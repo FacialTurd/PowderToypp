@@ -328,6 +328,7 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 	gameSave->gravityEnable = grav->ngrav_enable;
 	gameSave->aheatEnable = aheat_enable;
 	gameSave->sextraLoopsCA = extraLoopsCA;
+	gameSave->sim_max_pressure = sim_max_pressure;
 	// gameSave->PINV_wireless = wireless2;
 }
 

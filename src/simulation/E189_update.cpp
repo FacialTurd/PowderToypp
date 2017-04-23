@@ -334,12 +334,16 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							case 5: sim->E189_pause |=  0x20; break;
 							case 6: sim->E189_pause |=  0x40; break;
 							case 7:
-								sim->sim_max_pressure += 0.25f;
+								if (parts[i].temp < 273.15f)
+									parts[i].temp = 273.15f;
+								sim->sim_max_pressure += (int)(parts[i].temp - 272.65f) / 100.0f;
 								if (sim->sim_max_pressure > 256.0f)
 									sim->sim_max_pressure = 256.0f;
 							break;
 							case 8:
-								sim->sim_max_pressure -= 0.25f;
+								if (parts[i].temp < 273.15f)
+									parts[i].temp = 273.15f;
+								sim->sim_max_pressure -= (int)(parts[i].temp - 272.65f) / 100.0f;
 								if (sim->sim_max_pressure < 0.0f)
 									sim->sim_max_pressure = 0.0f;
 							break;
@@ -1089,6 +1093,19 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 					}
 			break;
+		case 20: // clock (like battery)
+			if (!(parts[i].tmp2))
+			{
+				for (rx = -1; rx < 2; rx++)
+					for (ry = -1; ry < 2; ry++)
+						if (BOUNDS_CHECK && (rx || ry))
+						{
+							r = pmap[y+ry][x+rx];
+							if (sim->elements[r].Properties & PROP_CONDUCTS)
+								conductTo (sim, r, x+rx, y+ry, parts);
+						}
+				parts[i].tmp2 = parts[i].tmp;
+			}
 		}
 		break;
 			

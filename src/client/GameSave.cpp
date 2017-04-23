@@ -27,6 +27,7 @@ edgeMode(save.edgeMode),
 signs(save.signs),
 palette(save.palette),
 expanded(save.expanded),
+sim_max_pressure(save.sim_max_pressure),
 hasOriginalData(save.hasOriginalData),
 originalData(save.originalData)
 {
@@ -163,9 +164,11 @@ void GameSave::InitVars()
 	gravityEnable = false;
 	aheatEnable = false;
 	paused = false;
+	sextraLoopsCA = false;
 	gravityMode = 0;
 	airMode = 0;
 	edgeMode = 0;
+	sim_max_pressure = 4.0f;
 }
 
 bool GameSave::Collapsed()
@@ -718,6 +721,18 @@ void GameSave::readOPS(char * data, int dataLength)
 			if(bson_iterator_type(&iter)==BSON_BOOL)
 			{
 				sextraLoopsCA = bson_iterator_bool(&iter);
+			}
+			else
+			{
+				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
+			}
+		}
+		else if(!strcmp(bson_iterator_key(&iter), "sim_max_pressure"))
+		{
+			if(bson_iterator_type(&iter)==BSON_INT)
+			{
+				int temporary1 = bson_iterator_int(&iter);
+				sim_max_pressure = * (float*) &temporary1; // floating point hacking
 			}
 			else
 			{
@@ -2484,7 +2499,8 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
 	bson_append_int(&b, "edgeMode", edgeMode);
-
+	bson_append_int(&b, "sim_max_pressure", * (int*) &sim_max_pressure);
+	
 	//bson_append_int(&b, "leftSelectedElement", sl);
 	//bson_append_int(&b, "rightSelectedElement", sr);
 	//bson_append_int(&b, "activeMenu", active_menu);

@@ -52,6 +52,7 @@ public:
 	int gravityMode;
 	int airMode;
 	int edgeMode;
+	float sim_max_pressure;
 	// int PINV_wireless[128][2];
 	
 	//Signs

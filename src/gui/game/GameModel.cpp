@@ -645,6 +645,7 @@ void GameModel::SetSave(SaveInfo * newSave)
 		sim->water_equal_test = saveData->waterEEnabled;
 		sim->aheat_enable = saveData->aheatEnable;
 		sim->extraLoopsCA = saveData->sextraLoopsCA;
+		sim->sim_max_pressure = saveData->sim_max_pressure;
 		// sim->wireless2 = saveData->PINV_wireless;
 		if(saveData->gravityEnable)
 			sim->grav->start_grav_async();
@@ -687,6 +688,7 @@ void GameModel::SetSaveFile(SaveFile * newSave)
 		sim->water_equal_test = saveData->waterEEnabled;
 		sim->aheat_enable = saveData->aheatEnable;
 		sim->extraLoopsCA = saveData->sextraLoopsCA;
+		sim->sim_max_pressure = saveData->sim_max_pressure;
 		// sim->wireless2 = saveData->PINV_wireless;
 		if(saveData->gravityEnable && !sim->grav->ngrav_enable)
 		{
