@@ -188,6 +188,7 @@ GameView::GameView():
 	recording(false),
 	screenshotIndex(0),
 	recordingIndex(0),
+    recordingSubframe(false),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -213,10 +214,31 @@ GameView::GameView():
 		SearchAction(GameView * _v) { v = _v; }
 		void ActionCallback(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour())
-				v->c->OpenLocalBrowse();
+			class SearchConfirmation: public ConfirmDialogueCallback {
+			public:
+				GameView * v;
+				bool ctrl;
+				SearchConfirmation(GameView * v, bool ctrl) : v(v), ctrl(ctrl) {}
+				virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
+					if (result == ConfirmPrompt::ResultOkay)
+					{
+						if(ctrl)
+							v->c->OpenLocalBrowse();
+						else
+							v->c->OpenSearch("");
+					}
+				}
+				virtual ~SearchConfirmation() { }
+			};
+			if(v->c->GetHasUnsavedChanges())
+				new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to continue?", new SearchConfirmation(v, v->CtrlBehaviour()));
 			else
-				v->c->OpenSearch("");
+			{
+				if(v->CtrlBehaviour())
+					v->c->OpenLocalBrowse();
+				else
+					v->c->OpenSearch("");
+			}
 		}
 	};
 
@@ -924,7 +946,7 @@ void GameView::NotifyUserChanged(GameModel * sender)
 
 void GameView::NotifyPausedChanged(GameModel * sender)
 {
-	pauseButton->SetToggleState(sender->GetPaused());
+	pauseButton->SetToggleState(sender->GetPaused() && !(sender->GetSubframeMode()));
 }
 
 void GameView::NotifyToolTipChanged(GameModel * sender)
@@ -1012,7 +1034,7 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		upVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		downVoteButton->Enabled = false;
-		downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
+		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		downVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		tagSimulationButton->Enabled = false;
 		tagSimulationButton->SetText("[no tags set]");
@@ -1051,6 +1073,7 @@ void GameView::record()
 {
 	if(recording)
 	{
+		recordingSubframe = false;
 		recording = false;
 	}
 	else
@@ -1068,6 +1091,43 @@ void GameView::record()
 			virtual ~RecordingConfirmation() { }
 		};
 		new ConfirmPrompt("Recording", "You're about to start recording all drawn frames. This may use a load of hard disk space.", new RecordingConfirmation(this));
+	}
+}
+
+void GameView::StopRecording()
+{
+	if(recording)
+	{
+		record();
+	}
+}
+
+void GameView::startSubframeRecording()
+{
+	if(recording)
+	{
+		std::cout << "Starting subframe recording." << std::endl;
+		c->SetSubframeMode(true);
+		recordingSubframe = true;
+	}
+	else
+	{
+		class RecordingConfirmation: public ConfirmDialogueCallback {
+		public:
+			GameView * v;
+			RecordingConfirmation(GameView * v): v(v) {}
+			virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
+				if (result == ConfirmPrompt::ResultOkay)
+				{
+					std::cout << "Starting subframe recording." << std::endl;
+					v->c->SetSubframeMode(true);
+					v->recordingSubframe = true;
+					v->recording = true;
+				}
+			}
+			virtual ~RecordingConfirmation() { }
+		};
+		new ConfirmPrompt("Recording", "You're about to start recording all remaining particle updates in this frame. This may use a load of hard disk space.", new RecordingConfirmation(this));
 	}
 }
 
@@ -1206,6 +1266,7 @@ void GameView::OnMouseDown(int x, int y, unsigned button)
 
 			isMouseDown = true;
 			c->HistorySnapshot();
+			c->SetWasModified(true);
 			if (drawMode == DrawRect || drawMode == DrawLine)
 			{
 				drawPoint1 = c->PointTranslate(currentMouse);
@@ -1245,16 +1306,6 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 					{
 						int thumbX = selectPoint2.X - (placeSaveThumb->Width/2);
 						int thumbY = selectPoint2.Y - (placeSaveThumb->Height/2);
-
-						if (thumbX < 0)
-							thumbX = 0;
-						if (thumbX+(placeSaveThumb->Width) >= XRES)
-							thumbX = XRES-placeSaveThumb->Width;
-
-						if (thumbY < 0)
-							thumbY = 0;
-						if (thumbY+(placeSaveThumb->Height) >= YRES)
-							thumbY = YRES-placeSaveThumb->Height;
 
 						c->PlaceSave(ui::Point(thumbX, thumbY));
 					}
@@ -1333,7 +1384,10 @@ void GameView::ExitPrompt()
 		}
 		virtual ~ExitConfirmation() { }
 	};
-	new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
+	if(c->GetHasUnsavedChanges())
+		new ConfirmPrompt("WARNING: You have unsaved changes", "Are you sure you want to exit the game?", new ExitConfirmation());
+	else
+		new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
 }
 
 void GameView::ToolTip(ui::Point senderPosition, std::string toolTip)
@@ -1452,7 +1506,14 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		enableShiftBehaviour();
 		break;
 	case ' ': //Space
-		c->SetPaused();
+        if (shift && c->GetSubframeEnabled())
+        {
+			c->SetSubframeMode();
+        }
+		else
+		{
+			c->SetPaused();
+		}
 		break;
 	case 'z':
 		if (selectMode != SelectNone && isMouseDown)
@@ -1478,6 +1539,8 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		c->ShowConsole();
 		break;
 	case 'p':
+		c->ActivatePropertyTool();
+		break;
 	case SDLK_F2:
 		screenshot();
 		break;
@@ -1485,11 +1548,18 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		SetDebugHUD(!GetDebugHUD());
 		break;
 	case SDLK_F5:
-		c->ReloadSim();
+		if (shift && c->GetSubframeEnabled())
+			c->ReloadParticleOrder();
+		else
+			c->ReloadSim();
 		break;
 	case 'r':
 		if (ctrl)
 			c->ReloadSim();
+        else if (shift && c->GetSubframeEnabled())
+        {
+			startSubframeRecording();
+        }
 		else
 			record();
 		break;
@@ -1640,6 +1710,12 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		if (ctrl)
 		{
 			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^SPECIFIC_DELETE);
+			break;
+		}
+		if (shift)
+		{
+			c->ReloadParticleOrder();
+			c->SetReplaceModeFlags(c->GetReplaceModeFlags()^STACK_MODE);
 			break;
 		}
 		//fancy case switch without break
@@ -2162,19 +2238,10 @@ void GameView::OnDraw()
 
 					ui::Point thumbPos = c->NormaliseBlockCoord(ui::Point(thumbX, thumbY));
 
-					if(thumbPos.X<0)
-						thumbPos.X = 0;
-					if(thumbPos.X+(placeSaveThumb->Width)>=XRES)
-						thumbPos.X = XRES-placeSaveThumb->Width;
-
-					if(thumbPos.Y<0)
-						thumbPos.Y = 0;
-					if(thumbPos.Y+(placeSaveThumb->Height)>=YRES)
-						thumbPos.Y = YRES-placeSaveThumb->Height;
-
 					ren->draw_image(placeSaveThumb, thumbPos.X, thumbPos.Y, 128);
 
-					ren->xor_rect(thumbPos.X, thumbPos.Y, placeSaveThumb->Width, placeSaveThumb->Height);
+					// Don't show xor-rect when placing save
+					// ren->xor_rect(thumbPos.X, thumbPos.Y, placeSaveThumb->Width, placeSaveThumb->Height);
 				}
 			}
 			else
@@ -2270,138 +2337,177 @@ void GameView::OnDraw()
 	else if(showHud)
 	{
 		//Draw info about simulation under cursor
-		int wavelengthGfx = 0, alpha = 255;
+		int alpha = 255;
 		if (toolTipPosition.Y < 120)
 			alpha = 255-toolTipPresence*3;
 		if (alpha < 50)
 			alpha = 50;
-		std::stringstream sampleInfo;
-		sampleInfo.precision(2);
-
-		int type = sample.particle.type;
-		if (type)
+		int yoffset = 0;
+		
+		if (sample.sparticle_count)
 		{
-			int ctype = sample.particle.ctype;
-			if (type == PT_PIPE || type == PT_PPIP)
-				ctype = sample.particle.tmp&0xFF;
-
-			if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY)
-				wavelengthGfx = (ctype&0x3FFFFFFF);
-
-			if (showDebug)
+			for (int i = 0; i < sample.sparticle_count; i++)
 			{
-				if (type == PT_LAVA && c->IsValidElement(ctype))
-					sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
-				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
-					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample.particle.pavg[1]);
-				else if (type == PT_LIFE)
-					sampleInfo << c->ElementResolve(type, ctype);
-				else if (type == PT_FILT)
-				{
-					sampleInfo << c->ElementResolve(type, ctype);
-					const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
-					if (sample.particle.tmp>=0 && sample.particle.tmp<=11)
-						sampleInfo << " (" << filtModes[sample.particle.tmp] << ")";
-					else
-						sampleInfo << " (unknown mode)";
-				}
-				else
-				{
-					sampleInfo << c->ElementResolve(type, ctype);
-					if (wavelengthGfx || type == PT_E187 || type == PT_E188)
-						sampleInfo << " (" << ctype << ")";
-					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
-						sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
-					else if (c->IsValidElement(ctype))
-						sampleInfo << " (" << c->ElementResolve(ctype, -1) << ")";
-					else
-						sampleInfo << " ()";
-				}
-				sampleInfo << ", Temp: " << std::fixed << sample.particle.temp -273.15f << " C";
-				sampleInfo << ", Life: " << sample.particle.life;
-				sampleInfo << ", Tmp: " << sample.particle.tmp;
+				int wavelengthGfx = 0;
+				std::stringstream sampleInfo;
+				sampleInfo.precision(2);
 
-				// only elements that use .tmp2 show it in the debug HUD
-				if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_PSTN)
-					sampleInfo << ", Tmp2: " << sample.particle.tmp2;
+				Particle sparticle = sample.sparticles[i];
 
-				sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
+				int type = sparticle.type;
+				if (type)
+				{
+					int ctype = sparticle.ctype;
+					if (type == PT_PIPE || type == PT_PPIP)
+						ctype = sparticle.tmp&0xFF;
+
+					if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY)
+						wavelengthGfx = (ctype&0x3FFFFFFF);
+
+					if (showDebug)
+					{
+						if (type == PT_LAVA && c->IsValidElement(ctype))
+							sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
+						else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
+							sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]);
+						else if (type == PT_LIFE)
+							sampleInfo << c->ElementResolve(type, ctype);
+						else if (type == PT_FILT)
+						{
+							sampleInfo << c->ElementResolve(type, ctype);
+							const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
+							if (sparticle.tmp>=0 && sparticle.tmp<=11)
+								sampleInfo << " (" << filtModes[sparticle.tmp];
+							else
+								sampleInfo << " (unknown mode";
+
+							int displayNumber = ctype & 0x1FFFFFFF;
+							if(ctype & 0x10000000)
+								displayNumber = -(((~ctype) & 0x1FFFFFFF) + 1);
+
+							sampleInfo << ", " << displayNumber << ")";
+						}
+						else
+						{
+							sampleInfo << c->ElementResolve(type, ctype);
+							if (wavelengthGfx)
+							{
+								int displayNumber = ctype & 0x1FFFFFFF;
+								if(ctype & 0x10000000)
+									displayNumber = -(((~ctype) & 0x1FFFFFFF) + 1);
+
+								sampleInfo << " (" << displayNumber << ")";
+							}
+							// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
+							else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
+								sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
+							else if (c->IsValidElement(ctype))
+								sampleInfo << " (" << c->ElementResolve(ctype, -1) << ")";
+							else
+								sampleInfo << " ()";
+						}
+						sampleInfo << ", Temp: " << std::fixed << sparticle.temp -273.15f << " C";
+						sampleInfo << ", Life: " << sparticle.life;
+						sampleInfo << ", Tmp: " << sparticle.tmp;
+
+						// only elements that use .tmp2 show it in the debug HUD
+						if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_PSTN)
+							sampleInfo << ", Tmp2: " << sparticle.tmp2;
+
+						sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
+					}
+					else
+					{
+						if (type == PT_LAVA && c->IsValidElement(ctype))
+							sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
+						else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
+							sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]);
+						else if (type == PT_LIFE)
+							sampleInfo << c->ElementResolve(type, ctype);
+						else
+							sampleInfo << c->ElementResolve(type, ctype);
+						sampleInfo << ", Temp: " << std::fixed << sparticle.temp - 273.15f << " C";
+						sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
+					}
+				}
+
+				int textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
+				g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
+				g->drawtext(XRES-16-textWidth, 16 + yoffset, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
+
+#ifndef OGLI
+				if (wavelengthGfx)
+				{
+					int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 10 + yoffset;
+					int tmp;
+					g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
+					for (i = 0; i < 30; i++)
+					{
+						if ((wavelengthGfx >> i)&1)
+						{
+							// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
+							if (i>2) tmp = 0x1F << (i-2);
+							else tmp = 0x1F >> (2-i);
+
+							cg = 0;
+							cb = 0;
+							cr = 0;
+
+							for (j=0; j<12; j++)
+							{
+								cr += (tmp >> (j+18)) & 1;
+								cb += (tmp >> j) & 1;
+							}
+							for (j=0; j<13; j++)
+								cg += (tmp >> (j+9)) & 1;
+
+							tmp = 624/(cr+cg+cb+1);
+							cr *= tmp;
+							cg *= tmp;
+							cb *= tmp;
+							for (j=0; j<h; j++)
+								g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
+						}
+					}
+				}
+#endif
+
+				yoffset += 16;
 			}
-			else
-			{
-				if (type == PT_LAVA && c->IsValidElement(ctype))
-					sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
-				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
-					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample.particle.pavg[1]);
-				else if (type == PT_LIFE)
-					sampleInfo << c->ElementResolve(type, ctype);
-				else
-					sampleInfo << c->ElementResolve(type, ctype);
-				sampleInfo << ", Temp: " << std::fixed << sample.particle.temp - 273.15f << " C";
-				sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
-			}
-		}
-		else if (sample.WallType)
-		{
-			sampleInfo << c->WallName(sample.WallType);
-			sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
-		}
-		else if (sample.isMouseInSim)
-		{
-			sampleInfo << "Empty, Pressure: " << std::fixed << sample.AirPressure;
 		}
 		else
 		{
-			sampleInfo << "Empty";
-		}
+			std::stringstream sampleInfo;
+			sampleInfo.precision(2);
 
-		int textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
-		g->fillrect(XRES-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
-		g->drawtext(XRES-16-textWidth, 16, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
-
-#ifndef OGLI
-		if (wavelengthGfx)
-		{
-			int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 10;
-			int tmp;
-			g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
-			for (i = 0; i < 30; i++)
+			if (sample.WallType)
 			{
-				if ((wavelengthGfx >> i)&1)
-				{
-					// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
-					if (i>2) tmp = 0x1F << (i-2);
-					else tmp = 0x1F >> (2-i);
-
-					cg = 0;
-					cb = 0;
-					cr = 0;
-
-					for (j=0; j<12; j++)
-					{
-						cr += (tmp >> (j+18)) & 1;
-						cb += (tmp >> j) & 1;
-					}
-					for (j=0; j<13; j++)
-						cg += (tmp >> (j+9)) & 1;
-
-					tmp = 624/(cr+cg+cb+1);
-					cr *= tmp;
-					cg *= tmp;
-					cb *= tmp;
-					for (j=0; j<h; j++)
-						g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
-				}
+				sampleInfo << c->WallName(sample.WallType);
+				sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
 			}
+			else if (sample.isMouseInSim)
+			{
+				sampleInfo << "Empty, Pressure: " << std::fixed << sample.AirPressure;
+			}
+			else
+			{
+				sampleInfo << "Empty";
+			}
+
+			int textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
+			g->fillrect(XRES-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
+			g->drawtext(XRES-16-textWidth, 16, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
+
+			yoffset += 16;
 		}
-#endif
+
 
 		if (showDebug)
 		{
-			sampleInfo.str(std::string());
+			std::stringstream sampleInfo;
+			sampleInfo.precision(2);
 
-			if (type)
+			if (sample.particle.type)
 				sampleInfo << "#" << sample.ParticleID << ", ";
 
 			sampleInfo << "X:" << sample.PositionX << " Y:" << sample.PositionY;
@@ -2412,9 +2518,9 @@ void GameView::OnDraw()
 			if (c->GetAHeatEnable())
 				sampleInfo << ", AHeat: " << std::fixed << sample.AirTemperature -273.15f << " C";
 
-			textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
-			g->fillrect(XRES-20-textWidth, 27, textWidth+8, 14, 0, 0, 0, alpha*0.5f);
-			g->drawtext(XRES-16-textWidth, 30, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
+			int textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
+			g->fillrect(XRES-20-textWidth, 11 + yoffset, textWidth+8, 14, 0, 0, 0, alpha*0.5f);
+			g->drawtext(XRES-16-textWidth, 14 + yoffset, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
 		}
 	}
 
@@ -2434,6 +2540,8 @@ void GameView::OnDraw()
 			fpsInfo << " [REPLACE MODE]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)
 			fpsInfo << " [SPECIFIC DELETE]";
+		if (c->GetReplaceModeFlags()&STACK_MODE)
+			fpsInfo << " [STACK MODE]";
 		if (ren->GetGridSize())
 			fpsInfo << " [GRID: " << ren->GetGridSize() << "]";
 		if (ren->findingElement)
