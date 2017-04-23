@@ -1101,11 +1101,47 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
-							if (sim->elements[r].Properties & PROP_CONDUCTS)
+							if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS)
 								conductTo (sim, r, x+rx, y+ry, parts);
 						}
 				parts[i].tmp2 = parts[i].tmp;
 			}
+			break;
+		case 21: // subframe SPRK generator/canceller
+			rrx = (parts[i].temp < 373.0f) ? 4 : 3;
+			rry = (parts[i].temp < 273.15f);
+			for (rx = -1; rx < 2; rx++)
+				for (ry = -1; ry < 2; ry++)
+					if (BOUNDS_CHECK && (rx || ry))
+					{
+						r = pmap[y+ry][x+rx];
+						if ((r&0xFF) == PT_SPRK)
+						{
+							if (rry)
+							{
+								rii = parts[r>>8].ctype;
+								if (rii > 0 && rii < PT_NUM && sim->elements[rii].Enabled)
+								{
+									sim->part_change_type(r, x+rx, y+ry, rii);
+									parts[r>>8].life = (rii == PT_SWCH) ? 10 : 0; // keep SWCH on
+								}
+							}
+							else
+								parts[r>>8].life = rrx;
+						}
+						else if ((r&0xFF) == PT_METL || (r&0xFF) == PT_PSCN || (r&0xFF) == PT_NSCN)
+						{
+							if (rry)
+								parts[r>>8].life = 0;
+							else
+							{
+								parts[r>>8].ctype = r&0xFF;
+								parts[r>>8].life = rrx;
+								sim->part_change_type(r, x+rx, y+ry, PT_SPRK);
+							}
+						}
+					}
+			break;
 		}
 		break;
 			
@@ -1475,6 +1511,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				{
 					nx = x + rx; ny = y + ry;
 					r = pmap[ny][nx];
+					if (!r)
+						continue;
 					if ((r & 0xFF) == PT_FILT)
 					{
 						rr = parts[r>>8].ctype + parts[i].ctype;
