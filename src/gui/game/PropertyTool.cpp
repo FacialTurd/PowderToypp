@@ -259,11 +259,22 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 	switch (propType)
 	{
 		case StructProperty::Float:
-			*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float;
+			if(propOffset == offsetof(Particle, temp))
+				*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float + 273.15f;
+			else
+				*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float;
 			break;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
-			*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
+			if(propOffset == offsetof(Particle, ctype) && (sim->parts[i>>8].type == PT_FILT || sim->parts[i>>8].type == PT_BRAY))
+			{
+				int filtVal = propValue.Integer;
+				if (propValue.Integer >= 0)
+					filtVal ^= (1<<29);
+				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = filtVal & 0x3FFFFFFF;
+			}
+			else
+				*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
 			break;
 		case StructProperty::UInteger:
 			*((unsigned int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.UInteger;

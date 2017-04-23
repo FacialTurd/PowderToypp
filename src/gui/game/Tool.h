@@ -2,6 +2,7 @@
 #define TOOL_H_
 
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -78,6 +79,24 @@ public:
 	virtual void Draw(Simulation * sim, Brush * brush, ui::Point position);
 	virtual void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) { }
 	virtual void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) { }
+	virtual void DrawFill(Simulation * sim, Brush * brush, ui::Point position) { }
+};
+
+class StackTool: public Tool
+{
+	GameModel * gameModel;
+public:
+	StackTool(GameModel *model):
+	Tool(0, "STCK", "Stack or unstack particles.", 0xff, 0xff, 0, "DEFAULT_UI_STACK", NULL),
+	gameModel(model)
+	{
+	}
+	virtual ~StackTool() {}
+	virtual void ProcessParts(Simulation * sim, std::vector<int> &parts);
+	virtual void Click(Simulation * sim, Brush * brush, ui::Point position) { }
+	virtual void Draw(Simulation * sim, Brush * brush, ui::Point position);
+	virtual void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false);
+	virtual void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2);
 	virtual void DrawFill(Simulation * sim, Brush * brush, ui::Point position) { }
 };
 

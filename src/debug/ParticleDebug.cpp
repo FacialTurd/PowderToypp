@@ -18,37 +18,67 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	int i;
 	std::stringstream logmessage;
 
+	if (sim->debug_currentParticle == 0 && sim->debug_needReloadParticleOrder)
+	{
+		model->ReloadParticleOrder();
+		sim->debug_needReloadParticleOrder = false;
+	}
+	
 	if (mode == 0)
 	{
 		if (!sim->NUM_PARTS)
 			return;
-		i = debug_currentParticle;
-		while (i < NPART && !sim->parts[i].type)
-			i++;
-		if (i == NPART)
-			logmessage << "End of particles reached, updated sim";
-		else
-			logmessage << "Updated particle #" << i;
-	}
-	else if (mode == 1)
-	{
-		if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = (sim->pmap[y][x]>>8)) < debug_currentParticle)
-		{
-			i = NPART;
-			logmessage << "Updated particles from #" << debug_currentParticle << " to end, updated sim";
-		}
-		else
-			logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
-	}
-	model->Log(logmessage.str(), false);
 
-	if (sim->debug_currentParticle == 0)
-	{
-		sim->framerender = 1;
-		sim->BeforeSim();
-		sim->framerender = 0;
+		if (sim->debug_currentParticle == 0)
+		{
+			sim->framerender = 1;
+			sim->BeforeSim();
+			sim->framerender = 0;
+		}
+		int rangeStart = debug_currentParticle;
+		do
+		{
+			i = rangeStart;
+			while (i < NPART && !sim->parts[i].type)
+				i++;
+
+			sim->UpdateParticles(rangeStart, i);
+			rangeStart = i+1;
+		}
+		while(i < NPART && !sim->debug_interestingChangeOccurred);
+
+		if (i == NPART)
+		{
+			logmessage << "End of particles reached, updated sim";
+			model->Log(logmessage.str(), false);
+		}
+
+		//else
+		//	logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
 	}
-	sim->UpdateParticles(debug_currentParticle, i);
+	else{
+		if (sim->debug_currentParticle == 0)
+		{
+			sim->framerender = 1;
+			sim->BeforeSim();
+			sim->framerender = 0;
+		}
+
+		if (mode == 1)
+		{
+			if (x < 0 || x >= XRES || y < 0 || y >= YRES || !sim->pmap[y][x] || (i = (sim->pmap[y][x]>>8)) < debug_currentParticle)
+			{
+				i = NPART;
+				logmessage << "Updated particles from #" << debug_currentParticle << " to end, updated sim";
+			}
+			else
+				logmessage << "Updated particles #" << debug_currentParticle << " through #" << i;
+			model->Log(logmessage.str(), false);
+		}
+
+		sim->UpdateParticles(debug_currentParticle, i);
+	}
+
 	if (i < NPART-1)
 		sim->debug_currentParticle = i+1;
 	else
@@ -86,12 +116,11 @@ bool ParticleDebug::KeyPress(int key, Uint16 character, bool shift, bool ctrl, b
 		{
 			if (sim->debug_currentParticle > 0)
 			{
-				sim->UpdateParticles(sim->debug_currentParticle, NPART);
-				sim->AfterSim();
+				sim->CompleteDebugUpdateParticles();
+
 				std::stringstream logmessage;
 				logmessage << "Updated particles from #" << sim->debug_currentParticle << " to end, updated sim";
 				model->Log(logmessage.str(), false);
-				sim->debug_currentParticle = 0;
 			}
 			else
 			{

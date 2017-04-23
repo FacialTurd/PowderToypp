@@ -94,6 +94,8 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 			continue;
 		if (!elements[tempPart.type].Enabled)
 			continue;
+		if (!InBounds(x, y))
+			continue;
 
 		if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
 			if (tempPart.type == PT_CLNE || tempPart.type == PT_PCLN || tempPart.type == PT_BCLN || tempPart.type == PT_PBCN || tempPart.type == PT_STOR || tempPart.type == PT_CONV || tempPart.type == PT_STKM || tempPart.type == PT_STKM2 || tempPart.type == PT_FIGH || tempPart.type == PT_LAVA || tempPart.type == PT_SPRK || tempPart.type == PT_PSTN || tempPart.type == PT_CRAY || tempPart.type == PT_DTEC || tempPart.type == PT_DRAY)
@@ -184,14 +186,15 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 			sign tempSign = save->signs[i];
 			tempSign.x += fullX;
 			tempSign.y += fullY;
-			signs.push_back(tempSign);
+			if (InBounds(tempSign.x, tempSign.y))
+				signs.push_back(tempSign);
 		}
 	}
 	for(int saveBlockX = 0; saveBlockX < save->blockWidth; saveBlockX++)
 	{
 		for(int saveBlockY = 0; saveBlockY < save->blockHeight; saveBlockY++)
 		{
-			if(save->blockMap[saveBlockY][saveBlockX])
+			if(save->blockMap[saveBlockY][saveBlockX] && InBounds((saveBlockX + blockX) * CELL, (saveBlockY + blockY) * CELL))
 			{
 				bmap[saveBlockY+blockY][saveBlockX+blockX] = save->blockMap[saveBlockY][saveBlockX];
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
@@ -317,6 +320,7 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 Snapshot * Simulation::CreateSnapshot()
 {
 	Snapshot * snap = new Snapshot();
+	snap->debug_currentParticle = debug_currentParticle;
 	snap->AirPressure.insert(snap->AirPressure.begin(), &pv[0][0], &pv[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->AirVelocityX.insert(snap->AirVelocityX.begin(), &vx[0][0], &vx[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->AirVelocityY.insert(snap->AirVelocityY.begin(), &vy[0][0], &vy[0][0]+((XRES/CELL)*(YRES/CELL)));
@@ -344,6 +348,9 @@ void Simulation::Restore(const Snapshot & snap)
 	parts_lastActiveIndex = NPART-1;
 	elementRecount = true;
 	force_stacking_check = true;
+
+	debug_currentParticle = snap.debug_currentParticle;
+	debug_needReloadParticleOrder = true;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);
@@ -499,6 +506,23 @@ SimulationSample Simulation::GetSample(int x, int y)
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
+		sample.sparticle_count = 0;
+		for (int i=0; i<=parts_lastActiveIndex; i++)
+		{
+			if (parts[i].type)
+			{
+				int partx = (int)(parts[i].x+0.5f);
+				int party = (int)(parts[i].y+0.5f);
+				if (partx == x && party == y)
+				{
+					sample.sparticles[sample.sparticle_count] = parts[i];
+					sample.sparticle_count++;
+				}
+			}
+			if (sample.sparticle_count >= 5)
+				break;
+		}
+
 		if (photons[y][x])
 		{
 			sample.particle = parts[photons[y][x]>>8];
@@ -1079,6 +1103,7 @@ int Simulation::Tool(int x, int y, int tool, float strength)
 			cpart = &(parts[r>>8]);
 		else if ((r = photons[y][x]))
 			cpart = &(parts[r>>8]);
+		debug_needReloadParticleOrder = true;
 		return tools[tool]->Perform(this, cpart, x, y, strength);
 	}
 	return 0;
@@ -1439,6 +1464,7 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 
 int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 {
+	debug_needReloadParticleOrder = true;
 	//delete
 	if (c == 0 && !(flags&REPLACE_MODE))
 		delete_part(x, y);
@@ -1461,6 +1487,12 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 			if (c!=0)
 				create_part(-2, x, y, c&0xFF, c>>8);
 		}
+	}
+	//stack mode
+	else if (flags&STACK_MODE)
+	{
+		if (create_part(-3, x, y, c&0xFF, c>>8) == -1)
+			return 1;
 	}
 	//normal draw
 	else
@@ -1910,6 +1942,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	debug_needReloadParticleOrder = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -2727,6 +2760,8 @@ void Simulation::kill_part(int i)//kills particle number i
 
 void Simulation::part_change_type(int i, int x, int y, int t)//changes the type of particle number i, to t.  This also changes pmap at the same time.
 {
+	debug_interestingChangeOccurred = true;
+
 	if (x<0 || y<0 || x>=XRES || y>=YRES || i>=NPART || t<0 || t>=PT_NUM || !parts[i].type)
 		return;
 	if (!elements[t].Enabled)
@@ -2806,10 +2841,11 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 	}
 }
 
-//the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, or a particle number to replace a particle.
+//the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, -3 to skip pmap check, or a particle number to replace a particle.
 //tv = Type (8 bits) + Var (24 bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
+	debug_interestingChangeOccurred = true;
 	int i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -3110,6 +3146,9 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			case PT_TSNS:
 				parts[i].tmp2 = 2;
 				break;
+			case PT_CRAY:
+				if (p == -2) parts[i].ctype = PT_SPRK;
+				break;
 			case PT_VINE:
 				parts[i].tmp = 1;
 				break;
@@ -3405,6 +3444,8 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 
 void Simulation::delete_part(int x, int y)//calls kill_part with the particle located at x,y
 {
+	debug_interestingChangeOccurred = true;
+
 	unsigned i;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
@@ -3418,6 +3459,16 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	if (!i)
 		return;
 	kill_part(i>>8);
+}
+
+void Simulation::CompleteDebugUpdateParticles()
+{
+	if(debug_currentParticle > 0)
+	{
+		UpdateParticles(debug_currentParticle, NPART);
+		AfterSim();
+		debug_currentParticle = 0;
+	}
 }
 
 void Simulation::UpdateParticles(int start, int end)
@@ -3435,6 +3486,8 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 
+    debug_interestingChangeOccurred = false;
+    
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
 		if (parts[i].type)
@@ -5401,6 +5454,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
+	debug_needReloadParticleOrder(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),
@@ -5416,6 +5470,7 @@ Simulation::Simulation():
 	legacy_enable(0),
 	aheat_enable(0),
 	water_equal_test(0),
+	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
 	pretty_powder(0),

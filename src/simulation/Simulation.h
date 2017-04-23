@@ -54,6 +54,8 @@ public:
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
+    bool debug_interestingChangeOccurred;
+	bool debug_needReloadParticleOrder;
 	int parts_lastActiveIndex;
 	int pfree;
 	int NUM_PARTS;
@@ -111,6 +113,7 @@ public:
 	int legacy_enable;
 	int aheat_enable;
 	int water_equal_test;
+	bool subframe_mode;
 	int sys_pause;
 	int framerender;
 	int pretty_powder;
@@ -161,6 +164,7 @@ public:
 	void set_emap(int x, int y);
 	int parts_avg(int ci, int ni, int t);
 	void create_arc(int sx, int sy, int dx, int dy, int midpoints, int variance, int type, int flags);
+	void CompleteDebugUpdateParticles();
 	void UpdateParticles(int start, int end);
 	void SimulateGoL();
 	void SimulateLLoops();

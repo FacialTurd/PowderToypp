@@ -65,6 +65,7 @@ private:
 	User currentUser;
 	float toolStrength;
 	std::deque<Snapshot*> history;
+	bool wasModified;
 	Snapshot *redoHistory;
 	unsigned int historyPosition;
 	unsigned int undoHistoryLimit;
@@ -158,15 +159,21 @@ public:
 	int GetBrushID();
 	void SetBrushID(int i);
 
+	bool GetWasModified();
+	void SetWasModified(bool value);
+
 	void SetVote(int direction);
 	SaveInfo * GetSave();
 	SaveFile * GetSaveFile();
 	void SetSave(SaveInfo * newSave);
 	void SetSaveFile(SaveFile * newSave);
 	void AddObserver(GameView * observer);
+	void ReloadParticleOrder();
 
 	bool GetPaused();
 	void SetPaused(bool pauseState);
+	bool GetSubframeMode();
+	void SetSubframeMode(bool subframeModeState);
 	bool GetDecoration();
 	void SetDecoration(bool decorationState);
 	bool GetLLCA();

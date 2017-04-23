@@ -7,6 +7,8 @@
 class Snapshot
 {
 public:
+	int debug_currentParticle;
+
 	std::vector<float> AirPressure;
 	std::vector<float> AirVelocityX;
 	std::vector<float> AirVelocityY;
@@ -32,6 +34,7 @@ public:
 	std::vector<sign> signs;
 
 	Snapshot() :
+		debug_currentParticle(0),
 		AirPressure(),
 		AirVelocityX(),
 		AirVelocityY(),

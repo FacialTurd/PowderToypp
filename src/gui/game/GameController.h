@@ -94,6 +94,8 @@ public:
 	void Update();
 	void SetPaused(bool pauseState);
 	void SetPaused();
+	void SetSubframeMode(bool subframeModeState);
+	void SetSubframeMode();
 	void SetDecoration(bool decorationState);
 	void SetDecoration();
 	void ShowGravityGrid();
@@ -101,6 +103,8 @@ public:
 	bool GetHudEnable();
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
+    unsigned int GetDebugFlags() { return debugFlags; }
+	bool GetSubframeEnabled() { return debugFlags & 0x8; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();
@@ -109,12 +113,15 @@ public:
 	Tool * GetActiveTool(int selection);
 	void SetActiveTool(int toolSelection, Tool * tool);
 	void SetLastTool(Tool * tool);
+	void ActivatePropertyTool();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void ActiveToolChanged(int toolSelection, Tool *tool);
 	void SetActiveColourPreset(int preset);
 	void SetColour(ui::Colour colour);
 	void SetToolStrength(float value);
+	bool GetHasUnsavedChanges();
+	void SetWasModified(bool value);
 	void LoadSaveFile(SaveFile * file);
 	void LoadSave(SaveInfo * save);
 	void OpenSearch(std::string searchText);
@@ -135,6 +142,7 @@ public:
 	void PlaceSave(ui::Point position);
 	void ClearSim();
 	void ReloadSim();
+	void ReloadParticleOrder();
 	void Vote(int direction);
 	void ChangeBrush();
 	void ShowConsole();

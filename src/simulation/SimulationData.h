@@ -127,6 +127,7 @@
 //replace mode / specific delete flags
 #define REPLACE_MODE 0x1
 #define SPECIFIC_DELETE 0x2
+#define STACK_MODE 0x4
 
 #ifndef SIMULATIONDATA_H
 #define SIMULATIONDATA_H
