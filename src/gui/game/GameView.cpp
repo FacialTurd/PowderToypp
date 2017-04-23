@@ -188,7 +188,7 @@ GameView::GameView():
 	recording(false),
 	screenshotIndex(0),
 	recordingIndex(0),
-    recordingSubframe(false),
+	recordingSubframe(false),
 	currentPoint(ui::Point(0, 0)),
 	lastPoint(ui::Point(0, 0)),
 	ren(NULL),
@@ -1034,7 +1034,7 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		upVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		downVoteButton->Enabled = false;
-		upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
+		downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 		downVoteButton->Appearance.BorderDisabled = ui::Colour(100, 100, 100);
 		tagSimulationButton->Enabled = false;
 		tagSimulationButton->SetText("[no tags set]");
@@ -1073,7 +1073,7 @@ void GameView::record()
 {
 	if(recording)
 	{
-		recordingSubframe = false;
+	recordingSubframe = false;
 		recording = false;
 	}
 	else
@@ -1306,6 +1306,16 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 					{
 						int thumbX = selectPoint2.X - (placeSaveThumb->Width/2);
 						int thumbY = selectPoint2.Y - (placeSaveThumb->Height/2);
+
+						if (thumbX < 0)
+							thumbX = 0;
+						if (thumbX+(placeSaveThumb->Width) >= XRES)
+							thumbX = XRES-placeSaveThumb->Width;
+
+						if (thumbY < 0)
+							thumbY = 0;
+						if (thumbY+(placeSaveThumb->Height) >= YRES)
+							thumbY = YRES-placeSaveThumb->Height;
 
 						c->PlaceSave(ui::Point(thumbX, thumbY));
 					}
@@ -2238,6 +2248,16 @@ void GameView::OnDraw()
 
 					ui::Point thumbPos = c->NormaliseBlockCoord(ui::Point(thumbX, thumbY));
 
+					if(thumbPos.X<0)
+						thumbPos.X = 0;
+					if(thumbPos.X+(placeSaveThumb->Width)>=XRES)
+						thumbPos.X = XRES-placeSaveThumb->Width;
+
+					if(thumbPos.Y<0)
+						thumbPos.Y = 0;
+					if(thumbPos.Y+(placeSaveThumb->Height)>=YRES)
+						thumbPos.Y = YRES-placeSaveThumb->Height;
+
 					ren->draw_image(placeSaveThumb, thumbPos.X, thumbPos.Y, 128);
 
 					// Don't show xor-rect when placing save
@@ -2337,7 +2357,7 @@ void GameView::OnDraw()
 	else if(showHud)
 	{
 		//Draw info about simulation under cursor
-		int alpha = 255;
+		int wavelengthGfx = 0, alpha = 255;
 		if (toolTipPosition.Y < 120)
 			alpha = 255-toolTipPresence*3;
 		if (alpha < 50)
