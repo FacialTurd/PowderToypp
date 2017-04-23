@@ -1,112 +1,56 @@
-The Powder Toy - July 2016
-==========================
+The Powder Toy (Subframe Chipmaker Mod) - August 2016
 
-Get the latest version here: http://powdertoy.co.uk/Download.html
+This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to a collection of tricks used to reduce computation cycles in electronic components to a single frame.
 
-To use online features such as saving, you need to register at: http://powdertoy.co.uk/Register.html
-You can visit the official TPT forum here: http://powdertoy.co.uk/Discussions/Categories/Index.html
+Features
+========
 
+These features are enabled when you enter the Lua command "tpt.setdebug(0x8)" into the console (or you can put it in autorun.lua):
 
-Have you ever wanted to blow something up? Or maybe you always dreamt of operating an atomic power plant? Do you have a will to develop your own CPU? The Powder Toy lets you to do all of these, and even more!
+- Particle order reloading: if you use the brush or do a copy-paste, then advance the simulation, the frame will be completed and the particle order will be reloaded automatically. You can reload the particle order manually with Shift-F5.
+- Shift-Space runs the simulation particle-by-particle rather than frame-by-frame.
+- Shift-R starts a recording of the particle-by-particle simulation and automatically stops recording at the end of the frame. Recording can still be stopped with R but particle-by-particle simulation will still continue.
+- Alt-F continues updating particles until it encouters an "interesting" update (create_part, delete_part or part_change_type called), and does not display any log messages until the frame is completed.
+- Overwriting a local save "<save>.cps" will create a backup of the file you're overwriting at "<save>.cps.backup". Subframe development is dangerous.
 
-The Powder Toy is a free physics sandbox game, which simulates air pressure and velocity, heat, gravity and a countless number of interactions between different substances! The game provides you with various building materials, liquids, gases and electronic components which can be used to construct complex machines, guns, bombs, realistic terrains and almost anything else. You can then mine them and watch cool explosions, add intricate wirings, play with little stickmen or operate your machine. You can browse and play thousands of different saves made by the community or upload your own - we welcome your creations!
+These features will be present without enabling:
 
-There is a Lua API - you can automate your work or even make plugins for the game. The Powder Toy is free and the source code is distributed under the GNU General Public License, so you can modify the game yourself or help with development. TPT is compiled using scons.
+- Stacked particles are shown in the debug HUD.
+- P opens the property tool window rather than takes a screenshot (you can still take screenshots with F2).
+- The property tool sets temp values in celsius rather than kelvin.
+- Ctrl-Y reverses an undo (merged in vanilla snapshot).
+- The ctype of FILTs will be displayed in the debug HUD. In the original game, this was only shown for non-FILT coloured particles like BRAY.
+- 30th bit handling: Setting the ctype of coloured particles (e.g. FILT) with the property tool will XOR the input value with 0x20000000 first (so it will set the 30th bit automatically, unless you set it). When hovering the mouse over coloured particles, the ctype displayed in the debug HUD will ignore the 30th bit and, if the 29th bit is set, be displayed as a negative number.
+- DRAY is coloured bright yellow to distinguish it from ARAY and DTEC.
+- When pasting (or placing a stamp), the pasted particles can be moved out of the initial paste boundary without getting deleted. Additionally, the white dotted paste boundary will not be shown.
+- If you attempt to open a save or close the window with the ESC button (the case for closing with the 'X' button has not been implemented) when there are unsaved changes, a confirmation warning will be displayed.
+- The position in frame is saved into undo history during subframe debugging, so you can undo into the middle of a frame without destroying everything.
+- (v1.1) Stack tool (Shortcut: Shift-S): Clicking on a stack of particles will unstack them, provided there's enough space; selecting multiple particles in different positions will stack them in order of their positions.
+- (v1.1) Creating CRAY with the brush gives it a ctype of SPRK automatically. If you want to create a ctype-less CRAY, use the property tool.
+- (v1.1, experimental) Shift-; (semicolon) toggles stack mode. It allows you to draw over existing particles, and makes right-click delete one stacked particle at a time. This helps to make transparent DTEC.
+- (v1.2) DTEC is coloured a darker red to distinguish it from ARAY.
 
-Build instructions
-===========================================================================
+Note that the original game already supports the following subframe debugging features:
 
-    sudo apt-get install build-essential libsdl1.2-dev libbz2-dev zlib1g-dev liblua5.1.0-dev git scons libfftw3-dev
-    scons
+- Shift-F updates all particles up to the particle where your mouse is at.
+- Alt-F updates a single particle. This behaviour has been modified in this mod to continue updating particles until an "interesting" update occurs.
 
-For a list of flags for `scons`, see http://powdertoy.co.uk/Wiki/W/Scons_command_line_flags.html.
+The following simulation features are from the vanilla TPT snapshot, so don't publish anything that depends on these:
 
-Thanks
-===========================================================================
+- Two new FILT modes, variable red shift and variable blue shift, allows ctype-based bitshifting that can be set by DTEC.
+- CRAY copies its own life to particles it creates.
 
-* Stanislaw K Skowronek - Designed the original
-* Simon Robertshaw
-* Skresanov Savely
-* cracker64
-* Catelite
-* Bryan Hoyle
-* Nathan Cousins
-* jacksonmj
-* Felix Wallin
-* Lieuwe Mosch
-* Anthony Boot
-* Matthew "me4502"
-* MaksProg
-* jacob1
-* mniip
+Changelog
+=========
 
+v1.0:
+Original release.
 
-Instructions
-===========================================================================
+v1.1:
+Merge changes in snapshot.
+Add stack tool.
+Add stack mode.
+Give drawn CRAY a ctype of SPRK.
 
-Click on the elements with the mouse and draw in the field, like in MS Paint. The rest of the game is learning what happens next.
-
-
-Controls
-===========================================================================
-
-| Key                     | Action                                                          |
-| ----------------------- | --------------------------------------------------------------- |
-| TAB                     | Switch between circle/square/triangle brush                     |
-| Space                   | Pause                                                           |
-| Q / Esc                 | Quit                                                            |
-| Z                       | Zoom                                                            |
-| S                       | Save stamp (+ Ctrl when STK2 is out)                            |
-| L                       | Load last saved stamp                                           |
-| K                       | Stamp library                                                   |
-| 1-9                     | Set view mode                                                   |
-| P / F2                  | Save screenshot to .png                                         |
-| E                       | Bring up element search                                         |
-| F                       | Pause and go to next frame                                      |
-| G                       | Increase grid size                                              |
-| Shift + G               | Decrease grid size                                              |
-| H                       | Show/Hide HUD                                                   |
-| Ctrl + H / F1           | Show intro text                                                 |
-| D / F3                  | Debug mode (+ Ctrl when STK2 is out)                            |
-| I                       | Invert Pressure and Velocity map                                |
-| W                       | Toggle gravity modes (+ Ctrl when STK2 is out)                  |
-| Y                       | Toggle air modes                                                |
-| B                       | Enter decoration editor menu                                    |
-| Ctrl + B                | Toggle decorations on/off                                       |
-| N                       | Toggle Newtonian Gravity on/off                                 |
-| U                       | Toggle ambient heat on/off                                      |
-| Ctrl + I                | Install powder toy, for loading saves/stamps by double clicking |
-| ~                       | Console                                                         |
-| =                       | Reset pressure and velocity map                                 |
-| Ctrl + =                | Reset Electricity                                               |
-| [                       | Decrease brush size                                             |
-| ]                       | Increase brush size                                             |
-| Alt + [                 | Decrease brush size by 1                                        |
-| Alt + ]                 | Increase brush size by 1                                        |
-| Ctrl + C/V/X            | Copy/Paste/Cut                                                  |
-| Ctrl + Z                | Undo                                                            |
-| Ctrl + Cursor drag      | Rectangle                                                       |
-| Shift + Cursor drag     | Line                                                            |
-| Middle click            | Sample element                                                  |
-| Alt + Left click        | Sample element                                                  |
-| Mouse scroll            | Change brush size                                               |
-| Ctrl + Mouse scroll     | Change vertical brush size                                      |
-| Shift + Mouse scroll    | Change horizontal brush size                                    |
-| Shift + R               | Horizontal mirror for selected area when pasting stamps         |
-| Ctrl + Shift + R        | Vertical mirror for selected area when pasting stamps           |
-| R                       | Rotate selected area counterclockwise when pasting stamps       |
-
-
-
-Command Line
----------------------------------------------------------------------------
-
-| Command                  |                                                                |
-| ------------------------ | -------------------------------------------------------------- |
-| scale:1                  | Normal window resolution                                       |
-| scale:2                  | Doubled window resolution                                      |
-| kiosk                    | Fullscreen mode                                                |
-| proxy:server[:port]      | Proxy server to use [Example: proxy:wwwcache.lancs.ac.uk:8080] |
-| open <file>              | Opens the file as a stamp or game save                         |
-| ddir <directory>         | Directory used for saving stamps and preferences               |
-| ptsave:<save id>#[name]  | [Example: ptsave:2198#Destroyable_city_5_wth_metro~dima-gord]  |
+v1.2 (not released):
+Change DTEC colour.
