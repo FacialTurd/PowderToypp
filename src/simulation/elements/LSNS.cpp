@@ -48,7 +48,7 @@ Element_LSNS::Element_LSNS()
 int Element_LSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt, rd = parts[i].tmp2;
-	int pavg;
+	int pavg, rcmp = parts[i].tmp3;
 	if (rd > 25) parts[i].tmp2 = rd = 25;
 	if (parts[i].life)
 	{
@@ -82,7 +82,7 @@ int Element_LSNS::update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 				if(!r)
 					continue;
-				if (parts[r>>8].life > parts[i].temp-273.15)
+				if ((parts[r>>8].life > parts[i].temp-273.15) == !(rcmp & 1))
 					parts[i].life = 1;
 			}
 	return 0;
