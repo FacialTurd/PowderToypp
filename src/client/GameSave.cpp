@@ -457,6 +457,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen;
+	int my_mod_id_2 = 0;
 
 	unsigned partsCount = 0, *partsSimIndex = NULL;
 	int *freeIndices = NULL;
@@ -662,6 +663,17 @@ void GameSave::readOPS(char * data, int dataLength)
 			else
 			{
 				fprintf(stderr, "Invalid datatype of soap data: %d[%d] %d[%d] %d[%d]\n", bson_iterator_type(&iter), bson_iterator_type(&iter)==BSON_BINDATA, (unsigned char)bson_iterator_bin_type(&iter), ((unsigned char)bson_iterator_bin_type(&iter))==BSON_BIN_USER, bson_iterator_bin_len(&iter), bson_iterator_bin_len(&iter)>0);
+			}
+		}
+		else if(strcmp(bson_iterator_key(&iter), "modId2")==0)
+		{
+			if(bson_iterator_type(&iter)==BSON_INT)
+			{
+				my_mod_id_2 = bson_iterator_int(&iter);
+			}
+			else
+			{
+				fprintf(stderr, "Invalid datatype of Mod ID: %d[%d] %d[%d] %d[%d]\n", bson_iterator_type(&iter), bson_iterator_type(&iter)==BSON_BINDATA, (unsigned char)bson_iterator_bin_type(&iter), ((unsigned char)bson_iterator_bin_type(&iter))==BSON_BIN_USER, bson_iterator_bin_len(&iter), bson_iterator_bin_len(&iter)>0);
 			}
 		}
 /*
@@ -1304,6 +1316,12 @@ void GameSave::readOPS(char * data, int dataLength)
 								particles[newIndex].ctype |= particles[newIndex].tmp<<8;
 								particles[newIndex].tmp = 0;
 							}
+						}
+						break;
+					case 185: // already used by "E185" and "LSNS"
+						if (my_mod_id_2 != 1017640403)
+						{
+							particles[newIndex].type = PT_LSNS;
 						}
 						break;
 					}
