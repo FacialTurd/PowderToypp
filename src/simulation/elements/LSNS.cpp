@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_LSNS PT_LSNS 185
+//#TPT-Directive ElementClass Element_LSNS PT_LSNS 194
 Element_LSNS::Element_LSNS()
 {
 	Identifier = "DEFAULT_PT_LSNS";
@@ -48,6 +48,7 @@ Element_LSNS::Element_LSNS()
 int Element_LSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt, rd = parts[i].tmp2;
+	int pavg;
 	if (rd > 25) parts[i].tmp2 = rd = 25;
 	if (parts[i].life)
 	{
@@ -60,7 +61,8 @@ int Element_LSNS::update(UPDATE_FUNC_ARGS)
 					if (!r)
 						continue;
 					rt = r&0xFF;
-					if (sim->parts_avg(i,r>>8,PT_INSL) != PT_INSL)
+					pavg = sim->parts_avg(i,r>>8,PT_INSL);
+					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
 						if ((sim->elements[rt].Properties&PROP_CONDUCTS) && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) && parts[r>>8].life==0)
 						{
