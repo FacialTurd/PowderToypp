@@ -97,9 +97,6 @@ public:
 private:
 	bool expanded;
 	bool hasOriginalData;
-	float * fanVelXPtr;
-	float * fanVelYPtr;
-	unsigned char * blockMapPtr;
 
 	std::vector<char> originalData;
 
