@@ -984,7 +984,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										docontinue = parts[r>>8].tmp;
 										parts[r>>8].tmp = 1;
 										continue;
-									case PT_ARAY:
+									case PT_GOO:
 										r = pmap[ny+ry][nx+rx];
 										if ((r&0xFF) == PT_METL || (r&0xFF) == PT_INDC)
 											conductTo (sim, r, nx+rx, ny+ry, parts);
@@ -993,7 +993,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 											nx -= rx; ny -= ry;
 											rr = pmap[ny][nx];
 											if ((rr & 0xFF) == PT_BRCK)
-												parts[r>>8].tmp = 0;
+												parts[rr>>8].tmp = 0;
 										}
 										goto break1d;
 									default:
