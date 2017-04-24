@@ -945,35 +945,41 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									parts[r>>8].ctype = rrx;
 									r = pmap[ny += ry][nx += rx];
 								}
-								break;
+								continue;
 							}
 							else if ((r & 0xFF) == PT_CRAY)
 							{
 								docontinue = 1;
-								rtmp = 0;
+								rrx = (rtmp == PT_PSCN) ? 1 : 0;
+								rry = 0;
 								while (docontinue)
 								{
-									r = pmap[ny += ry][nx += rx];
+									nx += rx; ny += ry;
+									if (!sim->InBounds(nx, ny))
+										break;
+									r = pmap[ny][nx];
 									if (!r)
 									{
 										ri = sim->create_part(-1, nx, ny, PT_INWR);
 										if (ri > 0)
-											parts[ri].dcolour = rtmp;
-										break;
+											parts[ri].dcolour = rry;
+										docontinue = rrx;
+										continue;
 									}
 									switch (r&0xFF)
 									{
 									case PT_INWR:
 										sim->kill_part(r>>8);
-										break;
+										docontinue = !rrx;
+										continue;
 									case PT_FILT:
-										rtmp = parts[r>>8].dcolour;
+										rry = parts[r>>8].dcolour;
 										break;
 									default:
 										docontinue = 0;
 									}
 								}
-								break;
+								continue;
 							}
 						}
 			}
