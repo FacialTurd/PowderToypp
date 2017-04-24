@@ -949,18 +949,29 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 							else if ((r & 0xFF) == PT_CRAY)
 							{
-								for (;;)
+								docontinue = 1;
+								rtmp = 0;
+								while (docontinue)
 								{
 									r = pmap[ny += ry][nx += rx];
 									if (!r)
 									{
-										sim->create_part(-1, nx, ny, PT_INWR);
+										ri = sim->create_part(-1, nx, ny, PT_INWR);
+										if (ri > 0)
+											parts[ri].dcolour = rtmp;
 										break;
 									}
-									else if ((r&0xFF) == PT_INWR)
+									switch (r&0xFF)
+									{
+									case PT_INWR:
 										sim->kill_part(r>>8);
-									else
 										break;
+									case PT_FILT:
+										rtmp = parts[r>>8].dcolour;
+										break;
+									default:
+										docontinue = 0;
+									}
 								}
 								break;
 							}
@@ -1179,7 +1190,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							// rx = rand()%3-1;
 							// ry = rand()%3-1;
 							int np = sim->create_part(-1, x-rx, y-ry, rctype & 0xFF, rctype >> 8);
-							if (np >= 0) { parts[np].vx = -rx; parts[np].vy = -ry; }
+							if (np >= 0) {
+								parts[np].vx = -rx; parts[np].vy = -ry;
+								parts[np].dcolour = parts[i].dcolour;
+							}
 						}
 						goto break3;
 					}
