@@ -1124,6 +1124,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								{
 									sim->part_change_type(r>>8, x+rx, y+ry, rii);
 									parts[r>>8].life = (rii == PT_SWCH) ? 10 : 0; // keep SWCH on
+									parts[r>>8].ctype = PT_NONE;
 								}
 							}
 							else
