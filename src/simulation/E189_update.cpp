@@ -963,14 +963,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										ri = sim->create_part(-1, nx, ny, PT_INWR);
 										if (ri > 0)
 											parts[ri].dcolour = rry;
-										docontinue = rrx;
+										docontinue = !rrx;
 										continue;
 									}
 									switch (r&0xFF)
 									{
 									case PT_INWR:
 										sim->kill_part(r>>8);
-										docontinue = !rrx;
+										docontinue = rrx;
 										continue;
 									case PT_FILT:
 										rry = parts[r>>8].dcolour;
