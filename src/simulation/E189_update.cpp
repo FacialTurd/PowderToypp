@@ -1122,7 +1122,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rii = parts[r>>8].ctype;
 								if (rii > 0 && rii < PT_NUM && sim->elements[rii].Enabled)
 								{
-									sim->part_change_type(r, x+rx, y+ry, rii);
+									sim->part_change_type(r>>8, x+rx, y+ry, rii);
 									parts[r>>8].life = (rii == PT_SWCH) ? 10 : 0; // keep SWCH on
 								}
 							}
@@ -1137,7 +1137,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							{
 								parts[r>>8].ctype = r&0xFF;
 								parts[r>>8].life = rrx;
-								sim->part_change_type(r, x+rx, y+ry, PT_SPRK);
+								sim->part_change_type(r>>8, x+rx, y+ry, PT_SPRK);
 							}
 						}
 					}
