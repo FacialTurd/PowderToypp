@@ -867,7 +867,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
-							if ((r & 0xFF) == PT_PSNS || (r & 0xFF) == PT_TSNS || (r & 0xFF) == PT_DTEC)
+							if ((r & 0xFF) == PT_PSNS || (r & 0xFF) == PT_TSNS || (r & 0xFF) == PT_DTEC || (r & 0xFF) == PT_LSNS)
 							{
 								parts[r>>8].tmp3 ^= 1;
 							}
