@@ -665,15 +665,26 @@ void GameSave::readOPS(char * data, int dataLength)
 				fprintf(stderr, "Invalid datatype of soap data: %d[%d] %d[%d] %d[%d]\n", bson_iterator_type(&iter), bson_iterator_type(&iter)==BSON_BINDATA, (unsigned char)bson_iterator_bin_type(&iter), ((unsigned char)bson_iterator_bin_type(&iter))==BSON_BIN_USER, bson_iterator_bin_len(&iter), bson_iterator_bin_len(&iter)>0);
 			}
 		}
-		else if(strcmp(bson_iterator_key(&iter), "modId2")==0)
+		else if (strcmp(bson_iterator_key(&iter), "origin")==0)
 		{
-			if(bson_iterator_type(&iter)==BSON_INT)
+			if(bson_iterator_type(&iter)==BSON_OBJECT)
 			{
-				my_mod_id_2 = bson_iterator_int(&iter);
-			}
-			else
-			{
-				fprintf(stderr, "Invalid datatype of Mod ID: %d[%d] %d[%d] %d[%d]\n", bson_iterator_type(&iter), bson_iterator_type(&iter)==BSON_BINDATA, (unsigned char)bson_iterator_bin_type(&iter), ((unsigned char)bson_iterator_bin_type(&iter))==BSON_BIN_USER, bson_iterator_bin_len(&iter), bson_iterator_bin_len(&iter)>0);
+				bson_iterator subiter;
+				bson_iterator_subiterator(&iter, &subiter);
+				while(bson_iterator_next(&subiter))
+				{
+					if(strcmp(bson_iterator_key(&subiter), "modId2")==0)
+					{
+						if(bson_iterator_type(&subiter)==BSON_INT)
+						{
+							my_mod_id_2 = bson_iterator_int(&subiter);
+						}
+						else
+						{
+							fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&subiter));
+						}
+					}
+				}
 			}
 		}
 /*
