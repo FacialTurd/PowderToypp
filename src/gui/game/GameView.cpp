@@ -2554,8 +2554,7 @@ void GameView::OnDraw()
 					sampleInfo << ", Tmp: " << parttmp;
 
 					// only elements that use .tmp2 show it in the debug HUD
-					if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS
-					 || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_PSTN || type == PT_E189)
+					if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN)
 						sampleInfo << ", Tmp2: " << sample_particle->tmp2;
 				}
 				else
