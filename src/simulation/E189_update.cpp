@@ -949,6 +949,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 							else if ((r & 0xFF) == PT_CRAY)
 							{
+								int ncount = 0;
 								docontinue = 1;
 								rrx = (rtmp == PT_PSCN) ? 1 : 0;
 								rry = 0;
@@ -956,7 +957,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								{
 									nx += rx; ny += ry;
 									if (!sim->InBounds(nx, ny))
+									{
+									break1d:
 										break;
+									}
+									ncount++;
 									r = pmap[ny][nx];
 									if (!r)
 									{
@@ -975,6 +980,22 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									case PT_FILT:
 										rry = parts[r>>8].dcolour;
 										break;
+									case PT_BRCK:
+										docontinue = parts[r>>8].tmp;
+										parts[r>>8].tmp = 1;
+										continue;
+									case PT_ARAY:
+										r = pmap[ny+ry][nx+rx];
+										if ((r&0xFF) == PT_METL || (r&0xFF) == PT_INDC)
+											conductTo (sim, r, nx+rx, ny+ry, parts);
+										while (--ncount)
+										{
+											nx -= rx; ny -= ry;
+											rr = pmap[ny][nx];
+											if ((rr & 0xFF) == PT_BRCK)
+												parts[r>>8].tmp = 0;
+										}
+										goto break1d;
 									default:
 										docontinue = 0;
 									}
@@ -1290,6 +1311,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									sim->part_change_type(rr >> 8, x-rx, y-ry, PT_IRON);
 								}
 								break;
+							case PT_CAUS:
+								rr = pmap[y-ry][x-rx];
+								if ((rr & 0xFF) == PT_WATR)
+								{
+									sim->part_change_type(r>>8, x+rx, y+ry, PT_ACID);
+									parts[r>>8].life += 10;
+								}
 							}
 						}
 						if (!--trade)
