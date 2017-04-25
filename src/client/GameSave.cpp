@@ -6,7 +6,7 @@
 #include <bzlib.h>
 #include "Config.h"
 #include "Format.h"
-#include "bson/BSON.h"
+// #include "bson/BSON.h"
 #include "GameSave.h"
 #include "simulation/SimulationData.h"
 #include "ElementClasses.h"
@@ -412,6 +412,10 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	ambientHeat = ambientHeatNew;
 }
 
+void bson_error_handler(const char *err)
+{
+	throw ParseException(ParseException::Corrupt, "BSON error when parsing save");
+}
  
 void GameSave::CheckBsonFieldUser(bson_iterator iter, const char *field, unsigned char **data, unsigned int *fieldLen)
 {
@@ -458,15 +462,10 @@ void GameSave::CheckBsonFieldInt(bson_iterator iter, const char *field, int *set
 	}
 }
 
-void bson_error_handler(const char *err)
-{
-	throw ParseException(ParseException::Corrupt, "BSON error when parsing save");
-}
-
 void GameSave::readOPS(char * data, int dataLength)
 {
 	unsigned char *inputData = (unsigned char*)data, *bsonData = NULL, *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
-	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
+	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL, *ambientData = NULL;
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen, ambientDataLen;
 	int my_mod_id_2 = 0;
