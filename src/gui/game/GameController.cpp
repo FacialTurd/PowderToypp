@@ -1179,7 +1179,6 @@ void GameController::OpenLocalSaveWindow(bool asCurrent)
 	}
 	else
 	{
-		sim->SaveSimOptions(gameSave);
 		gameSave->paused = gameModel->GetPaused();
 
 		SaveFile tempSave("");
@@ -1388,7 +1387,6 @@ void GameController::OpenSaveWindow()
 		}
 		else
 		{
-			sim->SaveSimOptions(gameSave);
 			gameSave->paused = gameModel->GetPaused();
 
 			if(gameModel->GetSave())
@@ -1437,7 +1435,6 @@ void GameController::SaveAsCurrent()
 		else
 		{
 			gameSave->paused = gameModel->GetPaused();
-			sim->SaveSimOptions(gameSave);
 
 			if(gameModel->GetSave())
 			{
