@@ -67,10 +67,16 @@ int Element_STOR::update(UPDATE_FUNC_ARGS)
 					parts[i].tmp = parts[r>>8].type;
 					parts[i].temp = parts[r>>8].temp;
 					parts[i].tmp2 = parts[r>>8].life;
+					/* original code:
 					parts[i].pavg[0] = parts[r>>8].tmp;
 					parts[i].pavg[1] = parts[r>>8].ctype;
 					parts[i].tmp3 = parts[r>>8].tmp2;
 					parts[i].tmp4 = parts[r>>8].tmp3;
+					*/
+					parts[i].tmp3 = parts[r>>8].tmp;
+					parts[i].tmp4 = parts[r>>8].ctype;
+					parts[i].pavg[0] = parts[r>>8].tmp2;
+					parts[i].pavg[1] = parts[r>>8].tmp3;
 					parts[i].cdcolour = parts[r>>8].dcolour;
 					sim->kill_part(r>>8);
 				}
@@ -83,10 +89,16 @@ int Element_STOR::update(UPDATE_FUNC_ARGS)
 							{
 								parts[np].temp = parts[i].temp;
 								parts[np].life = parts[i].tmp2;
+								/* original code:
 								parts[np].tmp = parts[i].pavg[0];
 								parts[np].ctype = parts[i].pavg[1];
 								parts[np].tmp2 = parts[i].tmp3;
 								parts[np].tmp3 = parts[i].tmp4;
+								*/
+								parts[np].tmp = parts[i].tmp3;
+								parts[np].ctype = parts[i].tmp4;
+								parts[np].tmp2 = parts[i].pavg[0];
+								parts[np].tmp3 = parts[i].pavg[1];
 								parts[np].dcolour = parts[i].cdcolour;
 								parts[i].tmp = 0;
 								parts[i].life = 10;

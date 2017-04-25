@@ -301,10 +301,16 @@ int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 			tpart.type = t;
 			tpart.temp = cpart->temp;
 			tpart.life = cpart->tmp2;
+			/* original code:
 			tpart.tmp = cpart->pavg[0];
 			tpart.ctype = cpart->pavg[1];
 			tpart.tmp2 = cpart->tmp3;
 			tpart.tmp3 = cpart->tmp4;
+			*/
+			tpart.tmp = cpart->tmp3;
+			tpart.ctype = cpart->tmp4;
+			tpart.tmp2 = cpart->pavg[0];
+			tpart.tmp3 = cpart->pavg[1];
 			if (t == PT_PHOT && tpart.ctype == 0x40000000)
 				tpart.ctype = 0x3FFFFFFF;
 
@@ -355,10 +361,16 @@ void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Parti
 	part->type = (pipe->tmp & 0xFF);
 	part->temp = pipe->temp;
 	part->life = pipe->tmp2;
+	/* original code:
 	part->tmp = pipe->pavg[0];
 	part->ctype = pipe->pavg[1];
 	part->tmp2 = pipe->tmp3;
 	part->tmp3 = pipe->tmp4;
+	*/
+	part->tmp = pipe->tmp3;
+	part->ctype = pipe->tmp4;
+	part->tmp2 = pipe->pavg[0];
+	part->tmp3 = pipe->pavg[1];
 	part->dcolour = pipe->cdcolour;
 	pipe->tmp &= ~0xFF;
 
@@ -380,10 +392,16 @@ void Element_PIPE::transfer_part_to_pipe(Particle *part, Particle *pipe)
 	pipe->tmp = (pipe->tmp&~0xFF) | part->type;
 	pipe->temp = part->temp;
 	pipe->tmp2 = part->life;
+	/* original code:
 	pipe->pavg[0] = part->tmp;
 	pipe->pavg[1] = part->ctype;
 	pipe->tmp3 = part->tmp2;
 	pipe->tmp4 = part->tmp3;
+	*/
+	pipe->tmp3 = part->tmp;
+	pipe->tmp4 = part->ctype;
+	pipe->pavg[0] = part->tmp2;
+	pipe->pavg[1] = part->tmp3;
 	pipe->cdcolour = part->dcolour;
 }
 

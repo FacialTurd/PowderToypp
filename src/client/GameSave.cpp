@@ -1162,6 +1162,15 @@ void GameSave::readOPS(char * data, int dataLength)
 							}
 						}
 						break;
+					case PT_PIPE:
+					case PT_PPIP:
+					case PT_STOR:
+						if (my_mod_id_2 != 1017640403)
+						{
+							particles[newIndex].tmp3 = particles[newIndex].pavg[0];
+							particles[newIndex].tmp4 = particles[newIndex].pavg[1];
+						}
+						break;
 					case 185: // already used by "E185" and "LSNS"
 						if (my_mod_id_2 != 1017640403)
 						{

@@ -968,7 +968,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									if (!r)
 									{
 										ri = sim->create_part(-1, nx, ny, PT_INWR);
-										if (ri > 0)
+										if (ri >= 0)
 											parts[ri].dcolour = rry;
 										docontinue = !rrx;
 										continue;
