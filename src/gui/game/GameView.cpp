@@ -2462,7 +2462,7 @@ void GameView::OnDraw()
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 					sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
 				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
-					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample_particle->pavg[1]);
+					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample_particle->tmp4 /*pavg[1]*/);
 				else if (type == PT_LIFE)
 					sampleInfo << c->ElementResolve(type, ctype);
 				else if (type == PT_FILT)
@@ -2643,7 +2643,7 @@ void GameView::OnDraw()
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 					sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
 				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
-					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample_particle->pavg[1]);
+					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample_particle->tmp4 /*pavg[1]*/);
 				else if (type == PT_LIFE)
 					sampleInfo << c->ElementResolve(type, ctype);
 				else if (type == PT_E189)
