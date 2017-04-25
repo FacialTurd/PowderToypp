@@ -1,3 +1,4 @@
+#include "common/tpt-minmax.h"
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -165,6 +166,7 @@ void GameSave::InitVars()
 	airMode = 0;
 	edgeMode = 0;
 }
+
 bool GameSave::Collapsed()
 {
 	return !expanded;
@@ -392,9 +394,9 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	fanVelX = fanVelXNew;
 	fanVelY = fanVelYNew;
 
-	delete[] pressure;
-	delete[] velocityX;
-	delete[] velocityY;
+	pressure = pressureNew;
+	velocityX = velocityXNew;
+	velocityY = velocityYNew;
 }
 
 void bson_error_handler(const char *err)
@@ -404,7 +406,7 @@ void bson_error_handler(const char *err)
 
 void GameSave::readOPS(char * data, int dataLength)
 {
-	unsigned char * inputData = (unsigned char*)data, *bsonData = NULL, *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
+	unsigned char *inputData = (unsigned char*)data, *bsonData = NULL, *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
 	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen;
@@ -1921,10 +1923,12 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 {
 	//Particle *particles = sim->parts;
 	unsigned char *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *finalData = NULL, *outputData = NULL, *soapLinkData = NULL;
+	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned *partsPosLink = NULL, *partsPosFirstMap = NULL, *partsPosCount = NULL, *partsPosLastMap = NULL;
 	unsigned partsCount = 0, *partsSaveIndex = NULL;
 	unsigned *elementCount = new unsigned[PT_NUM];
-	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
+	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;		 +	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
+ -	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0;//, ambientDataLen = 0;
 	int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int x, y, i, wallDataFound = 0;
 	int posCount, signsCount;
