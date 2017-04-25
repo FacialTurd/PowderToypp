@@ -1,4 +1,3 @@
-#include "common/tpt-minmax.h"
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -20,6 +19,7 @@ waterEEnabled(save.waterEEnabled),
 legacyEnable(save.legacyEnable),
 gravityEnable(save.gravityEnable),
 aheatEnable(save.aheatEnable),
+sextraLoopsCA(save.sextraLoopsCA),
 paused(save.paused),
 gravityMode(save.gravityMode),
 airMode(save.airMode),
@@ -159,12 +159,12 @@ void GameSave::InitVars()
 	legacyEnable = false;
 	gravityEnable = false;
 	aheatEnable = false;
+	sextraLoopsCA = false;
 	paused = false;
 	gravityMode = 0;
 	airMode = 0;
 	edgeMode = 0;
 }
-
 bool GameSave::Collapsed()
 {
 	return !expanded;
@@ -367,7 +367,6 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 			velocityXNew[ny][nx] = velocityX[y][x];
 			velocityYNew[ny][nx] = velocityY[y][x];
 		}
-
 	for (int j = 0; j < blockHeight; j++)
 	{
 		delete[] blockMap[j];
@@ -384,6 +383,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	delete[] blockMap;
 	delete[] fanVelX;
 	delete[] fanVelY;
+
 	delete[] pressure;
 	delete[] velocityX;
 	delete[] velocityY;
@@ -391,9 +391,10 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	blockMap = blockMapNew;
 	fanVelX = fanVelXNew;
 	fanVelY = fanVelYNew;
-	pressure = pressureNew;
-	velocityX = velocityXNew;
-	velocityY = velocityYNew;
+
+	delete[] pressure;
+	delete[] velocityX;
+	delete[] velocityY;
 }
 
 void bson_error_handler(const char *err)
@@ -403,7 +404,7 @@ void bson_error_handler(const char *err)
 
 void GameSave::readOPS(char * data, int dataLength)
 {
-	unsigned char *inputData = (unsigned char*)data, *bsonData = NULL, *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
+	unsigned char * inputData = (unsigned char*)data, *bsonData = NULL, *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
 	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen;
@@ -640,6 +641,17 @@ void GameSave::readOPS(char * data, int dataLength)
 			if(bson_iterator_type(&iter)==BSON_BOOL)
 			{
 				aheatEnable = bson_iterator_bool(&iter);
+			}
+			else
+			{
+				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
+			}
+		}
+		else if(!strcmp(bson_iterator_key(&iter), "sextraLoopsCA_Enable"))
+		{
+			if(bson_iterator_type(&iter)==BSON_BOOL)
+			{
+				sextraLoopsCA = bson_iterator_bool(&iter);
 			}
 			else
 			{
@@ -1909,12 +1921,10 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 {
 	//Particle *particles = sim->parts;
 	unsigned char *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *finalData = NULL, *outputData = NULL, *soapLinkData = NULL;
-	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned *partsPosLink = NULL, *partsPosFirstMap = NULL, *partsPosCount = NULL, *partsPosLastMap = NULL;
 	unsigned partsCount = 0, *partsSaveIndex = NULL;
 	unsigned *elementCount = new unsigned[PT_NUM];
-	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen,finalDataLen, outputDataLen, soapLinkDataLen;
-	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0;//, ambientDataLen = 0;
+	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
 	int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int x, y, i, wallDataFound = 0;
 	int posCount, signsCount;
@@ -2295,6 +2305,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
+	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
