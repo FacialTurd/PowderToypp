@@ -1169,6 +1169,7 @@ void GameSave::readOPS(char * data, int dataLength)
 						{
 							particles[newIndex].tmp3 = particles[newIndex].pavg[0];
 							particles[newIndex].tmp4 = particles[newIndex].pavg[1];
+							particles[newIndex].pavg[0] = particles[newIndex].pavg[1] = 0;
 						}
 						break;
 					case 185: // already used by "E185" and "LSNS"
