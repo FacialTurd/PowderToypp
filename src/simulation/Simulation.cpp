@@ -2272,7 +2272,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			if (parts[r>>8].tmp > 0)
 				pressureResistance = (float)parts[r>>8].tmp;
 			else
-				pressureResistance = 4.0f;
+				pressureResistance = sim_max_pressure;
 
 			if (pv[ny/CELL][nx/CELL] < -pressureResistance || pv[ny/CELL][nx/CELL] > pressureResistance)
 				result = 2;
@@ -2505,7 +2505,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					if (parts[r>>8].tmp > 0)
 						pressureResistance = (float)parts[r>>8].tmp;
 					else
-						pressureResistance = 4.0f;
+						pressureResistance = sim_max_pressure;
 					if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
 					{
 						part_change_type(i,x,y,PT_NEUT);

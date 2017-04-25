@@ -184,7 +184,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
-						if (sim->elements[r&0xFF].HeatConduct > 0)
+						if ((sim->elements[r&0xFF].HeatConduct > 0) && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
 							parts[r>>8].temp = parts[i].temp;
 					}
 		}
@@ -953,6 +953,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								docontinue = 1;
 								rrx = (rtmp == PT_PSCN) ? 1 : 0;
 								rry = 0;
+								if (parts[r>>8].dcolour == 0xFF000000) // if black deco is on
+									rry = 0xFF000000; // set deco colour to black
 								while (docontinue)
 								{
 									nx += rx; ny += ry;
@@ -978,7 +980,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										docontinue = rrx;
 										continue;
 									case PT_FILT:
-										rry = parts[r>>8].dcolour;
+										if (parts[r>>8].tmp == 0) // if mode is "set colour"
+											rry = parts[r>>8].dcolour;
 										break;
 									case PT_BRCK:
 										docontinue = parts[r>>8].tmp;
