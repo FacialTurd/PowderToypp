@@ -31,6 +31,7 @@ public:
 	
 	int blockWidth, blockHeight;
 	bool fromNewerVersion;
+	bool hasAmbientHeat;
 
 	//Simulation data
 	//int ** particleMap;
@@ -42,6 +43,7 @@ public:
 	float ** pressure;
 	float ** velocityX;
 	float ** velocityY;
+	float ** ambientHeat;
 	
 	//Simulation Options
 	bool waterEEnabled;
