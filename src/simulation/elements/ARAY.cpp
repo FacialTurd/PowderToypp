@@ -221,6 +221,18 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									nxx -= nxi; nyy -= nyi;
 									max_turn--;
 									continue;
+								case 19:
+									{
+										nxx += 2 * nxi;
+										nyy += 2 * nyi;
+										int rr = pmap[y+nyy][x+nxx];
+										if ((rr & 0xFF) == PT_E189 && parts[rr>>8].life == 16 && parts[rr>>8].ctype == 1)
+										{
+											r_life = (int)((parts[r>>8].temp - 73.15f) / 100);
+											parts[rr>>8].tmp += (r_life > 1) ? (r_life - 1) : 1;
+										}
+									}
+									goto break1a;
 								}
 							}
 							else if (noturn >= 2)

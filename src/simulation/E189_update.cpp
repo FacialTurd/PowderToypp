@@ -529,7 +529,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					parts[i].tmp--;
 			}
 			else if (!parts[i].tmp)
-				sim->create_part(i, x, y, PT_METL);
+			{
+				sim->part_change_type(i, x, y, PT_METL);
+				parts[i].life = 1;
+				parts[i].ctype = PT_NONE;
+				break;
+			}
 			for (rx = -2; rx <= 2; rx++)
 				for (ry = -2; ry <= 2; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
