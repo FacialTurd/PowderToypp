@@ -1927,8 +1927,8 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	unsigned *partsPosLink = NULL, *partsPosFirstMap = NULL, *partsPosCount = NULL, *partsPosLastMap = NULL;
 	unsigned partsCount = 0, *partsSaveIndex = NULL;
 	unsigned *elementCount = new unsigned[PT_NUM];
-	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;		 +	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
- -	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0;//, ambientDataLen = 0;
+	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
+	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0;//, ambientDataLen = 0;
 	int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int x, y, i, wallDataFound = 0;
 	int posCount, signsCount;
