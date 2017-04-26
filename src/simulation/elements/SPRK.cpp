@@ -285,7 +285,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				}
 
 				if (pavg == PT_INSL || pavg == PT_INDI) continue; //Insulation blocks everything past here
-				if (!((sim->elements[receiver].Properties&(PROP_CONDUCTS|PROP_CONDUCTS_SPEC))) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
+				if (!(sim->elements[receiver].Properties&(PROP_CONDUCTS|PROP_CONDUCTS_SPEC))) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
 				if (abs(rx)+abs(ry)>=4 &&sender!=PT_SWCH&&receiver!=PT_SWCH) continue; //Only switch conducts really far
 				if (receiver==sender && !(sim->elements[receiver].Properties & PROP_CONDUCTS_SPEC)) goto conduct; //Everything conducts to itself, except INST.
 
