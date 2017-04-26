@@ -70,6 +70,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int spc_conduct = 0, ray_less = 0;
 						int colored = 0, noturn = 0, rt, tmp, tmp2;
 						int max_turn = parts[i].tmp, tmpz = 0;
+						int r_incr = 1;
 						if (max_turn <= 0)
 							max_turn = 256;
 						modFlag = false;
@@ -221,17 +222,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									nxx -= nxi; nyy -= nyi;
 									max_turn--;
 									continue;
-								case 19:
+								case 16:
+									if (parts[r>>8].ctype == 1)
 									{
-										nxx += 2 * nxi;
-										nyy += 2 * nyi;
-										int rr = pmap[y+nyy][x+nxx];
-										if ((rr & 0xFF) == PT_E189 && parts[rr>>8].life == 16 && parts[rr>>8].ctype == 1)
-										{
-											r_life = (int)((parts[r>>8].temp - 73.15f) / 100);
-											parts[rr>>8].tmp += (r_life > 1) ? (r_life - 1) : 1;
-										}
+										parts[r>>8].tmp += (r_incr > 1) ? r_incr : 1;
 									}
+									goto break1a;
+								case 19:
+									r_incr += (int)((parts[r>>8].temp + 26.85f) / 100) - 3;
 									goto break1a;
 								}
 							}

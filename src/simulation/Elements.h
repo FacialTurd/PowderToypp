@@ -37,6 +37,7 @@
 #define PROP_TRANSPARENT	0x4000000   // 2^25 Photons (PHOT) pass through
 #define PROP_UNLIMSTACKING	0x8000000   // 2^27 Currently no limit on stacking
 #define PROP_INSULATED		0x10000000
+#define PROP_CONDUCTS_SPEC	0x20000000
 
 // second properties flag:
 #define PROP_ENERGY_PART		0x00000001

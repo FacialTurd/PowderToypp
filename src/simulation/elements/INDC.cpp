@@ -27,7 +27,7 @@ Element_INDC::Element_INDC()
 	Weight = 100;
 
 	Temperature = R_TEMP+0.0f	+273.15f;
-	HeatConduct = 0;
+	HeatConduct = 251;
 	Description = "Indestructible Conductor.";
 
 	Properties = TYPE_SOLID|PROP_CONDUCTS|PROP_LIFE_DEC;

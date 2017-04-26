@@ -11,9 +11,9 @@ Tool_Tool9::Tool_Tool9()
 
 int Tool_Tool9::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
 {
-	double multipler = 25.0 / 4096.0;
-	double cx = -2.632083113783302 + x * multipler;
-	double cy = -1.171875 + y * multipler;
+	double multipler = 25.0 / 4096.0 * ((YRES - CELL * 2) / 376.0);
+	double cx = -0.764407332533302 + (x - (XRES / 2)) * multipler;
+	double cy =  0.0 + (y - (YRES / 2)) * multipler;
 	double zx = cx, zy = cy;
 	double zx2 = zx * zx, zy2 = zy * zy;
 	// formula: z <-> z**2 + c

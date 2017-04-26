@@ -285,9 +285,9 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				}
 
 				if (pavg == PT_INSL || pavg == PT_INDI) continue; //Insulation blocks everything past here
-				if (!((sim->elements[receiver].Properties&PROP_CONDUCTS)||receiver==PT_INST||receiver==PT_QRTZ)) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
+				if (!((sim->elements[receiver].Properties&(PROP_CONDUCTS|PROP_CONDUCTS_SPEC))) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
 				if (abs(rx)+abs(ry)>=4 &&sender!=PT_SWCH&&receiver!=PT_SWCH) continue; //Only switch conducts really far
-				if (receiver==sender && receiver!=PT_INST && receiver!=PT_QRTZ) goto conduct; //Everything conducts to itself, except INST.
+				if (receiver==sender && !(sim->elements[receiver].Properties & PROP_CONDUCTS_SPEC)) goto conduct; //Everything conducts to itself, except INST.
 
 				//Sender cases, where elements can have specific outputs
 				switch (sender)
@@ -316,6 +316,12 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (receiver==PT_NSCN || receiver==PT_PSCN)
 						goto conduct;
 					continue;
+				/*
+				case PT_INW2:
+					if (sender==PT_NSCN || sender==PT_PSCN || (sender==PT_INW2 && parts[r>>8].tmp == parts[i].tmp))
+						goto conduct;
+					continue;
+				*/
 				default:
 					break;
 				}
@@ -338,6 +344,12 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (sender==PT_NSCN || sender==PT_PSCN)
 						goto conduct;
 					continue;
+				/*
+				case PT_INW2:
+					if (sender==PT_NSCN || sender==PT_PSCN)
+						goto conduct;
+					continue;
+				*/
 				case PT_INST:
 					if (sender==PT_PSCN)
 						goto conduct;

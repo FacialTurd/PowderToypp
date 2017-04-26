@@ -4,7 +4,7 @@ Element_E188::Element_E188()
 {
 	Identifier = "DEFAULT_PT_E188";
 	Name = "E188";
-	Colour = PIXPACK(0xFF60D0);
+	Colour = PIXPACK(0xB038D8);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
 #if (defined(DEBUG) || defined(SNAPSHOT)) && MOD_ID == 0

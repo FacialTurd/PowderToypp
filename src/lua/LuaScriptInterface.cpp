@@ -2706,6 +2706,7 @@ void LuaScriptInterface::initElementsAPI()
 	lua_pushinteger(l, PROP_UNLIMSTACKING);
 	lua_setfield(l, -2, "PROP_UNLIMITED_STACKING"); // 2^27
 	SETCONST(l, PROP_INSULATED);
+	SETCONST(l, PROP_CONDUCTS_SPEC);
 	
 	// second property flags
 	SETCONST(l, PROP_ENERGY_PART);

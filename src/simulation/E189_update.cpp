@@ -28,6 +28,7 @@ E189_Update::E189_Update()
 
 int E189_Update::update(UPDATE_FUNC_ARGS)
 {
+	int return_value = 1; // skip movement, legacyUpdate, etc.
 	static int tron_rx[4] = {-1, 0, 1, 0};
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
@@ -173,7 +174,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	case 25: // reserved for E189's life = 16, ctype = 10.
 	case 27: // reserved for stickmans
 	case 32: // reserved for ARAY / BRAY
-		break;
+		return return_value;
 	case 6: // heater
 		if (!sim->legacy_enable) //if heat sim is on
 		{
@@ -516,12 +517,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							if ((r & 0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 							{
 								parts[i].tmp2 = 2;
-								goto break1a;
+								return return_value;
 							}
 						}
 			}
-			break1a:
-			break;
+			return return_value;
 		case 2: // insulate->conduct counter
 			if (parts[i].tmp2)
 			{
@@ -543,7 +543,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((r & 0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 						{
 							parts[i].tmp2 = 6;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -568,7 +568,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((r & 0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 						{
 							parts[i].tmp ++;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -682,7 +682,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								sim->E189_FIGH_pause_check |= 1 << (rtmp < 31 ? (rtmp > 0 ? rtmp : 0) : 31);
 							else
 								sim->E189_pause |= 4;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -768,14 +768,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 												parts[rii].flags |= FLAG_SKIPMOVE; // set wait flag
 										}
 									}
-									goto break1b;
+									return return_value;
 								}
 							}
 						break;
 					}
 				}
-			break1b:
-			break;
 		// case 11: reserved for E189's life = 24.
 		case 12:
 			{
@@ -842,7 +840,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((r & 0xFF) == PT_E189 && parts[r>>8].life == 19 && rr == 9)
 						{
 							parts[i].tmp2 = 2;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -1094,7 +1092,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						{
 							parts[i].tmp = parts[r>>8].ctype;
 							parts[i].tmp2 = 2;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -1135,7 +1133,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((pavg != PT_INSL && pavg != PT_INDI) && (r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
 							parts[i].tmp2 = 3;
-							goto break1a;
+							return return_value;
 						}
 					}
 			break;
@@ -1189,6 +1187,53 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 					}
 			break;
+		case 22: // custom GOL type changer
+			if (parts[i].tmp2 == 1)
+			{
+				for (rx = -1; rx < 2; rx++)
+					for (ry = -1; ry < 2; ry++)
+						if (BOUNDS_CHECK && (!rx != !ry))
+						{
+							nx = x + rx; ny = y + ry;
+							r = pmap[ny][nx];
+							if (!r)
+								continue;
+							switch (r & 0xFF)
+							{
+							case PT_FILT:
+								rrx = parts[r>>8].ctype;
+								rry = parts[i].tmp;
+								switch (rry)
+								{
+								case PT_PSCN: case PT_NSCN:
+									{
+										int ipos = 0x1;
+										int imask = (rry == PT_PSCN ? 0x1 : 0x2);
+										for (int _it = 0; _it < 9; _it++)
+										{
+											sim->grule[NGT_CUSTOM+1][_it] &= ~imask;
+											if (rrx & ipos)
+												sim->grule[NGT_CUSTOM+1][_it] |= imask;
+											ipos <<= 1;
+										}
+									}
+									break;
+								}
+								break;
+							case PT_ACEL:
+								sim->grule[NGT_CUSTOM+1][9] += std::max(0, parts[r>>8].life);
+								break;
+							case PT_DCEL:
+								rrx = sim->grule[NGT_CUSTOM+1][9] - std::max(0, parts[r>>8].life);
+								sim->grule[NGT_CUSTOM+1][9] = (rrx < 2 ? 2 : rrx);
+								break;
+							case PT_FRAY:
+								sim->grule[NGT_CUSTOM+1][9] = std::max(0, parts[r>>8].tmp) + 2;
+								break;
+							}
+						}
+			}
+			goto continue1a;
 		}
 		break;
 			
@@ -1204,11 +1249,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 					{
 						parts[i].tmp = 9;
-						goto break3;
+						return return_value;
 					}
 				}
-		break3:
-		break;
+		return return_value;
 	case 20: // particle emitter
 		for (rx = -2; rx <= 2; rx++)
 			for (ry = -2; ry <= 2; ry++)
@@ -1219,7 +1263,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
 						if (!(rctype & 0xFF))
-							goto break3;
+							return return_value;
 						if ((rctype & 0xFF) != PT_LIGH || !(rand() & 7))
 						{
 							// rx = rand()%3-1;
@@ -1230,7 +1274,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[np].dcolour = parts[i].dcolour;
 							}
 						}
-						goto break3;
+						return return_value;
 					}
 				}
 		break;
@@ -1340,7 +1384,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			}
 		break;
 	case 24: // moving duplicator particle
-		if (parts[i].flags & FLAG_SKIPMOVE)
+		if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
 			parts[i].flags &= ~FLAG_SKIPMOVE; // clear wait flag
 		else if (BOUNDS_CHECK)
 		{
@@ -1431,7 +1475,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
 						parts[i].tmp ^= 1;
-						goto break3;
+						return return_value;
 					}
 				}
 		break;
@@ -1624,7 +1668,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		sim->air->bmap_blockairh[y/CELL][x/CELL] = 0x8;
 	}
 		
-	return 0;
+	return return_value;
 }
 
 E189_Update::~E189_Update() {}

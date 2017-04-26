@@ -311,8 +311,10 @@ int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 			tpart.ctype = cpart->tmp4;
 			tpart.tmp2 = cpart->pavg[0];
 			tpart.tmp3 = cpart->pavg[1];
+			/* original code:
 			if (t == PT_PHOT && tpart.ctype == 0x40000000)
 				tpart.ctype = 0x3FFFFFFF;
+			*/
 
 			*colr = PIXR(ren->sim->elements[t].Colour);
 			*colg = PIXG(ren->sim->elements[t].Colour);
@@ -379,8 +381,10 @@ void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Parti
 		part->vx = 0.0f;
 		part->vy = 0.0f;
 	}
+	/* original code:
 	else if (part->type == PT_PHOT && part->ctype == 0x40000000)
 		part->ctype = 0x3FFFFFFF;
+	*/
 	part->tmp4 = 0;
 	part->flags = 0;
 	part->cdcolour = 0;

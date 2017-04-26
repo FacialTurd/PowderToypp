@@ -444,6 +444,14 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 				}
 				part_phot->ctype = ctype;
 				break;
+			case 17: // PHOT life multipler
+				if (part_phot->life > 0)
+				{
+					part_phot->life *= part_E189->ctype;
+					if (part_phot->life < 0)
+						part_phot->life = 0;
+				}
+				break;
 		}
 	}
 }
