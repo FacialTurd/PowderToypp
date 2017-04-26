@@ -774,6 +774,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						break;
 					}
 				}
+			return return_value;
 		// case 11: reserved for E189's life = 24.
 		case 12:
 			{
