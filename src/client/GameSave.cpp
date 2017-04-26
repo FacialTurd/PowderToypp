@@ -543,37 +543,37 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
-		if(strcmp(bson_iterator_key(&iter), "signs")==0)
+		if (!strcmp(bson_iterator_key(&iter), "signs"))
 		{
-			if(bson_iterator_type(&iter)==BSON_ARRAY)
+			if (bson_iterator_type(&iter) == BSON_ARRAY)
 			{
 				bson_iterator subiter;
 				bson_iterator_subiterator(&iter, &subiter);
-				while(bson_iterator_next(&subiter))
+				while (bson_iterator_next(&subiter))
 				{
-					if(strcmp(bson_iterator_key(&subiter), "sign")==0)
+					if (!strcmp(bson_iterator_key(&subiter), "sign"))
 					{
-						if(bson_iterator_type(&subiter)==BSON_OBJECT)
+						if (bson_iterator_type(&subiter) == BSON_OBJECT)
 						{
 							bson_iterator signiter;
 							bson_iterator_subiterator(&subiter, &signiter);
 
 							sign tempSign("", 0, 0, sign::Left);
-							while(bson_iterator_next(&signiter))
+							while (bson_iterator_next(&signiter))
 							{
-								if(strcmp(bson_iterator_key(&signiter), "text")==0 && bson_iterator_type(&signiter)==BSON_STRING)
+								if (!strcmp(bson_iterator_key(&signiter), "text") && bson_iterator_type(&signiter)==BSON_STRING)
 								{
 									tempSign.text = format::CleanString(bson_iterator_string(&signiter), true, true, true).substr(0, 45);
 								}
-								else if(strcmp(bson_iterator_key(&signiter), "justification")==0 && bson_iterator_type(&signiter)==BSON_INT)
+								else if (!strcmp(bson_iterator_key(&signiter), "justification") && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.ju = (sign::Justification)bson_iterator_int(&signiter);
 								}
-								else if(strcmp(bson_iterator_key(&signiter), "x")==0 && bson_iterator_type(&signiter)==BSON_INT)
+								else if (!strcmp(bson_iterator_key(&signiter), "x") && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.x = bson_iterator_int(&signiter)+fullX;
 								}
-								else if(strcmp(bson_iterator_key(&signiter), "y")==0 && bson_iterator_type(&signiter)==BSON_INT)
+								else if (!strcmp(bson_iterator_key(&signiter), "y") && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.y = bson_iterator_int(&signiter)+fullY;
 								}
@@ -596,7 +596,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
 			}
 		}
-		else if(strcmp(bson_iterator_key(&iter), "palette")==0)
+		else if (!strcmp(bson_iterator_key(&iter), "palette"))
 		{
 			palette.clear();
 			if (bson_iterator_type(&iter) == BSON_ARRAY)
