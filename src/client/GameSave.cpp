@@ -6,6 +6,7 @@
 #include <bzlib.h>
 #include "Config.h"
 #include "Format.h"
+// #include "bson/BSON.h"
 #include "GameSave.h"
 #include "simulation/SimulationData.h"
 #include "ElementClasses.h"
@@ -19,6 +20,7 @@ waterEEnabled(save.waterEEnabled),
 legacyEnable(save.legacyEnable),
 gravityEnable(save.gravityEnable),
 aheatEnable(save.aheatEnable),
+sextraLoopsCA(save.sextraLoopsCA),
 paused(save.paused),
 gravityMode(save.gravityMode),
 airMode(save.airMode),
@@ -161,6 +163,7 @@ void GameSave::InitVars()
 	legacyEnable = false;
 	gravityEnable = false;
 	aheatEnable = false;
+	sextraLoopsCA = false;
 	paused = false;
 	gravityMode = 0;
 	airMode = 0;
@@ -368,7 +371,6 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 			velocityYNew[ny][nx] = velocityY[y][x];
 			ambientHeatNew[ny][nx] = ambientHeat[y][x];
 		}
-
 	for (int j = 0; j < blockHeight; j++)
 	{
 		delete[] blockMap[j];
@@ -386,6 +388,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	delete[] blockMap;
 	delete[] fanVelX;
 	delete[] fanVelY;
+
 	delete[] pressure;
 	delete[] velocityX;
 	delete[] velocityY;
@@ -394,6 +397,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate)
 	blockMap = blockMapNew;
 	fanVelX = fanVelXNew;
 	fanVelY = fanVelYNew;
+
 	pressure = pressureNew;
 	velocityX = velocityXNew;
 	velocityY = velocityYNew;
@@ -533,42 +537,43 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "legacyEnable", &legacyEnable);
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
+		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &aheatEnable);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
-		if (!strcmp(bson_iterator_key(&iter), "signs"))
+		if(strcmp(bson_iterator_key(&iter), "signs")==0)
 		{
-			if (bson_iterator_type(&iter)==BSON_ARRAY)
+			if(bson_iterator_type(&iter)==BSON_ARRAY)
 			{
 				bson_iterator subiter;
 				bson_iterator_subiterator(&iter, &subiter);
-				while (bson_iterator_next(&subiter))
+				while(bson_iterator_next(&subiter))
 				{
-					if (!strcmp(bson_iterator_key(&subiter), "sign"))
+					if(strcmp(bson_iterator_key(&subiter), "sign")==0)
 					{
-						if (bson_iterator_type(&subiter) == BSON_OBJECT)
+						if(bson_iterator_type(&subiter)==BSON_OBJECT)
 						{
 							bson_iterator signiter;
 							bson_iterator_subiterator(&subiter, &signiter);
 
 							sign tempSign("", 0, 0, sign::Left);
-							while (bson_iterator_next(&signiter))
+							while(bson_iterator_next(&signiter))
 							{
-								if (!strcmp(bson_iterator_key(&signiter), "text") && bson_iterator_type(&signiter) == BSON_STRING)
+								if(strcmp(bson_iterator_key(&signiter), "text")==0 && bson_iterator_type(&signiter)==BSON_STRING)
 								{
 									tempSign.text = format::CleanString(bson_iterator_string(&signiter), true, true, true).substr(0, 45);
 								}
-								else if (!strcmp(bson_iterator_key(&signiter), "justification") && bson_iterator_type(&signiter) == BSON_INT)
+								else if(strcmp(bson_iterator_key(&signiter), "justification")==0 && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.ju = (sign::Justification)bson_iterator_int(&signiter);
 								}
-								else if (!strcmp(bson_iterator_key(&signiter), "x") && bson_iterator_type(&signiter) == BSON_INT)
+								else if(strcmp(bson_iterator_key(&signiter), "x")==0 && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.x = bson_iterator_int(&signiter)+fullX;
 								}
-								else if (!strcmp(bson_iterator_key(&signiter), "y") && bson_iterator_type(&signiter) == BSON_INT)
+								else if(strcmp(bson_iterator_key(&signiter), "y")==0 && bson_iterator_type(&signiter)==BSON_INT)
 								{
 									tempSign.y = bson_iterator_int(&signiter)+fullY;
 								}
@@ -591,7 +596,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
 			}
 		}
-		else if (!strcmp(bson_iterator_key(&iter), "palette"))
+		else if(strcmp(bson_iterator_key(&iter), "palette")==0)
 		{
 			palette.clear();
 			if (bson_iterator_type(&iter) == BSON_ARRAY)
@@ -1820,11 +1825,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 {
 	//Particle *particles = sim->parts;
 	unsigned char *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *finalData = NULL, *outputData = NULL, *soapLinkData = NULL;
-	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL, *ambientData = NULL;
+	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL;//, *ambientData = NULL;
 	unsigned *partsPosLink = NULL, *partsPosFirstMap = NULL, *partsPosCount = NULL, *partsPosLastMap = NULL;
 	unsigned partsCount = 0, *partsSaveIndex = NULL;
 	unsigned *elementCount = new unsigned[PT_NUM];
-	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen,finalDataLen, outputDataLen, soapLinkDataLen;
+	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, finalDataLen, outputDataLen, soapLinkDataLen;
 	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
 	int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int x, y, i, wallDataFound = 0;
@@ -1884,7 +1889,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 
 			vyData[vyDataLen++] = (unsigned char)((int)(velY*128)&0xFF);
 			vyData[vyDataLen++] = (unsigned char)((int)(velY*128)>>8);
-
+			
 			int tempTemp = (int)(ambientHeat[y][x]+0.5f);
 			ambientData[ambientDataLen++] = tempTemp;
 			ambientData[ambientDataLen++] = tempTemp >> 8;
@@ -2211,6 +2216,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
+	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
