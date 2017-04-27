@@ -126,6 +126,18 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			long long int lsb = filtWl & (-filtWl);
 			return (origWl / lsb) & 0x3FFFFFFF; // blue shift
 		}
+		case (FILT_NORMAL_OPERATIONS + 0):
+		{
+			return ((origWl + filtWl) | 0x20000000) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 1):
+		{
+			return ((origWl - filtWl) | 0x20000000) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 2):
+		{
+			return ((origWl * filtWl) | 0x20000000) & mask;
+		}
 		default:
 			return filtWl;
 	}
