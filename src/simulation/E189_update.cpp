@@ -1206,7 +1206,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rry = parts[i].tmp;
 								switch (rry)
 								{
-								case PT_PSCN: case PT_NSCN:
+								case PT_PSCN: case PT_NSCN: // load GOL rule from sim particles
 									{
 										int ipos = 0x1;
 										int imask = (rry == PT_PSCN ? 0x1 : 0x2);
@@ -1219,6 +1219,21 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										}
 									}
 									break;
+								case PT_PTCT: case PT_NTCT: // store GOL rule to sim particles
+									{
+										int ipos = 0x1;
+										int imask = (rry == PT_PTCT ? 0x1 : 0x2);
+										rrx &= ~0xC00001FF;
+										rry = (rrx & 0xFF); // 0 for empty, 1 for GOL, 2 for HLIF, etc.
+										if (rry > NGOL) rry = 0;
+										for (int _it = 0; _it < 9; _it++)
+										{
+											rrx |= ((sim->grule[rry] & imask) ? ipos : 0);
+											ipos <<= 1;
+										}
+										parts[r>>8].ctype = rrx | 0x20000000; // use 29-bits FILT
+									}
+									break;
 								}
 								break;
 							case PT_ACEL:
@@ -1229,7 +1244,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								sim->grule[NGT_CUSTOM+1][9] = (rrx < 2 ? 2 : rrx);
 								break;
 							case PT_FRAY:
-								sim->grule[NGT_CUSTOM+1][9] = std::max(0, parts[r>>8].tmp) + 2;
+								if (rry == PT_PSCN)
+								{
+									sim->grule[NGT_CUSTOM+1][9] = std::max(0, parts[r>>8].tmp) + 2;
+								}
+								else if (rry == PT_NSCN)
+								{
+									parts[r>>8].tmp = sim->grule[NGT_CUSTOM+1][9] - 2;
+								}
 								break;
 							}
 						}
