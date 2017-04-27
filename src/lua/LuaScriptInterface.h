@@ -113,6 +113,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_createDebugComponent(lua_State * l);
 	static int simulation_breakable_wall_count(lua_State * l);
 	static int simulation_setCustomGOLRule(lua_State * l);
+	static int simulation_getGOLRule(lua_State * l);
 	static int simulation_setCustomGOLGrad(lua_State * l);
 
 	//Stickman attributes

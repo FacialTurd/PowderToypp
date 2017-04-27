@@ -757,6 +757,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"createDebugComponent", simulation_createDebugComponent},
 		{"createDComp", simulation_createDebugComponent},
 		{"setCustomGOLRule", simulation_setCustomGOLRule},
+		{"getGOLRule", simulation_getGOLRule},
 		{"setCustomGOLGrad", simulation_setCustomGOLGrad},
 		{NULL, NULL}
 	};
@@ -781,6 +782,7 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, TOOL_AIR);
 	SETCONST(l, TOOL_PGRV);
 	SETCONST(l, TOOL_NGRV);
+	SETCONST(l, TOOL_MIX);
 	lua_pushinteger(l, luacon_sim->tools.size()); lua_setfield(l, -2, "TOOL_WIND");
 	SETCONST(l, DECO_DRAW);
 	SETCONST(l, DECO_CLEAR);
@@ -2221,6 +2223,30 @@ int LuaScriptInterface::simulation_setCustomGOLRule(lua_State * l)
 		luacon_sim->grule[NGT_CUSTOM+1][i] = tmp_grule[i];
 	
 	return 0;
+}
+
+int LuaScriptInterface::simulation_getGOLRule(lua_State * l)
+{
+	int args = lua_gettop(l);
+	int gol_id = luaL_optint(l, 1, -1) + 1; // GOL id
+	if (gol_id < 0 || gol_id > NGOL)
+		gol_id = 0;
+	char survival_str[10], birth_str[10];
+	int survival_ptr = 0, birth_ptr = 0;
+	int rule_value;
+	for (int i = 0; i < 9; i++)
+	{
+		rule_value = luacon_sim->grule[gol_id][i];
+		if (rule_value & 1) survival_str[survival_ptr++] = '0' + i;
+		if (rule_value & 2) birth_str[birth_ptr++] = '0' + i;
+	}
+	survival_str[survival_ptr] = '\0';
+	birth_str[birth_ptr] = '\0';
+	// void lua_pushstring (lua_State *L, const char *s);
+	lua_pushstring (l, survival_str);
+	lua_pushstring (l, birth_ptr);
+	lua_pushnumber (l, luacon_sim->grule[gol_id][9]);
+	return 3;
 }
 
 int LuaScriptInterface::simulation_setCustomGOLGrad(lua_State * l)
