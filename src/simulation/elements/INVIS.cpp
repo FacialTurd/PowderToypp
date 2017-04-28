@@ -53,7 +53,7 @@ int Element_INVIS::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp > 0)
 		pressureResistance = (float) parts[i].tmp;
 	else
-		pressureResistance = 4.0f;
+		pressureResistance = sim->sim_max_pressure;
 
 	if (sim->pv[y/CELL][x/CELL] < -pressureResistance || sim->pv[y/CELL][x/CELL] > pressureResistance)
 		parts[i].tmp2 = 1;
