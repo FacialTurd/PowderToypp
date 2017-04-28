@@ -628,6 +628,10 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 				parts[r].life = 1000;
 			}
 			break;
+		case PT_URAN:
+			if (Probability::randFloat() < prob_breakElectronics)
+				sim->part_change_type(r, rx, ry, PT_PLUT);
+			break;
 		case PT_E189:
 			switch (parts[r].life)
 			{

@@ -11,7 +11,7 @@ Element_E185::Element_E185()
 {
 	Identifier = "DEFAULT_PT_E185";
 	Name = "E185";
-	Colour = PIXPACK(0x80C030);
+	Colour = PIXPACK(0x447722);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
 #if (defined(DEBUG) || defined(SNAPSHOT)) && MOD_ID == 0
@@ -67,86 +67,8 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 	float tempTemp, tempPress;
 	rr = sim->photons[y][x];
 	stmp = parts[i].tmp;
-	if (parts[i].tmp2 & 1)
+	if ((parts[i].tmp2 & 3) == 2)
 	{
-		tempTemp = parts[i].temp;
-		if (parts[i].life <= 1) {
-			for (s = parts[i].tmp; s > 0; s--)
-			{
-				rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_E185);
-				if (rr >= 0)
-				{
-					parts[rr].temp = tempTemp;
-					parts[rr].tmp  = rand() % 5 + 2;
-					parts[rr].tmp2 = 1;
-					parts[rr].life = rand() % 16 + 3;
-				}
-			}
-			sim->kill_part(i);
-		}
-	}
-	else
-	{
-		if (stmp < limit && !parts[i].life)
-		{
-			sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
-			is_warp = (sctype == PT_WARP);
-			if (!(rand()%140) && ((is_warp && (parts[i].temp > 1000) ? 5 : 1) > rand()%100) && !stmp)
-			{
-				if (!sctype)
-					s = sim->create_part(-3, x, y, PT_ELEC);
-				else if (sim->elements[sctype].Properties & TYPE_ENERGY)
-					s = sim->create_part(-3, x, y, sctype);
-				else
-				{
-					rx = rand() % 5 - 2;
-					ry = rand() % 5 - 2;
-					if (sim->IsWallBlocking(x+rx, y+ry, sctype))
-						s = -1; // it's wall blocked
-					else
-						s = sim->create_part(-1, x+rx, y+ry, sctype);
-				}
-				if (s >= 0)
-				{
-					parts[i].life = cooldown;
-					parts[i].tmp = 1;
-					parts[i].temp += 10;
-					parts[s].temp = parts[i].temp;
-					if (sctype == PT_GRVT)
-						parts[s].tmp = 0;
-					else if (is_warp)
-						parts[s].tmp2 = 3000 + rand() % 10000;
-				}
-			}
-			if (rr && ((rr & 0xFF) == PT_ELEC || (rr & 0xFF) == PT_E186) && !(rand()%80) && ((stmp - 11) < rand() % 10))
-			{
-				s = -1;
-				if (rand() % 10)
-				{
-					if (!sctype)
-						s = sim->create_part(-3, x, y, PT_ELEC);
-					else if (sim->elements[sctype].Properties & TYPE_ENERGY)
-						s = sim->create_part(-3, x, y, sctype);
-				}
-				else
-					s = sim->create_part(-3, x, y, PT_E186);
-				parts[i].life = cooldown;
-				parts[i].tmp ++;
-				parts[i].temp += (stmp >= 10) ? (stmp - 8) * 10 : 10;
-
-				parts[rr>>8].temp = parts[i].temp;
-				if (s >= 0)
-				{
-					parts[s].ctype = sctype;
-					parts[s].temp = parts[i].temp;
-					float veloc_multipler = (rand()%102 + 9950.0f) / 10000.0f;
-					parts[s].vx = parts[rr>>8].vx * veloc_multipler;
-					parts[s].vy = parts[rr>>8].vy * veloc_multipler;
-					if (sctype == PT_GRVT)
-						parts[s].tmp = 0;
-				}
-			}
-		}
 		for (trade = 0; trade < 6; trade ++)
 		{
 			rx = rand()%5-2; ry = rand()%5-2;
@@ -238,24 +160,6 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 			E185_eol_1:
 			;
 		}
-		else if ((rr & 0xFF) == PT_NEUT && !(rand()%10))
-		{
-			s = parts[i].tmp;
-			parts[i].tmp -= s > 0 ? (s >> 3) + 1 : 0;
-		}
-		for (rx=-2; rx<3; rx++)
-			for (ry=-2; ry<3; ry++)
-				if (BOUNDS_CHECK && (rx || ry))
-				{
-					r = pmap[y+ry][x+rx];
-					if ((r & 0xFF) == PT_E182 && !(rand()%40))
-					{
-						if (rand()%4)
-							parts[i].tmp = 0;
-						parts[r>>8].tmp = 0;
-					}
-				}
-		return 0;
 		E185_HasExot:
 		for (trade = 0; trade < 6; trade ++)
 		{
@@ -357,6 +261,106 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				return 0;
 			}
 		}
+		return 0;
+	}
+	if (parts[i].tmp2 & 1)
+	{
+		tempTemp = parts[i].temp;
+		if (parts[i].life <= 1) {
+			for (s = parts[i].tmp; s > 0; s--)
+			{
+				rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_E185);
+				if (rr >= 0)
+				{
+					parts[rr].temp = tempTemp;
+					parts[rr].tmp  = rand() % 5 + 2;
+					parts[rr].tmp2 = 1;
+					parts[rr].life = rand() % 16 + 3;
+				}
+			}
+			sim->kill_part(i);
+		}
+	}
+	else
+	{
+		if (stmp < limit && !parts[i].life)
+		{
+			sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
+			is_warp = (sctype == PT_WARP);
+			if (!(rand()%140) && ((is_warp && (parts[i].temp > 1000) ? 5 : 1) > rand()%100) && !stmp)
+			{
+				if (!sctype)
+					s = sim->create_part(-3, x, y, PT_ELEC);
+				else if (sim->elements[sctype].Properties & TYPE_ENERGY)
+					s = sim->create_part(-3, x, y, sctype);
+				else
+				{
+					rx = rand() % 5 - 2;
+					ry = rand() % 5 - 2;
+					if (sim->IsWallBlocking(x+rx, y+ry, sctype))
+						s = -1; // it's wall blocked
+					else
+						s = sim->create_part(-1, x+rx, y+ry, sctype);
+				}
+				if (s >= 0)
+				{
+					parts[i].life = cooldown;
+					parts[i].tmp = 1;
+					parts[i].temp += 10;
+					parts[s].temp = parts[i].temp;
+					if (sctype == PT_GRVT)
+						parts[s].tmp = 0;
+					else if (is_warp)
+						parts[s].tmp2 = 3000 + rand() % 10000;
+				}
+			}
+			if (rr && ((rr & 0xFF) == PT_ELEC || (rr & 0xFF) == PT_E186) && !(rand()%80) && ((stmp - 11) < rand() % 10))
+			{
+				s = -1;
+				if (rand() % 10)
+				{
+					if (!sctype)
+						s = sim->create_part(-3, x, y, PT_ELEC);
+					else if (sim->elements[sctype].Properties & TYPE_ENERGY)
+						s = sim->create_part(-3, x, y, sctype);
+				}
+				else
+					s = sim->create_part(-3, x, y, PT_E186);
+				parts[i].life = cooldown;
+				parts[i].tmp ++;
+				parts[i].temp += (stmp >= 10) ? (stmp - 8) * 10 : 10;
+
+				parts[rr>>8].temp = parts[i].temp;
+				if (s >= 0)
+				{
+					parts[s].ctype = sctype;
+					parts[s].temp = parts[i].temp;
+					float veloc_multipler = (rand()%102 + 9950.0f) / 10000.0f;
+					parts[s].vx = parts[rr>>8].vx * veloc_multipler;
+					parts[s].vy = parts[rr>>8].vy * veloc_multipler;
+					if (sctype == PT_GRVT)
+						parts[s].tmp = 0;
+				}
+			}
+		}
+		if ((rr & 0xFF) == PT_NEUT && !(rand()%10))
+		{
+			s = parts[i].tmp;
+			parts[i].tmp -= s > 0 ? (s >> 3) + 1 : 0;
+		}
+		for (rx=-2; rx<3; rx++)
+			for (ry=-2; ry<3; ry++)
+				if (BOUNDS_CHECK && (rx || ry))
+				{
+					r = pmap[y+ry][x+rx];
+					if ((r & 0xFF) == PT_E182 && !(rand()%40))
+					{
+						if (rand()%4)
+							parts[i].tmp = 0;
+						parts[r>>8].tmp = 0;
+					}
+				}
+		return 0;
 	}
 	return 0;
 }
@@ -374,9 +378,9 @@ int Element_E185::graphics(GRAPHICS_FUNC_ARGS)
 		*colg = 0x70;
 		*colb = 0x70;
 	} else if (cpart->tmp >= 10) {
-		*colr = 0x78;
-		*colg = 0x98;
-		*colb = 0x50;
+		*colr = (0x71 + *colr) / 2;
+		*colg = (0x71 + *colg) / 2;
+		*colb = (0x71 + *colb) / 2;
 	}
 	return 0;
 }
