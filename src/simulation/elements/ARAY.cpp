@@ -167,6 +167,13 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									tmpz = 1;
 									continue;
+								case 20:
+									if (!colored)
+										colored = 0x3FFFFFFF;
+									colored &= elements[parts[r].ctype].PhotonReflectWavelengths;
+									if (!colored)
+										break;
+									continue;
 								case 35:
 									if (!modFlag)
 									{
