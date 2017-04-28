@@ -273,9 +273,9 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				if (rr >= 0)
 				{
 					parts[rr].temp = tempTemp;
-					parts[rr].tmp  = rand() % 5 + 2;
+					parts[rr].tmp  = parts[i].tmp + (rand()%3 - 1);
 					parts[rr].tmp2 = 1;
-					parts[rr].life = rand() % 16 + 3;
+					parts[rr].life = parts[i].tmp + (rand()%5 - 2);
 				}
 			}
 			sim->kill_part(i);
