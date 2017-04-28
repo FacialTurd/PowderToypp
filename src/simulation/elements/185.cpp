@@ -69,6 +69,15 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 	stmp = parts[i].tmp;
 	if ((parts[i].tmp2 & 3) == 2)
 	{
+		if (rand () % 10000 && parts[i].tmp < 20)
+		{
+			s = sim->create_part(-3, x, y, PT_ELEC);
+			if (s > 0)
+			{
+				parts[s].temp = parts[i].temp;
+				parts[i].tmp ++;
+			}
+		}
 		for (trade = 0; trade < 6; trade ++)
 		{
 			rx = rand()%5-2; ry = rand()%5-2;
