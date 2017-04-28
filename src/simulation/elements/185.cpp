@@ -139,6 +139,9 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				{
 					parts[s].ctype = sctype;
 					parts[s].temp = parts[i].temp;
+					float veloc_multipler = (rand()%102 + 9950.0f) / 10000.0f
+					parts[s].vx = parts[rr>>8].vx * veloc_multipler;
+					parts[s].vy = parts[rr>>8].vy * veloc_multipler;
 					if (sctype == PT_GRVT)
 						parts[s].tmp = 0;
 				}

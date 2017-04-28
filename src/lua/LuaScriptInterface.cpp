@@ -2244,7 +2244,7 @@ int LuaScriptInterface::simulation_getGOLRule(lua_State * l)
 	birth_str[birth_ptr] = '\0';
 	// void lua_pushstring (lua_State *L, const char *s);
 	lua_pushstring (l, survival_str);
-	lua_pushstring (l, birth_ptr);
+	lua_pushstring (l, birth_str);
 	lua_pushnumber (l, luacon_sim->grule[gol_id][9]);
 	return 3;
 }
