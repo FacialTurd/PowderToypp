@@ -115,8 +115,10 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 						continue;
 					nx = x+rx;
 					ny = y+ry;
+					/*
 					if ((r&0xFF)==PT_FILT)
 					{
+					*/
 						while ((r&0xFF)==PT_FILT)
 						{
 							parts[r>>8].ctype = photonWl;
@@ -126,6 +128,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 								break;
 							r = pmap[ny][nx];
 						}
+					/*
 					}
 					else
 					{
@@ -152,6 +155,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 							r = pmap[ny][nx];
 						}
 					}
+					*/
 				}
 	}
 	return 0;

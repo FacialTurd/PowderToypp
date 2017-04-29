@@ -126,21 +126,111 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			long long int lsb = filtWl & (-filtWl);
 			return (origWl / lsb) & 0x3FFFFFFF; // blue shift
 		}
+		//--- custom part ---//
 		case (FILT_NORMAL_OPERATIONS + 0):
 		{
 			return origWl | (~filtWl & mask);
 		}
-		case (FILT_NORMAL_OPERATIONS + 1):
+		case (FILT_NORMAL_OPERATIONS + 1): // Arithmetic addition
 		{
 			return ((origWl + filtWl) | 0x20000000) & mask;
 		}
-		case (FILT_NORMAL_OPERATIONS + 2):
+		case (FILT_NORMAL_OPERATIONS + 2): // Arithmetic subtraction
 		{
 			return ((origWl - filtWl) | 0x20000000) & mask;
 		}
-		case (FILT_NORMAL_OPERATIONS + 3):
+		case (FILT_NORMAL_OPERATIONS + 3): // Arithmetic multiply
 		{
 			return ((origWl * filtWl) | 0x20000000) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 4): // rotate red shift
+		{
+			long long int lsb = filtWl & (-filtWl);
+			return ((origWl * lsb) | (origWl / (0x40000000 / lsb))) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 5): // rotate blue shift
+		{
+			long long int lsb = filtWl & (-filtWl);
+			return ((origWl / lsb) | (origWl * (0x40000000 / lsb))) & 0x3FFFFFFF;
+		}
+		case (FILT_NORMAL_OPERATIONS + 6): // set flag 0
+		{
+			long long int lsb = filtWl & (-filtWl);
+			return origWl & ~lsb;
+		}
+		case (FILT_NORMAL_OPERATIONS + 7): // set flag 1
+		{
+			long long int lsb = filtWl & (-filtWl);
+			return origWl | lsb;
+		}
+		case (FILT_NORMAL_OPERATIONS + 8): // toggle flag
+		{
+			long long int lsb = filtWl & (-filtWl);
+			return origWl ^ lsb;
+		}
+		case (FILT_NORMAL_OPERATIONS + 9): // random toggle
+		{
+			if (rand() & 1)
+			{
+				long long int lsb = filtWl & (-filtWl);
+				return origWl ^ lsb;
+			}
+		}
+		case (FILT_NORMAL_OPERATIONS + 10): // reversing wavelength from "Hacker's Delight"
+		{
+			int r1, r2;
+			r1  = origWl;
+			r2  = (r1 << 15) | (r1 >> 15); // wavelength rotate 15
+			r1  = (r2 ^ (r2>>10)) & 0x000F801F; // swap 10
+			r2 ^= (r1 | (r1<<10));
+			r1  = (r2 ^ (r2>> 3)) & 0x06318C63; // swap 3
+			r2 ^= (r1 | (r1<< 3));
+			r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
+			return = (r1 | (r1<< 1)) ^ r2;
+		}
+		case (FILT_NORMAL_OPERATIONS + 11): // random wavelength
+		{
+			int r1 = rand();
+			r1 += (rand() << 15);
+			if ((r1 ^ origWl) & mask == 0)
+				return origWl;
+			else
+				return (origWl ^ r1) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 12): // get "extraLoopsCA" info, without pause state
+		{
+			int r1 = 0;
+			if (!sim->extraLoopsCA)
+				r1 = 0x1;
+			else
+				r1 = 0x2 << sim->extraLoopsType;
+			if (sim->elementCount[PT_LOVE] > 0)
+				r1 |= 0x10;
+			if (sim->elementCount[PT_LOLZ] > 0)
+				r1 |= 0x20;
+			if (sim->elementCount[PT_WIRE] > 0)
+				r1 |= 0x40;
+			if (sim->elementCount[PT_LIFE] > 0)
+				r1 |= 0x80;
+			if (sim->player.spwn)
+				r1 |= 0x100;
+			if (sim->player2.spwn)
+				r1 |= 0x200;
+			if (sim->elementCount[PT_WIFI] > 0)
+				r1 |= 0x400;
+			if (sim->elementCount[PT_DMND] > 0)
+				r1 |= 0x800;
+			if (sim->elementCount[PT_INSL] > 0)
+				r1 |= 0x1000;
+			if (sim->elementCount[PT_INDI] > 0)
+				r1 |= 0x2000;
+			if (sim->elementCount[PT_PINS] > 0)
+				r1 |= 0x4000;
+			if (sim->elementCount[PT_PINVIS] > 0)
+				r1 |= 0x8000;
+			if (sim->elementCount[PT_INDC] > 0)
+				r1 |= 0x10000;
+			return = (r1 | (r1<< 1)) ^ r2;
 		}
 		default:
 			return filtWl;
