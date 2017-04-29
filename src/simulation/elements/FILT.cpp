@@ -230,7 +230,7 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 				r1 |= 0x8000;
 			if (sim->elementCount[PT_INDC] > 0)
 				r1 |= 0x10000;
-			return = (r1 | (r1<< 1)) ^ r2;
+			return = r1;
 		}
 		default:
 			return filtWl;
