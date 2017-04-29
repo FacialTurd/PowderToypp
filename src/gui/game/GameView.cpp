@@ -2428,11 +2428,11 @@ void GameView::OnDraw()
 					wavelengthGfx = (ctype&0x3FFFFFFF);
 				else if (partlife == 5)
 				{
-					int partfilt = parttmp >> 18;
-					int partfilt2 = parttmp & 0x1F;
-					if (partfilt >= 0 && partfilt <= 5 && partfilt != 4)
+					int partfilt = parttmp;
+					int partfilt2 = sample_particle->tmp2;
+					if (partfilt >= 1 && partfilt <= 6 && partfilt != 5)
 						wavelengthGfx = (ctype&0x3FFFFFFF);
-					if (partfilt == 4 || partfilt == 7 || (partfilt & 0x10) && ((0x0002E000 >> partfilt2) & 1))
+					if (partfilt == 5 || partfilt == 8 || !partfilt && ((0x0002E000 >> partfilt2) & 1))
 						partint = 1;
 				}
 				else if (partlife == 13)

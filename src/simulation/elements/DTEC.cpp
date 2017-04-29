@@ -133,10 +133,10 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 						{
 							if (parts[r>>8].life != 5)
 								break;
-							ntmp = parts[r>>8].tmp>>18;
-							if (ntmp < 0 || ntmp > 5)
+							ntmp = parts[r>>8].tmp;
+							if (ntmp < 1 || ntmp > 6)
 								break;
-							if (ntmp == 4)
+							if (ntmp == 5)
 							{
 								parts[r>>8].ctype &= 0x1E0;
 								parts[r>>8].ctype |= tempPhotWl;

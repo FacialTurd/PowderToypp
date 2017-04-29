@@ -325,7 +325,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						continue;
 					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
-						switch (rtmp & 0x3F)
+						switch (rtmp & 0xFF)
 						{
 							case 0: sim->E189_pause |=  0x01; break;
 							case 1: sim->E189_pause |=  0x02; break;
@@ -337,19 +337,32 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							case 7:
 								if (parts[i].temp < 273.15f)
 									parts[i].temp = 273.15f;
-								sim->sim_max_pressure += (int)(parts[i].temp - 272.65f) / 100.0f;
+								rdif = (int)(parts[i].temp - 272.65f);
+								if (parts[r>>8].ctype != PT_INST)
+									rdif /= 100.0f;
+								sim->sim_max_pressure += rdif;
 								if (sim->sim_max_pressure > 256.0f)
 									sim->sim_max_pressure = 256.0f;
 							break;
 							case 8:
 								if (parts[i].temp < 273.15f)
 									parts[i].temp = 273.15f;
-								sim->sim_max_pressure -= (int)(parts[i].temp - 272.65f) / 100.0f;
+								rdif = (int)(parts[i].temp - 272.65f);
+								if (parts[r>>8].ctype != PT_INST)
+									rdif /= 100.0f;
+								sim->sim_max_pressure -= rdif;
 								if (sim->sim_max_pressure < 0.0f)
 									sim->sim_max_pressure = 0.0f;
 							break;
+							case 9: // set sim_max_pressure
+								if (parts[i].temp < 273.15f)
+									parts[i].temp = 273.15f;
+								if (parts[i].temp > 273.15f + 256.0f)
+									parts[i].temp = 273.15f + 256.0f;
+								sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
+							break;
 						}
-						if ((rtmp & 0x7E) == 0x40 && (rx != ry))
+						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
 							E189_Update::InsertText(sim, i, x, y, -rx, -ry);
 					}
 				}

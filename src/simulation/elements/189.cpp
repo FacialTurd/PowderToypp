@@ -144,15 +144,19 @@ VideoBuffer * Element_E189::iconGen(int toolID, int width, int height)
 //#TPT-Directive ElementHeader Element_E189 static void interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189)
 void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189) // photons direction/type changer
 {
-	int rtmp = part_E189->tmp, rct = part_E189->ctype, mask = 0x3FFFFFFF;
-	int ctype, r1, r2, r3;
+	int rtmp = part_E189->tmp, rtmp2 = part_E189->tmp2, rct = part_E189->ctype, mask = 0x3FFFFFFF;
+	int ctype, r1, r2, r3, temp;
 	float rvx, rvy, rvx2, rvy2, rdif, multipler = 1.0f;
 	long long int lsb;
-	if (!((rtmp >> 22) & 1))
+	if (rtmp)
 	{
-		rvx = (float)(((rtmp ^ 0x80) & 0xFF) - 0x80) / 16.0f;
-		rvy = (float)((((rtmp >> 8) ^ 0x80) & 0xFF) - 0x80) / 16.0f;
-		switch ((rtmp >> 16) & 3)
+		temp = part_E189->pavg[0];
+		if (temp >= 32768) temp -= 32768;
+		rvx = temp / 100.0f;
+		temp = part_E189->pavg[1];
+		if (temp >= 32768) temp -= 32768;
+		rvy = temp / 100.0f;
+		switch (rtmp2)
 		{
 		case 0:
 			part_phot->vx = rvx;
@@ -180,29 +184,29 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 			part_phot->vy = rdif * sinf(rvx2);
 			break;
 		}
-		switch (rtmp >> 18)
+		switch (rtmp)
 		{
-		case 0: // Assign Colour
+		case 1: // Assign Colour
 			if (rct)
 				part_phot->ctype = rct;
 			break;
-		case 1: // Filter Colour
+		case 2: // Filter Colour
 			if (rct)
 				part_phot->ctype &= rct;
 			break;
-		case 2: // Add Colour
+		case 3: // Add Colour
 			if (rct)
 				part_phot->ctype |= rct;
 			break;
-		case 3: // Subtract colour
+		case 4: // Subtract colour
 			if (rct)
 				part_phot->ctype &= ~rct;
 			else
 				part_phot->ctype = (~part_phot->ctype) & mask; // Invert colours
 			break;
-		case 4:
+		case 5:
 			ctype = part_phot->ctype;
-			switch ((rct >> 5) & 15)
+			switch ((rct >> 5) & 31)
 			{
 			case 0:
 				part_phot->ctype <<= (rct & 0x1F); // red shift
@@ -232,16 +236,16 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 					part_phot->ctype ^=  (1 << (rct & 0x1F));
 				break;
 			case 8: // reversing wavelength from "Hacker's Delight"
-				r1 = part_phot->ctype;
-				r2 = (r1 << 15) | (r1 >> 15); // wavelength rotate 15
-				r1 = (r2 ^ (r2>>10)) & 0x000F801F; // swap 10
+				r1  = part_phot->ctype;
+				r2  = (r1 << 15) | (r1 >> 15); // wavelength rotate 15
+				r1  = (r2 ^ (r2>>10)) & 0x000F801F; // swap 10
 				r2 ^= (r1 | (r1<<10));
-				r1 = (r2 ^ (r2>> 3)) & 0x06318C63; // swap 3
+				r1  = (r2 ^ (r2>> 3)) & 0x06318C63; // swap 3
 				r2 ^= (r1 | (r1<< 3));
-				r1 = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
+				r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
 				part_phot->ctype = (r1 | (r1<< 1)) ^ r2;
 				break;
-			case 15: // get "extraLoopsCA" info, without pause state
+			case 31: // get "extraLoopsCA" info, without pause state
 				if (!sim->extraLoopsCA)
 					r1 = 0x1;
 				else
@@ -270,12 +274,14 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 					r1 |= 0x4000;
 				if (sim->elementCount[PT_PINVIS] > 0)
 					r1 |= 0x8000;
+				if (sim->elementCount[PT_INDC] > 0)
+					r1 |= 0x10000;
 				part_phot->ctype = r1;
 				break;
 			}
 			part_phot->ctype &= mask;
 			break;
-		case 5:
+		case 6:
 			if (!rct) // random wavelength
 			{
 				ctype = part_phot->ctype;
@@ -288,11 +294,14 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 			}
 			part_phot->ctype ^= rct; // XOR colours
 			break;
-		case 6:
-			sim->part_change_type(i, x, y, rct & 0xFF);
-			part_phot->tmp = part_E189->ctype >> 8;
+		case 7:
+			if ((rct&0xFF) == PT_PROT || (rct&0xFF) == PT_GRVT)
+			{
+				sim->part_change_type(i, x, y, rct & 0xFF);
+				part_phot->tmp = rct >> 8;
+			}
 			break;
-		case 7: // photon scattering
+		case 8: // photon scattering
 			sim->part_change_type(i, x, y, PT_E186);
 			if (rct & 1)
 				part_phot->ctype = 0x1F<<(rand()%26);
@@ -310,7 +319,7 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 	}
 	else
 	{
-		switch (rtmp & 0x1F)
+		switch (rtmp2)
 		{
 			case 0: // no photons operation
 				break;
