@@ -72,15 +72,43 @@ int Element_FILT::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
+int my_clz (int value)
+{
+#ifdef __GNUC__
+	x = __builtin_clz (value);
+#else
+	unsigned int xx = 0x80000000;
+	while (!(value & xx))
+	{
+		xx >>= 1; x ++;
+	}
+#endif
+	return x;
+}
+
 int my_ctz (int value)
 {
 #ifdef __GNUC__
 	x = __builtin_ctz (value);
 #else
+	int xx = 1;
 	while (!(value & xx))
 	{
 		xx <<= 1; x ++;
 	}
+#endif
+	return x;
+}
+
+int my_popc (int value)
+{
+#ifdef __GNUC__
+	x = __builtin_popcount (value);
+#else
+	x = x - ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x + (x >> 4)) & 0x0F0F0F0F;
+	x = (x * 0x01010101) >> 24;
 #endif
 	return x;
 }
@@ -161,40 +189,9 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
 			return = (r1 | (r1<< 1)) ^ r2;
 		}
-		case (FILT_NORMAL_OPERATIONS + 2): // get "extraLoopsCA" info, without pause state
+		case (FILT_NORMAL_OPERATIONS + 2): // population count
 		{
-			int r1 = 0;
-			if (!sim->extraLoopsCA)
-				r1 = 0x1;
-			else
-				r1 = 0x2 << sim->extraLoopsType;
-			if (sim->elementCount[PT_LOVE] > 0)
-				r1 |= 0x10;
-			if (sim->elementCount[PT_LOLZ] > 0)
-				r1 |= 0x20;
-			if (sim->elementCount[PT_WIRE] > 0)
-				r1 |= 0x40;
-			if (sim->elementCount[PT_LIFE] > 0)
-				r1 |= 0x80;
-			if (sim->player.spwn)
-				r1 |= 0x100;
-			if (sim->player2.spwn)
-				r1 |= 0x200;
-			if (sim->elementCount[PT_WIFI] > 0)
-				r1 |= 0x400;
-			if (sim->elementCount[PT_DMND] > 0)
-				r1 |= 0x800;
-			if (sim->elementCount[PT_INSL] > 0)
-				r1 |= 0x1000;
-			if (sim->elementCount[PT_INDI] > 0)
-				r1 |= 0x2000;
-			if (sim->elementCount[PT_PINS] > 0)
-				r1 |= 0x4000;
-			if (sim->elementCount[PT_PINVIS] > 0)
-				r1 |= 0x8000;
-			if (sim->elementCount[PT_INDC] > 0)
-				r1 |= 0x10000;
-			return = r1;
+			return = 1 << (my_popc(origWl & mask) - 1);
 		}
 		case (FILT_NORMAL_OPERATIONS + 3): // cyclic red shift
 		{

@@ -170,7 +170,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 20:
 									if (!colored)
 										colored = 0x3FFFFFFF;
-									colored &= sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+									tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+									if (parts[r].tmp & 0x1)
+										tmp = ~tmp;
+									colored &= tmp;
 									if (!colored)
 										break;
 									continue;
