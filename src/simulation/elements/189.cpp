@@ -169,7 +169,7 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 			part_phot->vy = rvx2 * rvy + rvy2 * rvx;
 			break;
 		case 4:
-			rvx2 = rtmp2 * 0.0174532925f;
+			rvx2 = rvx * 0.0174532925f;
 			rdif = hypotf(part_phot->vx, part_phot->vy);
 			if (rtmp & 0x100)
 			{
