@@ -72,6 +72,19 @@ int Element_FILT::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
+int my_ctz (int value)
+{
+#ifdef __GNUC__
+	x = __builtin_ctz (value);
+#else
+	while (!(value & xx))
+	{
+		xx <<= 1; x ++;
+	}
+#endif
+	return x;
+}
+
 #define FILT_NORMAL_OPERATIONS 12
 
 //#TPT-Directive ElementHeader Element_FILT static int interactWavelengths(Particle* cpart, int origWl)
@@ -127,56 +140,16 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			return (origWl / lsb) & 0x3FFFFFFF; // blue shift
 		}
 		//--- custom part ---//
-		case (FILT_NORMAL_OPERATIONS + 0):
+		case (FILT_NORMAL_OPERATIONS + 0): // random wavelength
 		{
-			return origWl | (~filtWl & mask);
+			int r1 = rand();
+			r1 += (rand() << 15);
+			if ((r1 ^ origWl) & mask == 0)
+				return origWl;
+			else
+				return (origWl ^ r1) & mask;
 		}
-		case (FILT_NORMAL_OPERATIONS + 1): // Arithmetic addition
-		{
-			return ((origWl + filtWl) | 0x20000000) & mask;
-		}
-		case (FILT_NORMAL_OPERATIONS + 2): // Arithmetic subtraction
-		{
-			return ((origWl - filtWl) | 0x20000000) & mask;
-		}
-		case (FILT_NORMAL_OPERATIONS + 3): // Arithmetic multiply
-		{
-			return ((origWl * filtWl) | 0x20000000) & mask;
-		}
-		case (FILT_NORMAL_OPERATIONS + 4): // rotate red shift
-		{
-			long long int lsb = filtWl & (-filtWl);
-			return ((origWl * lsb) | (origWl / (0x40000000 / lsb))) & mask;
-		}
-		case (FILT_NORMAL_OPERATIONS + 5): // rotate blue shift
-		{
-			long long int lsb = filtWl & (-filtWl);
-			return ((origWl / lsb) | (origWl * (0x40000000 / lsb))) & 0x3FFFFFFF;
-		}
-		case (FILT_NORMAL_OPERATIONS + 6): // set flag 0
-		{
-			long long int lsb = filtWl & (-filtWl);
-			return origWl & ~lsb;
-		}
-		case (FILT_NORMAL_OPERATIONS + 7): // set flag 1
-		{
-			long long int lsb = filtWl & (-filtWl);
-			return origWl | lsb;
-		}
-		case (FILT_NORMAL_OPERATIONS + 8): // toggle flag
-		{
-			long long int lsb = filtWl & (-filtWl);
-			return origWl ^ lsb;
-		}
-		case (FILT_NORMAL_OPERATIONS + 9): // random toggle
-		{
-			if (rand() & 1)
-			{
-				long long int lsb = filtWl & (-filtWl);
-				return origWl ^ lsb;
-			}
-		}
-		case (FILT_NORMAL_OPERATIONS + 10): // reversing wavelength from "Hacker's Delight"
+		case (FILT_NORMAL_OPERATIONS + 1): // reversing wavelength from "Hacker's Delight"
 		{
 			int r1, r2;
 			r1  = origWl;
@@ -188,16 +161,7 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
 			return = (r1 | (r1<< 1)) ^ r2;
 		}
-		case (FILT_NORMAL_OPERATIONS + 11): // random wavelength
-		{
-			int r1 = rand();
-			r1 += (rand() << 15);
-			if ((r1 ^ origWl) & mask == 0)
-				return origWl;
-			else
-				return (origWl ^ r1) & mask;
-		}
-		case (FILT_NORMAL_OPERATIONS + 12): // get "extraLoopsCA" info, without pause state
+		case (FILT_NORMAL_OPERATIONS + 2): // get "extraLoopsCA" info, without pause state
 		{
 			int r1 = 0;
 			if (!sim->extraLoopsCA)
@@ -231,6 +195,16 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			if (sim->elementCount[PT_INDC] > 0)
 				r1 |= 0x10000;
 			return = r1;
+		}
+		case (FILT_NORMAL_OPERATIONS + 3): // cyclic red shift
+		{
+			int x = my_ctz (filtWl);
+			return ((origWl << x) | (origWl >> (30 - x))) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 4): // cyclic blue shift
+		{
+			int x = my_ctz (filtWl);
+			return ((origWl >> x) | (origWl << (30 - x))) & mask;
 		}
 		default:
 			return filtWl;
