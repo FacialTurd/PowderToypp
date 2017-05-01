@@ -362,10 +362,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
 							break;
 							case 10: // reset currentTick
-								lightningRecreate -= currentTick;
-								if (lightningRecreate < 0)
-									lightningRecreate = 0;
-								currentTick = 0;
+								sim->lightningRecreate -= sim->currentTick;
+								if (sim->lightningRecreate < 0)
+									sim->lightningRecreate = 0;
+								sim->currentTick = 0;
 							break;
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
