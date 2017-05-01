@@ -75,8 +75,9 @@ int Element_FILT::graphics(GRAPHICS_FUNC_ARGS)
 int my_clz (int value)
 {
 #ifdef __GNUC__
-	x = __builtin_clz (value);
+	int x = __builtin_clz (value);
 #else
+	int x = 0;
 	unsigned int xx = 0x80000000;
 	while (!(value & xx))
 	{
@@ -89,8 +90,9 @@ int my_clz (int value)
 int my_ctz (int value)
 {
 #ifdef __GNUC__
-	x = __builtin_ctz (value);
+	int x = __builtin_ctz (value);
 #else
+	int x = 0;
 	int xx = 1;
 	while (!(value & xx))
 	{
@@ -103,9 +105,9 @@ int my_ctz (int value)
 int my_popc (int value)
 {
 #ifdef __GNUC__
-	x = __builtin_popcount (value);
+	int x = __builtin_popcount (value);
 #else
-	x = x - ((x >> 1) & 0x55555555);
+	int x = x - ((x >> 1) & 0x55555555);
 	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
 	x = (x + (x >> 4)) & 0x0F0F0F0F;
 	x = (x * 0x01010101) >> 24;
@@ -187,11 +189,11 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			r1  = (r2 ^ (r2>> 3)) & 0x06318C63; // swap 3
 			r2 ^= (r1 | (r1<< 3));
 			r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
-			return = (r1 | (r1<< 1)) ^ r2;
+			return (r1 | (r1<< 1)) ^ r2;
 		}
 		case (FILT_NORMAL_OPERATIONS + 2): // population count
 		{
-			return = 1 << (my_popc(origWl & mask) - 1);
+			return 1 << (my_popc(origWl & mask) - 1);
 		}
 		case (FILT_NORMAL_OPERATIONS + 3): // cyclic red shift
 		{

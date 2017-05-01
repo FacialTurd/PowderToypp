@@ -2391,7 +2391,7 @@ void GameView::OnDraw()
 			"TRONF", "TRONDL", "E189F32", "WIFI2", "FILTINC", "RNMRAY"
 		};
 		const int maxE189Type = 35;
-		static const int E189IntM[] = {0x81055000, 0x00000006};
+		static const int E189IntM[] = {0x81055020, 0x00000006};
 		//Draw info about simulation under cursor
 		int wavelengthGfx = 0, alpha = 255;
 		if (toolTipPosition.Y < 120)
