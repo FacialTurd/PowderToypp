@@ -1330,27 +1330,33 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				}
 		return return_value;
 	case 20: // particle emitter
-		for (rx = -2; rx <= 2; rx++)
-			for (ry = -2; ry <= 2; ry++)
+		rctype = parts[i].ctype;
+		if (!(rctype & 0xFF))
+			return return_value;
+		for (rx = -1; rx < 2; rx++)
+			for (ry = -1; ry < 2; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];
-					rctype = parts[i].ctype;
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
-						if (!(rctype & 0xFF))
-							return return_value;
-						if ((rctype & 0xFF) != PT_LIGH || !(rand() & 7))
+						// if (sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED && rx && ry) // INWR, PTCT, NTCT, etc.
+						//	continue;
+						if ((rctype & 0xFF) != PT_LIGH || !(rand() & 15))
 						{
 							// rx = rand()%3-1;
 							// ry = rand()%3-1;
 							int np = sim->create_part(-1, x-rx, y-ry, rctype & 0xFF, rctype >> 8);
 							if (np >= 0) {
-								parts[np].vx = -rx; parts[np].vy = -ry;
+								parts[np].vx = -3*rx; parts[np].vy = -3*ry;
 								parts[np].dcolour = parts[i].dcolour;
+								if ((rctype & 0xFF) == PT_PHOT && (np > i)) // like E189 (life = 11)
+								{
+									parts[np].flags |= FLAG_SKIPMOVE;
+								}
 							}
 						}
-						return return_value;
+						// return return_value;
 					}
 				}
 		break;
@@ -1726,9 +1732,17 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[ny][nx];
 						if (!r || (r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR) // if it's empty or insulated wire
 							continue;
-						if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == PT_E189 && parts[r>>8].life == 35)
+						if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE))
 						{
 							parts[r>>8].ctype = rrx;
+						}
+						else if ((r&0xFF) == PT_E189)
+						{
+							int p_life = parts[r>>8].life;
+							if (p_life == 20 || p_life == 35)
+							{
+								parts[r>>8].ctype = rrx;
+							}
 						}
 						else if ((r&0xFF) == PT_INSL || (r&0xFF) == PT_INDI)
 							break;
