@@ -1401,7 +1401,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[r>>8].life += parts[i].tmp;
 								break;
 							case PT_YEST:
-								rtmp = parts[i].tmp;
+								// rtmp = parts[i].tmp;
 								if (rtmp > 0)
 									parts[r>>8].temp = 303.0f + (rtmp > 28 ? 28 : (float)rtmp * 0.5f);
 								else if (-rtmp > (rand()&31))
@@ -1442,7 +1442,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rt = rr & 0xFF;
 								if (rt == PT_BMTL || rt == PT_BRMT)
 								{
-									sim->part_change_type(rr >> 8, x-rx, y-ry, PT_IRON);
+									sim->part_change_type(rr >> 8, x-rx, y-ry, rtmp >= 0 ? PT_IRON : PT_TUNG);
 								}
 								break;
 							case PT_CAUS:
