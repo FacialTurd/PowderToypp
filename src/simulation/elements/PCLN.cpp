@@ -88,7 +88,7 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 					if (!r)
 						continue;
 					rt = r&0xFF;
-					if (!(sim->elements[rt].Properties & PROP_CLONE) &&
+					if (!(sim->elements[rt].Properties2 & PROP_CLONE) &&
 					    rt!=PT_SPRK && rt!=PT_NSCN && rt!=PT_PSCN &&
 					    rt!=PT_STKM && rt!=PT_STKM2 && rt<PT_NUM)
 					{
