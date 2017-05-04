@@ -32,9 +32,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	static int tron_rx[4] = {-1, 0, 1, 0};
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
-	int rx, ry, ttan = 0, rlife = parts[i].life, direction, r, ri, rtmp, rctype;
-	int rr, rndstore, trade, transfer, rt, rii, rrx, rry, nx, ny, pavg;
-	int tmp_r;
+	int rx, ry, ttan = 0, rlife = parts[i].life, r, ri, rtmp, rctype;
+	int rr, rndstore, rt, rii, rrx, rry, nx, ny, pavg;
+	// int tmp_r;
 	float rvx, rvy, rdif;
 	int docontinue;
 	rtmp = parts[i].tmp;
@@ -63,7 +63,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		else if (rtmp & 0x01)
 		{
 			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			direction = (rr + (rtmp >> 17)) & 0x3;
+			int direction = (rr + (rtmp >> 17)) & 0x3;
 			rx = x + tron_rx[direction];
 			ry = y + tron_ry[direction];
 			r = pmap[ry][rx];
@@ -99,7 +99,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			rtmp &= ~0x04;
 		else if (rtmp & 0x01)
 		{
-			direction = (rtmp >> 5) & 0x3;
+			int direction = (rtmp >> 5) & 0x3;
 			ry = y + tron_ry[direction];
 			rx = x + tron_rx[direction];
 			r = pmap[ry][rx];
@@ -237,45 +237,48 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						continue;
 					if (sim->elements[r&0xFF].HeatConduct > 0)
 					{
-						transfer = (int)(parts[r>>8].temp - 273.15f);
+						int transfer = (int)(parts[r>>8].temp - 273.15f);
 						parts[i].tmp += transfer;
 						parts[r>>8].temp -= (float)transfer;
 					}
 				}
-		for (trade = 0; trade < 9; trade++)
 		{
-			if (trade%2)
-				rndstore = rand();
-			rx = rndstore%7-3;
-			rndstore >>= 3;
-			ry = rndstore%7-3;
-			rndstore >>= 3;
-			if (BOUNDS_CHECK && (rx || ry))
+			int trade;
+			for (trade = 0; trade < 9; trade++)
 			{
-				r = pmap[y+ry][x+rx];
-				bool not_self = !((r&0xFF) == PT_E189 && parts[r>>8].life == 8);
-				if ((r&0xFF) != PT_VIBR && (r&0xFF) != PT_BVBR && not_self)
-					continue;
-				if (not_self)
+				if (trade%2)
+					rndstore = rand();
+				rx = rndstore%7-3;
+				rndstore >>= 3;
+				ry = rndstore%7-3;
+				rndstore >>= 3;
+				if (BOUNDS_CHECK && (rx || ry))
 				{
-					if (rr & 1)
-					{ // VIBR2 <- VIBR
-						parts[i].tmp += parts[r>>8].tmp;
-						parts[r>>8].tmp = 0;
+					r = pmap[y+ry][x+rx];
+					bool not_self = !((r&0xFF) == PT_E189 && parts[r>>8].life == 8);
+					if ((r&0xFF) != PT_VIBR && (r&0xFF) != PT_BVBR && not_self)
+						continue;
+					if (not_self)
+					{
+						if (rr & 1)
+						{ // VIBR2 <- VIBR
+							parts[i].tmp += parts[r>>8].tmp;
+							parts[r>>8].tmp = 0;
+						}
+						else
+						{ // VIBR2 -> VIBR
+							parts[r>>8].tmp += parts[i].tmp;
+							parts[i].tmp = 0;
+						}
+						break;
 					}
-					else
-					{ // VIBR2 -> VIBR
-						parts[r>>8].tmp += parts[i].tmp;
-						parts[i].tmp = 0;
+					if (parts[i].tmp > parts[r>>8].tmp)
+					{
+						int transfer = parts[i].tmp - parts[r>>8].tmp;
+						parts[r>>8].tmp += transfer/2;
+						parts[i].tmp -= transfer/2;
+						break;
 					}
-					break;
-				}
-				if (parts[i].tmp > parts[r>>8].tmp)
-				{
-					transfer = parts[i].tmp - parts[r>>8].tmp;
-					parts[r>>8].tmp += transfer/2;
-					parts[i].tmp -= transfer/2;
-					break;
 				}
 			}
 		}
@@ -292,37 +295,39 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			sim->emp2_trigger_count ++;
 		}
 		parts[i].temp += 12;
-		trade = 5;
-		for (rx=-1; rx<2; rx++)
-			for (ry=-1; ry<2; ry++)
-				if (BOUNDS_CHECK && (rx || ry))
-				{
-					if (trade >= 5)
+		{
+			int trade = 5;
+			for (rx=-1; rx<2; rx++)
+				for (ry=-1; ry<2; ry++)
+					if (BOUNDS_CHECK && (rx || ry))
 					{
-						rndstore = rand(); trade = 0;
-					}
-					r = pmap[y+ry][x+rx];
-					rt = r & 0xFF;
-					if (!r || (sim->elements[rt].Properties2 & PROP_NODESTRUCT) || rt == PT_VIBR || rt == PT_BVBR || rt == PT_WARP || rt == PT_SPRK)
-						continue;
-					if (rt == PT_E189)
-					{
-						if (parts[r>>8].life == 8)
+						if (trade >= 5)
 						{
-							parts[r>>8].tmp += 1000;
-							continue;
+							rndstore = rand(); trade = 0;
 						}
-						if (parts[r>>8].life == 9)
+						r = pmap[y+ry][x+rx];
+						rt = r & 0xFF;
+						if (!r || (sim->elements[rt].Properties2 & PROP_NODESTRUCT) || rt == PT_VIBR || rt == PT_BVBR || rt == PT_WARP || rt == PT_SPRK)
 							continue;
+						if (rt == PT_E189)
+						{
+							if (parts[r>>8].life == 8)
+							{
+								parts[r>>8].tmp += 1000;
+								continue;
+							}
+							if (parts[r>>8].life == 9)
+								continue;
+						}
+						if (!(rndstore & 0x7))
+						{
+							sim->part_change_type(r>>8, x+rx, y+ry, PT_E189);
+							parts[r>>8].life = 8;
+							parts[r>>8].tmp = 21000;
+						}
+						trade++; rndstore >>= 3;
 					}
-					if (!(rndstore & 0x7))
-					{
-						sim->part_change_type(r>>8, x+rx, y+ry, PT_E189);
-						parts[r>>8].life = 8;
-						parts[r>>8].tmp = 21000;
-					}
-					trade++; rndstore >>= 3;
-				}
+		}
 		break;
 #endif /* NO_SPC_ELEM_EXPLODE */
 	case 10: // electronics debugger [电子产品调试]
@@ -763,7 +768,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
-						direction = rr;
+						int direction = rr;
 						for (rr = 0; rr < 4; rr++) // reset "rr" variable
 							if (BOUNDS_CHECK)
 							{
@@ -943,12 +948,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									rrx ^= (signed int)0x80000000 >> __builtin_clz(~rrx); // increment reversed int.
 									rrx >>= 3;
 #else
-									tmp_r = 0x10000000;
-									while (tmp_r)
 									{
-										rrx ^= tmp_r;
-										if ((rrx & tmp_r)) break;
-										tmp_r >>= 1;
+										int tmp_r = 0x10000000;
+										while (tmp_r)
+										{
+											rrx ^= tmp_r;
+											if ((rrx & tmp_r)) break;
+											tmp_r >>= 1;
+										}
 									}
 #endif
 									break;
@@ -959,12 +966,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									// __builtin_clz(0x00000000) is undefined.
 									rrx >>= 3;
 #else
-									tmp_r = 0x10000000;
-									while (tmp_r)
 									{
-										rrx ^= tmp_r;
-										if (!(rrx & tmp_r)) break;
-										tmp_r >>= 1;
+										int tmp_r = 0x10000000;
+										while (tmp_r)
+										{
+											rrx ^= tmp_r;
+											if (!(rrx & tmp_r)) break;
+											tmp_r >>= 1;
+										}
 									}
 #endif
 									break;
@@ -1365,105 +1374,108 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	 *   or TRON detector.
 	 * note: exclude E185 "replicating powder"
 	 */
-		rndstore = rand(), trade = 5;
-		for (rx = -1; rx < 2; rx++)
-			for (ry = -1; ry < 2; ry++)
-			{
-				if (BOUNDS_CHECK && (rx || ry))
+		{
+			rndstore = rand();
+			int trade = 5;
+			for (rx = -1; rx < 2; rx++)
+				for (ry = -1; ry < 2; ry++)
 				{
-					r = pmap[y+ry][x+rx];
-					if ((r & 0xFF) == PT_TRON && !(rx && ry)) // (!(rx && ry)) equivalent to (!rx || !ry)
+					if (BOUNDS_CHECK && (rx || ry))
 					{
-						rr = pmap[y-ry][x-rx];
-						rt = rr & 0xFF;
-						rr >>= 8;
-						if (rt == PT_E189 && parts[rr].life == 30)
+						r = pmap[y+ry][x+rx];
+						if ((r & 0xFF) == PT_TRON && !(rx && ry)) // (!(rx && ry)) equivalent to (!rx || !ry)
 						{
-							if ((parts[rr].tmp >> 20) == 3)
+							rr = pmap[y-ry][x-rx];
+							rt = rr & 0xFF;
+							rr >>= 8;
+							if (rt == PT_E189 && parts[rr].life == 30)
 							{
-								parts[rr].ctype &= ~0x1F;
-								parts[rr].ctype |= (parts[r>>8].tmp >> 11) & 0x1F;
+								if ((parts[rr].tmp >> 20) == 3)
+								{
+									parts[rr].ctype &= ~0x1F;
+									parts[rr].ctype |= (parts[r>>8].tmp >> 11) & 0x1F;
+								}
+								else
+									parts[rr].ctype = (parts[r>>8].tmp >> 7) & 0x1FF;
 							}
-							else
-								parts[rr].ctype = (parts[r>>8].tmp >> 7) & 0x1FF;
-						}
-					}
-					else
-					{
-						if (!(rndstore&7))
-						{
-							switch (r & 0xFF)
-							{
-							case PT_MERC:
-								parts[r>>8].tmp += parts[i].tmp;
-								break;
-							case PT_DEUT:
-								parts[r>>8].life += parts[i].tmp;
-								break;
-							case PT_YEST:
-								// rtmp = parts[i].tmp;
-								if (rtmp > 0)
-									parts[r>>8].temp = 303.0f + (rtmp > 28 ? 28 : (float)rtmp * 0.5f);
-								else if (-rtmp > (rand()&31))
-									sim->kill_part(r>>8);
-								break;
-							case PT_SPNG:
-								if (parts[r>>8].life > 0)
-								{
-									rr = sim->create_part(-1, x-rx, y-ry, PT_WATR);
-									if (rr >= 0)
-										parts[r>>8].life --;
-								}
-								break;
-							case PT_VIBR:
-								if (parts[r>>8].tmp > 0)
-								{
-									rr = pmap[y-ry][x-rx];
-									rt = rr & 0xFF;
-									if (rt == PT_WATR || rt == PT_DSTW || rt == PT_SLTW || rt == PT_CBNW)
-									{
-										rr >>= 8;
-										if(!(rand()%3))
-											sim->part_change_type(rr, x-rx, y-ry, PT_O2);
-										else
-											sim->part_change_type(rr, x-rx, y-ry, PT_H2);
-										if (rt == PT_CBNW)
-										{
-											rrx = rand() % 5 - 2;
-											rry = rand() % 5 - 2;
-											sim->create_part(-1, x+rrx, y+rry, PT_CO2);
-										}
-										parts[r>>8].tmp --;
-									}
-								}
-								break;
-							case PT_GOLD:
-								rr = pmap[y-ry][x-rx];
-								rt = rr & 0xFF;
-								if (rt == PT_BMTL || rt == PT_BRMT)
-								{
-									sim->part_change_type(rr >> 8, x-rx, y-ry, rtmp >= 0 ? PT_IRON : PT_TUNG);
-								}
-								break;
-							case PT_CAUS:
-								rr = pmap[y-ry][x-rx];
-								if ((rr & 0xFF) == PT_WATR)
-								{
-									sim->part_change_type(r>>8, x+rx, y+ry, PT_ACID);
-									parts[r>>8].life += 10;
-								}
-							}
-						}
-						if (!--trade)
-						{
-							trade = 5;
-							rndstore = rand();
 						}
 						else
-							rndstore >>= 3;
+						{
+							if (!(rndstore&7))
+							{
+								switch (r & 0xFF)
+								{
+								case PT_MERC:
+									parts[r>>8].tmp += parts[i].tmp;
+									break;
+								case PT_DEUT:
+									parts[r>>8].life += parts[i].tmp;
+									break;
+								case PT_YEST:
+									// rtmp = parts[i].tmp;
+									if (rtmp > 0)
+										parts[r>>8].temp = 303.0f + (rtmp > 28 ? 28 : (float)rtmp * 0.5f);
+									else if (-rtmp > (rand()&31))
+										sim->kill_part(r>>8);
+									break;
+								case PT_SPNG:
+									if (parts[r>>8].life > 0)
+									{
+										rr = sim->create_part(-1, x-rx, y-ry, PT_WATR);
+										if (rr >= 0)
+											parts[r>>8].life --;
+									}
+									break;
+								case PT_VIBR:
+									if (parts[r>>8].tmp > 0)
+									{
+										rr = pmap[y-ry][x-rx];
+										rt = rr & 0xFF;
+										if (rt == PT_WATR || rt == PT_DSTW || rt == PT_SLTW || rt == PT_CBNW)
+										{
+											rr >>= 8;
+											if(!(rand()%3))
+												sim->part_change_type(rr, x-rx, y-ry, PT_O2);
+											else
+												sim->part_change_type(rr, x-rx, y-ry, PT_H2);
+											if (rt == PT_CBNW)
+											{
+												rrx = rand() % 5 - 2;
+												rry = rand() % 5 - 2;
+												sim->create_part(-1, x+rrx, y+rry, PT_CO2);
+											}
+											parts[r>>8].tmp --;
+										}
+									}
+									break;
+								case PT_GOLD:
+									rr = pmap[y-ry][x-rx];
+									rt = rr & 0xFF;
+									if (rt == PT_BMTL || rt == PT_BRMT)
+									{
+										sim->part_change_type(rr >> 8, x-rx, y-ry, rtmp >= 0 ? PT_IRON : PT_TUNG);
+									}
+									break;
+								case PT_CAUS:
+									rr = pmap[y-ry][x-rx];
+									if ((rr & 0xFF) == PT_WATR)
+									{
+										sim->part_change_type(r>>8, x+rx, y+ry, PT_ACID);
+										parts[r>>8].life += 10;
+									}
+								}
+							}
+							if (!--trade)
+							{
+								trade = 5;
+								rndstore = rand();
+							}
+							else
+								rndstore >>= 3;
+						}
 					}
 				}
-			}
+		}
 		break;
 	case 24: // moving duplicator particle
 		if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
@@ -1608,7 +1620,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				break;
 			}
 			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			direction = (rr + (rtmp >> 17)) & 0x3;
+			int direction = (rr + (rtmp >> 17)) & 0x3;
 			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
 			rii = parts[r >> 8].life;
 			if ((r & 0xFF) == PT_E189 && rii == 3)
@@ -1643,7 +1655,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		else if (rtmp & 0x01)
 		{
 			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			direction = (rr + (rtmp >> 17)) & 0x3;
+			int direction = (rr + (rtmp >> 17)) & 0x3;
 			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
 			rii = parts[r >> 8].life;
 			if ((r & 0xFF) == PT_E189 && (rii & ~0x1) == 2)
@@ -1739,7 +1751,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						else if ((r&0xFF) == PT_E189)
 						{
 							int p_life = parts[r>>8].life;
-							if (p_life == 20 || p_life == 35)
+							if (p_life == 20 || p_life == 35 || p_life == 36)
 							{
 								parts[r>>8].ctype = rrx;
 							}
@@ -1750,6 +1762,25 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					} while (docontinue);
 				}
 			}
+		break;
+	case 36:
+		rctype = parts[i].ctype & 0xFF;
+		for (rx = -1; rx < 2; rx++)
+			for (ry = -1; ry < 2; ry++)
+				if (BOUNDS_CHECK && (!rx != !ry))
+				{
+					r = pmap[y+ry][x+rx];
+					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+					{
+						switch (parts[r>>8].ctype)
+						{
+							case PT_PSCN: sim->elements[rctype].Properties2 |=  PROP_DEBUG_USE_TMP2; break;
+							case PT_NSCN: sim->elements[rctype].Properties2 &= ~PROP_DEBUG_USE_TMP2; break;
+							case PT_INWR: sim->elements[rctype].Properties2 ^=  PROP_DEBUG_USE_TMP2; break;
+						}
+						return return_value;
+					}
+				}
 		break;
 	}
 	
