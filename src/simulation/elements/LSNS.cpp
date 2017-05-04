@@ -31,6 +31,7 @@ Element_LSNS::Element_LSNS()
  	Description = "Life sensor. Creates a spark when the life is higher than the temp.";
  
  	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
  
  	LowPressure = IPL;
  	LowPressureTransition = NT;

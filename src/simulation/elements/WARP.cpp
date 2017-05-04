@@ -31,6 +31,7 @@ Element_WARP::Element_WARP()
 	Description = "Displaces other elements.";
 
 	Properties = TYPE_GAS|PROP_LIFE_DEC|PROP_LIFE_KILL;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

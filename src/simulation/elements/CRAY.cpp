@@ -31,7 +31,7 @@ Element_CRAY::Element_CRAY()
 	Description = "Particle Ray Emitter. Creates a beam of particles set by its ctype, with a range set by tmp.";
 
 	Properties = TYPE_SOLID;
-	Properties2 = PROP_DRAWONCTYPE;
+	Properties2 = PROP_DRAWONCTYPE | PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

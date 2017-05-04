@@ -31,6 +31,7 @@ Element_PSTN::Element_PSTN()
 	Description = "Piston, extends and pushes particles.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

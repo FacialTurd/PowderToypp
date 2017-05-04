@@ -40,9 +40,10 @@
 #define PROP_CONDUCTS_SPEC	0x20000000
 
 // second properties flag:
-#define PROP_ENERGY_PART		0x00000001
-#define PROP_ELEC_HEATING		0x00000002  // Electricity heating effect
-#define PROP_NOWAVELENGTHS		0x00000004  // Energy particle without wavelengths
+#define PROP_DEBUG_USE_TMP2		0x00000001	// 1 Use .tmp2 show it in the debug HUD
+#define PROP_ELEC_HEATING		0x00000002  // 2 Electricity heating effect
+#define PROP_NOWAVELENGTHS		0x00000004  // 4 Energy particle without wavelengths
+#define PROP_ENERGY_PART		0x00000008	// 8 VIBR absorb-able particle
 #define PROP_UNBREAKABLECLONE	0x00004000  // 2^14
 #define PROP_NODESTRUCT			0x00008000  // 2^15 Indestructible property
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it

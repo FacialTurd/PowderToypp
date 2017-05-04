@@ -32,6 +32,7 @@ Element_LIGH::Element_LIGH()
 	Description = "Lightning. Change the brush size to set the size of the lightning.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

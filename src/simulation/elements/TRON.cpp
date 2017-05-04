@@ -31,6 +31,7 @@ Element_TRON::Element_TRON()
 	Description = "Smart particles, Travels in straight lines and avoids obstacles. Grows with time.";
 
 	Properties = TYPE_SOLID|PROP_LIFE_DEC|PROP_LIFE_KILL;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

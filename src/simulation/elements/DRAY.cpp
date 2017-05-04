@@ -31,7 +31,7 @@ Element_DRAY::Element_DRAY()
 	Description = "Duplicator ray. Replicates a line of particles in front of it.";
 
 	Properties = TYPE_SOLID|PROP_LIFE_DEC;
-	Properties2 = PROP_DRAWONCTYPE;
+	Properties2 = PROP_DRAWONCTYPE | PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
