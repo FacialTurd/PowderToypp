@@ -7,8 +7,8 @@ struct Particle;
 class E189_Update
 {
 public:
-	E189_Update();
-	virtual ~E189_Update();
+	E189_Update() { }
+	virtual ~E189_Update() { }
 	static int update(UPDATE_FUNC_ARGS);
 	static int graphics(GRAPHICS_FUNC_ARGS);
 	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);

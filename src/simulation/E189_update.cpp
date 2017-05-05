@@ -21,11 +21,6 @@ unsigned msvc_clz(unsigned a)
 #define __builtin_clz msvc_clz
 #endif
 
-E189_Update::E189_Update()
-{
-	// null constructor
-}
-
 int E189_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, legacyUpdate, etc.
@@ -1791,5 +1786,3 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		
 	return return_value;
 }
-
-E189_Update::~E189_Update() {}

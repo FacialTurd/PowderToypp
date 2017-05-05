@@ -938,19 +938,19 @@ int LuaScriptInterface::simulation_partCreate2(lua_State * l)
 	newID2 = luacon_sim->create_part(newID, lua_tointeger(l, 2), lua_tointeger(l, 3), part_type, part_value);
 	if (argCount > 5 && newID2 >= 0)
 	{
-		part_value = lua_tointeger(l, 6);
+		int part_value2 = lua_tointeger(l, 6);
 		if (part_type == PT_LIFE || part_type == PT_FILT)
-			luacon_sim->parts[newID2].tmp = part_value;
+			luacon_sim->parts[newID2].tmp = part_value2;
 		else if (part_type == PT_WIFI || part_type == PT_PRTI || part_type == PT_PRTO || part_type == PT_E189 && part_value == 33)
-			luacon_sim->parts[newID2].temp = part_value * 100.0f;
+			luacon_sim->parts[newID2].temp = part_value2 * 100.0f;
 		else if (part_type == PT_PUMP || part_type == PT_GPMP || part_type == PT_PSNS || part_type == PT_TSNS || part_type == PT_DLAY || part_type == PT_FRAY || part_type == PT_RPEL)
 		{
-			luacon_sim->parts[newID2].temp = part_value + 273.15f;
+			luacon_sim->parts[newID2].temp = part_value2 + 273.15f;
 		}
 		else if (part_type == PT_ACEL || part_type == PT_DCEL)
-			luacon_sim->parts[newID2].life = part_value;
+			luacon_sim->parts[newID2].life = part_value2;
 		else
-			luacon_sim->parts[newID2].ctype = part_value;
+			luacon_sim->parts[newID2].ctype = part_value2;
 	}
 	lua_pushinteger(l, newID2);
 	return 1;
