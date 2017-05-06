@@ -379,7 +379,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							break;
 							case 11:
 								rctype = parts[r>>8].ctype;
-								rr = pmap[y+2*ry][x+2*rx];
+								rr = pmap[y-ry][x-rx];
 								{
 									int rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
 									switch (rr & 0xFF)
