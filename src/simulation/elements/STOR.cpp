@@ -31,6 +31,7 @@ Element_STOR::Element_STOR()
 	Description = "Storage. Captures and stores a single particle. Releases when charged with PSCN, also passes to PIPE.";
 
 	Properties = TYPE_SOLID|PROP_NOCTYPEDRAW;
+	Properties2 = PROP_DRAWONCTYPE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
