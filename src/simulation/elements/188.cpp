@@ -35,6 +35,7 @@ Element_E188::Element_E188()
 	Description = "Experimental element. acts like ISZS and E187.";
 
 	Properties = TYPE_SOLID | PROP_LIFE_DEC | PROP_NOSLOWDOWN | PROP_TRANSPARENT;
+	Properties2 = PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

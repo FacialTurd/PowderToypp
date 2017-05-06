@@ -61,7 +61,7 @@ int Element_CONV::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (!(sim->elements[r&0xFF].Properties & PROP_CLONE) &&
+					if (!(sim->elements[r&0xFF].Properties2 & PROP_CLONE) &&
 					    (r&0xFF)!=PT_STKM && (r&0xFF)!=PT_STKM2 &&
 					    (r&0xFF)!=PT_CONV && (r&0xFF)<PT_NUM)
 					{

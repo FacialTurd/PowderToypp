@@ -2408,6 +2408,7 @@ void GameView::OnDraw()
 		int type = sample_particle->type;
 		if (type)
 		{
+			int el_prop = ren->sim->elements[type].Properties2;
 			int ctype = sample_particle->ctype;
 			int partctype = ctype;
 			int partlife = sample_particle->life;
@@ -2417,45 +2418,55 @@ void GameView::OnDraw()
 			if (type == PT_PIPE || type == PT_PPIP)
 				ctype = sample_particle->tmp&0xFF;
 
-			if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
-				wavelengthGfx = (ctype&0x3FFFFFFF);
-			
-			if (type == PT_GLOW || type == PT_SOAP || type == PT_WIRE || type == PT_E187 || type == PT_E188) partint = 1;
-			
-			if (type == PT_E189)
+			if (el_prop & PROP_CTYPE_SPEC)
 			{
-				if (partlife == 4 || partlife == 7 || partlife == 11)
+				switch (type)
+				{
+				case PT_E189:
+					if (partlife == 4 || partlife == 7 || partlife == 11)
+						wavelengthGfx = (ctype&0x3FFFFFFF);
+					/*
+					else if (partlife == 5)
+					{
+						int partfilt = parttmp;
+						int partfilt2 = sample_particle->tmp2;
+						if (partfilt >= 1 && partfilt <= 6 && partfilt != 5)
+							wavelengthGfx = (ctype&0x3FFFFFFF);
+						if (partfilt == 5 || partfilt == 8 || !partfilt && ((0x0002E000 >> partfilt2) & 1))
+							partint = 1;
+					}
+					*/
+					else if (partlife == 13)
+					{
+						if ((sample_particle->tmp2 & 0x3) == 0x1)
+							wavelengthGfx = (ctype&0x3FFFFFFF);
+						else
+							partint = 1;
+					}
+					else if (partlife >= 0 && partlife < 64 && (E189IntM[partlife >> 5] >> (partlife & 0x1F)) & 1)
+					{
+						partint = 1;
+					}
+					else if (partlife == 10)
+					{
+						partstr = 1;
+					}
+					else if (partlife == 27)
+					{
+						ctype &= 0x1FF;
+					}
+					break;
+				}
+			}
+			else
+			{
+				// if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
+				if (el_prop & PROP_CTYPE_WAVEL)
 					wavelengthGfx = (ctype&0x3FFFFFFF);
-				/*
-				else if (partlife == 5)
-				{
-					int partfilt = parttmp;
-					int partfilt2 = sample_particle->tmp2;
-					if (partfilt >= 1 && partfilt <= 6 && partfilt != 5)
-						wavelengthGfx = (ctype&0x3FFFFFFF);
-					if (partfilt == 5 || partfilt == 8 || !partfilt && ((0x0002E000 >> partfilt2) & 1))
-						partint = 1;
-				}
-				*/
-				else if (partlife == 13)
-				{
-					if ((sample_particle->tmp2 & 0x3) == 0x1)
-						wavelengthGfx = (ctype&0x3FFFFFFF);
-					else
-						partint = 1;
-				}
-				else if (partlife >= 0 && partlife < 64 && (E189IntM[partlife >> 5] >> (partlife & 0x1F)) & 1)
-				{
+				
+				// if (type == PT_GLOW || type == PT_SOAP || type == PT_WIRE || type == PT_E187 || type == PT_E188)
+				if (el_prop & PROP_CTYPE_INTG)
 					partint = 1;
-				}
-				else if (partlife == 10)
-				{
-					partstr = 1;
-				}
-				else if (partlife == 27)
-				{
-					ctype &= 0x1FF;
-				}
 			}
 			
 			if (showDebug)
@@ -2555,7 +2566,7 @@ void GameView::OnDraw()
 					sampleInfo << ", Tmp: " << parttmp;
 
 					// only elements that use .tmp2 show it in the debug HUD
-					if (ren->sim->elements[type].Properties2 & PROP_DEBUG_USE_TMP2)
+					if (el_prop & PROP_DEBUG_USE_TMP2)
 					{
 					/* conditions:
 					  ( type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS

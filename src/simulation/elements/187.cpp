@@ -35,6 +35,7 @@ Element_E187::Element_E187()
 	Description = "Experimental element. acts like ISOZ.";
 
 	Properties = TYPE_LIQUID | PROP_LIFE_DEC | PROP_NOSLOWDOWN | PROP_TRANSPARENT;
+	Properties2 = PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

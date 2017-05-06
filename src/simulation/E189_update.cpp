@@ -377,6 +377,25 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									sim->lightningRecreate = 0;
 								sim->currentTick = 0;
 							break;
+							case 11:
+								rctype = parts[r>>8].ctype;
+								rr = pmap[y+2*ry][x+2*rx];
+								{
+									int rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
+									switch (rr & 0xFF)
+									{
+										case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
+										case PT_CRAY: tFlag = PROP_CTYPE_WAVEL; break;
+										case PT_DRAY: tFlag = PROP_CTYPE_SPEC; break;
+									}
+									switch (rctype)
+									{
+										case PT_PSCN: sim->elements[rrt].Properties2 |=  tFlag; break;
+										case PT_NSCN: sim->elements[rrt].Properties2 &= ~tFlag; break;
+										case PT_INWR: sim->elements[rrt].Properties2 ^=  tFlag; break;
+									}
+								}
+							break;
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
 							E189_Update::InsertText(sim, i, x, y, -rx, -ry);

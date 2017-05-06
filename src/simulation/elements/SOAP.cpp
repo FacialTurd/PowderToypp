@@ -31,7 +31,7 @@ Element_SOAP::Element_SOAP()
 	Description = "Soap. Creates bubbles, washes off deco color, and cures virus.";
 
 	Properties = TYPE_LIQUID|PROP_NEUTPENETRATE|PROP_LIFE_DEC;
-	Properties2 = PROP_DEBUG_USE_TMP2;
+	Properties2 = PROP_DEBUG_USE_TMP2 | PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

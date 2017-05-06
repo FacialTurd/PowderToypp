@@ -31,6 +31,7 @@ Element_BIZRS::Element_BIZRS()
 	Description = "Bizarre solid.";
 
 	Properties = TYPE_SOLID | PROP_TRANSPARENT;
+	Properties2 = PROP_CTYPE_WAVEL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

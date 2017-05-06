@@ -168,14 +168,23 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									tmpz = 1;
 									continue;
 								case 20:
-									if (!colored)
-										colored = 0x3FFFFFFF;
-									tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
-									if (parts[r].tmp & 0x1)
-										tmp = ~tmp;
-									colored &= tmp;
-									if (!colored)
-										break;
+									if (!modFlag)
+									{
+										if (!colored)
+											colored = 0x3FFFFFFF;
+										tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+										if (parts[r].tmp & 0x1)
+											tmp = ~tmp;
+										colored &= tmp;
+										if (!colored)
+											break;
+									}
+									else
+									{
+										parts[r].ctype = modProp;
+										if (!nostop)
+											goto break1a;
+									}
 									continue;
 								case 35:
 									if (!modFlag)

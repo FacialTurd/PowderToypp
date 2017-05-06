@@ -31,7 +31,7 @@ Element_FILT::Element_FILT()
 	Description = "Filter for photons, changes the color.";
 
 	Properties = TYPE_SOLID | PROP_NOAMBHEAT | PROP_LIFE_DEC | PROP_TRANSPARENT;
-	Properties2 = PROP_INVISIBLE;
+	Properties2 = PROP_INVISIBLE | PROP_CTYPE_WAVEL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

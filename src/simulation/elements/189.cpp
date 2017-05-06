@@ -38,7 +38,7 @@ Element_E189::Element_E189()
 	Description = "Experimental element. has multi-purpose.";
 
 	Properties = TYPE_SOLID | PROP_NOSLOWDOWN | PROP_TRANSPARENT;
-	Properties2 = PROP_DEBUG_USE_TMP2;
+	Properties2 = PROP_DEBUG_USE_TMP2 | PROP_CTYPE_SPEC;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
