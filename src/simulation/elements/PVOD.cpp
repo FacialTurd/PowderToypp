@@ -31,6 +31,7 @@ Element_PVOD::Element_PVOD()
 	Description = "Powered VOID. When activated, destroys entering particles.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DRAWONCTYPE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
