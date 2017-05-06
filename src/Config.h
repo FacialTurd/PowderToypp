@@ -38,6 +38,11 @@
 #define MOD_ID_2 1017640403
 #endif
 
+#ifndef PARENT_MOD_ID_2
+#define PARENT_MOD_ID_2 1017640403
+#endif
+
+
 #ifdef SNAPSHOT
 #define FUTURE_SAVE_VERSION 92
 #define FUTURE_MINOR_VERSION 0
