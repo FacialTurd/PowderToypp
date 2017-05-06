@@ -58,7 +58,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 		//has been cured, so change back into the original element
 		if (!parts[i].pavg[0])
 		{
-			int rt = parts[i].tmp2;
+			int rt = parts[i].tmp4;
 			if ((rt >> 16) == 1)
 			{
 				sim->part_change_type(i,x,y,PT_E189);
@@ -66,7 +66,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 			}
 			else
 				sim->part_change_type(i,x,y,rt);
-			parts[i].tmp2 = parts[i].tmp4;
+			// parts[i].tmp2 = parts[i].tmp4;
 			parts[i].tmp4 = 0;
 			parts[i].pavg[0] = 0;
 			parts[i].pavg[1] = 0;
@@ -124,13 +124,13 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				{
 					if (!(rndstore & 0x7))
 					{
-						parts[r>>8].tmp4 = parts[r>>8].tmp2;
+						// parts[r>>8].tmp4 = parts[r>>8].tmp2;
 						{
 							int rt = r&0xFF;
 							if (rt == PT_E189)
-								parts[r>>8].tmp2 = 0x10000 | parts[r>>8].life;
+								parts[r>>8].tmp4 = 0x10000 | parts[r>>8].life;
 							else
-								parts[r>>8].tmp2 = (r&0xFF);
+								parts[r>>8].tmp4 = (r&0xFF);
 						}
 						parts[r>>8].pavg[0] = 0;
 						if (parts[i].pavg[1])
