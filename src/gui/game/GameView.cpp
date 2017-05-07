@@ -2482,9 +2482,10 @@ void GameView::OnDraw()
 					sampleInfo << c->ElementResolve(type, ctype);
 					const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
 					if (parttmp>=0 && parttmp<=11)
-						sampleInfo << " (" << filtModes[parttmp] << ")";
+						sampleInfo << " (" << filtModes[parttmp]; // << ")";
 					else
-						sampleInfo << " (unknown mode)";
+						sampleInfo << " (unknown mode";
+					sampleInfo << ", " << ctype << ")";
 				}
 				else if (type == PT_PINVIS)
 				{
