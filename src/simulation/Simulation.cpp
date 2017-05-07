@@ -2166,6 +2166,7 @@ void Simulation::init_can_move()
 	// can_move[PT_DEST][PT_BCLN] = 0;
 	// can_move[PT_DEST][PT_PBCN] = 0;
 	can_move[PT_DEST][PT_SPRK] = 3;
+	can_move[PT_DEST][PT_PINVIS] = 3;
 
 	can_move[PT_NEUT][PT_INVIS] = 2;
 	can_move[PT_ELEC][PT_LCRY] = 2;
