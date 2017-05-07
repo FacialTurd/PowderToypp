@@ -800,7 +800,7 @@ void Element_STKM::STKM_set_life_1(Simulation *sim, int s, int i)
 }
 
 
-//#TPT-Directive ElementHeader Element_STKM static void removeSTKMChilds(Simulation *sim, playerst* player)
+//#TPT-Directive ElementHeader Element_STKM static void removeSTKMChilds(Simulation *sim, playerst* playerp)
 void Element_STKM::removeSTKMChilds(Simulation *sim, playerst* playerp)
 {
 	int child_f = playerp->firstChild;
@@ -811,7 +811,7 @@ void Element_STKM::removeSTKMChilds(Simulation *sim, playerst* playerp)
 	}
 }
 
-//#TPT-Directive ElementHeader Element_STKM static void createSTKMChild(Simulation *sim, playerst* player, int i, int np)
+//#TPT-Directive ElementHeader Element_STKM static void createSTKMChild(Simulation *sim, playerst* playerp, int i, int np)
 void Element_STKM::createSTKMChild(Simulation *sim, playerst* playerp, int i, int np)
 {
 	int old_FIGH_id, new_FIGH_id;
