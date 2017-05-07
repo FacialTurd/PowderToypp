@@ -31,7 +31,7 @@ Element_BIZRG::Element_BIZRG()
 	Description = "Bizarre gas.";
 
 	Properties = TYPE_GAS | PROP_TRANSPARENT;
-	Properties2 = PROP_CTYPE_WAVEL;
+	Properties2 |= PROP_CTYPE_WAVEL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

@@ -31,7 +31,7 @@ Element_BIZR::Element_BIZR()
 	Description = "Bizarre... contradicts the normal state changes. Paints other elements with its deco color.";
 
 	Properties = TYPE_LIQUID | PROP_TRANSPARENT;
-	Properties2 = PROP_CTYPE_WAVEL;
+	Properties2 |= PROP_CTYPE_WAVEL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

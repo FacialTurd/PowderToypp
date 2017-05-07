@@ -31,7 +31,7 @@ Element_GLOW::Element_GLOW()
 	Description = "Glow, Glows under pressure.";
 
 	Properties = TYPE_LIQUID|PROP_LIFE_DEC | PROP_TRANSPARENT;
-	Properties2 = PROP_CTYPE_INTG;
+	Properties2 |= PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
