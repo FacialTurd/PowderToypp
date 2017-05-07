@@ -31,7 +31,8 @@ Element_VIRS::Element_VIRS()
 	Description = "Virus. Turns everything it touches into virus.";
 
 	Properties = TYPE_LIQUID|PROP_DEADLY;
-	Properties2 |= PROP_DEBUG_USE_TMP2;
+	// Properties2 |= PROP_DEBUG_USE_TMP2;
+	// VIRS using "tmp4", not "tmp2"
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
