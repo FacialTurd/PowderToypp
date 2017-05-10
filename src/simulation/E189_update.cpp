@@ -376,6 +376,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								if (sim->lightningRecreate < 0)
 									sim->lightningRecreate = 0;
 								sim->currentTick = 0;
+								if (parts[r>>8].ctype == PT_INST)
+									sim->elementRecount = true;
 							break;
 							case 11:
 								rctype = parts[r>>8].ctype;

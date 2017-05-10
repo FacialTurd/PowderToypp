@@ -258,7 +258,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					// for wireless2[][0] - see PINVIS.cpp and Simulation.cpp
 					if (parts[i].life<4)
 					{
-						if (sender == PT_PSCN && parts[r>>8].life<10)
+						if (sender == PT_NSCN && parts[r>>8].life>=10)
 						{
 							// Instantly activate PINV
 							/*
@@ -266,10 +266,10 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 							sim->wireless2[tmp >> 5][1] |= 1 << (tmp & 0x1F);
 							*/
 							PropertyValue value;
-							value.Integer = 10;
+							value.Integer = 9;
 							sim->flood_prop(x+rx, y+ry, offsetof(Particle, life), value, StructProperty::Integer);
 						}
-						else if (sender == PT_NSCN)
+						else if (sender == PT_PSCN)
 						{
 							// Instantly deactivate PINV
 							/*
@@ -277,7 +277,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 							sim->wireless2[tmp >> 5][1] &= ~(1 << (tmp & 0x1F));
 							*/
 							PropertyValue value;
-							value.Integer = 9;
+							value.Integer = 10;
 							sim->flood_prop(x+rx, y+ry, offsetof(Particle, life), value, StructProperty::Integer);
 						}
 					}
