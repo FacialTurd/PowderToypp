@@ -251,6 +251,18 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 19:
 									r_incr += (int)((parts[r].temp + 26.85f) / 100) - 3;
 									continue;
+								case 23:
+									for (; ; nyy+=nyi, nxx+=nxi)
+									{
+										int front1 = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
+										int ftype1 = front1 & 0xFF;
+										if (ftype1 != PT_BIZR && ftype1 != PT_BIZRG && ftype1 != PT_BIZRS)
+										{
+											break;
+										}
+										colored = parts[front1 >> 8].ctype;
+									}
+									continue;
 								}
 							}
 							else if (noturn >= 2)

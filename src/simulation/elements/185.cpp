@@ -248,7 +248,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				return 0;
 			case PT_PLSM:
 				sim->create_part(i, x, y, PT_PLSM);
-				return 0;
+				return 1;
 			case PT_SAND:
 				if (parts[r>>8].temp >= 1750)
 				{
@@ -267,7 +267,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 			case PT_URAN:
 				sim->create_part(i, x, y, PT_PLUT);
 				sim->create_part(r>>8, x+rx, y+ry, PT_PLUT);
-				return 0;
+				return 1;
 			}
 		}
 		return 0;
@@ -282,9 +282,9 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				if (rr >= 0)
 				{
 					parts[rr].temp = tempTemp;
-					parts[rr].tmp  = parts[i].tmp + (rand() % 3 - 1);
+					parts[rr].tmp  = parts[i].tmp + ((rand() % 10 - 1) >> 3);
 					parts[rr].tmp2 = 1;
-					parts[rr].life = (39 + rand() % 6) >> 2;
+					parts[rr].life = (79 + rand() % 6) >> 2;
 				}
 			}
 			sim->kill_part(i);

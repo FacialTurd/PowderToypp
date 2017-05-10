@@ -699,6 +699,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"partCreate", simulation_partCreate},
 		{"partCreate2", simulation_partCreate2},
 		{"partProperty", simulation_partProperty},
+		{"secondaryDeco", simulation_secondaryDeco},
 		{"partPosition", simulation_partPosition},
 		{"partID", simulation_partID},
 		{"partKill", simulation_partKill},
@@ -1118,6 +1119,34 @@ int LuaScriptInterface::simulation_partProperty(lua_State * l)
 				lua_pushnil(l);
 		}
 		return 1;
+	}
+}
+
+int LuaScriptInterface::simulation_secondaryDeco(lua_State * l)
+{
+	int argCount = lua_gettop(l);
+	int particleID = luaL_checkinteger(l, 1);
+
+	if (particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
+	{
+		if (argCount == 1)
+		{
+			lua_pushnil(l);
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+	unsigned int * deco = &(luacon_sim->parts[particleID].cdcolour);
+	if (argCount == 1)
+	{
+		lua_pushinteger(l, *deco); // or push *(int*) deco
+		return 1;
+	}
+	else
+	{
+		*deco = lua_tointeger(l, 2);
+		return 0;
 	}
 }
 
