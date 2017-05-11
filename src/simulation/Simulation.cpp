@@ -5491,7 +5491,7 @@ void Simulation::CheckStacking()
 					int t = parts[i].type;
 					int x = (int)(parts[i].x+0.5f);
 					int y = (int)(parts[i].y+0.5f);
-					if (x>=0 && y>=0 && x<XRES && y<YRES && !(elements[t].Properties&TYPE_ENERGY))
+					if (x>=0 && y>=0 && x<XRES && y<YRES && !(elements[t].Properties& (TYPE_ENERGY | PROP_NO_NBHL_GEN) ))
 					{
 						if (pmap_count[y][x]>=NPART)
 						{
