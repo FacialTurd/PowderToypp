@@ -5366,7 +5366,7 @@ void Simulation::RecalcFreeParticles()
 			if (x>=0 && y>=0 && x<XRES && y<YRES)
 			{
 				
-				if (t == PT_PINVIS && (parts[i].tmp2>>8) >= i)
+				if (t == PT_PINVIS && (parts[i].tmp4>>8) >= i)
 					parts[i].tmp4 = 0;
 
 				if (elements[t].Properties & TYPE_ENERGY)
