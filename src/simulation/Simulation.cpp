@@ -2440,20 +2440,21 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	{
 		if (parts[i].type == PT_PHOT)
 		{
-			if ((r&0xFF) == PT_PINVIS)
-				return 1;
-			if ((r&0xFF) == PT_GLOW)
+			switch (r&0xFF)
 			{
+			case PT_PINVIS:
+				return 1;
+			case PT_GLOW:
 				if (!parts[r>>8].life && rand() < RAND_MAX/30)
 				{
 					parts[r>>8].life = 120;
 					create_gain_photon(i);
 				}
-			}
-			else if ((r&0xFF) == PT_FILT)
+				return 1;
+			case PT_FILT:
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
-			else if ((r&0xFF) == PT_E189)
-			{
+				return 1;
+			case PT_E189:
 				switch (parts[r>>8].life)
 				{
 				case 5:
@@ -2464,9 +2465,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 						Element_E189::duplicatePhotons(this, i, nx, ny, &parts[i], &parts[r>>8]);
 					break;
 				}
-			}
-			else if ((r&0xFF) == PT_C5)
-			{
+				return 1;
+			case PT_C5:
 				if (parts[r>>8].life > 0 && (parts[r>>8].ctype & parts[i].ctype & 0xFFFFFFC0))
 				{
 					float vx = ((parts[r>>8].tmp << 16) >> 16) / 255.0f;
@@ -2492,46 +2492,45 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					parts[r>>8].tmp2 = (0xFFFF & (int)((parts[i].x - x) * 255.0f)) | (0xFFFF0000 & (int)((parts[i].y - y) * 16711680.0f));
 					kill_part(i);
 				}
-			}
-			else if (!(E189_pause & 0x8)) {
-				float pressureResistance;
-				switch (r&0xFF)
+				return 1;
+			case PT_INVIS:
+				if (E189_pause & 0x8)
+					return 1;
+				pressureResistance = 0.0f;
+				if (parts[r>>8].tmp > 0)
+					pressureResistance = (float)parts[r>>8].tmp;
+				else
+					pressureResistance = sim_max_pressure;
+				if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
 				{
-				case PT_INVIS:
-					pressureResistance = 0.0f;
-					if (parts[r>>8].tmp > 0)
-						pressureResistance = (float)parts[r>>8].tmp;
-					else
-						pressureResistance = sim_max_pressure;
-					if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
-					{
-						part_change_type(i,x,y,PT_NEUT);
-						parts[i].ctype = 0;
-					}
-					break;
-				case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
-					part_change_type(i, x, y, PT_ELEC);
+					part_change_type(i,x,y,PT_NEUT);
 					parts[i].ctype = 0;
-					break;
-				case PT_H2:
-					if (!(parts[i].tmp&0x1))
-					{
-						part_change_type(i, x, y, PT_PROT);
-						parts[i].ctype = 0;
-						parts[i].tmp2 = 0x1;
-
-						create_part(r>>8, x, y, PT_ELEC);
-						return 1;
-					}
-					break;
-				case PT_GPMP:
-					if (parts[r>>8].life == 0)
-					{
-						part_change_type(i, x, y, PT_GRVT);
-						parts[i].tmp = parts[r>>8].temp - 273.15f;
-					}
-					break;
 				}
+				break;
+			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
+				if (E189_pause & 0x8)
+					return 1;
+				part_change_type(i, x, y, PT_ELEC);
+				parts[i].ctype = 0;
+				break;
+			case PT_H2:
+				if (!((parts[i].tmp & 0x1) || (E189_pause & 0x8)))
+				{
+					part_change_type(i, x, y, PT_PROT);
+					parts[i].ctype = 0;
+					parts[i].tmp2 = 0x1;
+
+					create_part(r>>8, x, y, PT_ELEC);
+					return 1;
+				}
+				break;
+			case PT_GPMP:
+				if (parts[r>>8].life == 0 && !(E189_pause & 0x8))
+				{
+					part_change_type(i, x, y, PT_GRVT);
+					parts[i].tmp = parts[r>>8].temp - 273.15f;
+				}
+				break;
 			}
 		}
 		else if (parts[i].type == PT_NEUT)
