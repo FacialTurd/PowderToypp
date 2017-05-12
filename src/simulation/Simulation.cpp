@@ -2125,7 +2125,6 @@ void Simulation::init_can_move()
 		can_move[movingType][PT_FIGH] = 0;
 		//INVS behaviour varies with pressure
 		can_move[movingType][PT_INVIS] = 3;
-		can_move[movingType][PT_PINVIS] = 3;
 		//stop CNCT from being displaced by other particles
 		can_move[movingType][PT_CNCT] = 0;
 		//VOID and PVOD behaviour varies with powered state and ctype
@@ -2158,6 +2157,19 @@ void Simulation::init_can_move()
 		}
 		if (elements[destinationType].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
 			can_move[PT_DEST][destinationType] = 0;
+
+		if (destinationType == PT_E182 || destinationType == PT_E185  || destinationType == PT_URAN || destinationType == PT_H2   ||
+			destinationType == PT_PLSM || destinationType == PT_NBLE  || destinationType == PT_CO2  || destinationType == PT_O2   ||
+			destinationType == PT_FILT || destinationType == PT_ISOZ  || destinationType == PT_ISZS || destinationType == PT_EXOT ||
+			destinationType == PT_TUNG || destinationType == PT_INVIS || destinationType == PT_SPNG || destinationType == PT_GEL  ||
+			destinationType == PT_VIRS || destinationType == PT_VRSS)
+			can_move[PT_DEST][destinationType] = 2;
+	}
+	
+	for (movingType = 1; movingType < PT_NUM; movingType++)
+	{
+		if (destinationType != PT_PHOT || destinationType != PT_GRVT)
+			can_move[movingType][PT_PINVIS] = 3;
 	}
 	
 
@@ -2168,7 +2180,6 @@ void Simulation::init_can_move()
 	// can_move[PT_DEST][PT_BCLN] = 0;
 	// can_move[PT_DEST][PT_PBCN] = 0;
 	can_move[PT_DEST][PT_SPRK] = 3;
-	can_move[PT_DEST][PT_PINVIS] = 3;
 
 	can_move[PT_NEUT][PT_INVIS] = 2;
 	can_move[PT_ELEC][PT_LCRY] = 2;
@@ -2197,25 +2208,7 @@ void Simulation::init_can_move()
 	can_move[PT_ELEC][PT_E185] = 2;
 	can_move[PT_E185][PT_YEST] = 0; // moving type = "E185", type at destination = yeast
 
-	can_move[PT_E186][PT_E182] = 2;
-	can_move[PT_E186][PT_E185] = 2;
-	can_move[PT_E186][PT_URAN] = 2;
-	can_move[PT_E186][PT_H2] = 2;
-	can_move[PT_E186][PT_PLSM] = 2;
-	can_move[PT_E186][PT_NBLE] = 2;
-	can_move[PT_E186][PT_CO2] = 2;
-	can_move[PT_E186][PT_O2] = 2;
-	can_move[PT_E186][PT_FILT] = 2;
-	can_move[PT_E186][PT_ISOZ] = 2;
-	can_move[PT_E186][PT_ISZS] = 2;
-	can_move[PT_E186][PT_EXOT] = 2;
-	can_move[PT_E186][PT_TUNG] = 2;
-	can_move[PT_E186][PT_INVIS] = 2;
-	can_move[PT_E186][PT_SPNG] = 2;
-	can_move[PT_E186][PT_GEL] = 2;
 	can_move[PT_E186][PT_BRMT] = 3;
-	can_move[PT_E186][PT_VIRS] = 2;
-	can_move[PT_E186][PT_VRSS] = 2;
 	
 	can_move[PT_PROT][PT_E189] = 3;
 	can_move[PT_GRVT][PT_E189] = 3;
