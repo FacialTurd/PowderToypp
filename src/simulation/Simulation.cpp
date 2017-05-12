@@ -2168,7 +2168,7 @@ void Simulation::init_can_move()
 	
 	for (movingType = 1; movingType < PT_NUM; movingType++)
 	{
-		if (movingType != PT_PHOT || movingType != PT_GRVT)
+		if (movingType != PT_PHOT && movingType != PT_GRVT)
 			can_move[movingType][PT_PINVIS] = 3;
 	}
 	
@@ -2440,6 +2440,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	{
 		if (parts[i].type == PT_PHOT)
 		{
+			if ((r&0xFF) == PT_PINVIS)
+				return 1;
 			if ((r&0xFF) == PT_GLOW)
 			{
 				if (!parts[r>>8].life && rand() < RAND_MAX/30)
