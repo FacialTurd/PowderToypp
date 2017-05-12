@@ -524,6 +524,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
+		sample.cparticle = NULL;
 		if (photons[y][x])
 		{
 			sample.particle = parts[photons[y][x]>>8];
@@ -533,7 +534,8 @@ SimulationSample Simulation::GetSample(int x, int y)
 		{
 			sample.particle = parts[pmap[y][x]>>8];
 			sample.ParticleID = pmap[y][x]>>8;
-			sample.cparticle = &(parts[sample.particle.tmp4>>8]);
+			if ((pmap[y][x] & 0xFF) == PT_PINVIS)
+				sample.cparticle = &(parts[sample.particle.tmp4>>8]);
 		}
 		if (bmap[y/CELL][x/CELL])
 		{
@@ -5366,10 +5368,12 @@ void Simulation::RecalcFreeParticles()
 			if (x>=0 && y>=0 && x<XRES && y<YRES)
 			{
 				
-				if (t == PT_PINVIS && (parts[i].tmp4>>8) >= i)
-					parts[i].tmp4 = 0;
-
-				if (elements[t].Properties & TYPE_ENERGY)
+				if (t == PT_PINVIS)
+				{
+					parts[i].tmp4 = pmap[y][x];
+					pmap[y][x] = t|(i<<8);
+				}
+				else if (elements[t].Properties & TYPE_ENERGY)
 					photons[y][x] = t|(i<<8);
 				else
 				{
