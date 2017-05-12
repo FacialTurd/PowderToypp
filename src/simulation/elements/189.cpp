@@ -228,12 +228,10 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 				sim->kill_part(i);
 				break;
 			case 7: // PHOT->NEUT
-				part_phot->ctype = 0x102;
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_NEUT);
 				break;
 			case 8: // PHOT->ELEC
-				part_phot->ctype = 0x103;
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_ELEC);
 				break;
 			case 9: // PHOT->PROT
 				// part_phot->tmp = 0;
