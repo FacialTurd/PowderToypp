@@ -2496,15 +2496,17 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			case PT_INVIS:
 				if (E189_pause & 0x8)
 					return 1;
-				pressureResistance = 0.0f;
-				if (parts[r>>8].tmp > 0)
-					pressureResistance = (float)parts[r>>8].tmp;
-				else
-					pressureResistance = sim_max_pressure;
-				if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
 				{
-					part_change_type(i,x,y,PT_NEUT);
-					parts[i].ctype = 0;
+					float pressureResistance = 0.0f;
+					if (parts[r>>8].tmp > 0)
+						pressureResistance = (float)parts[r>>8].tmp;
+					else
+						pressureResistance = sim_max_pressure;
+					if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
+					{
+						part_change_type(i,x,y,PT_NEUT);
+						parts[i].ctype = 0;
+					}
 				}
 				break;
 			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
