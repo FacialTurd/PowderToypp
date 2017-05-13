@@ -31,7 +31,7 @@ Element_EMBR::Element_EMBR()
 	Description = "Sparks. Formed by explosions.";
 
 	Properties = TYPE_PART|PROP_LIFE_DEC|PROP_LIFE_KILL|PROP_SPARKSETTLE | PROP_UNLIMSTACKING;
-	Properties2 |= PROP_CTYPE_INTG
+	Properties2 |= PROP_CTYPE_INTG ;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
