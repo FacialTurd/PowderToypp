@@ -2443,6 +2443,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			switch (r&0xFF)
 			{
 			case PT_PINVIS:
+				// PINV + PHOT -> PINV + ?
+				// part_change_type(i, x, y, PT_???);
 				return 1;
 			case PT_GLOW:
 				if (!parts[r>>8].life && rand() < RAND_MAX/30)
