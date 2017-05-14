@@ -1335,6 +1335,32 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 			}
 			goto continue1a;
+		case 23: // powered BTRY
+			{
+				int old_tmp = rtmp;
+				for (rx=-2; rx<3; rx++)
+				for (ry=-2; ry<3; ry++)
+				if (BOUNDS_CHECK && (rx || ry) && abs(rx)+abs(ry) < 4)
+				{
+					r = pmap[y+ry][x+rx];
+					if (!r)
+						continue;
+					pavg = sim->parts_avg(i,r>>8,PT_INSL);
+					if (pavg != PT_INSL && pavg != PT_INDI)
+					{
+						if ((r&0xFF) == PT_SPRK)
+						{
+							if (parts[r>>8].ctype == PT_NSCN)
+								parts[i].tmp = 0;
+							else if (parts[r>>8].ctype == PT_PSCN)
+								parts[i].tmp = 1;
+						}
+						else if (old_tmp && rt != PT_PSCN && rt != PT_NSCN &&
+							sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+							conductTo (sim, r, x+rx, y+ry, parts)
+					}
+				}
+			}
 		}
 		break;
 			
