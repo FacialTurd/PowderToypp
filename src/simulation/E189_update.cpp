@@ -1356,8 +1356,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[i].tmp = 1;
 						}
 						else if (old_tmp && rt != PT_PSCN && rt != PT_NSCN &&
-							sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
-							conductTo (sim, r, x+rx, y+ry, parts)
+							(sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+							conductTo (sim, r, x+rx, y+ry, parts);
 					}
 				}
 			}
