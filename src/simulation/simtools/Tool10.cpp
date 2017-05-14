@@ -4,14 +4,15 @@
 Tool_Tool10::Tool_Tool10()
 {
 	Identifier = "DEFAULT_TOOL_TOOL10";
-	Name = "T10";
+	Name = "CNDT";
 	Colour = PIXPACK(0xEE22EE);
-	Description = "Experimental tool.";
+	Description = "TESC conductor";
 }
 
 int Tool_Tool10::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
 {
-	/* freed */
+	int id = sim->create_part(-1, x, y, PT_TESC, 0);
+	return (id >= 0 ? 1 : 0);
 }
 
 Tool_Tool10::~Tool_Tool10() {}
