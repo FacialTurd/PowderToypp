@@ -1348,7 +1348,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					pavg = sim->parts_avg(i,r>>8,PT_INSL);
 					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
-						if ((r&0xFF) == PT_SPRK)
+						rt = (r&0xFF);
+						if (rt == PT_SPRK)
 						{
 							if (parts[r>>8].ctype == PT_NSCN)
 								parts[i].tmp = 0;
@@ -1361,6 +1362,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 				}
 			}
+			return 1;
 		}
 		break;
 			
