@@ -109,6 +109,8 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case PT_TESC:
+		if (parts[i].tmp <= 4)
+			break;
 		if (parts[i].tmp>300)
 			parts[i].tmp=300;
 		for (rx=-1; rx<2; rx++)
@@ -118,7 +120,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (r)
 						continue;
-					if (parts[i].tmp>4 && rand()%(parts[i].tmp*parts[i].tmp/20+6)==0)
+					if (/* parts[i].tmp>4 && */ rand()%(parts[i].tmp*parts[i].tmp/20+6)==0)
 					{
 						int p = sim->create_part(-1, x+rx*2, y+ry*2, PT_LIGH);
 						if (p!=-1)

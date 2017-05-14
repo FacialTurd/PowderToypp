@@ -1,5 +1,8 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_146 PT_146 146
+
+// TODO: Replace this with Life sensor (LSNS)
+
 Element_146::Element_146()
 {
 	Identifier = "DEFAULT_PT_146";
