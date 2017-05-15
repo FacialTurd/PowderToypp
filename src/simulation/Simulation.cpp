@@ -810,7 +810,7 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 		}
 		for(i=1; i<((YRES/CELL)-1); i++)
 		{
-			if (bmap[0][i] == WL_BREAKABLE_WALL)
+			if (bmap[i][0] == WL_BREAKABLE_WALL)
 				breakable_wall_count--;
 			bmap[i][0] = WL_WALL;
 			if (bmap[i][XRES/CELL-1] == WL_BREAKABLE_WALL)
