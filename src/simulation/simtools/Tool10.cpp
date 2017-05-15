@@ -6,7 +6,7 @@ Tool_Tool10::Tool_Tool10()
 	Identifier = "DEFAULT_TOOL_TOOL10";
 	Name = "CNDT";
 	Colour = PIXPACK(0xEE22EE);
-	Description = "TESC conductor";
+	Description = "Conductor, virtually indestructible.";
 }
 
 int Tool_Tool10::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
