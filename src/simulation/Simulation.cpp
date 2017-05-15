@@ -414,6 +414,8 @@ void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
 		{
 			if (bmap[y][x] == WL_GRAV)
 				gravWallChanged = true;
+			else if (bmap[y][x] == WL_BREAKABLE_WALL)
+				breakable_wall_count --;
 			bmap[y][x] = 0;
 			emap[y][x] = 0;
 		}
@@ -778,12 +780,20 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 	case 2:
 		for(int i = 0; i<(XRES/CELL); i++)
 		{
+			if (bmap[0][i] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[0][i] = 0;
+			if (bmap[YRES/CELL-1][i] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[YRES/CELL-1][i] = 0;
 		}
 		for(int i = 1; i<((YRES/CELL)-1); i++)
 		{
+			if (bmap[i][0] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[i][0] = 0;
+			if (bmap[i][XRES/CELL-1] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[i][XRES/CELL-1] = 0;
 		}
 		break;
@@ -791,12 +801,20 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 		int i;
 		for(i=0; i<(XRES/CELL); i++)
 		{
+			if (bmap[0][i] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[0][i] = WL_WALL;
+			if (bmap[YRES/CELL-1][i] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[YRES/CELL-1][i] = WL_WALL;
 		}
 		for(i=1; i<((YRES/CELL)-1); i++)
 		{
+			if (bmap[0][i] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[i][0] = WL_WALL;
+			if (bmap[i][XRES/CELL-1] == WL_BREAKABLE_WALL)
+				breakable_wall_count--;
 			bmap[i][XRES/CELL-1] = WL_WALL;
 		}
 		break;
