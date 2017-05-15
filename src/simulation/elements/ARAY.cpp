@@ -70,7 +70,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int spc_conduct = 0, ray_less = 0;
 						int colored = 0, noturn = 0, rt, tmp, tmp2;
 						int max_turn = parts[i].tmp, tmpz = 0;
-						int r_incr = 1;
+						int r_incr = 1, pass_wall = 1;
 						if (max_turn <= 0)
 							max_turn = 256;
 						modFlag = false;
@@ -80,6 +80,12 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							{
 							break1a:
 								break;
+							}
+							if (!pass_wall)
+							{
+								int block1 = sim->bmap[(y+nyi+nyy)/CELL][(x+nxi+nxx)/CELL];
+								if (block1 && block1 != WL_STREAM)
+									break;
 							}
 
 							r = pmap[y+nyi+nyy][x+nxi+nxx];
@@ -163,6 +169,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											spc_conduct = temp_z1[2];
 										if (tmp & 8)
 											ray_less = temp_z1[3];
+										if (tmp & 16)
+											pass_wall = !pass_wall;
 										break;
 									}
 									tmpz = 1;
