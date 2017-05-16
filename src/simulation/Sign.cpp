@@ -153,6 +153,11 @@ std::string sign::getText(Simulation *sim)
 					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].vy);
 				}
+				else if (!strcmp(matched1, "dcolor") || !strcmp(matched1, "dcolour"))
+				{
+					structtype = 4;
+					num1 = sim->parts[r>>8].dcolour;
+				}
 				else if (!strcmp(matched1, "pavg0"))
 				{
 					structtype = 1;
