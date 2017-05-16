@@ -5390,15 +5390,15 @@ void Simulation::RecalcFreeParticles()
 				else
 				{
 					pmapp1 = pmapp2 = &(pmap[y][x]);
-					if ((*pmapp2 & 0xFF) == PT_PINVIS) // if pmap [y][x] value is PINV
-						pmapp2 = &(parts[*pmapp2].tmp4);
+					if ((*pmapp1 & 0xFF) == PT_PINVIS) // if pmap [y][x] value is PINV
+						pmapp2 = &(parts[*pmapp1 >> 8].tmp4);
 
 					// Particles are sometimes allowed to go inside INVS and FILT
 					// To make particles collide correctly when inside these elements, these elements must not overwrite an existing pmap entry from particles inside them
 					if (t == PT_PINVIS)
 					{
-						*pmapp1 = PT_PINVIS | (i<<8);
 						parts[i].tmp4 = *pmapp2;
+						*pmapp1 = PT_PINVIS | (i<<8);
 					}
 					else if (!*pmapp2 || !(elements[t].Properties2 & PROP_INVISIBLE))
 					{

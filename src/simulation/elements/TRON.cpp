@@ -299,7 +299,7 @@ int Element_TRON::trymovetron(Simulation * sim, int x, int y, int dir, int i, in
 bool Element_TRON::canmovetron(Simulation * sim, int r, int len)
 {
 	if ((r&0xFF) == PT_PINVIS && sim->parts[r>>8].life >= 10)
-		r = parts[r>>8].tmp4;
+		r = sim->parts[r>>8].tmp4;
 	if (!r || ( (r&0xFF) == PT_SWCH && sim->parts[r>>8].life >= 10) || ((r&0xFF) == PT_INVIS && sim->parts[r>>8].tmp2 == 1))
 		return true;
 	if ((((sim->elements[r&0xFF].Properties & PROP_LIFE_KILL_DEC) && sim->parts[r>>8].life > 0)|| ((sim->elements[r&0xFF].Properties & PROP_LIFE_KILL) && (sim->elements[r&0xFF].Properties & PROP_LIFE_DEC))) && sim->parts[r>>8].life < len)
