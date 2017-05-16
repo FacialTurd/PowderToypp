@@ -197,6 +197,8 @@ std::string sign::getText(Simulation *sim)
 					case 1: sprintf(buff, "%3.2f", * (float*) & num1); break;
 					case 2:
 					case 3:
+					{
+						bool overridden1 = false;
 						if ( structtype == 3 )
 						{
 							int num1h = (num1 >> 8); // .ctype?
@@ -210,6 +212,7 @@ std::string sign::getText(Simulation *sim)
 						{
 							sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
 						}
+					}
 					break;
 					case 4: sprintf(buff, "0x%08x", num1); break;
 					case 5: sprintf(buff, "0x%08X", num1); break;

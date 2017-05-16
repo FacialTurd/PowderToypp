@@ -1008,6 +1008,48 @@ int LuaScriptInterface::simulation_partPosition(lua_State * l)
 	}
 }
 
+int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)
+{
+	int ni = lua_tointeger(l, 1); // new index
+	int argCount = lua_gettop(l);
+	if(ni < -3 || ni >= NPART) // check new index
+	{
+		lua_pushinteger(l, -1);
+		return 1;
+	}
+	if(argCount == 4)
+	{
+		float xx = (float)lua_tonumber(l, 2); // new x
+		float yy = (float)lua_tonumber(l, 3); // new y
+		int i = lua_tointeger(l, 4);
+		int FIGH_tmp;
+		if(i < 0 || i >= NPART) // check parent index
+		{
+			lua_pushinteger(l, -1);
+			return 1;
+		}
+		int t = luacon_sim->parts[i].type;
+		int tt = (t == PT_SPRK ? t : PT_METL); // SPRK hack
+		int x = (int)(luacon_sim->parts[i].x + 0.5f); // parent x
+		int y = (int)(luacon_sim->parts[i].y + 0.5f); // parent y
+		int p = luacon_sim->create_part (ni, (int)(xx+0.5f), (int)(yy+0.5f), tt);
+		if (p >= 0)
+		{
+			if (t != tt)
+				luacon_sim->part_change_type(p, (int)(xx+0.5f), (int)(yy+0.5f), t); // SPRK hack
+			FIGH_tmp = luacon_sim->parts[p].tmp;
+			luacon_sim->parts[p] = luacon_sim->parts[i]; // duplicating particle
+			luacon_sim->parts[p].x = xx; // set .x value
+			luacon_sim->parts[p].y = yy; // set .y value
+			if (t == PT_FIGH)
+				luacon_sim->parts[p].tmp = FIGH_tmp;
+		}
+		return 1;
+	}
+	lua_pushinteger(l, -1);
+	return 1;
+}
+
 int LuaScriptInterface::simulation_partProperty(lua_State * l)
 {
 	int argCount = lua_gettop(l);
