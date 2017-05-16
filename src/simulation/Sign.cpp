@@ -144,9 +144,15 @@ std::string sign::getText(Simulation *sim)
 				}
 				*/
 				else if (!strcmp(matched1, "vx"))
+				{
+					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].vx);
+				}
 				else if (!strcmp(matched1, "vy"))
+				{
+					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].vy);
+				}
 				else if (!strcmp(matched1, "pavg0"))
 				{
 					structtype = 1;
