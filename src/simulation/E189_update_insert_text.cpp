@@ -10,10 +10,13 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 	// simulation, index, position (x2), direction (x2)
 	int ct_x = (sim->parts[i].ctype & 0xFFFF), ct_y = ((sim->parts[i].ctype >> 16) & 0xFFFF);
 	int it_x = ct_x, it_r, it_g, it_b, chr_1, esc = 0, pack, bkup, errflag = 0, cfptr;
-	int oldr, oldg, oldb, call_ptr = 0, tmp = 0, diff;
+	int oldr, oldg, oldb;
+	int call_ptr = 0, tmp = 0, diff;
+#ifdef EXT_FUNC_1
 	char __digits[5];
 	short counter = 0;
 	short calls[128][5]; /* dynamic */
+#endif
 	it_r = it_g = it_b = 255;
 	for (;;)
 	{
@@ -42,6 +45,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 			}
 			continue;
 		}
+#ifdef EXT_FUNC_1
 		if (pack == 12) // if "spark reflector"
 		{
 			switch (chr_1 & 63) // chr_1 : initial ctype
@@ -417,6 +421,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				}
 			continue;
 		}
+#endif
 		if (pack != 10)
 			break;
 		if (!esc)
@@ -466,6 +471,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				pack += ((pack > 36) ? 29 : (pack > 10) ? 87 : '0');
 				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, pack, (it_r << 16) | (it_g << 8) | it_b);
 				break;
+#ifdef EXT_FUNC_1
 			case 266:
 				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, counter & 0xFF, (it_r << 16) | (it_g << 8) | it_b);
 				break;
@@ -488,6 +494,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				while (tmp)
 					ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, __digits[--tmp], pack);
 				break;
+#endif
 			case 269: // random punctuation (exclude space)
 				pack = rand() & 31;
 				pack += ((pack < 15) ? '!' : (pack < 22) ? 43 : (pack < 28) ? 69 : 95);
@@ -548,7 +555,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 16) & 0xFF, pack);
 				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 24) & 0xFF, pack);
 				break;
-			case 6: // set location (relative)
+			case 6: // set horizontal tab size
 				tab_size = chr_1;
 				esc = 0;
 				break;
