@@ -121,6 +121,19 @@ std::string sign::getText(Simulation *sim)
 					num1 = sim->parts[r>>8].tmp3;
 				else if (!strcmp(matched1, "tmp4"))
 					num1 = sim->parts[r>>8].tmp4;
+				/*
+				else if (!strcmp(matched1, "vrad"))
+				{
+					float veloc_x = sim->parts[r>>8].vx;
+					float veloc_y = sim->parts[r>>8].vy;
+					float velocity = hypotf(veloc_x, veloc_y);
+					num1 = * (int*) & velocity;
+				}
+				*/
+				else if (!strcmp(matched1, "vx"))
+					num1 = * (int*) & (sim->parts[r>>8].vx);
+				else if (!strcmp(matched1, "vy"))
+					num1 = * (int*) & (sim->parts[r>>8].vy);
 				else if (!strcmp(matched1, "pavg0"))
 					num1 = * (int*) & (sim->parts[r>>8].pavg[0]);
 				else if (!strcmp(matched1, "pavg1"))
