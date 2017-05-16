@@ -96,7 +96,11 @@ std::string sign::getText(Simulation *sim)
 				matched1[ptr2++] = cchar;
 			}
 			if (x>=0 && x<XRES && y>=0 && y<YRES)
-				r = sim->pmap[y][x];
+			{
+				r = sim->photons[y][x];
+				if (!r)
+					r = sim->pmap[y][x];
+			}
 			if (r)
 			{
 				if (!strcmp(matched1, "i"))

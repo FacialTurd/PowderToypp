@@ -1259,7 +1259,7 @@ void Renderer::render_parts()
 		if (sim->parts[i].type && sim->parts[i].type >= 0 && sim->parts[i].type < PT_NUM) {
 			t = sim->parts[i].type;
 
-			if (t == PT_PINVIS && parts[i].tmp4 && (parts[i].tmp4>>8)<i)
+			if (t == PT_PINVIS && parts[i].tmp4)
 				continue;
 
 			nx = (int)(sim->parts[i].x+0.5f);
