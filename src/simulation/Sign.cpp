@@ -67,6 +67,10 @@ std::string sign::getText(Simulation *sim)
 			int r = 0, num1, ptr1 = 2, ptr2 = 0, ptr3 = 0;
 			char cchar;
 			char dchar = 0;
+			char structtype = 0;
+			// structtype = 0: int
+			// structtype = 1: float
+			// structtype = 2: particle type
 			char matched1 [256];
 			const char* matched1ptr = matched1;
 			
@@ -106,13 +110,22 @@ std::string sign::getText(Simulation *sim)
 				if (!strcmp(matched1, "i"))
 					num1 = r >> 8;
 				else if (!strcmp(matched1, "type"))
+				{
+					structtype = 2;
 					num1 = r & 0xFF;
+				}
 				else if (!strcmp(matched1, "life"))
 					num1 = sim->parts[r>>8].life;
 				else if (!strcmp(matched1, "ctype"))
+				{
+					structtype = 2;
 					num1 = sim->parts[r>>8].ctype;
+				}
 				else if (!strcmp(matched1, "temp"))
+				{
+					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].temp);
+				}
 				else if (!strcmp(matched1, "tmp"))
 					num1 = sim->parts[r>>8].tmp;
 				else if (!strcmp(matched1, "tmp2"))
@@ -135,27 +148,45 @@ std::string sign::getText(Simulation *sim)
 				else if (!strcmp(matched1, "vy"))
 					num1 = * (int*) & (sim->parts[r>>8].vy);
 				else if (!strcmp(matched1, "pavg0"))
+				{
+					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].pavg[0]);
+				}
 				else if (!strcmp(matched1, "pavg1"))
+				{
+					structtype = 1;
 					num1 = * (int*) & (sim->parts[r>>8].pavg[1]);
+				}
 				else
 				{
 					strcpy(buff, signText);
 					return std::string(buff);
 				}
 
-				if (!ptr3)
-					sprintf(buff, "%d", num1);
-				else
+				if (ptr3)
 				{
 					matched1ptr += ptr3;
-					if (!strcmp(matched1ptr, "f")) // 
-						sprintf(buff, "%3.2f", * (float*) & num1);
+					if (!strcmp(matched1ptr, "f"))
+						structtype = 1;
 					else if (!strcmp(matched1ptr, "t") || !strcmp(matched1ptr, "xt"))
 					{
-						int exttype = (*matched1ptr == 'x');
-						bool overridden1 = false;
-						if ( exttype )
+						structtype = (*matched1ptr == 'x') ? 3 : 2;
+					}
+					else if (!strcmp(matched1ptr, "x"))
+						structtype = 4;
+					else if (!strcmp(matched1ptr, "X"))
+						structtype = 5;
+					else
+						structtype = 0;
+				}
+				
+				switch (structtype)
+				{
+					case 0: sprintf(buff, "%d", num1); break;
+					case 1: sprintf(buff, "%3.2f", * (float*) & num1); break;
+					case 2:
+					case 3:
+						if ( structtype == 3 )
 						{
 							int num1h = (num1 >> 8); // .ctype?
 							if ( (num1 & 0xFF) == PT_LIFE && num1h >= 0 && num1h < NGOL )
@@ -168,11 +199,9 @@ std::string sign::getText(Simulation *sim)
 						{
 							sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
 						}
-					}
-					else if (!strcmp(matched1ptr, "x"))
-						sprintf(buff, "0x%08x", num1&0xFF);
-					else
-						sprintf(buff, "%d", num1);
+					break;
+					case 4: sprintf(buff, "0x%08x", num1); break;
+					case 5: sprintf(buff, "0x%08X", num1); break;
 				}
 			}
 			else
