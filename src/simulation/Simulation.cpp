@@ -5367,7 +5367,7 @@ void Simulation::RecalcFreeParticles()
 	int x, y, t;
 	int lastPartUsed = 0;
 	int lastPartUnused = -1;
-	int* pmapp1, pmapp2; // maybe wild pointers?
+	int * pmapp1, * pmapp2; // maybe wild pointers?
 
 	memset(pmap, 0, sizeof(pmap));
 	memset(pmap_count, 0, sizeof(pmap_count));
