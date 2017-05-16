@@ -5364,9 +5364,10 @@ void Simulation::SimulateLLoops()
 
 void Simulation::RecalcFreeParticles()
 {
-	int x, y, t, tt;
+	int x, y, t;
 	int lastPartUsed = 0;
 	int lastPartUnused = -1;
+	int* pmapp1, pmapp2; // maybe wild pointers?
 
 	memset(pmap, 0, sizeof(pmap));
 	memset(pmap_count, 0, sizeof(pmap_count));
@@ -5388,9 +5389,23 @@ void Simulation::RecalcFreeParticles()
 					photons[y][x] = t|(i<<8);
 				else
 				{
-					tt = pmap[y][x];
+					pmapp1 = pmapp2 = &(pmap[y][x]);
+					if ((*pmapp2 & 0xFF) == PT_PINVIS) // if pmap [y][x] value is PINV
+						pmapp2 = &(parts[*pmapp2].tmp4);
+
 					// Particles are sometimes allowed to go inside INVS and FILT
 					// To make particles collide correctly when inside these elements, these elements must not overwrite an existing pmap entry from particles inside them
+					if (t == PT_PINVIS)
+					{
+						*pmapp1 = PT_PINVIS | (i<<8);
+						parts[i].tmp4 = *pmapp2;
+					}
+					else if (!*pmapp2 || !(elements[t].Properties2 & PROP_INVISIBLE))
+					{
+						*pmapp2 = t | (i<<8);
+					}
+
+#if 0
 					if (!tt || ( (tt & 0xFF) != PT_PINVIS && !(elements[t].Properties2 & PROP_INVISIBLE) ))
 					{
 						if (t == PT_PINVIS)
@@ -5399,6 +5414,7 @@ void Simulation::RecalcFreeParticles()
 					}
 					else if ((tt & 0xFF) == PT_PINVIS)
 						parts[tt>>8].tmp4 = t|(i<<8);
+#endif
 
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
 
