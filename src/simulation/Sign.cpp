@@ -39,6 +39,128 @@ std::string sign::getText(Simulation *sim)
 			else
 				sprintf(buff, "Temp: 0.00");  //...temperature
 		}
+		else if (signText[1] == 'v') // air velocity
+		{
+			if (signText[3] == '}' && !signText[4])
+			{
+				float velocity = 0.0f;
+				if (signText[2] == 'x')
+				{
+					velocity = sim->vx[y/CELL][x/CELL];
+					sprintf(buff, "%3.2f", velocity);
+				}
+				else if (signText[2] == 'y')
+				{
+					velocity = sim->vy[y/CELL][x/CELL];
+					sprintf(buff, "%3.2f", velocity);
+				}
+				else
+				{
+					strcpy(buff, signText);
+				}
+			}
+			else
+				strcpy(buff, signText);
+		}
+		else if (signText[1] == '.') // element
+		{
+			int r = 0, num1, ptr1 = 2, ptr2 = 0, ptr3 = 0;
+			char cchar;
+			char dchar = 0;
+			char matched1 [256];
+			const char* matched1ptr = matched1;
+			
+			for (;;) // infinite loop
+			{
+				cchar = signText[ptr1++];
+				if (!cchar) // found end of string
+				{
+					strcpy(buff, signText);
+					return std::string(buff);
+				}
+				if (cchar == '}') // found "}"
+				{
+					if (signText[ptr1]) // if isn't end of string
+					{
+						strcpy(buff, signText);
+						return std::string(buff);
+					}
+					matched1[ptr2++] = '\0';
+					break;
+				}
+				if (cchar == ':' && !ptr3) // found ":"
+				{
+					ptr3 = ptr2 + 1;
+					cchar = '\0';
+				}
+				matched1[ptr2++] = cchar;
+			}
+			if (x>=0 && x<XRES && y>=0 && y<YRES)
+				r = sim->pmap[y][x];
+			if (r)
+			{
+				if (!strcmp(matched1, "i"))
+					num1 = r >> 8;
+				else if (!strcmp(matched1, "type"))
+					num1 = r & 0xFF;
+				else if (!strcmp(matched1, "life"))
+					num1 = sim->parts[r>>8].life;
+				else if (!strcmp(matched1, "ctype"))
+					num1 = sim->parts[r>>8].ctype;
+				else if (!strcmp(matched1, "temp"))
+					num1 = * (int*) & (sim->parts[r>>8].temp);
+				else if (!strcmp(matched1, "tmp"))
+					num1 = sim->parts[r>>8].tmp;
+				else if (!strcmp(matched1, "tmp2"))
+					num1 = sim->parts[r>>8].tmp2;
+				else if (!strcmp(matched1, "tmp3"))
+					num1 = sim->parts[r>>8].tmp3;
+				else if (!strcmp(matched1, "tmp4"))
+					num1 = sim->parts[r>>8].tmp4;
+				else if (!strcmp(matched1, "pavg0"))
+					num1 = * (int*) & (sim->parts[r>>8].pavg[0]);
+				else if (!strcmp(matched1, "pavg1"))
+					num1 = * (int*) & (sim->parts[r>>8].pavg[1]);
+				else
+				{
+					strcpy(buff, signText);
+					return std::string(buff);
+				}
+
+				if (!ptr3)
+					sprintf(buff, "%d", num1);
+				else
+				{
+					matched1ptr += ptr3;
+					if (!strcmp(matched1ptr, "f")) // 
+						sprintf(buff, "%3.2f", * (float*) & num1);
+					else if (!strcmp(matched1ptr, "t") || !strcmp(matched1ptr, "xt"))
+					{
+						int exttype = (*matched1ptr == 'x');
+						bool overridden1 = false;
+						if ( exttype )
+						{
+							int num1h = (num1 >> 8); // .ctype?
+							if ( (num1 & 0xFF) == PT_LIFE && num1h >= 0 && num1h < NGOL )
+							{
+								sprintf(buff, "%s", sim->gmenu[num1h].name);
+								overridden1 = true;
+							}
+						}
+						if (!overridden1)
+						{
+							sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
+						}
+					}
+					else if (!strcmp(matched1ptr, "x"))
+						sprintf(buff, "0x%08x", num1&0xFF);
+					else
+						sprintf(buff, "%d", num1);
+				}
+			}
+			else
+				strcpy(buff, "");
+		}
 		else
 		{
 			int pos = splitsign(signText);
