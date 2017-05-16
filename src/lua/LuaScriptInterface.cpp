@@ -696,6 +696,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"partNeighbours", simulation_partNeighbours},
 		{"partNeighbors", simulation_partNeighbours},
 		{"partChangeType", simulation_partChangeType},
+		{"duplicateParticle", simulation_duplicateParticle},
 		{"partCreate", simulation_partCreate},
 		{"partCreate2", simulation_partCreate2},
 		{"partProperty", simulation_partProperty},
