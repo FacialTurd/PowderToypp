@@ -50,7 +50,7 @@ Element_BCLN::Element_BCLN()
 //#TPT-Directive ElementHeader Element_BCLN static int update(UPDATE_FUNC_ARGS)
 int Element_BCLN::update(UPDATE_FUNC_ARGS)
 {
-	if (!parts[i].life && sim->pv[y/CELL][x/CELL]>4.0f)
+	if (!parts[i].life && sim->pv[y/CELL][x/CELL]> sim->sim_max_pressure)
 		parts[i].life = rand()%40+80;
 	if (parts[i].life)
 	{

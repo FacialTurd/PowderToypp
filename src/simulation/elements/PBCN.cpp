@@ -52,7 +52,7 @@ Element_PBCN::Element_PBCN()
 int Element_PBCN::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt;
-	if (!parts[i].tmp2 && sim->pv[y/CELL][x/CELL]>4.0f)
+	if (!parts[i].tmp2 && sim->pv[y/CELL][x/CELL]> sim->sim_max_pressure)
 		parts[i].tmp2 = rand()%40+80;
 	if (parts[i].tmp2)
 	{
