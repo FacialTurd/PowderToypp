@@ -107,12 +107,21 @@ std::string sign::getText(Simulation *sim)
 			}
 			if (r)
 			{
+				bool sparked = false;
 				if (!strcmp(matched1, "i"))
 					num1 = r >> 8;
 				else if (!strcmp(matched1, "type"))
 				{
 					structtype = 2;
 					num1 = r & 0xFF;
+					int ctype = sim->parts[r>>8].ctype;
+					if (num1 == PT_SPRK && ctype)
+					{
+						sparked = true;
+						num1 = ctype;
+					}
+					else if (num1 == PT_LIFE)
+						num1 |= (ctype << 8);
 				}
 				else if (!strcmp(matched1, "life"))
 					num1 = sim->parts[r>>8].life;
@@ -210,7 +219,10 @@ std::string sign::getText(Simulation *sim)
 						}
 						if (!overridden1)
 						{
-							sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
+							if (sparked)
+								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
+							else
+								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
 						}
 					}
 					break;
