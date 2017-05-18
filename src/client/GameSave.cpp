@@ -701,38 +701,41 @@ void GameSave::readOPS(char * data, int dataLength)
 				if (wallData[y*blockW+x])
 					blockMap[blockY+y][blockX+x] = wallData[y*blockW+x];
 
-				if (blockMap[y][x]==O_WL_WALLELEC)
-					blockMap[y][x]=WL_WALLELEC;
-				if (blockMap[y][x]==O_WL_EWALL)
-					blockMap[y][x]=WL_EWALL;
-				if (blockMap[y][x]==O_WL_DETECT)
-					blockMap[y][x]=WL_DETECT;
-				if (blockMap[y][x]==O_WL_STREAM)
-					blockMap[y][x]=WL_STREAM;
-				if (blockMap[y][x]==O_WL_FAN||blockMap[y][x]==O_WL_FANHELPER)
-					blockMap[y][x]=WL_FAN;
-				if (blockMap[y][x]==O_WL_ALLOWLIQUID)
-					blockMap[y][x]=WL_ALLOWLIQUID;
-				if (blockMap[y][x]==O_WL_DESTROYALL)
-					blockMap[y][x]=WL_DESTROYALL;
-				if (blockMap[y][x]==O_WL_ERASE)
-					blockMap[y][x]=WL_ERASE;
-				if (blockMap[y][x]==O_WL_WALL)
-					blockMap[y][x]=WL_WALL;
-				if (blockMap[y][x]==O_WL_ALLOWAIR)
-					blockMap[y][x]=WL_ALLOWAIR;
-				if (blockMap[y][x]==O_WL_ALLOWSOLID)
-					blockMap[y][x]=WL_ALLOWPOWDER;
-				if (blockMap[y][x]==O_WL_ALLOWALLELEC)
-					blockMap[y][x]=WL_ALLOWALLELEC;
-				if (blockMap[y][x]==O_WL_EHOLE)
-					blockMap[y][x]=WL_EHOLE;
-				if (blockMap[y][x]==O_WL_ALLOWGAS)
-					blockMap[y][x]=WL_ALLOWGAS;
-				if (blockMap[y][x]==O_WL_GRAV)
-					blockMap[y][x]=WL_GRAV;
-				if (blockMap[y][x]==O_WL_ALLOWENERGY)
-					blockMap[y][x]=WL_ALLOWENERGY;
+				if (!my_mod_id_2)
+				{
+					if (blockMap[y][x]==O_WL_WALLELEC)
+						blockMap[y][x]=WL_WALLELEC;
+					if (blockMap[y][x]==O_WL_EWALL)
+						blockMap[y][x]=WL_EWALL;
+					if (blockMap[y][x]==O_WL_DETECT)
+						blockMap[y][x]=WL_DETECT;
+					if (blockMap[y][x]==O_WL_STREAM)
+						blockMap[y][x]=WL_STREAM;
+					if (blockMap[y][x]==O_WL_FAN||blockMap[y][x]==O_WL_FANHELPER)
+						blockMap[y][x]=WL_FAN;
+					if (blockMap[y][x]==O_WL_ALLOWLIQUID)
+						blockMap[y][x]=WL_ALLOWLIQUID;
+					if (blockMap[y][x]==O_WL_DESTROYALL)
+						blockMap[y][x]=WL_DESTROYALL;
+					if (blockMap[y][x]==O_WL_ERASE)
+						blockMap[y][x]=WL_ERASE;
+					if (blockMap[y][x]==O_WL_WALL)
+						blockMap[y][x]=WL_WALL;
+					if (blockMap[y][x]==O_WL_ALLOWAIR)
+						blockMap[y][x]=WL_ALLOWAIR;
+					if (blockMap[y][x]==O_WL_ALLOWSOLID)
+						blockMap[y][x]=WL_ALLOWPOWDER;
+					if (blockMap[y][x]==O_WL_ALLOWALLELEC)
+						blockMap[y][x]=WL_ALLOWALLELEC;
+					if (blockMap[y][x]==O_WL_EHOLE)
+						blockMap[y][x]=WL_EHOLE;
+					if (blockMap[y][x]==O_WL_ALLOWGAS)
+						blockMap[y][x]=WL_ALLOWGAS;
+					if (blockMap[y][x]==O_WL_GRAV)
+						blockMap[y][x]=WL_GRAV;
+					if (blockMap[y][x]==O_WL_ALLOWENERGY)
+						blockMap[y][x]=WL_ALLOWENERGY;
+				}
 
 				if (blockMap[y][x] == WL_FAN && fanData)
 				{
