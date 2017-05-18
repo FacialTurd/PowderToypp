@@ -220,7 +220,7 @@ std::string sign::getText(Simulation *sim)
 						if (!overridden1)
 						{
 							if (sparked)
-								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
+								sprintf(buff, "sparked %s", sim->elements[num1&0xFF].Name);
 							else
 								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
 						}
