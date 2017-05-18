@@ -5612,24 +5612,29 @@ void Simulation::BeforeSim()
 		int tmp_count = breakable_wall_count, xx, yy;
 		if (breakable_wall_count >= 0)
 		{
+			// maybe "spaghetti code" ?
 			for (y = 0; y < YRES/CELL; y++)
 			{
 				for (x = 0; x < XRES/CELL; x++)
 				{
 					if (!tmp_count)
 						goto bwall_count_end;
-					if (wtypes[ bmap[y][x] ].PressureTransition >= 0)
+					int wtrans = wtypes[ bmap[y][x] ].PressureTransition;
+					if (wtrans >= 0)
 					{
 						tmp_count--;
 						if (pv[y][x] > sim_max_pressure || pv[y][x] < -sim_max_pressure)
 						{
 							breakable_wall_count--;
 							bmap[y][x] = 0;
-							for (yy = 0; yy < CELL; yy++)
+							if (wtrans)
 							{
-								for (xx = 0; xx < CELL; xx++)
+								for (yy = 0; yy < CELL; yy++)
 								{
-									create_part(-1, x*CELL+xx, y*CELL+yy, PT_STNE);
+									for (xx = 0; xx < CELL; xx++)
+									{
+										create_part(-1, x*CELL+xx, y*CELL+yy, wtrans);
+									}
 								}
 							}
 						}
