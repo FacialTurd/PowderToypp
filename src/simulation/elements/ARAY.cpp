@@ -84,7 +84,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							if (!pass_wall)
 							{
 								int block1 = sim->bmap[(y+nyi+nyy)/CELL][(x+nxi+nxx)/CELL];
-								if (block1 && block1 != WL_STREAM)
+								if (block1 && (block1 != WL_STREAM && block1 != WL_FAN && block1 != WL_DETECT && block1 != WL_GRAV && block1 != WL_ALLOWALLELEC))
 									break;
 							}
 
