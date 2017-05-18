@@ -195,11 +195,11 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 		{
 			if(save->blockMap[saveBlockY][saveBlockX])
 			{
-				if (bmap[saveBlockY+blockY][saveBlockX+blockX] == WL_BREAKABLE_WALL)
+				if (wtypes[ bmap[saveBlockY+blockY][saveBlockX+blockX] ].PressureTransition >= 0)
 				{
 					breakable_wall_count--;
 				}
-				if (save->blockMap[saveBlockY][saveBlockX] == WL_BREAKABLE_WALL)
+				if (wtypes[ save->blockMap[saveBlockY][saveBlockX] ].PressureTransition >= 0)
 				{
 					breakable_wall_count++;
 				}
@@ -414,7 +414,7 @@ void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
 		{
 			if (bmap[y][x] == WL_GRAV)
 				gravWallChanged = true;
-			else if (bmap[y][x] == WL_BREAKABLE_WALL)
+			else if (wtypes[ bmap[y][x] ].PressureTransition >= 0)
 				breakable_wall_count --;
 			bmap[y][x] = 0;
 			emap[y][x] = 0;
@@ -780,19 +780,19 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 	case 2:
 		for(int i = 0; i<(XRES/CELL); i++)
 		{
-			if (bmap[0][i] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[0][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[0][i] = 0;
-			if (bmap[YRES/CELL-1][i] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[YRES/CELL-1][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[YRES/CELL-1][i] = 0;
 		}
 		for(int i = 1; i<((YRES/CELL)-1); i++)
 		{
-			if (bmap[i][0] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[i][0] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[i][0] = 0;
-			if (bmap[i][XRES/CELL-1] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[i][XRES/CELL-1] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[i][XRES/CELL-1] = 0;
 		}
@@ -801,19 +801,19 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 		int i;
 		for(i=0; i<(XRES/CELL); i++)
 		{
-			if (bmap[0][i] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[0][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[0][i] = WL_WALL;
-			if (bmap[YRES/CELL-1][i] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[YRES/CELL-1][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[YRES/CELL-1][i] = WL_WALL;
 		}
 		for(i=1; i<((YRES/CELL)-1); i++)
 		{
-			if (bmap[i][0] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[i][0] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[i][0] = WL_WALL;
-			if (bmap[i][XRES/CELL-1] == WL_BREAKABLE_WALL)
+			if (wtypes[ bmap[i][XRES/CELL-1] ].PressureTransition >= 0)
 				breakable_wall_count--;
 			bmap[i][XRES/CELL-1] = WL_WALL;
 		}
@@ -1257,11 +1257,11 @@ int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBru
 				if (wall == WL_GRAV || bmap[wallY][wallX] == WL_GRAV)
 					gravWallChanged = true;
 
-				if (bmap[wallY][wallX] == WL_BREAKABLE_WALL)
+				if (wtypes[ bmap[wallY][wallX] ].PressureTransition >= 0)
 				{
 					breakable_wall_count--;
 				}
-				if (wall == WL_BREAKABLE_WALL)
+				if (wtypes[ wall ].PressureTransition >= 0)
 				{
 					breakable_wall_count++;
 				}
@@ -5618,7 +5618,7 @@ void Simulation::BeforeSim()
 				{
 					if (!tmp_count)
 						goto bwall_count_end;
-					if (bmap[y][x] == WL_BREAKABLE_WALL)
+					if (wtypes[ bmap[y][x] ].PressureTransition >= 0)
 					{
 						tmp_count--;
 						if (pv[y][x] > sim_max_pressure || pv[y][x] < -sim_max_pressure)

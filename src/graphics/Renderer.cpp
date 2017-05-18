@@ -559,12 +559,13 @@ VideoBuffer * Renderer::WallIcon(int wallID, int width, int height)
 	}
 	else if (wtypes[wt].drawstyle==5)
 	{
+		pixel pc2 = wtypes[wt].colour2;
 		for (j=0; j<height; j++)
 			for (i=0; i<width; i++)
 				if ((i << 1 ^ j) & 3)
 					newTexture->SetPixel(i, j, PIXR(pc), PIXG(pc), PIXB(pc), 255);
 				else
-					newTexture->SetPixel(i, j, PIXR(gc), PIXG(gc), PIXB(gc), 255);
+					newTexture->SetPixel(i, j, PIXR(pc2), PIXG(pc2), PIXB(pc2), 255);
 	}
 
 	// special rendering for some walls
@@ -868,12 +869,15 @@ void Renderer::DrawWalls()
 								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
 					break;
 				case 5:
-					for (int j = 0; j < CELL; j++)
-						for (int i = 0; i < CELL; i++)
-							if ((i << 1 ^ j) & 3)
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
-							else 
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = gc;
+					{
+						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						for (int j = 0; j < CELL; j++)
+							for (int i = 0; i < CELL; i++)
+								if ((i << 1 ^ j) & 3)
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+								else 
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+					}
 					break;
 				}
 
@@ -958,12 +962,15 @@ void Renderer::DrawWalls()
 									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
 						break;
 					case 5:
-						for (int j = 0; j < CELL; j++)
-							for (int i = 0; i < CELL; i++)
-								if ((i << 1 ^ j) & 3)
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
-								else 
-									drawblob((x*CELL+i), (y*CELL+j), PIXR(gc), PIXG(gc), PIXB(gc));
+						{
+							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							for (int j = 0; j < CELL; j++)
+								for (int i = 0; i < CELL; i++)
+									if ((i << 1 ^ j) & 3)
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+									else 
+										drawblob((x*CELL+i), (y*CELL+j), PIXR(pc2), PIXG(pc2), PIXB(pc2));
+						}
 						break;
 					}
 				}
