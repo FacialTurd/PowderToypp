@@ -1580,12 +1580,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 				c->ResetAir();
 			break;
 		case 'm':
-			if (showDebug)
-			{
-				showDebugState ++;
-				if (showDebugState >= 11)
-					showDebugState = 0;
-			}
+			alternateState = 4;
 			break;
 		case 'c':
 			if(ctrl)
@@ -1717,10 +1712,13 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 					showDebugState = (shift ? 12 : 9);
 				break;
 				case 'e':
-					showDebugStateFlags = 0x10;
+					showDebugStateFlags ^= 0x10;
 				break;
 				case 'f':
 					showDebugState = 11;
+				break;
+				case 'h':
+					usingHexadecimal = !usingHexadecimal;
 				break;
 				case 'l':
 					showDebugState = 2;
@@ -1733,6 +1731,14 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 						showDebugState = 10;
 					else
 						showDebugStateFlags ^= 0x01;
+				break;
+				case 's':
+					if (showDebug)
+					{
+						showDebugState ++;
+						if (showDebugState >= 11)
+							showDebugState = 0;
+					}
 				break;
 				case 't':
 					if (!alt)
@@ -1750,10 +1756,6 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 					else
 						showDebugStateFlags ^= 0x02;
 				break;
-				case 'x':
-					usingHexadecimal = !usingHexadecimal;
-					alternateState = 1;
-				break;
 				case '-':
 					if (debugPrecision) { debugPrecision --; }
 					alternateState = 1;
@@ -1764,7 +1766,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			}
 			if(key >= '0' && key <= '9')
 			{
-				alternateState = (key - '0') + 4;
+				alternateState = (key - '0') + 5;
 				if (shift)
 					alternateState += 10;
 			}
@@ -1772,6 +1774,8 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		case 2:
 			break;
 		case 3:
+			break;
+		case 4:
 			break;
 		}
 	}
