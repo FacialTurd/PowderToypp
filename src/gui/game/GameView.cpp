@@ -1716,6 +1716,9 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 				case 'd':
 					showDebugState = (shift ? 12 : 9);
 				break;
+				case 'e':
+					showDebugStateFlags = 0x10;
+				break;
 				case 'f':
 					showDebugState = 11;
 				break;
@@ -1736,9 +1739,9 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 						showDebugState = (shift ? 5 : 1);
 					else
 					{
-						int tmp = (showDebugState >> 2) + (shift ? 2 : 1);
+						int tmp = ((showDebugStateFlags >> 2) & 3) + (shift ? 2 : 1);
 						showDebugStateFlags &= ~0x0C;
-						showDebugStateFlags |= tmp << 2;
+						showDebugStateFlags |= (tmp % 3) << 2;
 					}
 				break;
 				case 'v':
@@ -2697,6 +2700,11 @@ void GameView::OnDraw()
 		else if (sample.WallType)
 		{
 			sampleInfo << c->WallName(sample.WallType);
+			if (showDebugStateFlags & 0x00000010)
+			{
+				int emap1 = ren->sim->emap[sample.PositionY/CELL][sample.PositionX/CELL];
+				sampleInfo << ", emap: " << emap1;
+			}
 			sampleInfo << ", Pressure: " << std::fixed << sample.AirPressure;
 		}
 		else if (sample.isMouseInSim)
