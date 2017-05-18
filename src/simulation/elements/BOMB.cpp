@@ -72,7 +72,13 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 								if (!(sim->elements[ rr&0xFF ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && (rr&0xFF)!=PT_VIBR && ((rr&0xFF)!=PT_E189 || (parts[rr >> 8].life&~0x1)!=8)
 									&& ((rr&0xFF)!=PT_SPRK || !(sim->elements[parts[rr>>8].ctype].Properties2 & PROP_NODESTRUCT)))
 								{
-									sim->delete_part(x+nxi, y+nxj);
+									// add PBCN in immune elements list.
+									// "BOMB can killing GRVT": bug or feature?
+
+									// sim->delete_part(x+nxi, y+nxj); 
+									// or:
+									sim->kill_part(rr >> 8);
+
 									sim->pv[(y+nxj)/CELL][(x+nxi)/CELL] += 0.1f;
 									nb = sim->create_part(-3, x+nxi, y+nxj, PT_EMBR);
 									if (nb!=-1)
