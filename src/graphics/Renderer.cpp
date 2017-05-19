@@ -548,12 +548,13 @@ VideoBuffer * Renderer::WallIcon(int wallID, int width, int height)
 	}
 	else if (wtypes[wt].drawstyle==4)
 	{
+		pixel pc2 = wtypes[wt].colour2;
 		for (j=0; j<height; j++)
 			for (i=0; i<width; i++)
 				if(i%CELL == j%CELL)
 					newTexture->SetPixel(i, j, PIXR(pc), PIXG(pc), PIXB(pc), 255);
 				else if  (i%CELL == (j%CELL)+1 || (i%CELL == 0 && j%CELL == CELL-1))
-					newTexture->SetPixel(i, j, PIXR(gc), PIXG(gc), PIXB(gc), 255);
+					newTexture->SetPixel(i, j, PIXR(pc2), PIXG(pc2), PIXB(pc2), 255);
 				else
 					newTexture->SetPixel(i, j, 0x20, 0x20, 0x20, 255);
 	}
@@ -859,14 +860,17 @@ void Renderer::DrawWalls()
 							vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
 					break;
 				case 4:
-					for (int j = 0; j < CELL; j++)
-						for (int i = 0; i < CELL; i++)
-							if (i == j)
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
-							else if (i == j+1 || (i == 0 && j == CELL-1))
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = gc;
-							else
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+					{
+						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						for (int j = 0; j < CELL; j++)
+							for (int i = 0; i < CELL; i++)
+								if (i == j)
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+								else if (i == j+1 || (i == 0 && j == CELL-1))
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+								else
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+					}
 					break;
 				case 5:
 					{
@@ -951,15 +955,18 @@ void Renderer::DrawWalls()
 								drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
 						break;
 					case 4:
-						for (int j = 0; j < CELL; j++)
-							for (int i = 0; i < CELL; i++)
-								if (i == j)
-									drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
-								else if (i == j+1 || (i == 0 && j == CELL-1))
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = gc;
-								else
-									// looks bad if drawing black blobs
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+						{
+							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							for (int j = 0; j < CELL; j++)
+								for (int i = 0; i < CELL; i++)
+									if (i == j)
+										drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
+									else if (i == j+1 || (i == 0 && j == CELL-1))
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+									else
+										// looks bad if drawing black blobs
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+						}
 						break;
 					case 5:
 						{
