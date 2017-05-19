@@ -5628,6 +5628,7 @@ void Simulation::BeforeSim()
 						{
 							breakable_wall_count--;
 							bmap[y][x] = 0;
+							emap[y][x] = 0;
 							if (wtrans)
 							{
 								for (yy = 0; yy < CELL; yy++)
