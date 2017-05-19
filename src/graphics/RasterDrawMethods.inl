@@ -456,12 +456,24 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 	}
 	if(!h || y < 0) return;
 	if(a >= 255)
+	{
+		int left_w = 0;
+		if (x < 0)
+		{
+			left_w = -x;
+			w += x;
+			x = 0;
+		}
 		for (j=0; j<h; j++)
+		{
+			img += left_w;
 			for (i=0; i<w; i++)
 			{
 				vid[(y+j)*(VIDXRES)+(x+i)] = *img;
 				img++;
 			}
+		}
+	}
 	else
 		for (j=0; j<h; j++)
 			for (i=0; i<w; i++)
