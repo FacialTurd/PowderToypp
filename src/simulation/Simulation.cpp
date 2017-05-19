@@ -1813,12 +1813,12 @@ void Simulation::orbitalparts_set(int *block1, int *block2, int resblock1[], int
 
 inline int Simulation::is_wire(int x, int y)
 {
-	return bmap[y][x]==WL_DETECT || bmap[y][x]==WL_EWALL || bmap[y][x]==WL_ALLOWLIQUID || bmap[y][x]==WL_WALLELEC || bmap[y][x]==WL_ALLOWALLELEC || bmap[y][x]==WL_EHOLE;
+	return bmap[y][x]==WL_DETECT || bmap[y][x]==WL_EWALL || bmap[y][x]==WL_ALLOWLIQUID || bmap[y][x]==WL_WALLELEC || bmap[y][x]==WL_ALLOWALLELEC || bmap[y][x]==WL_EHOLE || bmap[y][x]==WL_BREAKABLE_WALLELEC;
 }
 
 inline int Simulation::is_wire_off(int x, int y)
 {
-	return (bmap[y][x]==WL_DETECT || bmap[y][x]==WL_EWALL || bmap[y][x]==WL_ALLOWLIQUID || bmap[y][x]==WL_WALLELEC || bmap[y][x]==WL_ALLOWALLELEC || bmap[y][x]==WL_EHOLE) && emap[y][x]<8;
+	return (bmap[y][x]==WL_DETECT || bmap[y][x]==WL_EWALL || bmap[y][x]==WL_ALLOWLIQUID || bmap[y][x]==WL_WALLELEC || bmap[y][x]==WL_ALLOWALLELEC || bmap[y][x]==WL_EHOLE || bmap[y][x]==WL_BREAKABLE_WALLELEC) && emap[y][x]<8;
 }
 
 // implement __builtin_ctz and __builtin_clz on msvc
@@ -2066,7 +2066,7 @@ bool Simulation::IsWallBlocking(int x, int y, int type)
 			return true;
 		else if (wall == WL_ALLOWPOWDER && !(elements[type].Properties&TYPE_PART))
 			return true;
-		else if (wall == WL_ALLOWAIR || wall == WL_WALL || wall == WL_WALLELEC || wall == WL_BREAKABLE_WALL)
+		else if (wall == WL_ALLOWAIR || wall == WL_WALL || wall == WL_WALLELEC || wall == WL_BREAKABLE_WALL || wall == WL_BREAKABLE_WALLELEC)
 			return true;
 		else if (wall == WL_EWALL && !emap[y/CELL][x/CELL])
 			return true;
@@ -3743,6 +3743,7 @@ void Simulation::UpdateParticles(int start, int end)
 			         (bmap[y/CELL][x/CELL]==WL_WALL ||
 					  bmap[y/CELL][x/CELL]==WL_BREAKABLE_WALL ||
 			          bmap[y/CELL][x/CELL]==WL_WALLELEC ||
+					  bmap[y/CELL][x/CELL]==WL_BREAKABLE_WALLELEC ||
 			          bmap[y/CELL][x/CELL]==WL_ALLOWAIR ||
 			          (bmap[y/CELL][x/CELL]==WL_DESTROYALL) ||
 			          (bmap[y/CELL][x/CELL]==WL_ALLOWLIQUID && !(elements[t].Properties&TYPE_LIQUID)) ||

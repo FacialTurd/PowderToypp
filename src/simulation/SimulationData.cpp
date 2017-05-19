@@ -138,6 +138,8 @@ wall_type * LoadWalls(int & wallCount)
 		{PIXPACK(0xDCDCDC), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "AIRBLOCK WALL",	"DEFAULT_WL_NOAIR",	"Allows all particles, but blocks air.", NT},
 		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 0, Renderer::WallIcon, "ERASEALL",		"DEFAULT_WL_ERASEA","Erases walls, particles, and signs.", NT},
 		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x80C0FF), 5, Renderer::WallIcon, "BREAKABLE WALL",	"DEFAULT_WL_BRWALL","Breakable wall, but allows air.", PT_STNE},
+		{PIXPACK(0x808080), PIXPACK(0x101010), PIXPACK(0xFFE060), 5, Renderer::WallIcon, "BREAKABLE CONDUCTIVE WALL",
+		 "DEFAULT_WL_BCNDTW","Breakable conductive wall.", PT_BRMT},
 	};
 	wallCount = UI_WALLCOUNT;
 	wall_type * wtypesT = (wall_type*)malloc(UI_WALLCOUNT*sizeof(wall_type));
