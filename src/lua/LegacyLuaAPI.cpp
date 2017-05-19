@@ -1188,6 +1188,10 @@ int luatpt_set_wallmap(lua_State* l)
 		for (nx = x1; nx<x1+width; nx++)
 			for (ny = y1; ny<y1+height; ny++)
 			{
+				if (luacon_sim->wtypes[ luacon_sim->bmap[ny][nx] ].PressureTransition >= 0)
+					luacon_sim->breakable_wall_count--;
+				if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+					luacon_sim->breakable_wall_count++;
 				luacon_sim->bmap[ny][nx] = wallType;
 			}
 	}
@@ -1197,6 +1201,10 @@ int luatpt_set_wallmap(lua_State* l)
 			x1 = (XRES/CELL);
 		if(y1 > (YRES/CELL))
 			y1 = (YRES/CELL);
+		if (luacon_sim->wtypes[ luacon_sim->bmap[y1][x1] ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count--;
+		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count++;
 		luacon_sim->bmap[y1][x1] = wallType;
 	}
 	return 0;
