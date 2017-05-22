@@ -77,7 +77,7 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 				case PT_LO2:
 					goto succ;
 #if 0
-				case PT_CHRM: // chromium
+				case PT_CHRM: // iron + chromium = stainless steel
 					return 0;
 #endif
 				default:
