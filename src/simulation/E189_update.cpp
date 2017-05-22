@@ -1470,8 +1470,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 											parts[r>>8].life --;
 									}
 									break;
-								case PT_VIBR:
-									if (parts[r>>8].tmp > 0)
+								case PT_BTRY:
+									// if (parts[r>>8].tmp > 0)
 									{
 										rr = pmap[y-ry][x-rx];
 										rt = rr & 0xFF;
@@ -1488,7 +1488,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 												rry = rand() % 5 - 2;
 												sim->create_part(-1, x+rrx, y+rry, PT_CO2);
 											}
-											parts[r>>8].tmp --;
+											// parts[r>>8].tmp --;
 										}
 									}
 									break;
@@ -1502,7 +1502,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									break;
 								case PT_CAUS:
 									rr = pmap[y-ry][x-rx];
-									if ((rr & 0xFF) == PT_WATR)
+									rt = rr & 0xFF;
+									if (rt == PT_CLNE || rt == PT_PCLN && parts[rr>>8].life == 10)
+										rt = parts[rr>>8].ctype;
+									if (rt == PT_WATR) // if it's water or water generator
 									{
 										sim->part_change_type(r>>8, x+rx, y+ry, PT_ACID);
 										parts[r>>8].life += 10;
