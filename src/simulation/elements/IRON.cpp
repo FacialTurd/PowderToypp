@@ -76,6 +76,10 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 					break;
 				case PT_LO2:
 					goto succ;
+#if 0
+				case PT_CHRM: // chromium
+					return 0;
+#endif
 				default:
 					break;
 				}
