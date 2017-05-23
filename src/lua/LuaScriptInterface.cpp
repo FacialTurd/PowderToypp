@@ -2866,6 +2866,14 @@ void LuaScriptInterface::initElementsAPI()
 			}
 		}
 	}
+	
+	lua_newtable(l);
+	SETCONST(l, IPL);
+	SETCONST(l, IPH);
+	SETCONST(l, ITL);
+	SETCONST(l, ITH);
+	SETCONST(l, NT);
+	lua_setfield(l, -2, "transition");
 }
 
 int LuaScriptInterface::elements_loadDefault(lua_State * l)
