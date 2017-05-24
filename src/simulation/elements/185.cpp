@@ -67,6 +67,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 	float tempTemp, tempPress;
 	rr = sim->photons[y][x];
 	stmp = parts[i].tmp;
+#if 0
 	if ((parts[i].tmp2 & 3) == 2)
 	{
 		if (rand () % 10000 && parts[i].tmp < 20)
@@ -272,6 +273,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 		}
 		return 0;
 	}
+#endif
 	if (parts[i].tmp2 & 1)
 	{
 		tempTemp = parts[i].temp;
