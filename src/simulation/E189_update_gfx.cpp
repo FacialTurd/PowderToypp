@@ -65,9 +65,10 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		*pixel_mode |= FIRE_BLEND;
 		break;
 	case 13:
-		switch (cpart->tmp2 & 0x3)
+		switch (cpart->tmp2)
 		{
 		case 0:
+		case 4:
 			ptmp = cpart->ctype;
 			if (cpart->tmp2 & 0x4)
 			{
