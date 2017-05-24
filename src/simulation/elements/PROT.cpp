@@ -51,6 +51,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 {
 	sim->pv[y/CELL][x/CELL] -= .003f;
 	int under = pmap[y][x];
+	if ((under & 0xFF) == PT_PINVIS)
+		under = parts[under>>8].tmp4;
 	int utype = under & 0xFF;
 	switch (utype)
 	{
@@ -118,7 +120,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		break;
 	}
 	//make temp of other things closer to it's own temperature. This will change temp of things that don't conduct, and won't change the PROT's temperature
-	if (utype && utype != PT_WIFI && utype != PT_PINVIS)
+	if (utype && utype != PT_WIFI)
 		parts[under>>8].temp = restrict_flt(parts[under>>8].temp-(parts[under>>8].temp-parts[i].temp)/4.0f, MIN_TEMP, MAX_TEMP);
  
 
