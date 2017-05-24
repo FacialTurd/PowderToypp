@@ -51,8 +51,8 @@ int Element_ARAY::temp_z1[5];
 int Element_ARAY::update(UPDATE_FUNC_ARGS)
 {
 	int r_life, swap;
-	int  modProp;
-	bool modFlag;
+	int modProp;
+	int modFlag;
 	if (!parts[i].life)
 	{
 		for (int rx = -1; rx <= 1; rx++)
@@ -73,7 +73,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int r_incr = 1, pass_wall = 1;
 						if (max_turn <= 0)
 							max_turn = 256;
-						modFlag = false;
+						modFlag = 0;
 						for (int docontinue = 1, nxx = 0, nyy = 0, nxi = rx*-1, nyi = ry*-1; docontinue; nyy+=nyi, nxx+=nxi)
 						{
 							if (!(x+nxi+nxx<XRES && y+nyi+nyy<YRES && x+nxi+nxx >= 0 && y+nyi+nyy >= 0))
@@ -176,7 +176,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									tmpz = 1;
 									continue;
 								case 20:
-									if (!modFlag)
+									if (!(modFlag & 1))
 									{
 										if (!colored)
 											colored = 0x3FFFFFFF;
@@ -185,7 +185,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											tmp = ~tmp;
 										colored &= tmp;
 										if (!colored)
-											break;
+											goto break1a;
 									}
 									else
 									{
@@ -195,9 +195,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									continue;
 								case 35:
-									if (!modFlag)
+									if (!(modFlag & 1))
 									{
-										modFlag = true;
+										modFlag |= 1;
 										modProp = parts[r].ctype;
 										continue;
 									}
@@ -249,6 +249,23 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									nxx -= nxi; nyy -= nyi;
 									max_turn--;
 									continue;
+								case 13:
+									if (parts[r].tmp2 == 3)
+									{
+										tmp = parts[r].ctype;
+										tmp2 = parts[r].tmp;
+										for (nyy+=2*nyi, nxx+=2*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
+										{
+											if (!sim->InBounds(x+nxx, y+nyy))
+												break;
+											r = pmap[y+nyy][x+nxx];
+											if (!r)
+												continue;
+											parts[r>>8].dcolour = tmp;
+										}
+										goto break1a;
+									}
+									
 								case 16:
 									if (parts[r /* actually: r>>8 */].ctype == 1)
 									{
@@ -349,7 +366,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									isBlackDeco = (parts[r].dcolour==0xFF000000);
 									parts[r].life = 4;
 								}
-								else if (modFlag && (sim->elements[rt].Properties2 & PROP_DRAWONCTYPE))
+								else if ((modFlag & 1) && (sim->elements[rt].Properties2 & PROP_DRAWONCTYPE))
 								{
 									parts[r].ctype = modProp;
 									docontinue = nostop;

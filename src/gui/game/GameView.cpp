@@ -2445,7 +2445,7 @@ void GameView::OnDraw()
 					*/
 					else if (partlife == 13)
 					{
-						if ((sample_particle->tmp2 & 0x3) == 0x1)
+						if (sample_particle->tmp2 == 0x1)
 							wavelengthGfx = (ctype&0x3FFFFFFF);
 						else
 							partint = 1;
