@@ -2095,7 +2095,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	partsDataLen = 0;
 	partsSaveIndex = (unsigned int *)calloc(NPART, sizeof(unsigned));
 	partsCount = 0;
-	unsigned long ExtraData;
+	unsigned int ExtraData;
 	for (y=0;y<fullH;y++)
 	{
 		for (x=0;x<fullW;x++)
@@ -2242,54 +2242,61 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				}
 				
 				// Tmp3 and extra data (optional), varies
-				if (particles[i].tmp3 || particles[i].tmp4 || (particles[i].tmp2 & 0xFFFF0000))
 				{
-					fieldDesc |= 1 << 14;
-					ExtraData = (unsigned)particles[i].tmp3;
-					desc2Pos = partsDataLen++;
-					if (ExtraData) // if tmp3 exists
+					int partsDataOffset = partsDataLen;
+					desc2Pos = partsDataOffset++;
+					if (particles[i].tmp3)
 					{
-						partsData[partsDataLen++] = ExtraData & 0x00FF;
+						ExtraData = (unsigned)particles[i].tmp3;
+						partsData[partsDataOffset++] = ExtraData & 0x00FF;
 						if (ExtraData & 0xFFFFFF00)
 						{
-							partsData[partsDataLen++] = (ExtraData >> 8) & 0x00FF;
+							partsData[partsDataOffset++] = (ExtraData >> 8) & 0x00FF;
+							desc2Data |= 2;
 							if (ExtraData & 0xFFFF0000)
 							{
-								partsData[partsDataLen++] = (ExtraData >> 24) & 0x00FF;
-								partsData[partsDataLen++] = (ExtraData >> 16) & 0x00FF;
-								desc2Data |= 3;
+								partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+								partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
+								desc2Data |= 1; // desc2Data |= 3;
 							}
-							else
-								desc2Data |= 2;
 						}
 						else
 							desc2Data |= 1;
 					}
-					ExtraData = (unsigned)(particles[i].tmp2 >> 16);
-					if (ExtraData) // if tmp2 >= 2 ** 16
+					
+					if (particles[i].tmp2 & 0xFFFF0000) // if tmp2 >= 2 ** 16
 					{
-						partsData[partsDataLen++] = (ExtraData >> 8) & 0x00FF;
-						partsData[partsDataLen++] = ExtraData & 0x00FF;
+						ExtraData = (unsigned)particles[i].tmp2;
+						partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+						partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
 						desc2Data |= 4;
 					}
-					ExtraData = (unsigned)(particles[i].tmp4);
-					//Don't save tmp4 for PINV
-					if (ExtraData && particles[i].type != PT_PINVIS)
+					
+					//Don't save tmp4 for PINV (because automatically calculate second pmap?)
+					if (particles[i].tmp4 && particles[i].type != PT_PINVIS)
 					{
-						partsData[partsDataLen++] = (ExtraData >> 8) & 0x00FF;
-						partsData[partsDataLen++] = ExtraData & 0x00FF;
+						ExtraData = (unsigned)particles[i].tmp4;
+						partsData[partsDataOffset++] = (ExtraData >> 8) & 0x00FF;
+						partsData[partsDataOffset++] = ExtraData & 0x00FF;
 						desc2Data |= 8;
 						if (ExtraData & 0xFFFF0000)
 						{
-							partsData[partsDataLen++] = (ExtraData >> 24) & 0x00FF;
-							partsData[partsDataLen++] = (ExtraData >> 16) & 0x00FF;
+							partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+							partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
 							desc2Data |= 16;
 						}
 
 					}
-					partsData[desc2Pos] = desc2Data;
+					
+					//Write the extra field descriptor
+					if (desc2Data)
+					{
+						fieldDesc |= 1 << 14;
+						partsData[desc2Pos] = desc2Data;
+						partsDataLen = partsDataOffset;
+					}
 				}
-
+				
 				//Write the field descriptor
 				partsData[fieldDescLoc] = fieldDesc;
 				partsData[fieldDescLoc+1] = fieldDesc>>8;
