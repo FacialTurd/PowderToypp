@@ -537,7 +537,11 @@ SimulationSample Simulation::GetSample(int x, int y)
 			sample.particle = parts[pmap[y][x]>>8];
 			sample.ParticleID = pmap[y][x]>>8;
 			if ((pmap[y][x] & 0xFF) == PT_PINVIS)
-				sample.cparticle = &(parts[sample.particle.tmp4>>8]);
+			{
+				int ParticleID2 = sample.particle.tmp4>>8;
+				if (ParticleID2 >= 0 && ParticleID2 < NPART)
+					sample.cparticle = &(parts[ParticleID2]);
+			}
 		}
 		if (bmap[y/CELL][x/CELL])
 		{

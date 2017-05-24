@@ -2497,7 +2497,7 @@ void GameView::OnDraw()
 				else if (type == PT_PINVIS)
 				{
 					ctype = sample_particle->tmp4 & 0xFF;
-					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner)
+					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
 						partnerID = sample_particle->tmp4 >> 8;
@@ -2684,7 +2684,7 @@ void GameView::OnDraw()
 				else if (type == PT_PINVIS)
 				{
 					ctype = sample_particle->tmp4 & 0xFF;
-					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner)
+					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
 						// partnerID = sample_particle->tmp4 >> 8;
