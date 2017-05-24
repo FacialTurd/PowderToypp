@@ -2219,7 +2219,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				}
 
 				//Tmp2 (optional), 1 or 2 bytes
-				if(particles[i].tmp2)
+				if(particles[i].tmp2 & 0x0000FFFF)
 				{
 					fieldDesc |= 1 << 10;
 					partsData[partsDataLen++] = particles[i].tmp2;
