@@ -118,6 +118,108 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								r_life = parts[r].life;
 								switch (r_life)
 								{
+								case 13:
+									if (parts[r].tmp2 == 3)
+									{
+										tmp = parts[r].ctype;
+										tmp2 = parts[r].tmp;
+										for (nyy+=2*nyi, nxx+=2*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
+										{
+											if (!sim->InBounds(x+nxx, y+nyy))
+												break;
+											r = pmap[y+nyy][x+nxx];
+											if (!r)
+												continue;
+											parts[r>>8].dcolour = tmp;
+										}
+										goto break1a;
+									}
+									
+								case 16:
+									if (parts[r /* actually: r>>8 */].ctype == 1)
+									{
+										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
+									}
+									docontinue = nostop;
+									continue;
+								case 19:
+									r_incr += (int)((parts[r].temp + 26.85f) / 100) - 3;
+									continue;
+								case 20:
+									if (!(modFlag & 1))
+									{
+										if (!colored)
+											colored = 0x3FFFFFFF;
+										tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+										if (parts[r].tmp & 0x1)
+											tmp = ~tmp;
+										colored &= tmp;
+										if (!colored)
+											goto break1a;
+									}
+									else
+									{
+										parts[r].ctype = modProp;
+										if (!nostop)
+											goto break1a;
+									}
+									continue;
+								case 23:
+									for (; ; nyy+=nyi, nxx+=nxi)
+									{
+										int front1 = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
+										int ftype1 = front1 & 0xFF;
+										if (ftype1 != PT_BIZR && ftype1 != PT_BIZRG && ftype1 != PT_BIZRS)
+										{
+											break;
+										}
+										colored = parts[front1 >> 8].ctype;
+									}
+									continue;
+								case 28:
+									if (noturn)
+										continue;
+									if (!max_turn)
+										goto break1a;
+									nxx += nxi; nyy += nyi;
+									switch (parts[r].tmp & 7)
+									{
+									case 0: // turn right
+										tmp =  nxi;
+										nxi = -nyi;
+										nyi =  tmp;
+										break;
+									case 1: // turn left
+										tmp =  nxi;
+										nxi =  nyi;
+										nyi = -tmp;
+										break;
+									case 2: // "/" reflect
+										tmp =  nxi;
+										nxi =  nyi;
+										nyi =  tmp;
+										break;
+									case 3: // "\" reflect
+										tmp =  nxi;
+										nxi = -nyi;
+										nyi = -tmp;
+										break;
+									case 4: // go "/\"
+										nxi = 0; nyi = -1;
+										break;
+									case 5: // go "\/"
+										nxi = 0; nyi = 1;
+										break;
+									case 6: // go ">"
+										nxi = 1; nyi = 0;
+										break;
+									case 7: // go "<"
+										nxi = -1; nyi = 0;
+										break;
+									}
+									nxx -= nxi; nyy -= nyi;
+									max_turn--;
+									continue;
 								case 32:
 									tmp  = parts[r].tmp;
 									tmp2 = parts[r].tmp2;
@@ -175,25 +277,6 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									tmpz = 1;
 									continue;
-								case 20:
-									if (!(modFlag & 1))
-									{
-										if (!colored)
-											colored = 0x3FFFFFFF;
-										tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
-										if (parts[r].tmp & 0x1)
-											tmp = ~tmp;
-										colored &= tmp;
-										if (!colored)
-											goto break1a;
-									}
-									else
-									{
-										parts[r].ctype = modProp;
-										if (!nostop)
-											goto break1a;
-									}
-									continue;
 								case 35:
 									if (!(modFlag & 1))
 									{
@@ -204,89 +287,6 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									parts[r].ctype = modProp;
 									if (!nostop)
 										goto break1a;
-									continue;
-								case 28:
-									if (noturn)
-										continue;
-									if (!max_turn)
-										goto break1a;
-									nxx += nxi; nyy += nyi;
-									switch (parts[r].tmp & 7)
-									{
-									case 0: // turn right
-										tmp =  nxi;
-										nxi = -nyi;
-										nyi =  tmp;
-										break;
-									case 1: // turn left
-										tmp =  nxi;
-										nxi =  nyi;
-										nyi = -tmp;
-										break;
-									case 2: // "/" reflect
-										tmp =  nxi;
-										nxi =  nyi;
-										nyi =  tmp;
-										break;
-									case 3: // "\" reflect
-										tmp =  nxi;
-										nxi = -nyi;
-										nyi = -tmp;
-										break;
-									case 4: // go "/\"
-										nxi = 0; nyi = -1;
-										break;
-									case 5: // go "\/"
-										nxi = 0; nyi = 1;
-										break;
-									case 6: // go ">"
-										nxi = 1; nyi = 0;
-										break;
-									case 7: // go "<"
-										nxi = -1; nyi = 0;
-										break;
-									}
-									nxx -= nxi; nyy -= nyi;
-									max_turn--;
-									continue;
-								case 13:
-									if (parts[r].tmp2 == 3)
-									{
-										tmp = parts[r].ctype;
-										tmp2 = parts[r].tmp;
-										for (nyy+=2*nyi, nxx+=2*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
-										{
-											if (!sim->InBounds(x+nxx, y+nyy))
-												break;
-											r = pmap[y+nyy][x+nxx];
-											if (!r)
-												continue;
-											parts[r>>8].dcolour = tmp;
-										}
-										goto break1a;
-									}
-									
-								case 16:
-									if (parts[r /* actually: r>>8 */].ctype == 1)
-									{
-										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
-									}
-									docontinue = nostop;
-									continue;
-								case 19:
-									r_incr += (int)((parts[r].temp + 26.85f) / 100) - 3;
-									continue;
-								case 23:
-									for (; ; nyy+=nyi, nxx+=nxi)
-									{
-										int front1 = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
-										int ftype1 = front1 & 0xFF;
-										if (ftype1 != PT_BIZR && ftype1 != PT_BIZRG && ftype1 != PT_BIZRS)
-										{
-											break;
-										}
-										colored = parts[front1 >> 8].ctype;
-									}
 									continue;
 								}
 							}
