@@ -60,12 +60,12 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 		if (!parts[i].pavg[0])
 		{
 			int rt = parts[i].tmp4;
-			if ((rt >> 16) == 1)
-			{
-				sim->part_change_type(i,x,y,PT_E189);
-				parts[i].life = rt & 0xFFFF;
-			}
-			else
+			// if ((rt >> 16) == 1)
+			// {
+			//	sim->part_change_type(i,x,y,PT_E189);
+			//	parts[i].life = rt & 0xFFFF;
+			// }
+			// else
 				sim->part_change_type(i,x,y,rt);
 			// parts[i].tmp2 = parts[i].tmp4;
 			parts[i].tmp4 = 0;
@@ -128,10 +128,10 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 						// parts[r>>8].tmp4 = parts[r>>8].tmp2;
 						{
 							int rt = r&0xFF;
-							if (rt == PT_E189)
-								parts[r>>8].tmp4 = 0x10000 | parts[r>>8].life;
-							else
-								parts[r>>8].tmp4 = (r&0xFF);
+							// if (rt == PT_E189)
+							//	parts[r>>8].tmp4 = 0x10000 | parts[r>>8].life;
+							// else
+							parts[r>>8].tmp4 = (r&0xFF);
 						}
 						parts[r>>8].pavg[0] = 0;
 						if (parts[i].pavg[1])
