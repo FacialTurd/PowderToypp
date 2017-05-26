@@ -1371,6 +1371,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			}
 			return return_value;
 		case 24: // shift register
+			if (rtmp <= 0)
+				rtmp = XRES + YRES;
 			for (rx = -1; rx < 2; rx++)
 				for (ry = -1; ry < 2; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
@@ -1387,20 +1389,23 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								continue;
 							nx = x + rx, ny = y + ry;
 							int nx2 = nx, ny2 = ny;
-							for (rrx = 0; sim->InBounds(nx, ny); rrx++, nx+=rx, ny+=ry) // fixed
+							for (rrx = 0; sim->InBounds(nx, ny) && rrx < rtmp; rrx++, nx+=rx, ny+=ry) // fixed
 							{
 								rr = pmap[ny][nx];
-								if ((rr&0xFF) == PT_INSL || sim->elements[rr&0xFF].Properties2 & PROP_NODESTRUCT) break;
+								if ((rr&0xFF) == PT_INSL || sim->elements[rr&0xFF].Properties2 & PROP_NODESTRUCT)
+									break;
 								pmap[ny][nx] = 0; // clear pmap
 								Element_PSTN::tempParts[rrx] = rr;
 							}
 							for (rry = 0; rry < rrx; rry++) // "rrx" in previous "for" loop
 							{
 								rr = Element_PSTN::tempParts[rry]; // moving like PSTN
+								if (!rr)
+									continue;
 								rii = rry + ri;
 								if (rii < 0 || rii >= rrx) // assembly: "cmp rii, rrx" then "jae/jb ..."
 								{
-									if (!(rtmp & 1))
+									if (!(parts[i].tmp3 & 1))
 									{
 										sim->kill_part(rr >> 8);
 										continue;
