@@ -1127,7 +1127,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									r = pmap[ny += ry][nx += rx];
 								}
 								break;
-							case PT_PUMP: case PT_GPMP:
+							case PT_PUMP: case PT_GPMP: case PT_DLAY:
 								rrx = r & 0xFF;
 								rdif = (parts[i].tmp == PT_PSCN) ? 1.0f : -1.0f;
 								while (BOUNDS_CHECK && (r & 0xFF) == rrx) // check another pumps

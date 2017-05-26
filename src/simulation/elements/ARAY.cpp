@@ -254,6 +254,21 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 5:
 										pass_wall = !pass_wall;
 										break;
+									case 6:
+										{
+											nxx += nxi; nyy += nyi;
+											int front1 = pmap[y+nyi+nyy][x+nxi+nxx];
+											switch (front1 & 0xFF)
+											{
+											case PT_DLAY:
+												tmpz2 += (int)(parts[front1>>8].temp - (273.15f - 0.5f));
+											break;
+											case PT_INVIS:
+												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
+											break;
+											}
+										}
+										break;
 									}
 									tmpz = 1;
 									continue;
