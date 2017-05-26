@@ -1379,19 +1379,22 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((r&0xFF) == PT_SPRK)
 						{
 							nx = x + rx, ny = y + ry;
-							int old_r = pmap[ny][nx];
+							int old_r = 0;
 							while (!sim->InBounds(nx, ny))
 							{
 								rr = old_r;
-								if (rr && (rr&0xFF) != PT_INWR)
+								if (rr)
 								{
-									sim->kill_part(rr>>8);
-									break;
+									if ((rr&0xFF) != PT_INWR)
+									{
+										sim->kill_part(rr>>8);
+										break;
+									}
+									parts[rr>>8].x += rx;
+									parts[rr>>8].y += ry;
+									pmap[ny][nx] = old_r;
 								}
-								parts[rr].x += rx;
-								parts[rr].y += ry;
-								pmap[ny][nx] = 0;
-								nx += rx; ny += ry;
+								nx += rx; ny += ry; // mutated
 								old_r = pmap[ny][nx];
 								pmap[ny][nx] = rr;
 							}
