@@ -1381,18 +1381,27 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
 							rctype = parts[r>>8].ctype;
-							if (rctype == PT_PSCN)
-								ri =  floor((parts[i].temp - 268.15)/10); // How many tens of degrees above 0 C
-							else if (rctype == PT_NSCN)
+							switch (rctype)
+							{
+							case PT_PTCT:
+								if (!rx || !ry) continue;
+							case PT_PSCN:
+								ri = floor((parts[i].temp - 268.15)/10); // How many tens of degrees above 0 C
+								break;
+							case PT_NTCT:
+								if (!rx || !ry) continue;
+							case PT_NSCN:
 								ri = -floor((parts[i].temp - 268.15)/10);
-							else
+								break;
+							default:
 								continue;
+							}
 							nx = x + rx, ny = y + ry;
 							int nx2 = nx, ny2 = ny;
 							for (rrx = 0; sim->InBounds(nx, ny) && rrx < rtmp; rrx++, nx+=rx, ny+=ry) // fixed
 							{
 								rr = pmap[ny][nx];
-								if ((rr&0xFF) == PT_INSL || sim->elements[rr&0xFF].Properties2 & PROP_NODESTRUCT)
+								if ((rr&0xFF) == PT_INSL || sim->elements[rr&0xFF].Properties2 & PROP_NODESTRUCT) // don't moving INSL
 									break;
 								pmap[ny][nx] = 0; // clear pmap
 								Element_PSTN::tempParts[rrx] = rr;
