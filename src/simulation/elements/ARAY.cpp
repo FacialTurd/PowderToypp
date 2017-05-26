@@ -44,8 +44,8 @@ Element_ARAY::Element_ARAY()
 	Update = &Element_ARAY::update;
 }
 
-//#TPT-Directive ElementHeader Element_ARAY static int temp_z1[5];
-int Element_ARAY::temp_z1[5];
+// #TPT-Directive ElementHeader Element_ARAY static int temp_z1[5];
+// int Element_ARAY::temp_z1[5];
 
 //#TPT-Directive ElementHeader Element_ARAY static int update(UPDATE_FUNC_ARGS)
 int Element_ARAY::update(UPDATE_FUNC_ARGS)
@@ -69,7 +69,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int nostop = (parts[r>>8].ctype==PT_INST) ? 1 : 0;
 						int spc_conduct = 0, ray_less = 0;
 						int colored = 0, noturn = 0, rt, tmp, tmp2;
-						int max_turn = parts[i].tmp, tmpz = 0;
+						int max_turn = parts[i].tmp, tmpz = 0, tmpz2 = 0;
 						int r_incr = 1, pass_wall = 1;
 						if (max_turn <= 0)
 							max_turn = 256;
@@ -123,7 +123,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									{
 										tmp = parts[r].ctype;
 										tmp2 = parts[r].tmp;
-										for (nyy+=2*nyi, nxx+=2*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
+										for (nyy+=(2+tmpz2)*nyi, nxx+=(2+tmpz2)*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
 										{
 											if (!sim->InBounds(x+nxx, y+nyy))
 												break;
@@ -165,15 +165,16 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									continue;
 								case 23:
-									for (; ; nyy+=nyi, nxx+=nxi)
 									{
 										int front1 = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
 										int ftype1 = front1 & 0xFF;
-										if (ftype1 != PT_BIZR && ftype1 != PT_BIZRG && ftype1 != PT_BIZRS)
+										while (ftype1 == PT_BIZR || ftype1 == PT_BIZRG || ftype1 == PT_BIZRS)
 										{
-											break;
+											colored = parts[front1 >> 8].ctype;
+											nyy+=nyi; nxx+=nxi;
+											front1 = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
+											ftype1 = front1 & 0xFF;
 										}
-										colored = parts[front1 >> 8].ctype;
 									}
 									continue;
 								case 28:
@@ -226,7 +227,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									switch (tmp2)
 									{
 									case 0:
-										temp_z1[0] = noturn;
+										// temp_z1[8] = noturn;
 										noturn = (tmp >> (2 * noturn)) & 0x3;
 										if (noturn == 3)
 										{
@@ -234,45 +235,24 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										break;
 									case 1:
-										temp_z1[1] = tmp2 = nostop | (destroy << 1);
+										// temp_z1[8] = tmp2 = nostop | (destroy << 1);
 										tmp2 = (tmp >> (2 * tmp2));
 										nostop = tmp2 & 0x1;
 										destroy = (tmp2 >> 1) & 0x1;
 										break;
 									case 2:
-										temp_z1[2] = spc_conduct;
+										// temp_z1[8] = spc_conduct;
 										spc_conduct = tmp;
 										break;
 									case 3:
-										temp_z1[3] = ray_less;
+										// temp_z1[8] = ray_less;
 										ray_less = ((tmp ^ 1) >> ray_less) & 0x1;
 										break;
 									case 4:
-										tmpz = 4;
-										tmp2 = tmp & 3;
-										if (tmp & 4)
-										{
-											swap = tmpz;
-											tmpz = tmp2;
-											tmp2 = swap;
-										}
-										temp_z1[tmpz] = temp_z1[tmp2];
+										tmpz2 = tmp;
 										break;
 									case 5:
-										if (tmp & 1)
-											noturn = temp_z1[0];
-										if (tmp & 2)
-										{
-											tmp2 = temp_z1[1];
-											nostop = tmp2 & 0x1;
-											destroy = (tmp2 >> 1) & 0x1;
-										}
-										if (tmp & 4)
-											spc_conduct = temp_z1[2];
-										if (tmp & 8)
-											ray_less = temp_z1[3];
-										if (tmp & 16)
-											pass_wall = !pass_wall;
+										pass_wall = !pass_wall;
 										break;
 									}
 									tmpz = 1;
