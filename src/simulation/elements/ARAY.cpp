@@ -260,8 +260,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											int front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 											switch (front1 & 0xFF)
 											{
-											case PT_DLAY:
-												tmpz2 += (int)(parts[front1>>8].temp - (273.15f - 0.5f));
+											case PT_FRAY:
+												tmpz2 += parts[front1 >> 8].tmp;
 											break;
 											case PT_INVIS:
 												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);

@@ -1127,7 +1127,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									r = pmap[ny += ry][nx += rx];
 								}
 								break;
-							case PT_PUMP: case PT_GPMP: case PT_DLAY:
+							case PT_PUMP: case PT_GPMP:
 								rrx = r & 0xFF;
 								rdif = (parts[i].tmp == PT_PSCN) ? 1.0f : -1.0f;
 								while (BOUNDS_CHECK && (r & 0xFF) == rrx) // check another pumps
@@ -1135,6 +1135,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									parts[r>>8].temp += rdif;
 									r = pmap[ny += ry][nx += rx];
 								}
+								break;
+							case PT_FRAY:
+								rrx = r & 0xFF;
+								rii = (parts[i].tmp == PT_PSCN) ? 1 : -1;
+								parts[r>>8].tmp += rii;
+								if (parts[r>>8].tmp < 0)
+									parts[r>>8].tmp = 0;
 								break;
 							case PT_C5:
 								r = pmap[ny += ry][nx += rx];
@@ -1362,6 +1369,34 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 				}
 			}
+			return 1;
+		case 24: // shift register
+			for (rx = -1; rx < 2; rx++)
+				for (ry = -1; ry < 2; ry++)
+					if (BOUNDS_CHECK && (!rx != !ry))
+					{
+						r = pmap[y-ry][x-rx];
+						if ((r&0xFF) == PT_SPRK)
+						{
+							nx = x + rx, ny = y + ry;
+							int old_r = pmap[ny][nx];
+							while (!sim->InBounds(nx, ny))
+							{
+								rr = old_r;
+								if (rr && (rr&0xFF) != PT_INWR)
+								{
+									sim->kill_part(rr>>8);
+									break;
+								}
+								parts[rr].x += rx;
+								parts[rr].y += ry;
+								pmap[ny][nx] = 0;
+								nx += rx; ny += ry;
+								old_r = pmap[ny][nx];
+								pmap[ny][nx] = rr;
+							}
+						}
+					}
 			return 1;
 		}
 		break;
