@@ -1373,7 +1373,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		case 24: // shift register
 			for (rx = -1; rx < 2; rx++)
 				for (ry = -1; ry < 2; ry++)
-					if (BOUNDS_CHECK && (!rx != !ry))
+					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y-ry][x-rx];
 						if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
