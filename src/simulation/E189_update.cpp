@@ -1376,13 +1376,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (!rx != !ry))
 					{
 						r = pmap[y-ry][x-rx];
-						if ((r&0xFF) == PT_SPRK)
+						if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
 							rctype = parts[r>>8].ctype;
 							if (rctype == PT_PSCN)
-								ri =  floor((parts[r>>8].temp - 268.15)/10); // How many tens of degrees above 0 C
+								ri =  floor((parts[i].temp - 268.15)/10); // How many tens of degrees above 0 C
 							else if (rctype == PT_NSCN)
-								ri = -floor((parts[r>>8].temp - 268.15)/10);
+								ri = -floor((parts[i].temp - 268.15)/10);
 							else
 								continue;
 							nx = x + rx, ny = y + ry;
