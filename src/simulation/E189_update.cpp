@@ -1369,7 +1369,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 				}
 			}
-			return 1;
+			return return_value;
 		case 24: // shift register
 			for (rx = -1; rx < 2; rx++)
 				for (ry = -1; ry < 2; ry++)
@@ -1378,29 +1378,45 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y-ry][x-rx];
 						if ((r&0xFF) == PT_SPRK)
 						{
+							rctype = parts[r>>8].ctype;
+							if (rctype == PT_PSCN)
+								ri =  floor((parts[r>>8].temp - 268.15)/10); // How many tens of degrees above 0 C
+							else if (rctype == PT_NSCN)
+								ri = -floor((parts[r>>8].temp - 268.15)/10);
+							else
+								continue;
 							nx = x + rx, ny = y + ry;
-							int old_r = 0;
-							while (!sim->InBounds(nx, ny))
+							int nx2 = nx, ny2 = ny;
+							for (rrx = 0; sim->InBounds(nx, ny); rrx++, nx+=rx, ny+=ry) // fixed
 							{
-								rr = old_r;
-								if (rr)
+								rr = pmap[ny][nx];
+								if ((rr&0xFF) == PT_INSL || sim->elements[rr&0xFF].Properties2 & PROP_NODESTRUCT) break;
+								pmap[ny][nx] = 0; // clear pmap
+								Element_PSTN::tempParts[rrx] = rr;
+							}
+							for (rry = 0; rry < rrx; rry++) // "rrx" in previous "for" loop
+							{
+								rr = Element_PSTN::tempParts[rry]; // moving like PSTN
+								rii = rry + ri;
+								if (rii < 0 || rii >= rrx) // assembly: "cmp rii, rrx" then "jae/jb ..."
 								{
-									if ((rr&0xFF) != PT_INWR)
+									if (!(rtmp & 1))
 									{
-										sim->kill_part(rr>>8);
-										break;
+										sim->kill_part(rr >> 8);
+										continue;
 									}
-									parts[rr>>8].x += rx;
-									parts[rr>>8].y += ry;
-									pmap[ny][nx] = old_r;
+									else if (rii < 0)
+										rii += rrx;
+									else
+										rii -= rrx;
 								}
-								nx += rx; ny += ry; // mutated
-								old_r = pmap[ny][nx];
+								nx = nx2 + rii * rx; ny = ny2 + rii * ry;
+								parts[rr>>8].x = nx; parts[rr>>8].y = ny;
 								pmap[ny][nx] = rr;
 							}
 						}
 					}
-			return 1;
+			return return_value;
 		}
 		break;
 			
