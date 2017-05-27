@@ -47,7 +47,7 @@ private:
 	unsigned int debugFlags;
 public:
 	bool HasDone;
-	int extra_option_x[4];
+	// int extra_option_x[4];
 	class SearchCallback;
 	class SSaveCallback;
 	class TagsCallback;
