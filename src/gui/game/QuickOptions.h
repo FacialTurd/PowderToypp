@@ -119,6 +119,7 @@ public:
 	}
 };
 
+/*
 class LangtonsLoopsOption: public QuickOption
 {
 public:
@@ -136,3 +137,4 @@ public:
 		m->SetLLCA(!m->GetLLCA());
 	}
 };
+*/

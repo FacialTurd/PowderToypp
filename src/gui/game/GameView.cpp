@@ -574,7 +574,7 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 		delete quickOptionButtons[i];
 	}
 
-	int currentY = 1;
+	int currentY = 1, iterid = 0;
 	vector<QuickOption*> optionList = sender->GetQuickOptions();
 	for(vector<QuickOption*>::iterator iter = optionList.begin(), end = optionList.end(); iter != end; ++iter)
 	{
