@@ -22,5 +22,7 @@ public:
 			parts[r>>8].life = 4;
 		}
 	}
+	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
+	// static bool GetDecoration();
 };
 #endif

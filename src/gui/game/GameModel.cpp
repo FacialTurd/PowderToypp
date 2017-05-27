@@ -19,6 +19,7 @@
 #include "GameModelException.h"
 #include "Format.h"
 #include "Favorite.h"
+#include "simulation/E189_update.h"
 
 GameModel::GameModel():
 	clipboard(NULL),
@@ -142,6 +143,8 @@ GameModel::GameModel():
 	// cap due to memory usage (this is about 3.4GB of RAM)
 	if (undoHistoryLimit > 200)
 		undoHistoryLimit = 200;
+	
+	// sim->renderer_decorations = &(ren->decorations_enable);
 }
 
 GameModel::~GameModel()
@@ -157,14 +160,14 @@ GameModel::~GameModel()
 
 	Client::Ref().SetPref("Renderer.GravityField", (bool)ren->gravityFieldEnabled);
 	Client::Ref().SetPref("Renderer.Decorations", (bool)ren->decorations_enable);
-	Client::Ref().SetPref("Simulation.LangtonsLoops", (bool)sim->extraLoopsCA);
-	Client::Ref().SetPref("Simulation.ExtraLoopsType", (int)sim->extraLoopsType);
 	Client::Ref().SetPref("Renderer.DebugMode", ren->debugLines); //These two should always be equivalent, even though they are different things
 
 	Client::Ref().SetPref("Simulation.EdgeMode", edgeMode);
 	Client::Ref().SetPref("Simulation.NewtonianGravity", sim->grav->ngrav_enable);
 	Client::Ref().SetPref("Simulation.AmbientHeat", sim->aheat_enable);
 	Client::Ref().SetPref("Simulation.PrettyPowder", sim->pretty_powder);
+	Client::Ref().SetPref("Simulation.LangtonsLoops", (bool)sim->extraLoopsCA);
+	Client::Ref().SetPref("Simulation.ExtraLoopsType", (int)sim->extraLoopsType);
 
 	Client::Ref().SetPref("Decoration.Red", (int)colour.Red);
 	Client::Ref().SetPref("Decoration.Green", (int)colour.Green);
@@ -914,24 +917,41 @@ bool GameModel::GetPaused()
 	return sim->sys_pause?true:false;
 }
 
-void GameModel::SetDecoration(bool decorationState)
+void GameModel::SetDecoration(bool decorationState /*, bool no_tip */ )
 {
 	if (ren->decorations_enable != (decorationState?1:0))
 	{
 		ren->decorations_enable = decorationState?1:0;
 		notifyDecorationChanged();
 		UpdateQuickOptions();
-		if (decorationState)
-			SetInfoTip("Decorations Layer: On");
-		else
-			SetInfoTip("Decorations Layer: Off");
+		// if (!no_tip)
+		// {
+			if (decorationState)
+				SetInfoTip("Decorations Layer: On");
+			else
+				SetInfoTip("Decorations Layer: Off");
+		// }
 	}
 }
+
+#if 0
+void E189_Update::SetDecoration(bool decorationState)
+{
+	GameModel::SetDecoration(bool decorationState, true);
+}
+#endif
 
 bool GameModel::GetDecoration()
 {
 	return ren->decorations_enable?true:false;
 }
+
+#if 0
+bool E189_Update::GetDecoration()
+{
+	return GameModel::GetDecoration();
+}
+#endif
 
 void GameModel::SetLLCA(bool m)
 {

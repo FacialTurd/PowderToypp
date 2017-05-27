@@ -325,7 +325,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 #endif /* NO_SPC_ELEM_EXPLODE */
-	case 10: // electronics debugger [电子产品调试]
+	case 10: // electronics debugger input [电子产品调试]
 		for (rx = -1; rx <= 1; rx++)
 			for (ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -398,6 +398,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									}
 								}
 							break;
+							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
 							E189_Update::InsertText(sim, i, x, y, -rx, -ry);

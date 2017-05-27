@@ -168,7 +168,7 @@ public:
 	bool GetPaused();
 	void SetPaused(bool pauseState);
 	bool GetDecoration();
-	void SetDecoration(bool decorationState);
+	void SetDecoration(bool decorationState, bool no_tip = false);
 	bool GetLLCA();
 	void SetLLCA(bool m);
 	bool GetAHeatEnable();

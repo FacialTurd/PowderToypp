@@ -1451,7 +1451,7 @@ void Renderer::render_parts()
 				//Apply decoration colour
 				if(!(colour_mode & ~COLOUR_GRAD) && decorations_enable && deca)
 				{
-					if (deca >= 255) // 为什么仅仅对数据进行了排序，处理速度就快了将近一倍还要多呢？
+					if (deca >= 255)
 					{
 						if(!(pixel_mode & NO_DECO))
 						{
