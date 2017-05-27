@@ -1248,7 +1248,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							else
 								parts[r>>8].life = rrx;
 						}
-						else if ((r&0xFF) == PT_METL || (r&0xFF) == PT_PSCN || (r&0xFF) == PT_NSCN)
+						else if ((r&0xFF) == PT_METL || (r&0xFF) == PT_PSCN || (r&0xFF) == PT_NSCN || (r&0xFF) == PT_INDC)
 						{
 							if (rry)
 								parts[r>>8].life = 0;
