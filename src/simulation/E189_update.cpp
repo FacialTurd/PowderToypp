@@ -1934,6 +1934,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		pmap[ry][rx] = parts[i].type | (i<<8);
 		parts[i].x = rx;
 		parts[i].y = ry;
+		parts[i].tmp = rr;
 		if (rtmp & 4) // white square
 		{
 			ri = sim->create_part(-1, x, y, PT_INWR);
