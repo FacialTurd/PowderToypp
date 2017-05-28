@@ -1922,7 +1922,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		rr |= rtmp & ~7;
 		rx = x - tron_rx[rr]; ry = y - tron_ry[rr];
 		r = pmap[ry][rx];
-		if ((r&0xFF) == PT_INWR)
+		if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype = PT_INWR)
 		{
 			sim->kill_part(r>>8); rr |= 4;
 		}
