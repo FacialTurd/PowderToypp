@@ -2310,7 +2310,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					RESTRICTVERSION(91, 5);
 				}
 #ifdef SNAPSHOT
-				if (particles[i].type == PT_E180 || particles[i].type == PT_E181 || particles[i].type == PT_E182)
+				if (particles[i].type == PT_E180 || particles[i].type == PT_E181 || particles[i].type == PT_E182
+#ifdef MOD_ID_2
+				|| particles[i].type == PT_E185 || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == PT_E188
+#endif
+				)
 				{
 					RESTRICTVERSION(92, 0);
 					fromNewerVersion = true;
