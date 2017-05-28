@@ -21,6 +21,8 @@ unsigned msvc_clz(unsigned a)
 #define __builtin_clz msvc_clz
 #endif
 
+// 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
+
 int E189_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, legacyUpdate, etc.
@@ -1904,6 +1906,40 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						return return_value;
 					}
 				}
+		break;
+	case 37: // Simulation of Langton's ant
+		// At a white square (NONE), turn 90° right ((tmp % 4) += 1), flip the color of the square, move forward one unit
+		// At a black square (INWR), turn 90° left  ((tmp % 4) -= 1), flip the color of the square, move forward one unit
+		// direction: 0 = right, 1 = down, 2 = left, 3 = up
+		if ((rtmp & 4) == 0) // white square
+		{
+			rr = (rtmp + 1) & 3;
+		}
+		else // black square
+		{
+			rr = (rtmp - 1) & 3;
+		}
+		rr |= rtmp & ~7;
+		rx = x - tron_rx[rr]; ry = y - tron_ry[rr];
+		r = pmap[ry][rx];
+		if ((r&0xFF) == PT_INWR)
+		{
+			sim->kill_part(r>>8); rr |= 4;
+		}
+		else if (r)
+		{
+			sim->kill_part(i); return return_value;
+		}
+		pmap[y][x] = 0;
+		pmap[ry][rx] = parts[i].type | (i<<8);
+		parts[i].x = rx;
+		parts[i].y = ry;
+		if (rtmp & 4) // white square
+		{
+			ri = sim->create_part(-1, x, y, PT_INWR);
+			if (ri >= 0)
+				parts[ri].dcolour = parts[i].ctype;
+		}
 		break;
 	}
 	
