@@ -21,6 +21,13 @@ unsigned msvc_clz(unsigned a)
 #define __builtin_clz msvc_clz
 #endif
 
+int ant_states[] = {2, 2};
+
+int (**ant_rules)[2] = {
+	{{1, 1}, {3, 0}},
+	{{1, 1}, {0, 0}},
+};
+
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 
 int E189_Update::update(UPDATE_FUNC_ARGS)
@@ -1907,7 +1914,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 				}
 		break;
-	case 37: // Simulation of Langton's ant
+	case 37: // Simulation of Langton's ant (turmite)
 		// At a white square (NONE), turn 90° right ((tmp % 4) += 1), flip the color of the square, move forward one unit
 		// At a black square (INWR), turn 90° left  ((tmp % 4) -= 1), flip the color of the square, move forward one unit
 		// direction: 0 = right, 1 = down, 2 = left, 3 = up
@@ -1917,7 +1924,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		}
 		else // black square
 		{
-			rr = (rtmp - 1) & 3;
+			ri = parts[i].tmp2;
+			rr = (rtmp - (ri ? 0 : 1)) & 3;
 		}
 		rr |= rtmp & ~7;
 		rx = x - tron_rx[rr]; ry = y - tron_ry[rr];
@@ -1932,26 +1940,36 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			if (ry >= YRES-CELL)
 				ry -= YRES - 2*CELL;
 		}
-		r = pmap[ry][rx];
+		
+		pmap[y][x] = 0;
 		if (!(rtmp & 4)) // black <-> white square
 		{
 			ri = sim->create_part(-1, x, y, PT_INWR);
 			if (ri >= 0)
 				parts[ri].dcolour = parts[i].ctype;
 		}
-		if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
-			sim->kill_part(r>>8), rr |= 4;
-		else if (r || sim->IsWallBlocking(rx, ry, 0))
+		if (sim->IsWallBlocking(rx, ry, 0))
+			goto kill1;
+		else
 		{
-			sim->kill_part(i);
-			return return_value;
+			r = pmap[ry][rx];
+			if (r)
+			{
+				if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
+					sim->kill_part(r>>8), rr |= 4;
+				else
+					goto kill1;
+			}
 		}
 		parts[i].x = rx;
 		parts[i].y = ry;
-		pmap[y][x] = 0;
+		
 		parts[i].tmp = rr;
 		pmap[ry][rx] = parts[i].type | (i<<8);
 		break;
+	kill1:
+		sim->kill_part(i);
+		return return_value;
 	}
 	
 	if(ttan>=2) {
