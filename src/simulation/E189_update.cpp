@@ -1911,7 +1911,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		// At a white square (NONE), turn 90° right ((tmp % 4) += 1), flip the color of the square, move forward one unit
 		// At a black square (INWR), turn 90° left  ((tmp % 4) -= 1), flip the color of the square, move forward one unit
 		// direction: 0 = right, 1 = down, 2 = left, 3 = up
-		if ((rtmp & 4) == 0) // white square
+		if (!(rtmp & 4)) // white square
 		{
 			rr = (rtmp + 1) & 3;
 		}
@@ -1935,7 +1935,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		parts[i].x = rx;
 		parts[i].y = ry;
 		parts[i].tmp = rr;
-		if (rtmp & 4) // white square
+		if (!(rtmp & 4)) // white square
 		{
 			ri = sim->create_part(-1, x, y, PT_INWR);
 			if (ri >= 0)
