@@ -21,12 +21,6 @@ unsigned msvc_clz(unsigned a)
 #define __builtin_clz msvc_clz
 #endif
 
-int ant_states[] = {2, 2};
-
-int (**ant_rules)[2] = {
-	{{1, 1}, {3, 0}},
-	{{1, 1}, {0, 0}},
-};
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 
@@ -1447,6 +1441,38 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 						}
 					}
+			return return_value;
+		case 25: // arrow key detector
+			rrx = Element_E189::Arrow_keys; // current state
+			rry = (parts[i].flags >> 16); // previous state
+			switch (rtmp)
+			{
+				case 0: break;
+				case 1: rry = rrx & ~rry; break; // start pressing key
+				case 2: rry &= ~rrx; break; // end pressing key
+				default:
+					return return_value;
+			}
+			parts[i].flags &= 0x0000FFFF;
+			parts[i].flags |= (rrx << 16);
+			for (rii = 0; rii < 4; rii++) // do 4 times
+			{
+				if (rry & (1 << rii)) // check direction
+				{
+					rx = tron_ry[rii];
+					ry = tron_rx[rii];
+					r = pmap[y+ry][x+rx]; // checking distance = 1
+					if (!r)
+					{
+						rx *= 2; ry *= 2;
+						r = pmap[y+ry][x+rx]; // checking distance = 2
+					}
+					if (!r)
+						continue;
+					if ((sim->elements[r & 0xFF].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+						conductTo (sim, r, x+rx, y+ry, parts);
+				}
+			}
 			return return_value;
 		}
 		break;

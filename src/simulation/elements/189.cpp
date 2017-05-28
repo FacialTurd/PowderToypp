@@ -59,6 +59,9 @@ Element_E189::Element_E189()
 //#TPT-Directive ElementHeader Element_E189 static bool useDefaultPart
 bool Element_E189::useDefaultPart = false;
 
+//#TPT-Directive ElementHeader Element_E189 static int Arrow_keys
+int Element_E189::Arrow_keys = 0; // Note: TPT uses SDL
+
 //#TPT-Directive ElementHeader Element_E189 static void HSV2RGB(int ctype, int *r, int *g, int *b)
 void Element_E189::HSV2RGB (int ctype, int *r, int *g, int *b)
 {

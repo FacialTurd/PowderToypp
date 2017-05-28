@@ -745,6 +745,21 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 				}
 			}
 		}
+		switch(key)
+		{
+		case SDLK_UP:
+			Element_E189::Arrow_keys |= 0x1;
+			break;
+		case SDLK_LEFT:
+			Element_E189::Arrow_keys |= 0x2;
+			break;
+		case SDLK_DOWN:
+			Element_E189::Arrow_keys |= 0x4;
+			break;
+		case SDLK_RIGHT:
+			Element_E189::Arrow_keys |= 0x8;
+			break;
+		}
 	}
 		
 	for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
@@ -766,14 +781,17 @@ bool GameController::KeyRelease(int key, Uint16 character, bool shift, bool ctrl
 		{
 			sim->player.pcomm = sim->player.comm;  //Saving last movement
 			sim->player.comm = (int)(sim->player.comm)&12;  //Stop command
+			Element_E189::Arrow_keys &= (key == SDLK_LEFT ? ~0x2 : ~0x8);
 		}
 		if (key == SDLK_UP)
 		{
 			sim->player.comm = (int)(sim->player.comm)&11;
+			Element_E189::Arrow_keys &= ~0x1;
 		}
 		if (key == SDLK_DOWN)
 		{
 			sim->player.comm = (int)(sim->player.comm)&7;
+			Element_E189::Arrow_keys &= ~0x4;
 		}
 
 		if (key == SDLK_d || key == SDLK_a)
