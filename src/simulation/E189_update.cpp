@@ -1409,7 +1409,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rt = rr & 0xFF;
 								if (rt == PT_SPRK)
 									rt = parts[rr>>8].ctype;
-								if (rt != PT_INWR && rt != PT_FILT && rt != PT_STOR)
+								if (rt && rt != PT_INWR && rt != PT_FILT && rt != PT_STOR)
 									break;
 								pmap[ny][nx] = 0; // clear pmap
 								Element_PSTN::tempParts[rrx] = rr;
