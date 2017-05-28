@@ -1921,6 +1921,17 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		}
 		rr |= rtmp & ~7;
 		rx = x - tron_rx[rr]; ry = y - tron_ry[rr];
+		if (edgeMode == 2)
+		{
+			if (rx < CELL)
+				rx += XRES - 2*CELL;
+			if (rx >= XRES-CELL)
+				rx -= XRES - 2*CELL;
+			if (ry < CELL)
+				ry += YRES - 2*CELL;
+			if (ry >= YRES-CELL)
+				ry -= YRES - 2*CELL;
+		}
 		r = pmap[ry][rx];
 		if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
 		{
