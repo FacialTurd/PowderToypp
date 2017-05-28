@@ -1921,7 +1921,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		}
 		rr |= rtmp & ~7;
 		rx = x - tron_rx[rr]; ry = y - tron_ry[rr];
-		if (edgeMode == 2)
+		if (sim->edgeMode == 2)
 		{
 			if (rx < CELL)
 				rx += XRES - 2*CELL;
@@ -1933,13 +1933,16 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				ry -= YRES - 2*CELL;
 		}
 		r = pmap[ry][rx];
-		if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
+		if (r || sim->IsWallBlocking(posX, posY, 0))
 		{
-			sim->kill_part(r>>8); rr |= 4;
-		}
-		else if (r)
-		{
-			sim->kill_part(i); return return_value;
+			if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
+			{
+				sim->kill_part(r>>8); rr |= 4;
+			}
+			else
+			{
+				sim->kill_part(i); return return_value;
+			}
 		}
 		pmap[y][x] = 0;
 		pmap[ry][rx] = parts[i].type | (i<<8);
