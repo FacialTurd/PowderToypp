@@ -1933,28 +1933,24 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				ry -= YRES - 2*CELL;
 		}
 		r = pmap[ry][rx];
-		if (r || sim->IsWallBlocking(posX, posY, 0))
-		{
-			if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
-			{
-				sim->kill_part(r>>8); rr |= 4;
-			}
-			else
-			{
-				sim->kill_part(i); return return_value;
-			}
-		}
-		pmap[y][x] = 0;
-		pmap[ry][rx] = parts[i].type | (i<<8);
-		parts[i].x = rx;
-		parts[i].y = ry;
-		parts[i].tmp = rr;
-		if (!(rtmp & 4)) // white square
+		if (!(rtmp & 4)) // black <-> white square
 		{
 			ri = sim->create_part(-1, x, y, PT_INWR);
 			if (ri >= 0)
 				parts[ri].dcolour = parts[i].ctype;
 		}
+		if ((r&0xFF) == PT_INWR || (r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_INWR)
+			sim->kill_part(r>>8), rr |= 4;
+		else if (r || sim->IsWallBlocking(rx, ry, 0))
+		{
+			sim->kill_part(i);
+			return return_value;
+		}
+		parts[i].x = rx;
+		parts[i].y = ry;
+		pmap[y][x] = 0;
+		parts[i].tmp = rr;
+		pmap[ry][rx] = parts[i].type | (i<<8);
 		break;
 	}
 	
