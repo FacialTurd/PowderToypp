@@ -138,6 +138,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 16:
 									if (parts[r /* actually: r>>8 */].ctype == 1)
 									{
+										if (!parts[r].tmp && r > i) // If the other particle hasn't been life updated
+											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
 									}
 									docontinue = nostop;

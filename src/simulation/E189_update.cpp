@@ -544,6 +544,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		case 1: // conduct->insulate counter
 			if (parts[i].tmp)
 			{
+				if (parts[i].flags & FLAG_SKIPMOVE)
+				{
+					parts[i].flags &= ~FLAG_SKIPMOVE;
+					return return_value;
+				}
 				if (parts[i].tmp2 == 1)
 				{
 					for (rx = -2; rx <= 2; rx++)
