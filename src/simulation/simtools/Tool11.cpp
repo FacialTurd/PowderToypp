@@ -6,7 +6,7 @@ Tool_Tool11::Tool_Tool11()
 	Identifier = "DEFAULT_TOOL_TOOL11";
 	Name = "PSC2";
 	Colour = PIXPACK(0xEE22EE);
-	Description = "Second PSCN, can activite powered materials.";
+	Description = "Second PSCN, can activate powered materials.";
 }
 
 int Tool_Tool11::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
