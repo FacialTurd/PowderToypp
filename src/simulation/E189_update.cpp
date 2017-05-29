@@ -508,14 +508,15 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			rry = parts[i].tmp3; // save old value
 			if (rry)
 				parts[i].tmp3 --;
-			switch (rtmp & 3)
+			switch (rtmp & 4)
 			{
 				case 0: conductive =  rrx ||  rry; break;
 				case 1: conductive =  rrx &&  rry; break;
 				case 2: conductive =  rrx && !rry; break;
-				case 3: conductive = !rrx != !rry; break;
+				case 3: conductive = !rrx &&  rry; break;
+				case 4: conductive = !rrx != !rry; break;
 			}
-			if (rtmp & 4)
+			if (rtmp & 8)
 				conductive = !conductive;
 
 			// PSCNCount = 0;
