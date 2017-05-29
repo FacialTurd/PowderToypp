@@ -14,7 +14,7 @@ int Tool_Tool11::Perform(Simulation * sim, Particle * cpart, int x, int y, float
 	int id = sim->create_part(-1, x, y, PT_PSCN);
 	if (id >= 0)
 	{
-		parts[id].tmp = 1;
+		sim->parts[id].tmp = 1;
 		return 1;
 	}
 	return 0;
