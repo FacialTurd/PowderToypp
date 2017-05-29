@@ -508,7 +508,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			rry = parts[i].tmp3; // save old value
 			if (rry)
 				parts[i].tmp3 --;
-			switch (rtmp & 4)
+			switch (rtmp & 7)
 			{
 				case 0: conductive =  rrx ||  rry; break;
 				case 1: conductive =  rrx &&  rry; break;
