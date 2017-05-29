@@ -1358,7 +1358,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
 						rt = (r&0xFF);
-						if (rt == PT_SPRK)
+						if (rt == PT_SPRK && parts[r>>8].life == 3)
 						{
 							switch (parts[r>>8].ctype)
 							{
