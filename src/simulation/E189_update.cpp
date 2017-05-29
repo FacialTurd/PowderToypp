@@ -1360,10 +1360,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						rt = (r&0xFF);
 						if (rt == PT_SPRK)
 						{
-							if (parts[r>>8].ctype == PT_NSCN)
-								parts[i].tmp = 0;
-							else if (parts[r>>8].ctype == PT_PSCN)
-								parts[i].tmp = 1;
+							switch (parts[r>>8].ctype)
+							{
+								case PT_NSCN: parts[i].tmp = 0; break;
+								case PT_PSCN: parts[i].tmp = 1; break;
+								case PT_INST: parts[i].tmp = !parts[i].tmp; break;
+							}
 						}
 						else if (old_tmp && rt != PT_PSCN && rt != PT_NSCN &&
 							(sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
