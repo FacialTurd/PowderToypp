@@ -147,7 +147,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 			*colr = 0xFF; *colg = 0x5A; *colb = 0x65;
 			return 0;
 		}
-		temp = !(cpart->ctype) && (cpart->tmp & 0x100); // if ctype = 0 and tmp activating
+		temp = !(cpart->ctype) && (cpart->tmp3); // if ctype = 0 and tmp activating
 		if (cpart->tmp2)
 		{
 			*colr = 0x65; *colg = 0xFF; *colb = 0x5A;

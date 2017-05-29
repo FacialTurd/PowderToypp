@@ -504,26 +504,19 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		switch (rctype = parts[i].ctype)
 		{
 		case 0: // logic gate
-			rii = rtmp & ~0xFF;
+			rrx = parts[i].tmp2; // save old value
+			rry = parts[i].tmp3; // save old value
+			if (rry)
+				parts[i].tmp3 --;
 			switch (rtmp & 3)
 			{
-				case 0: conductive =  rii ||  parts[i].tmp2; break;
-				case 1: conductive =  rii &&  parts[i].tmp2; break;
-				case 2: conductive = !rii &&  parts[i].tmp2; break;
-				case 3: conductive = !rii != !parts[i].tmp2; break;
+				case 0: conductive =  rrx ||  rry; break;
+				case 1: conductive =  rrx &&  rry; break;
+				case 2: conductive =  rrx && !rry; break;
+				case 3: conductive = !rrx != !rry; break;
 			}
-			if (!(rtmp & 4) == conductive)
-			{
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
-						if (BOUNDS_CHECK && (rx || ry))
-						{
-							r = pmap[y+ry][x+rx];
-							if ((r & 0xFF) == PT_NSCN) /* && parts[r>>8].life == 0 */
-								conductTo (sim, r, x+rx, y+ry, parts);
-						}
-			}
-			parts[i].tmp -= (rii > 0 ? 0x100 : 0);
+			if (rtmp & 4)
+				conductive = !conductive;
 
 			// PSCNCount = 0;
 			{
@@ -536,15 +529,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							{
 								if (parts[r>>8].ctype == PT_PSCN)
 								{
-									// PSCNCount ++;
-									parts[i].tmp2 = 8 + 1;
-								}
-								else if (parts[r>>8].ctype == PT_BMTL)
-								{
-									// INWRCount ++;
-									parts[i].tmp |= (8 * 0x100);
+									if (parts[r>>8].tmp & 1)
+										parts[i].tmp3 = 8;
+									else
+										parts[i].tmp2 = 8 + 1;
 								}
 							}
+							else if ((r & 0xFF) == PT_NSCN && conductive)
+								conductTo (sim, r, x+rx, y+ry, parts);
 						}
 			}
 			break;
