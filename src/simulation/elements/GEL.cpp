@@ -122,6 +122,12 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					}
 					gel = true;
 					break;
+				case PT_PINVIS:
+					r = parts[r>>8].tmp4;
+					if (!r) continue;
+					rt = r & 0xFF;
+					if (rt == PT_GEL) gel = true;
+					break;
 				default:
 					break;
 				}
