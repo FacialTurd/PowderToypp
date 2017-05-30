@@ -190,6 +190,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((sim->elements[r&0xFF].HeatConduct > 0) && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
 							parts[r>>8].temp = parts[i].temp;
 					}
+			if (sim->aheat_enable) //if ambient heat sim is on
+				sim->hv[y/CELL][x/CELL] = parts[i].temp;
 		}
 		break;
 #ifndef NO_SPC_ELEM_EXPLODE
