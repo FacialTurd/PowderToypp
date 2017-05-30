@@ -5757,8 +5757,8 @@ void Simulation::BeforeSim()
 						case 18:
 							break;
 						case 16:
-							if (parts[r>>8].tmp2) // use "tmp2" attribute for life value, because "life", "ctype" and "tmp" attributes is used for other purpose.
-								parts[r>>8].tmp2--;
+							if (parts[i].tmp2) // use "tmp2" attribute for life value, because "life", "ctype" and "tmp" attributes is used for other purpose.
+								parts[i].tmp2--;
 							break;
 					}
 				}
