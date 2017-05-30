@@ -517,6 +517,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				case 2: conductive =  rrx && !rry; break;
 				case 3: conductive = !rrx &&  rry; break;
 				case 4: conductive = !rrx != !rry; break;
+				case 5: conductive =  rrx; break; // input 1 detector
+				case 6: conductive =  rry; break; // input 2 detector
 			}
 			if (rtmp & 8)
 				conductive = !conductive;
