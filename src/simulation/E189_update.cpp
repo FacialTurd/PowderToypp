@@ -1502,7 +1502,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		rctype &= 0xFF;
 		if (!rctype)
 			return return_value;
-		if (rtmp < 0)
+		if (rtmp <= 0)
 			rtmp = 3;
 		for (rx = -1; rx < 2; rx++)
 			for (ry = -1; ry < 2; ry++)
