@@ -1080,7 +1080,7 @@ void Renderer::render_gravlensing(pixel * source)
 			gy = (int)(ny-sim->gravy[co]*0.875f+0.5f);
 			bx = (int)(nx-sim->gravx[co]+0.5f);
 			by = (int)(ny-sim->gravy[co]+0.5f);
-			if(rx > 0 && rx < XRES && ry > 0 && ry < YRES && gx > 0 && gx < XRES && gy > 0 && gy < YRES && bx > 0 && bx < XRES && by > 0 && by < YRES)
+			if(rx >= 0 && rx < XRES && ry >= 0 && ry < YRES && gx >= 0 && gx < XRES && gy >= 0 && gy < YRES && bx >= 0 && bx < XRES && by >= 0 && by < YRES)
 			{
 				t = dst[ny*(VIDXRES)+nx];
 				r = PIXR(src[ry*(VIDXRES)+rx]) + PIXR(t);
@@ -1451,7 +1451,7 @@ void Renderer::render_parts()
 				//Apply decoration colour
 				if(!(colour_mode & ~COLOUR_GRAD) && decorations_enable && deca)
 				{
-					if (deca >= 255)
+					if (deca >= 255) // 为什么仅仅对数据进行了排序，处理速度就快了将近一倍还要多呢？
 					{
 						if(!(pixel_mode & NO_DECO))
 						{
