@@ -5747,25 +5747,19 @@ void Simulation::BeforeSim()
 		// make E189 work
 		if(elementCount[PT_E189] > 0)
 		{
-			for (int nx = 0; nx < XRES; nx++)
+			for (int i = 0; i <= parts_lastActiveIndex; i++)
 			{
-				for (int ny = 0; ny < YRES; ny++)
+				if(parts[i].type == PT_E189)
 				{
-					int r = pmap[ny][nx];
-					if (!r)
-						continue;
-					if(parts[r>>8].type == PT_E189)
+					switch (parts[i].life)
 					{
-						switch (parts[r>>8].life)
-						{
-							case 13:
-							case 18:
-								break;
-							case 16:
-								if (parts[r>>8].tmp2) // use "tmp2" attribute for life value, because "life", "ctype" and "tmp" attributes is used for other purpose.
-									parts[r>>8].tmp2--;
-								break;
-						}
+						case 13:
+						case 18:
+							break;
+						case 16:
+							if (parts[r>>8].tmp2) // use "tmp2" attribute for life value, because "life", "ctype" and "tmp" attributes is used for other purpose.
+								parts[r>>8].tmp2--;
+							break;
 					}
 				}
 			}
