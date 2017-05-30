@@ -1414,7 +1414,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rt = rr & 0xFF;
 								if (rt == PT_SPRK)
 									rt = parts[rr>>8].ctype;
-								if (rt && rt != PT_INWR && rt != PT_FILT && rt != PT_STOR && rt != PT_BIZR && rt != PT_BIZRG && rt != PT_BIZRS)
+								if (rt && rt != PT_INWR && rt != PT_FILT && rt != PT_STOR && rt != PT_BIZR && rt != PT_BIZRG && rt != PT_BIZRS && rt != PT_GOO)
 									break;
 								pmap[ny][nx] = 0; // clear pmap
 								Element_PSTN::tempParts[rrx] = rr;
@@ -1496,35 +1496,53 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				}
 		return return_value;
 	case 20: // particle emitter
+		{
 		rctype = parts[i].ctype;
-		if (!(rctype & 0xFF))
+		int rctypeExtra = rctype >> 8;
+		rctype &= 0xFF;
+		if (!rctype)
 			return return_value;
+		if (rtmp < 0)
+			rtmp = 3;
 		for (rx = -1; rx < 2; rx++)
 			for (ry = -1; ry < 2; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
-					r = pmap[y+ry][x+rx];
+					r = pmap[y-ry][x-rx];
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
 						// if (sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED && rx && ry) // INWR, PTCT, NTCT, etc.
 						//	continue;
-						if ((rctype & 0xFF) != PT_LIGH || !(rand() & 15))
+						if (rctype != PT_LIGH || !(rand() & 15))
 						{
-							// rx = rand()%3-1;
-							// ry = rand()%3-1;
-							int np = sim->create_part(-1, x-rx, y-ry, rctype & 0xFF, rctype >> 8);
+							nx = x+rx; ny = y+ry;
+							if (rctype == PT_EMBR) // use by EMBR (explosion spark) emitter
+							{
+								rr = pmap[ny][nx];
+								if ((rr & 0xFF) == PT_GLAS)
+								{
+									rdif = parts[rr>>8].temp; // get temperature from GLAS
+									ny += ry; nx += rx;
+								}
+							}
+							int np = sim->create_part(-1, nx, ny, rctype, rctypeExtra);
 							if (np >= 0) {
-								parts[np].vx = -3*rx; parts[np].vy = -3*ry;
+								parts[np].vx = rtmp*rx; parts[np].vy = rtmp*ry;
 								parts[np].dcolour = parts[i].dcolour;
 								if ((rctype & 0xFF) == PT_PHOT && (np > i)) // like E189 (life = 11)
 								{
 									parts[np].flags |= FLAG_SKIPMOVE;
+								}
+								else if (rctype == PT_EMBR)
+								{
+									parts[np].temp = rdif; // set temperature to EMBR
 								}
 							}
 						}
 						// return return_value;
 					}
 				}
+		}
 		break;
 	case 21:
 	/* MERC/DEUT/YEST expander, or SPNG "water releaser",
