@@ -1501,6 +1501,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		{
 		rctype = parts[i].ctype;
 		int rctypeExtra = rctype >> 8;
+		int EMBR_modifier;
 		rctype &= 0xFF;
 		if (!rctype)
 			return return_value;
@@ -1515,6 +1516,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					{
 						// if (sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED && rx && ry) // INWR, PTCT, NTCT, etc.
 						//	continue;
+						EMBR_modifier = 0;
 						if (rctype != PT_LIGH || !(rand() & 15))
 						{
 							nx = x+rx; ny = y+ry;
@@ -1523,8 +1525,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rr = pmap[ny][nx];
 								if ((rr & 0xFF) == PT_GLAS)
 								{
-									rdif = parts[rr>>8].temp; // get temperature from GLAS
 									ny += ry; nx += rx;
+									EMBR_modifier |= 1;
 								}
 							}
 							int np = sim->create_part(-1, nx, ny, rctype, rctypeExtra);
@@ -1535,9 +1537,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								{
 									parts[np].flags |= FLAG_SKIPMOVE;
 								}
-								else if (rctype == PT_EMBR)
+								else if (EMBR_modifier & 1)
 								{
-									parts[np].temp = rdif; // set temperature to EMBR
+									parts[np].temp = parts[rr>>8].temp; // set temperature to EMBR
+									if (parts[rr>>8].life > 0)
+										parts[np].life = parts[rr>>8].life;
 								}
 							}
 						}
