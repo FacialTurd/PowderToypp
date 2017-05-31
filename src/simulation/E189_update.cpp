@@ -1208,37 +1208,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 					}
 			break;
-		case 19: // universal conducts?
-			if (parts[i].tmp2 == 2)
-			{
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
-						if (BOUNDS_CHECK && (!rx || !ry))
-						{
-							r = pmap[y+ry][x+rx];
-							if (!r)
-								continue;
-							pavg = sim->parts_avg(i,r>>8,PT_INSL);
-							if (pavg != PT_INSL && pavg != PT_INDI)
-							{
-								if ((r & 0xFF) == PT_INST)
-								{
-									sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);
-								}
-								else if (sim->elements[r].Properties & PROP_CONDUCTS)
-								{
-									conductTo (sim, r, x+rx, y+ry, parts);
-								}
-							}
-						}
-			}
+		case 19: // universal conducts (without WWLD)?
+			// int oldl;
+			/* oldl */ rii = parts[i].tmp2;
 			if (parts[i].tmp2)
 			{
 				parts[i].tmp2--;
 				break;
 			}
-			// goto continue1c;
-		// continue1c:
 			for (rx = -2; rx <= 2; rx++)
 				for (ry = -2; ry <= 2; ry++)
 					if (BOUNDS_CHECK && (!rx || !ry))
@@ -1246,10 +1223,20 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r) continue;
 						pavg = sim->parts_avg(i,r>>8,PT_INSL);
-						if ((pavg != PT_INSL && pavg != PT_INDI) && (r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+						if (pavg != PT_INSL && pavg != PT_INDI)
 						{
-							parts[i].tmp2 = 2;
-							return return_value;
+							if (rii == 2)
+							{
+								if ((r & 0xFF) == PT_INST)
+									sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);
+								else if (sim->elements[r & 0xFF].Properties & PROP_CONDUCTS)
+									conductTo (sim, r, x+rx, y+ry, parts);
+							}
+							if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+							{
+								parts[i].tmp2 = 2;
+								return return_value;
+							}
 						}
 					}
 			break;
