@@ -1223,20 +1223,19 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r) continue;
 						pavg = sim->parts_avg(i,r>>8,PT_INSL);
-						if (pavg != PT_INSL && pavg != PT_INDI)
+						if (pavg == PT_INSL && pavg == PT_INDI)
+							continue;
+						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
-							if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
-							{
-								parts[i].tmp2 = 2;
-								return return_value;
-							}
-							else if (rii == 2)
-							{
-								if ((r & 0xFF) == PT_INST)
-									sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);
-								else if (sim->elements[r & 0xFF].Properties & PROP_CONDUCTS)
-									conductTo (sim, r, x+rx, y+ry, parts);
-							}
+							parts[i].tmp2 = 2;
+							// return return_value;
+						}
+						else if (rii == 2)
+						{
+							if ((r & 0xFF) == PT_INST)
+								sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);
+							else if (sim->elements[r & 0xFF].Properties & PROP_CONDUCTS)
+								conductTo (sim, r, x+rx, y+ry, parts);
 						}
 					}
 			break;
