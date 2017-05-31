@@ -502,49 +502,58 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case 16:
-		int conductive;
 		switch (rctype = parts[i].ctype)
 		{
 		case 0: // logic gate
-			rrx = parts[i].tmp2; // save old value
-			if (rrx)
-				parts[i].tmp2 --;
-			rry = parts[i].tmp3; // save old value
-			if (rry)
-				parts[i].tmp3 --;
-			switch (rtmp & 7)
 			{
-				case 0: conductive =  rrx ||  rry; break;
-				case 1: conductive =  rrx &&  rry; break;
-				case 2: conductive =  rrx && !rry; break;
-				case 3: conductive = !rrx &&  rry; break;
-				case 4: conductive = !rrx != !rry; break;
-				case 5: conductive =  rrx; break; // input 1 detector
-				case 6: conductive =  rry; break; // input 2 detector
-			}
-			if (rtmp & 8)
-				conductive = !conductive;
+				int conductive;
+				// char* ptr1 = &(parts[i].tmp2);
+				rrx = parts[i].tmp2 & 0xFF;  // movzx reg, al ???
+				if (rrx)
+					parts[i].tmp2 --;
+				rry = (parts[i].tmp2 >> 8) & 0xFF;  // movzx reg, ah ???
+				if (rry)
+					parts[i].tmp2 -= 0x100;
+				switch (rtmp & 7)
+				{
+					case 0: conductive =  rrx ||  rry; break;
+					case 1: conductive =  rrx &&  rry; break;
+					case 2: conductive =  rrx && !rry; break;
+					case 3: conductive = !rrx &&  rry; break;
+					case 4: conductive = !rrx != !rry; break;
+					case 5: conductive =  rrx; break; // input 1 detector
+					case 6: conductive =  rry; break; // input 2 detector
+				}
+				if (rtmp & 8)
+					conductive = !conductive;
 
-			// PSCNCount = 0;
-			{
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
-						if (BOUNDS_CHECK && (rx || ry))
-						{
-							r = pmap[y+ry][x+rx];
-							if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+				// PSCNCount = 0;
+				{
+					for (rx = -2; rx <= 2; rx++)
+						for (ry = -2; ry <= 2; ry++)
+							if (BOUNDS_CHECK && (rx || ry))
 							{
-								if (parts[r>>8].ctype == PT_PSCN)
+								r = pmap[y+ry][x+rx];
+								if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 								{
-									if (parts[r>>8].tmp & 1)
-										parts[i].tmp3 = 8;
-									else
-										parts[i].tmp2 = 8;
+									if (parts[r>>8].ctype == PT_PSCN)
+									{
+										if (parts[r>>8].tmp & 1)
+										{
+											parts[i].tmp2 &= ~(0xFF<<8);
+											parts[i].tmp2 |= 8<<8;
+										}
+										else
+										{
+											parts[i].tmp2 &= ~0xFF;
+											parts[i].tmp2 |= 8;
+										}
+									}
 								}
+								else if ((r & 0xFF) == PT_NSCN && conductive)
+									conductTo (sim, r, x+rx, y+ry, parts);
 							}
-							else if ((r & 0xFF) == PT_NSCN && conductive)
-								conductTo (sim, r, x+rx, y+ry, parts);
-						}
+				}
 			}
 			break;
 		case 1: // conduct->insulate counter

@@ -19,7 +19,7 @@ pixel special_colors [NUM_SPC] = {
 int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 {
 	static char excitedtable [16] = {  0, 8, 2,10,12, 4,14, 6, 3,11, 1, 9,15, 7,13, 5 };
-	int ptmp, ppos, pexc1, temp;
+	int ptmp, ppos, pexc1, temp, tmp2v;
 	int clife = cpart->life;
 	if (clife >= 0 && clife < NUM_SPC) // pre-decoration
 	{
@@ -142,26 +142,30 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		*pixel_mode |= PMODE_BLEND;
 		break;
 	case 16:
-		if (cpart->ctype == 3 && cpart->tmp)
+		switch (cpart->ctype)
 		{
-			*colr = 0xFF; *colg = 0x5A; *colb = 0x65;
-			return 0;
-		}
-		temp = !(cpart->ctype) && (cpart->tmp3); // if ctype = 0 and tmp activating
-		if (cpart->tmp2)
-		{
-			*colr = 0x65; *colg = 0xFF; *colb = 0x5A;
-			if (temp)
+		case 0:
+			if ((cpart->tmp2) & 0xFF)
 			{
-				ptmp  = *colg;
-				*colg = *colb;
-				*colb =  ptmp;
+				*colb += 0x50;
+			}
+			if ((cpart->tmp2 >> 8) & 0xFF)
+			{
+				*colg += 0x50;
 			}
 			return 0;
-		}
-		if (temp)
-		{
-			*colg = *colr - *colg;
+		case 3:
+			if (cpart->tmp)
+			{
+				*colr = 0xFF; *colg = 0x5A; *colb = 0x65;
+				return 0;
+			}
+		default:
+			if (cpart->tmp2)
+			{
+				*colr = 0x65; *colg = 0xFF; *colb = 0x5A;
+				return 0;
+			}
 		}
 		break;
 	case 17:
