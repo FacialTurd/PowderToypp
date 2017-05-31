@@ -507,6 +507,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		{
 		case 0: // logic gate
 			rrx = parts[i].tmp2; // save old value
+			if (rrx)
+				parts[i].tmp2 --;
 			rry = parts[i].tmp3; // save old value
 			if (rry)
 				parts[i].tmp3 --;
@@ -537,7 +539,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									if (parts[r>>8].tmp & 1)
 										parts[i].tmp3 = 8;
 									else
-										parts[i].tmp2 = 8 + 1;
+										parts[i].tmp2 = 8;
 								}
 							}
 							else if ((r & 0xFF) == PT_NSCN && conductive)
@@ -553,7 +555,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					parts[i].flags &= ~FLAG_SKIPMOVE;
 					return return_value;
 				}
-				if (parts[i].tmp2 == 1)
+				if (parts[i].tmp2)
 				{
 					for (rx = -2; rx <= 2; rx++)
 						for (ry = -2; ry <= 2; ry++)
@@ -564,6 +566,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									conductTo (sim, r, x+rx, y+ry, parts);
 							}
 					parts[i].tmp--;
+					parts[i].tmp2 = 0;
 				}
 				for (rx = -2; rx <= 2; rx++)
 					for (ry = -2; ry <= 2; ry++)
@@ -572,7 +575,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							r = pmap[y+ry][x+rx];
 							if ((r & 0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 							{
-								parts[i].tmp2 = 2;
+								parts[i].tmp2 = 1;
 								return return_value;
 							}
 						}
@@ -583,6 +586,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			{
 				if (parts[i].tmp2 == 1)
 					parts[i].tmp--;
+				parts[i].tmp2--;
 			}
 			else if (!parts[i].tmp)
 			{
@@ -667,46 +671,59 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 			// break;
 		break2b:
-			if (parts[i].tmp2 == 9)
+			if (parts[i].tmp2)
 			{
-				for (rtmp = 0; rtmp < 4; rtmp++)
+				if (parts[i].tmp2 == 9)
 				{
-					if (BOUNDS_CHECK)
+					for (rtmp = 0; rtmp < 4; rtmp++)
 					{
-						rx = tron_rx[rtmp];
-						ry = tron_ry[rtmp];
-						r = pmap[y+ry][x+rx];
-						if ((r&0xFF) == PT_E189 && parts[r>>8].life == 16 && parts[r>>8].ctype == 5 && !parts[r>>8].tmp2)
-							parts[r>>8].tmp2 = 3;
+						if (BOUNDS_CHECK)
+						{
+							rx = tron_rx[rtmp];
+							ry = tron_ry[rtmp];
+							r = pmap[y+ry][x+rx];
+							rii = parts[r>>8].tmp2;
+							if (rii & (r>>8)>i) // If the other particle hasn't been life updated
+								rii--;
+							if ((r&0xFF) == PT_E189 && parts[r>>8].life == 16 && parts[r>>8].ctype == 5 && !rii)
+							{
+								parts[r>>8].tmp2 = (r>>8) > i ? 10 : 9;
+							}
+						}
 					}
+					parts[i].tmp = (parts[i].tmp & ~0x3F) | ((parts[i].tmp >> 3) & 0x7) | ((parts[i].tmp & 0x7) << 3);
 				}
-				parts[i].tmp = (parts[i].tmp & ~0x3F) | ((parts[i].tmp >> 3) & 0x7) | ((parts[i].tmp & 0x7) << 3);
+				parts[i].tmp2--;
 			}
 			break;
 		case 6: // wire crossing
 		case 7:
 			{
-				if (parts[i].tmp2 == 2)
+				if (parts[i].tmp2)
 				{
-					for (rii = 0; rii < 4; rii++)
+					if (parts[i].tmp2 == 3)
 					{
-						if (BOUNDS_CHECK)
+						for (rii = 0; rii < 4; rii++)
 						{
-							r = osc_r1[rii], rtmp = parts[i].tmp;
-							if (rtmp & 1 << (rctype & 1))
+							if (BOUNDS_CHECK)
 							{
-								rx = pmap[y][x+r];
-								if (sim->elements[rx&0xFF].Properties&PROP_CONDUCTS)
-									conductTo(sim, rx, x+r, y, parts);
-							}
-							if (rtmp & 2 >> (rctype & 1))
-							{
-								ry = pmap[y+r][x];
-								if (sim->elements[ry&0xFF].Properties&PROP_CONDUCTS)
-									conductTo(sim, ry, x, y+r, parts);
+								r = osc_r1[rii], rtmp = parts[i].tmp;
+								if (rtmp & 1 << (rctype & 1))
+								{
+									rx = pmap[y][x+r];
+									if (sim->elements[rx&0xFF].Properties&PROP_CONDUCTS)
+										conductTo(sim, rx, x+r, y, parts);
+								}
+								if (rtmp & 2 >> (rctype & 1))
+								{
+									ry = pmap[y+r][x];
+									if (sim->elements[ry&0xFF].Properties&PROP_CONDUCTS)
+										conductTo(sim, ry, x, y+r, parts);
+								}
 							}
 						}
 					}
+					parts[i].tmp2--;
 				}
 				for (rr = rii = 0; rii < 4; rii++)
 				{
@@ -837,7 +854,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				rndstore = rand();
 				rx = (rndstore&1)*2-1;
 				ry = (rndstore&2)-1;
-				if (parts[i].tmp2 == 1)
+				if (parts[i].tmp2)
 				{
 					for (rii = 1; rii <= 2; rii++)
 					{
@@ -852,6 +869,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								conductTo (sim, rrx, x+rx*rii, y, parts);
 						}
 					}
+					parts[i].tmp2 = 0;
 				}
 				for (rr = rii = 0; rii < 4; rii++)
 				{
@@ -866,12 +884,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				}
 				if (rr && !((rctype & 1) && parts[i].tmp2))
 				{
-					parts[i].tmp = rr; parts[i].tmp2 = 2;
+					parts[i].tmp = rr; parts[i].tmp2 = 1;
 				}
 			}
 			break;
 		case 13:
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				for (rx = -2; rx <= 2; rx++)
 					for (ry = -2; ry <= 2; ry++)
@@ -887,6 +905,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[r>>8].life = 4;
 							}
 						}
+				parts[i].tmp2 = 0;
 			}
 			for (rx = -2; rx <= 2; rx++)
 				for (ry = -2; ry <= 2; ry++)
@@ -896,14 +915,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						rr = ((r>>8) > i) ? (parts[r>>8].tmp) : (parts[r>>8].tmp2);
 						if ((r & 0xFF) == PT_E189 && parts[r>>8].life == 19 && rr == 9)
 						{
-							parts[i].tmp2 = 2;
+							parts[i].tmp2 = 1;
 							return return_value;
 						}
 					}
 			break;
 		case 14:
 		case 15:
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				rdif = (parts[i].tmp == PT_PSCN) ? 100.0f : -100.0f;
 				for (rx = -2; rx <= 2; rx++)
@@ -917,10 +936,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 						}
 				parts[i].tmp = 0; // PT_NONE ( or clear .tmp )
+				parts[i].tmp2 = 0;
 			}
 			goto continue1a;
 		case 16:
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				for (rx = -2; rx <= 2; rx++)
 					for (ry = -2; ry <= 2; ry++)
@@ -932,10 +952,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[r>>8].tmp3 ^= 1;
 							}
 						}
+				parts[i].tmp2 = 0;
 			}
 			goto continue1a;
 		case 17:
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				for (rx = -1; rx < 2; rx++)
 					for (ry = -1; ry < 2; ry++)
@@ -1075,10 +1096,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								continue;
 							}
 						}
+				parts[i].tmp2 = 0;
 			}
 			goto continue1a;
 		case 18:
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				for (rx = -1; rx < 2; rx++)
 					for (ry = -1; ry < 2; ry++)
@@ -1158,6 +1180,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								break;
 							}
 						}
+				parts[i].tmp2 = 0;
 			}
 			goto continue1a;
 		continue1a:
@@ -1171,7 +1194,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((pavg != PT_INSL && pavg != PT_INDI) && (r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
 							parts[i].tmp = parts[r>>8].ctype;
-							parts[i].tmp2 = 2;
+							parts[i].tmp2 = 1;
 							return return_value;
 						}
 					}
@@ -1200,7 +1223,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 						}
 			}
-			if (parts[i].tmp2) break;
+			if (parts[i].tmp2)
+			{
+				parts[i].tmp2--;
+				break;
+			}
 			// goto continue1c;
 		// continue1c:
 			for (rx = -2; rx <= 2; rx++)
@@ -1212,13 +1239,15 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						pavg = sim->parts_avg(i,r>>8,PT_INSL);
 						if ((pavg != PT_INSL && pavg != PT_INDI) && (r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 						{
-							parts[i].tmp2 = 3;
+							parts[i].tmp2 = 2;
 							return return_value;
 						}
 					}
 			break;
 		case 20: // clock (like battery)
-			if (!(parts[i].tmp2))
+			if (parts[i].tmp2)
+				parts[i].tmp2--;
+			else
 			{
 				for (rx = -1; rx < 2; rx++)
 					for (ry = -1; ry < 2; ry++)
@@ -1228,8 +1257,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS)
 								conductTo (sim, r, x+rx, y+ry, parts);
 						}
-				parts[i].tmp2 = parts[i].tmp;
+				parts[i].tmp2 = parts[i].tmp - 1;
 			}
+			
 			break;
 		case 21: // subframe SPRK generator/canceller
 			rrx = (parts[i].temp < 373.0f) ? 4 : 3;
@@ -1268,7 +1298,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 			break;
 		case 22: // custom GOL type changer
-			if (parts[i].tmp2 == 1)
+			if (parts[i].tmp2)
 			{
 				for (rx = -1; rx < 2; rx++)
 					for (ry = -1; ry < 2; ry++)
@@ -1429,7 +1459,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rii = rry + ri;
 								if (rii < 0 || rii >= rrx) // assembly: "cmp rii, rrx" then "jae/jb ..."
 								{
-									if (!(parts[i].tmp3 & 1))
+									if (!(parts[i].tmp2 & 1))
 									{
 										sim->kill_part(rr >> 8);
 										continue;

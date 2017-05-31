@@ -5745,6 +5745,7 @@ void Simulation::BeforeSim()
 		}
 		
 		// make E189 work
+#if 0
 		if(elementCount[PT_E189] > 0)
 		{
 			for (int i = 0; i <= parts_lastActiveIndex; i++)
@@ -5764,6 +5765,7 @@ void Simulation::BeforeSim()
 				}
 			}
 		}
+#endif
 
 		// update PPIP tmp?
 		if (Element_PPIP::ppip_changed)
