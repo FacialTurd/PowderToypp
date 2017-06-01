@@ -708,9 +708,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		case 6: // wire crossing
 		case 7:
 			{
-				if (parts[i].tmp2)
+				if (rtmp>>8)
 				{
-					if (parts[i].tmp2 == 3)
+					if ((rtmp>>8) == 3)
 					{
 						for (rii = 0; rii < 4; rii++)
 						{
@@ -732,7 +732,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							}
 						}
 					}
-					parts[i].tmp2--;
+					parts[i].tmp -= 1<<8;
 				}
 				for (rr = rii = 0; rii < 4; rii++)
 				{
@@ -745,9 +745,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if ((ry & 0xFF) == PT_SPRK && parts[ry>>8].life == 3) rr |= 2;
 					}
 				}
-				if (rr && !((rctype & 1) && parts[i].tmp2))
+				if (rr && !((rctype & 1) && rtmp>>8))
 				{
-					parts[i].tmp = rr; parts[i].tmp2 = 3;
+					parts[i].tmp = rr | 3<<8;
 				}
 			}
 			break;
