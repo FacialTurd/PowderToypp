@@ -282,6 +282,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												if (f_type <= 0 || f_type >= PT_NUM || !sim->elements[f_type].Enabled)
 													f_type = PT_METL;
 												sim->part_change_type(front1>>8, x+nxi+nxx, y+nyi+nyy, f_type);
+												parts[front1>>8].ctype = PT_NONE; // clear ctype
 											}
 											if (f_type == PT_SWCH)
 												parts[front1>>8].life = 14;
