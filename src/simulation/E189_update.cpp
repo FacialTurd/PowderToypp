@@ -26,7 +26,7 @@ unsigned msvc_clz(unsigned a)
 
 int E189_Update::update(UPDATE_FUNC_ARGS)
 {
-	int return_value = 1; // skip movement, legacyUpdate, etc.
+	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
 	static int tron_rx[4] = {-1, 0, 1, 0};
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
@@ -559,9 +559,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		case 1: // conduct->insulate counter
 			if (parts[i].tmp)
 			{
-				if (parts[i].flags & FLAG_SKIPMOVE)
+				if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
 				{
-					parts[i].flags &= ~FLAG_SKIPMOVE;
+					parts[i].flags &= ~FLAG_SKIPMOVE; // clear wait flag
 					return return_value;
 				}
 				if (parts[i].tmp2)
