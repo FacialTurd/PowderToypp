@@ -1214,7 +1214,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			if (parts[i].tmp2)
 			{
 				parts[i].tmp2--;
-				break;
+				// break;
 			}
 			for (rx = -2; rx <= 2; rx++)
 				for (ry = -2; ry <= 2; ry++)
@@ -1225,14 +1225,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						pavg = sim->parts_avg(i,r>>8,PT_INSL);
 						if (pavg == PT_INSL && pavg == PT_INDI)
 							continue;
-						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+						if ((r & 0xFF) == PT_SPRK || parts[r>>8].life == 3)
 						{
 							parts[i].tmp2 = 2;
 							// return return_value;
 						}
 						else if ((r & 0xFF) == PT_WIRE)
 						{
-							if (parts[r>>8].tmp == 2)
+							if (!rii && parts[r>>8].tmp == 1)
 							{
 								parts[i].tmp2 = 2;
 							}
