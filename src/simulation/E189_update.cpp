@@ -1230,6 +1230,19 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							parts[i].tmp2 = 2;
 							// return return_value;
 						}
+						else if ((r & 0xFF) == PT_WIRE)
+						{
+							if (parts[r>>8].tmp == 2)
+							{
+								parts[i].tmp2 = 2;
+							}
+							else if (!parts[r>>8].tmp && rii == 2)
+							{
+								parts[r>>8].ctype = 1;
+								if ((r>>8) > i)
+									parts[r>>8].flags |= FLAG_SKIPMOVE;
+							}
+						}
 						else if (rii == 2)
 						{
 							if ((r & 0xFF) == PT_INST)

@@ -48,15 +48,19 @@ Element_WIRE::Element_WIRE()
 //#TPT-Directive ElementHeader Element_WIRE static int update(UPDATE_FUNC_ARGS)
 int Element_WIRE::update(UPDATE_FUNC_ARGS)
 {
-	int r,rx,ry,count=0;
-	/*
+	int r,rx,ry,count=0;/*
 	  0:  wire
 	  1:  spark head
 	  2:  spark tail
 	  
 	  tmp is previous state, ctype is current state
 	*/
-	//parts[i].tmp=parts[i].ctype;
+	//parts[i].tmp = parts[i].ctype;
+	if (parts[i].flags & FLAG_SKIPMOVE)
+	{
+		parts[i].flags &= ~FLAG_SKIPMOVE;
+		return 0;
+	}
 	parts[i].ctype=0;
 	if (parts[i].tmp==1)
 	{
@@ -66,6 +70,7 @@ int Element_WIRE::update(UPDATE_FUNC_ARGS)
 	{
 		parts[i].ctype=0;
 	}
+	
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 		{
