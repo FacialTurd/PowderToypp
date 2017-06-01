@@ -271,6 +271,25 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											}
 										}
 										break;
+									case 7: // remove front SPRK
+										{
+											nxx += 2*nxi; nyy += 2*nyi;
+											int front1 = pmap[y+nyy][x+nxx];
+											int f_type = front1 & 0xFF;
+											if ((front1 & 0xFF) == PT_SPRK)
+											{
+												f_type = parts[front1>>8].ctype;
+												if (f_type <= 0 || f_type >= PT_NUM || !sim->elements[f_type].Enabled)
+													f_type = PT_METL;
+												sim->part_change_type(front1>>8, x+nxi+nxx, y+nyi+nyy, f_type);
+											}
+											if (f_type == PT_SWCH)
+												parts[front1>>8].life = 14;
+											else if (sim->elements[f_type].Properties & (PROP_CONDUCTS|PROP_CONDUCTS_SPEC))
+												parts[front1>>8].life = 4;
+											goto break1a;
+										}
+										break;
 									}
 									tmpz = 1;
 									continue;
