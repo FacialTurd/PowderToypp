@@ -1223,7 +1223,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r) continue;
 						pavg = sim->parts_avg(i,r>>8,PT_INSL);
-						if (pavg == PT_INSL && pavg == PT_INDI)
+						if (pavg == PT_INSL || pavg == PT_INDI)
 							continue;
 						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3 && !rii)
 						{
