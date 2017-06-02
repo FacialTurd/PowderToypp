@@ -284,14 +284,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												sim->part_change_type(front1>>8, x+nxi+nxx, y+nyi+nyy, f_type);
 												parts[front1>>8].ctype = PT_NONE; // clear ctype
 												if (f_type == PT_SWCH)
-													parts[front1>>8].life = 14; // keep SWCH on
+													parts[front1>>8].life = 19; // keep SWCH on
 											}
 											else if (f_type == PT_SWCH && parts[front1>>8].life >= 10)
 											{
-												parts[front1>>8].life = 14; // keep SWCH on
+												parts[front1>>8].life = 19; // keep SWCH on
 											}
 											if (sim->elements[f_type].Properties & (PROP_CONDUCTS|PROP_CONDUCTS_SPEC))
-												parts[front1>>8].life = 4;
+												parts[front1>>8].life = 8;
 											goto break1a;
 										}
 										break;
