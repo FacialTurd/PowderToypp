@@ -1118,7 +1118,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							nx = x + rx; ny = y + ry;
 							r = pmap[ny][nx];
 							if (!r)
+							{
+							break1a:
 								continue;
+							}
 							switch (r & 0xFF)
 							{
 							case PT_FILT:
@@ -1185,6 +1188,22 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								if (((r&0xFF) == PT_VIBR || (r&0xFF) == PT_BVBR) && parts[r>>8].life)
 								{
 									parts[r>>8].tmp2 = 1; parts[r>>8].tmp = 0;
+								}
+								break;
+							case PT_WIFI:
+								{ // for 29-bit FILT data
+									rii = (int)((parts[r>>8].temp-73.15f)/100+1);
+									if (rii < 0) rii = 0;
+									r = pmap[ny += ry][nx += rx];
+									if ((r&0xFF) == PT_FILT)
+									{
+										rrx = parts[r>>8].ctype & 0x1FFFFFFF;
+										for (; rrx && rii < CHANNELS; rii++)
+										{
+											sim->wireless[rii][1] = 1;
+										}
+										sim->ISWIRE = 2;
+									}
 								}
 								break;
 							}
