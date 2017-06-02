@@ -1192,14 +1192,16 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									rii = (int)((parts[r>>8].temp-73.15f)/100+1);
 									if (rii < 0) rii = 0;
 									r = pmap[ny += ry][nx += rx];
+									sim->ISWIRE = 2;
 									if ((r&0xFF) == PT_FILT)
 									{
 										rrx = parts[r>>8].ctype & 0x1FFFFFFF;
 										for (; rrx && rii < CHANNELS; rii++)
 										{
-											sim->wireless[rii][1] = 1;
+											if (rrx & 1)
+												sim->wireless[rii][1] = 1;
+											rrx >>= 1;
 										}
-										sim->ISWIRE = 2;
 									}
 								}
 								break;
