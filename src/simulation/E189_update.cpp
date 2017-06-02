@@ -1118,10 +1118,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							nx = x + rx; ny = y + ry;
 							r = pmap[ny][nx];
 							if (!r)
-							{
-							break1a:
 								continue;
-							}
 							switch (r & 0xFF)
 							{
 							case PT_FILT:
