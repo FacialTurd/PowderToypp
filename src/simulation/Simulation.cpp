@@ -4488,6 +4488,17 @@ killed:
 				parts[i].y += parts[i].vy;
 				int nx = (int)((float)parts[i].x+0.5f);
 				int ny = (int)((float)parts[i].y+0.5f);
+
+				playerst* stickman = NULL;
+				int tt = parts[i].type;
+				
+				if (tt == PT_STKM)
+					stickman = &player;
+				else if (tt == PT_STKM2)
+					stickman = &player2;
+				else if (tt == PT_FIGH && parts[i].tmp >= 0 && parts[i].tmp < MAX_FIGHTERS)
+					stickman = &fighters[parts[i].tmp];
+
 				if (edgeMode == 2)
 				{
 					bool x_ok = (nx >= CELL && nx < XRES-CELL);
@@ -4507,6 +4518,7 @@ killed:
 					if (!x_ok || !y_ok) //when moving from left to right stickmen might be able to fall through solid things, fix with "eval_move(t, nx+diffx, ny+diffy, NULL)" but then they die instead
 					{
 						//adjust stickmen legs
+/*
 						playerst* stickman = NULL;
 						int t = parts[i].type;
 						if (t == PT_STKM)
@@ -4515,6 +4527,7 @@ killed:
 							stickman = &player2;
 						else if (t == PT_FIGH && parts[i].tmp >= 0 && parts[i].tmp < MAX_FIGHTERS)
 							stickman = &fighters[parts[i].tmp];
+*/
 
 						if (stickman)
 							for (int i = 0; i < 16; i+=2)
@@ -4529,6 +4542,22 @@ killed:
 				}
 				if (ny!=y || nx!=x)
 				{
+					if (stickman)
+					{
+						pmap[y][x] = stickman->underp;
+						int part1 = pmap[ny][nx];
+						if (part1 == PT_PINVIS)
+							part1 = parts[part1>>8].tmp4;
+						int part_type = part1 & 0xFF;
+						if (part_type == PT_STKM)
+							stickman->underp = player->underp;
+						else if (part_type == PT_STKM2)
+							stickman->underp = player2->underp;
+						else if (part_type == PT_FIGH)
+							stickman->underp = fighters[parts[part1>>8].tmp]->underp;
+						else
+							stickman->underp = part1;
+					}	
 					pmap_remove (i, x, y, PT_PINVIS);
 					if (nx<CELL || nx>=XRES-CELL || ny<CELL || ny>=YRES-CELL)
 					{

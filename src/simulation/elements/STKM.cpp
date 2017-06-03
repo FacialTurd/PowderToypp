@@ -735,6 +735,7 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 	playerp->nextStickman = -1;
 	playerp->lastChild = -1;
 	playerp->self_ID = i;
+	playerp->underp = 0;
 }
 
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_element(Simulation *sim, playerst *playerp, int element)

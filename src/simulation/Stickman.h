@@ -21,6 +21,7 @@ struct playerst
 	int nextStickman;
 	int lastChild;
 	int self_ID;
+	int underp;          // id of the other particle
 };
 
 #endif

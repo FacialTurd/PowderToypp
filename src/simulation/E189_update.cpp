@@ -691,6 +691,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							rx = tron_rx[rtmp];
 							ry = tron_ry[rtmp];
 							r = pmap[y+ry][x+rx];
+							switch (r&0xFF)
+							{
+								case PT_NONE:  continue;
+								case PT_STKM:  r = sim->player->underp; break;
+								case PT_STKM2: r = sim->player2->underp; break;
+								case PT_FIGH:  r = sim->fighters[parts[r>>8].tmp]->underp; break;
+							}
 							rii = parts[r>>8].tmp2;
 							if (rii & (r>>8)>i) // If the other particle hasn't been life updated
 								rii--;
