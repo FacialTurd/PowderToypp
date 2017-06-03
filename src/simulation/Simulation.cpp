@@ -2176,16 +2176,19 @@ void Simulation::init_can_move()
 		{
 			can_move[PT_PROT][destinationType] = 2;
 			can_move[PT_GRVT][destinationType] = 2;
+			can_move[PT_E186][destinationType] = 2;
 		}
 		if (elements[destinationType].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
 			can_move[PT_DEST][destinationType] = 0;
 
+/*
 		if (destinationType == PT_E182 || destinationType == PT_E185  || destinationType == PT_URAN || destinationType == PT_H2   ||
 			destinationType == PT_PLSM || destinationType == PT_NBLE  || destinationType == PT_CO2  || destinationType == PT_O2   ||
 			destinationType == PT_FILT || destinationType == PT_ISOZ  || destinationType == PT_ISZS || destinationType == PT_EXOT ||
 			destinationType == PT_TUNG || destinationType == PT_INVIS || destinationType == PT_SPNG || destinationType == PT_GEL  ||
 			destinationType == PT_VIRS || destinationType == PT_VRSS)
 			can_move[PT_E186][destinationType] = 2;
+*/
 	}
 	
 	for (movingType = 1; movingType < PT_NUM; movingType++)
@@ -3172,7 +3175,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 					retcode = -1;
 				drawOnE189Ctype:
 					parts[E189ID].ctype = t;
-					if (t == PT_LIFE && v >= 0 && v < NGOL)
+					if ((t == PT_LIFE && v >= 0 && v < NGOL) || t == PT_E189)
 						parts[E189ID].ctype |= v << 8;
 					return retcode;
 				}
