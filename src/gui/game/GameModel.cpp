@@ -313,7 +313,7 @@ void GameModel::BuildMenus()
 	}
 	
 	{
-		Tool * tempTool = new ElementTool(PT_E189|(37<<8), "ANT", std::string("Original Langton's Ant"), PIXR(0xFF0055), PIXG(0xFF0055), PIXB(0xFF0055), "DEFAULT_PT_LIFE2_ANT");
+		Tool * tempTool = new ElementTool(PT_E189|(37<<8), "ANT", std::string("Langton's Ant"), PIXR(0xFF0055), PIXG(0xFF0055), PIXB(0xFF0055), "DEFAULT_PT_LIFE2_ANT");
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 
