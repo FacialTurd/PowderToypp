@@ -4553,8 +4553,8 @@ killed:
 							stickman->underp = player.underp;
 						else if (part_type == PT_STKM2)
 							stickman->underp = player2.underp;
-						else if (part_type == PT_FIGH)
-							stickman->underp = fighters[parts[part1>>8].tmp].underp;
+						else if (part_type == PT_FIGH && parts[part1>>8].tmp >= 0 && parts[part1>>8].tmp < MAX_FIGHTERS)
+							stickman->underp = fighters[fighterID].underp;
 						else
 							stickman->underp = part1;
 					}	
