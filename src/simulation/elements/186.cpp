@@ -87,6 +87,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						break;
 				}
 				break;
+/*
+			case 44: // (300 - 0x100)
+				if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS)
+				{
+					parts[r>>8].ctype = parts[r>>8].type;
+					parts[r>>8].life = 40 + parts[r>>8].life;
+					sim->part_change_type(r>>8, x, y, PT_SPRK);
+				}
+				break;
+*/
 			/*
 			case 2:
 				sim->part_change_type(i, x, y, PT_NEUT);
