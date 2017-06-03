@@ -625,7 +625,7 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 	if (r)
 	{
 		if ((r&0xFF) == PT_PINVIS)
-			r = parts[r>>8].tmp4;
+			r = sim->parts[r>>8].tmp4;
 		if (!(sim->E189_FIGH_pause & 16))
 		{
 			if ((r&0xFF)==PT_SPRK && playerp->elem!=PT_LIGH) //If on charge
