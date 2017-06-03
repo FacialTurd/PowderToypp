@@ -77,7 +77,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 
 									// sim->delete_part(x+nxi, y+nxj); 
 									// or:
-									sim->kill_part(rr >> 8);
+									if (rr) sim->kill_part(rr >> 8);
 
 									sim->pv[(y+nxj)/CELL][(x+nxi)/CELL] += 0.1f;
 									nb = sim->create_part(-3, x+nxi, y+nxj, PT_EMBR);
