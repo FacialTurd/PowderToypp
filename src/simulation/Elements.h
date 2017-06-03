@@ -33,12 +33,11 @@
 #define PROP_DRAWONCTYPE	0x80000    // 2^19 Set its ctype to another element if the element is drawn upon it (like what CLNE does)
 #define PROP_NOCTYPEDRAW	0x100000   // 2^20 When this element is drawn upon with, do not set ctype (like BCLN for CLNE)
 // 2^21 reserved
-#define PROP_NOSLOWDOWN		0x2000000   // 2^25 Photons (PHOT) without slowed down
-#define PROP_TRANSPARENT	0x4000000   // 2^25 Photons (PHOT) pass through
-#define PROP_UNLIMSTACKING	0x8000000   // 2^27 Currently no limit on stacking
-#define PROP_INSULATED		0x10000000
-#define PROP_CONDUCTS_SPEC	0x20000000
-#define PROP_NO_NBHL_GEN	0x40000000
+#define PROP_NOSLOWDOWN		0x02000000   // 2^25 Photons (PHOT) without slowed down
+#define PROP_TRANSPARENT	0x04000000   // 2^26 Photons (PHOT) pass through
+#define PROP_INSULATED		0x08000000   // 2^27 Insulated wires
+#define PROP_CONDUCTS_SPEC	0x10000000   // 2^28 Special conducts (like INST)
+#define PROP_NO_NBHL_GEN	0x20000000   // 2^29 
 
 // second properties flag:
 #define PROP_DEBUG_USE_TMP2		0x00000001	//  1 Use .tmp2 show it in the debug HUD
@@ -53,7 +52,8 @@
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it
 // #define PROP_DRAWONCTYPE		0x00080000
 // #define PROP_NOSLOWDOWN		0x02000000
-#define PROP_INVISIBLE			0x04000000
+#define PROP_INVISIBLE			0x04000000  // 2^26 Invisible to particles like INVS and FILT
+#define PROP_UNLIMSTACKING		0x08000000  // 2^27 Currently no limit on stacking
 
 #define FLAG_STAGNANT	0x1
 #define FLAG_SKIPMOVE  0x2 // skip movement for one frame, only implemented for PHOT
