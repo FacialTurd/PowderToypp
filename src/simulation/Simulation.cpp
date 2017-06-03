@@ -4550,11 +4550,11 @@ killed:
 							part1 = parts[part1>>8].tmp4;
 						int part_type = part1 & 0xFF;
 						if (part_type == PT_STKM)
-							stickman->underp = player->underp;
+							stickman->underp = player.underp;
 						else if (part_type == PT_STKM2)
-							stickman->underp = player2->underp;
+							stickman->underp = player2.underp;
 						else if (part_type == PT_FIGH)
-							stickman->underp = fighters[parts[part1>>8].tmp]->underp;
+							stickman->underp = fighters[parts[part1>>8].tmp].underp;
 						else
 							stickman->underp = part1;
 					}	
