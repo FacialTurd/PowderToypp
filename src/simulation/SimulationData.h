@@ -70,7 +70,17 @@
 #define UI_WALLCOUNT 20
 
 #define OLD_SPC_AIR 236
+/*
+#define OLD_SPC_HEAT 237
+#define OLD_SPC_COOL 238
+#define OLD_SPC_VACUUM 239
+#define OLD_SPC_WIND 241
+#define OLD_SPC_PGRV 243
+#define OLD_SPC_NGRV 244
+#define OLD_SPC_PROP 246
+*/
 #define SPC_AIR 256
+#define SPC_VACUUM 257
 
 #define DECO_DRAW	0
 #define DECO_CLEAR	1

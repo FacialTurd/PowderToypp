@@ -3070,16 +3070,22 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	if (t>=0 && t<PT_NUM && !elements[t].Enabled)
 		return -1;
 
-	if (t == SPC_AIR)
+	if (t >= PT_NUM)
 	{
-		pv[y/CELL][x/CELL] += 0.03f;
+		float air_dif = 0.0f;
+		if (t == SPC_AIR)
+			air_dif = 0.03f;
+		else if (t == SPC_VACUUM)
+			air_dif = -0.03f;
+			
+		pv[y/CELL][x/CELL] += air_dif;
 		if (y+CELL<YRES)
-			pv[y/CELL+1][x/CELL] += 0.03f;
+			pv[y/CELL+1][x/CELL] += air_dif;
 		if (x+CELL<XRES)
 		{
-			pv[y/CELL][x/CELL+1] += 0.03f;
+			pv[y/CELL][x/CELL+1] += air_dif;
 			if (y+CELL<YRES)
-				pv[y/CELL+1][x/CELL+1] += 0.03f;
+				pv[y/CELL+1][x/CELL+1] += air_dif;
 		}
 		return -1;
 	}

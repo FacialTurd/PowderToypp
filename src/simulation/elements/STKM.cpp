@@ -79,7 +79,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	float rocketBootsHeadEffectV = 0.3f;// stronger acceleration vertically, to counteract gravity
 	float rocketBootsFeetEffectV = 0.45f;
 
-	if (parts[i].ctype && (sim->IsValidElement(parts[i].ctype) || parts[i].ctype == SPC_AIR))
+	if (parts[i].ctype && (sim->IsValidElement(parts[i].ctype) || parts[i].ctype == SPC_AIR || parts[i].ctype == SPC_VACUUM))
 		STKM_set_element(sim, playerp, parts[i].ctype);
 	playerp->frames++;
 
@@ -95,7 +95,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	{
 		pressure = -pressure;
 	}
-	if (parts[i].life<1 || (pressure>=4.5f && !(sim->E189_FIGH_pause & 16) && playerp->elem != SPC_AIR) ) //If his HP is less than 0 or there is very big wind...
+	if (parts[i].life<1 || (pressure>=4.5f && !(sim->E189_FIGH_pause & 16) && (playerp->elem != SPC_AIR && playerp->elem != SPC_VACUUM)) ) //If his HP is less than 0 or there is very big wind...
 	{
 		if (playerp->elem != PT_FIGH)
 		{
@@ -433,7 +433,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 						ctype = parts[r>>8].ctype;
 						int xctype = ctype >> 9;
 						ctype &= 0x1FF;
-						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR))
+						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM))
 							STKM_set_element(sim, playerp, ctype);
 						if (xctype == 1 || xctype == 2)
 						{
@@ -471,11 +471,11 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		else
 		{
 			int np = -1;
-			if (playerp->elem == SPC_AIR)
+			if (playerp->elem == SPC_AIR || playerp->elem == SPC_VACUUM)
 			{
 				for(int j = -4; j < 5; j++)
 					for (int k = -4; k < 5; k++)
-						sim->create_part(-2, rx + 3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01)+j, ry+k, SPC_AIR);
+						sim->create_part(-1, rx + 3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01)+j, ry+k, playerp->elem);
 			}
 			else if ((playerp->elem==PT_LIGH || playerp->elem==PT_FIGH) && playerp->frames<30)//limit lightning and fighter creation rate
 				np = -1;
@@ -518,7 +518,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					parts[np].temp=parts[np].life*power/2.5;
 					parts[np].tmp2=1;
 				}
-				else if (playerp->elem != SPC_AIR)
+				else if (playerp->elem != SPC_AIR && playerp->elem != SPC_VACUUM)
 				{
 					parts[np].vx -= -gvy*(5*((((int)playerp->pcomm)&0x02) == 0x02) - 5*(((int)(playerp->pcomm)&0x01) == 0x01));
 					parts[np].vy -= gvx*(5*((((int)playerp->pcomm)&0x02) == 0x02) - 5*(((int)(playerp->pcomm)&0x01) == 0x01));
@@ -763,7 +763,7 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 	    || sim->elements[element].Properties&TYPE_GAS
 	    || sim->elements[element].Properties&TYPE_LIQUID
 	    || sim->elements[element].Properties&TYPE_ENERGY
-	    || element == PT_LOLZ || element == PT_LOVE || element == SPC_AIR)
+	    || element == PT_LOLZ || element == PT_LOVE || element == SPC_AIR || element == SPC_VACUUM)
 	{
 		if (!playerp->rocketBoots || element != PT_PLSM)
 			playerp->elem = element;
