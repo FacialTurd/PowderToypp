@@ -191,7 +191,15 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							parts[r>>8].temp = parts[i].temp;
 					}
 			if (sim->aheat_enable) //if ambient heat sim is on
+			{
 				sim->hv[y/CELL][x/CELL] = parts[i].temp;
+				if (sim->bmap_blockairh & 0x7)
+				{
+					// if bmap_blockairh exist or it isn't ambient heat insulator
+					sim->bmap_blockairh --;
+					return return_value;
+				}
+			}
 		}
 		break;
 #ifndef NO_SPC_ELEM_EXPLODE

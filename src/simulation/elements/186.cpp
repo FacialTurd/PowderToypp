@@ -268,6 +268,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					if (velocity1 + velocity2 > 15.0f && !pmap[y+ry][x+rx])
 					{
 						sim->part_change_type(r>>8, x, y, PT_BOMB);
+						parts[r>>8].life = 0;
 					}
 				}
 			}

@@ -4238,7 +4238,7 @@ void Simulation::UpdateParticles(int start, int end)
 				}
 				else
 				{
-					if (!(air->bmap_blockairh[y/CELL][x/CELL]&0x8))
+					if (!(/* t == PT_PINVIS || */ air->bmap_blockairh[y/CELL][x/CELL]&0x8))
 						air->bmap_blockairh[y/CELL][x/CELL]++;
 					parts[i].temp = restrict_flt(parts[i].temp, MIN_TEMP, MAX_TEMP);
 				}
@@ -4344,6 +4344,8 @@ void Simulation::UpdateParticles(int start, int end)
 				}
 				transitionOccurred = true;
 			}
+
+		updatefunc_part:
 
 			//call the particle update function, if there is one
 #if !defined(RENDERER) && defined(LUACONSOLE)
