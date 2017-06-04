@@ -2405,6 +2405,8 @@ void LuaScriptInterface::initStickmanAPI()
 	lua_setfield(l, -2, "VACUUM_KILL");
 	lua_pushinteger(l, 0x00000200);
 	lua_setfield(l, -2, "ANTI_GRAV");
+	lua_pushinteger(l, 0x00000400);
+	lua_setfield(l, -2, "NO_EMIT_PLASMA");
 }
 
 playerst* LuaScriptInterface::get_stickman_ptr (int stickmanID)
