@@ -2355,7 +2355,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			switch (pt)
 			{
 			case PT_E186:
-				if (rlife == 5)
+				if (rlife == 5 || rlife == 10)
 					return 2; // corrected code
 				if (rlife == 17)
 					return 1;

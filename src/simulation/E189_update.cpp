@@ -30,7 +30,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	static int tron_rx[4] = {-1, 0, 1, 0};
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
-	int rx, ry, ttan = 0, rlife = parts[i].life, r, ri, rtmp, rctype;
+	int rx, ry, rlife = parts[i].life, r, ri, rtmp, rctype;
 	int rr, rndstore, rt, rii, rrx, rry, nx, ny, pavg;
 	// int tmp_r;
 	float rvx, rvy, rdif;
@@ -41,19 +41,26 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	{
 	case 0: // acts like TTAN [压力绝缘体]
 	case 1:
-		if (nt<=2)
-			ttan = 2;
-		else if (rlife)
-			ttan = 2;
-		else if (nt<=6)
-			for (rx=-1; rx<2; rx++) {
-				for (ry=-1; ry<2; ry++) {
-					if ((!rx != !ry) && BOUNDS_CHECK) {
-						if((pmap[y+ry][x+rx]&0xFF)==PT_E189)
-							ttan++;
+		{
+			int ttan = 0;
+			if (nt<=2)
+				ttan = 2;
+			else if (rlife)
+				ttan = 2;
+			else if (nt<=6)
+				for (rx=-1; rx<2; rx++) {
+					for (ry=-1; ry<2; ry++) {
+						if ((!rx != !ry) && BOUNDS_CHECK) {
+							if((pmap[y+ry][x+rx]&0xFF)==PT_E189)
+								ttan++;
+						}
 					}
 				}
+			if(ttan>=2) {
+				sim->air->bmap_blockair[y/CELL][x/CELL] = 1;
+				sim->air->bmap_blockairh[y/CELL][x/CELL] = 0x8;
 			}
+		}
 		break;
 	case 2: // TRON input ["智能粒子" 的传送门入口]
 		if (rtmp & 0x04)
@@ -193,10 +200,10 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			if (sim->aheat_enable) //if ambient heat sim is on
 			{
 				sim->hv[y/CELL][x/CELL] = parts[i].temp;
-				if (sim->bmap_blockairh & 0x7)
+				if (sim->air->bmap_blockairh[y/CELL][x/CELL] & 0x7)
 				{
 					// if bmap_blockairh exist or it isn't ambient heat insulator
-					sim->bmap_blockairh --;
+					sim->air->bmap_blockairh[y/CELL][x/CELL] --;
 					return return_value;
 				}
 			}
@@ -2098,11 +2105,6 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	kill1:
 		sim->kill_part(i);
 		return return_value;
-	}
-	
-	if(ttan>=2) {
-		sim->air->bmap_blockair[y/CELL][x/CELL] = 1;
-		sim->air->bmap_blockairh[y/CELL][x/CELL] = 0x8;
 	}
 		
 	return return_value;
