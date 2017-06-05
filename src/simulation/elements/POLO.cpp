@@ -104,7 +104,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 	}
 	else if (sim->isFromMyMod && (r & 0xFF) == PT_ELEC && !(rand()%25))
 	{
-		s = parts[i].tmp;
+		int s = parts[i].tmp;
 		if (s) parts[i].tmp --;
 	}
 	if (parts[i].temp < 388.15f)
