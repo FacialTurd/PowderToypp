@@ -280,7 +280,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 		if (parts[i].life <= 1) {
 			for (s = parts[i].tmp; s > 0; s--)
 			{
-				rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_E185);
+				rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_POLC);
 				if (rr >= 0)
 				{
 					parts[rr].temp = tempTemp;
