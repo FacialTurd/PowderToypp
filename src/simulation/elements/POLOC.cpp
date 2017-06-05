@@ -13,11 +13,7 @@ Element_POLC::Element_POLC()
 	Colour = PIXPACK(0x447722);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
-#if (defined(DEBUG) || defined(SNAPSHOT)) && MOD_ID == 0
 	Enabled = 1;
-#else
-	Enabled = 0;
-#endif
 
 	Advection = 0.4f;
 	AirDrag = 0.01f * CFDS;

@@ -655,7 +655,6 @@ void GameModel::SetSave(SaveInfo * newSave)
 		sim->aheat_enable = saveData->aheatEnable;
 		sim->extraLoopsCA = saveData->sextraLoopsCA;
 		sim->sim_max_pressure = saveData->sim_max_pressure;
-		sim->isFromMyMod = saveData->isFromMyMod;
 		if (sim->isFromMyMod != saveData->isFromMyMod)
 		{
 			sim->isFromMyMod = saveData->isFromMyMod;
@@ -1027,8 +1026,8 @@ void GameModel::ClearSimulation()
 	sim->SetEdgeMode(edgeMode);
 	if (!sim->isFromMyMod)
 	{
-		sim->restrict_can_move();
 		sim->isFromMyMod = true;
+		sim->restrict_can_move();
 	}
 
 	sim->clear_sim();
