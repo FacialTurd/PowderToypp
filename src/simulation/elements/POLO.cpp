@@ -74,7 +74,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 			}
 		}
 
-		if (r && !(rand()%100 || sim->isFromMyMod && (r & 0xFF) != PT_ELEC))
+		if (r && !(rand()%100 || sim->isFromMyMod && (r & 0xFF) == PT_ELEC))
 		{
 			int s = sim->create_part(-3, x, y, PT_NEUT);
 			if (s >= 0)
