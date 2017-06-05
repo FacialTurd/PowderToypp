@@ -1,16 +1,15 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_E185 PT_E185 185
+//#TPT-Directive ElementClass Element_POLC PT_POLC 185
 
 /*
 TODO: 
-	- Molten version
-	- "muted version" a powder created by mixing E185 with ? that is weaker
+	- "muted version" a powder created by mixing POLC with ? that is weaker
 */
 
-Element_E185::Element_E185()
+Element_POLC::Element_POLC()
 {
-	Identifier = "DEFAULT_PT_E185";
-	Name = "E185";
+	Identifier = "DEFAULT_PT_POLC";
+	Name = "POLC";
 	Colour = PIXPACK(0x447722);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
@@ -39,7 +38,7 @@ Element_E185::Element_E185()
 
 	Temperature = R_TEMP+4.0f	+273.15f;
 	HeatConduct = 251;
-	Description = "Experimental element. Some kind of nuclear fuel, or replicating powder";
+	Description = "Experimental element. Some kind of nuclear fuel, POLO decay catalyst, or replicating powder";
 
 	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC;
 
@@ -52,12 +51,12 @@ Element_E185::Element_E185()
 	HighTemperature = 526.95f;
 	HighTemperatureTransition = PT_LAVA;
 
-	Update = &Element_E185::update;
-	Graphics = &Element_E185::graphics;
+	Update = &Element_POLC::update;
+	Graphics = &Element_POLC::graphics;
 }
 
-//#TPT-Directive ElementHeader Element_E185 static int update(UPDATE_FUNC_ARGS)
-int Element_E185::update(UPDATE_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_POLC static int update(UPDATE_FUNC_ARGS)
+int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
 	int r, s, rx, ry, rr, sctype, stmp, trade, exot_id, exot_pos_x, exot_pos_y, prev_type = 0;
 	int rrx, rry, rrr;
@@ -88,7 +87,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 			exot_id = r >> 8;
 			if ((r & 0xFF) == PT_EXOT)
 			{
-				goto E185_HasExot;
+				goto POLC_HasExot;
 			}
 			switch (r & 0xFF)
 			{
@@ -107,7 +106,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 						}
 						else
 						{
-							sim->part_change_type(exot_id, exot_pos_x, exot_pos_y, PT_E185); // not E189
+							sim->part_change_type(exot_id, exot_pos_x, exot_pos_y, PT_POLC); // not E189
 							parts[exot_id].tmp = 5;
 							parts[exot_id].tmp2 = 1;
 						}
@@ -154,23 +153,23 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				case PT_SALT:
 					sim->part_change_type(exot_id, exot_pos_x, exot_pos_y, PT_SOAP);
 					sim->part_change_type(r >> 8, x + rx, y + ry, PT_SOAP);
-					goto E185_eol_1;
+					goto POLC_eol_1;
 				case PT_SOAP:
 					if (sim->pv[y/CELL][x/CELL] >= 10)
 					{
 						sim->part_change_type(exot_id, exot_pos_x, exot_pos_y, PT_SPNG);
 						sim->part_change_type(r >> 8, x + rx, y + ry, PT_SPNG);
 					}
-					goto E185_eol_1;
+					goto POLC_eol_1;
 				case PT_CAUS:
 					sim->part_change_type(r >> 8, x + rx, y + ry, PT_BOYL);
 					break;
 				}
 			}
-			E185_eol_1:
+			POLC_eol_1:
 			;
 		}
-		E185_HasExot:
+		POLC_HasExot:
 		for (trade = 0; trade < 6; trade ++)
 		{
 			rx = rand()%5-2; ry = rand()%5-2;
@@ -211,7 +210,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				sim->create_part(r>>8, x+rx, y+ry, PT_LAVA);
 				parts[r>>8].ctype = PT_DMND;
 				break;
-			// case PT_EXOT: 2 exotic matters and E185
+			// case PT_EXOT: 2 exotic matters and POLC
 			case PT_EMP:
 				if (!(rand() % 1000) && parts[i].temp >= 2000)
 				{
@@ -274,6 +273,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 		return 0;
 	}
 #endif
+
 	if (parts[i].tmp2 & 1)
 	{
 		tempTemp = parts[i].temp;
@@ -379,8 +379,8 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 }
 
 
-//#TPT-Directive ElementHeader Element_E185 static int graphics(GRAPHICS_FUNC_ARGS)
-int Element_E185::graphics(GRAPHICS_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_POLC static int graphics(GRAPHICS_FUNC_ARGS)
+int Element_POLC::graphics(GRAPHICS_FUNC_ARGS)
 {
 	if (cpart->tmp2 & 1) {
 		*colr = 0xFF;
@@ -398,4 +398,4 @@ int Element_E185::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-Element_E185::~Element_E185() {}
+Element_POLC::~Element_POLC() {}

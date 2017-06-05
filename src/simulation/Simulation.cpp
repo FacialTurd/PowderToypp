@@ -2182,7 +2182,7 @@ void Simulation::init_can_move()
 			can_move[PT_DEST][destinationType] = 0;
 
 /*
-		if (destinationType == PT_POLO || destinationType == PT_E185  || destinationType == PT_URAN || destinationType == PT_H2   ||
+		if (destinationType == PT_POLO || destinationType == PT_POLC  || destinationType == PT_URAN || destinationType == PT_H2   ||
 			destinationType == PT_PLSM || destinationType == PT_NBLE  || destinationType == PT_CO2  || destinationType == PT_O2   ||
 			destinationType == PT_FILT || destinationType == PT_ISOZ  || destinationType == PT_ISZS || destinationType == PT_EXOT ||
 			destinationType == PT_TUNG || destinationType == PT_INVIS || destinationType == PT_SPNG || destinationType == PT_GEL  ||
@@ -2229,12 +2229,8 @@ void Simulation::init_can_move()
 	can_move[PT_EMBR][PT_EMBR] = 2;
 	can_move[PT_TRON][PT_SWCH] = 3;
 	
-	if (isFromMyMod)
-	{
-		can_move[PT_ELEC][PT_POLO] = 2;
-	}
-	can_move[PT_ELEC][PT_E185] = 2;
-	can_move[PT_E185][PT_YEST] = 0; // moving type = "E185", type at destination = yeast
+	can_move[PT_ELEC][PT_POLC] = 2;
+	can_move[PT_POLC][PT_YEST] = 0; // moving type = "POLC", type at destination = yeast
 
 	can_move[PT_E186][PT_BRMT] = 3;
 	
@@ -2247,6 +2243,7 @@ void Simulation::init_can_move()
 	can_move[PT_STKM][PT_E189] = 3;
 	can_move[PT_STKM2][PT_E189] = 3;
 	can_move[PT_FIGH][PT_E189] = 3;
+	restrict_can_move();
 	
 	// can_move[PT_CNCT][PT_E191] = 0;
 }
@@ -2938,6 +2935,18 @@ int Simulation::get_normal_interp(int pt, float x0, float y0, float dx, float dy
 		photoelectric_effect(x, y);
 
 	return get_normal(pt, x, y, dx, dy, nx, ny);
+}
+
+void Simulation::restrict_can_move()
+{
+	if (isFromMyMod)
+	{
+		can_move[PT_ELEC][PT_POLO] = 2;
+	}
+	else
+	{
+		can_move[PT_ELEC][PT_POLO] = 0;
+	}
 }
 
 void Simulation::kill_part(int i)//kills particle number i

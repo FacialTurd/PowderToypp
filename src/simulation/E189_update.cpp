@@ -1636,7 +1636,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	case 21:
 	/* MERC/DEUT/YEST expander, or SPNG "water releaser",
 	 *   or TRON detector.
-	 * note: exclude E185 "replicating powder"
+	 * note: exclude POLC "replicating powder"
 	 */
 		{
 			rndstore = rand();

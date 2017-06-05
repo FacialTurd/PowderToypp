@@ -1187,7 +1187,7 @@ void GameSave::readOPS(char * data, int dataLength)
 							particles[newIndex].tmp2 = 0;
 						}
 						break;
-					case 185: // already used by "E185" and "LSNS"
+					case 185: // already used by "POLC" and "LSNS"
 						if (!isFromMyMod)
 						{
 							particles[newIndex].type = PT_LSNS;
@@ -2316,7 +2316,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				if (particles[i].type == PT_HEAC || particles[i].type == PT_SAWD || particles[i].type == PT_POLO
 					|| particles[i].type == PT_RFRG || particles[i].type == PT_RFGL || particles[i].type == PT_LSNS
 #ifdef MOD_ID_2
-					|| particles[i].type == PT_E185 || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == PT_E188
+					|| particles[i].type == PT_POLC || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == PT_E188
 #endif
 				)
 				{

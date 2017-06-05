@@ -3,7 +3,7 @@
 
 /*
 TODO: 
-	- "stronger version" a powder created by mixing E182 (POLO) with E185 (???) that is stronger?
+	- "stronger version" a powder created by mixing E182 (POLO) with E185 (POLC) that is stronger?
 */
 
 Element_POLO::Element_POLO()
