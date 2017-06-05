@@ -369,7 +369,10 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 					if ((r & 0xFF) == PT_POLO && !(rand()%40))
 					{
 						if (rand()%4)
+						{
 							parts[i].tmp = 0;
+							parts[r>>8].temp = (R_TEMP+273.15f);
+						}
 						parts[r>>8].tmp = 0;
 					}
 				}
