@@ -49,8 +49,8 @@ Element_E185::Element_E185()
 	HighPressureTransition = NT;
 	LowTemperature = ITL;
 	LowTemperatureTransition = NT;
-	HighTemperature = ITH;
-	HighTemperatureTransition = NT;
+	HighTemperature = 526.95f;
+	HighTemperatureTransition = PT_LAVA;
 
 	Update = &Element_E185::update;
 	Graphics = &Element_E185::graphics;
@@ -298,7 +298,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 		{
 			sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
 			is_warp = (sctype == PT_WARP);
-			if (!(rand()%140) && ((is_warp && (parts[i].temp > 1000) ? 5 : 1) > rand()%100) && !stmp)
+			if (!(rand()%140) && (is_warp ? ((int)(parts[i].temp) >> 6) : 1) > rand()%100) && !stmp)
 			{
 				if (!sctype)
 					s = sim->create_part(-3, x, y, PT_ELEC);
