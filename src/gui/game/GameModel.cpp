@@ -655,6 +655,7 @@ void GameModel::SetSave(SaveInfo * newSave)
 		sim->aheat_enable = saveData->aheatEnable;
 		sim->extraLoopsCA = saveData->sextraLoopsCA;
 		sim->sim_max_pressure = saveData->sim_max_pressure;
+		sim->isFromMyMod = saveData->isFromMyMod;
 		// sim->wireless2 = saveData->PINV_wireless;
 		if(saveData->gravityEnable)
 			sim->grav->start_grav_async();
