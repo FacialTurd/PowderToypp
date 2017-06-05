@@ -2182,7 +2182,7 @@ void Simulation::init_can_move()
 			can_move[PT_DEST][destinationType] = 0;
 
 /*
-		if (destinationType == PT_E182 || destinationType == PT_E185  || destinationType == PT_URAN || destinationType == PT_H2   ||
+		if (destinationType == PT_POLO || destinationType == PT_E185  || destinationType == PT_URAN || destinationType == PT_H2   ||
 			destinationType == PT_PLSM || destinationType == PT_NBLE  || destinationType == PT_CO2  || destinationType == PT_O2   ||
 			destinationType == PT_FILT || destinationType == PT_ISOZ  || destinationType == PT_ISZS || destinationType == PT_EXOT ||
 			destinationType == PT_TUNG || destinationType == PT_INVIS || destinationType == PT_SPNG || destinationType == PT_GEL  ||
@@ -2229,7 +2229,10 @@ void Simulation::init_can_move()
 	can_move[PT_EMBR][PT_EMBR] = 2;
 	can_move[PT_TRON][PT_SWCH] = 3;
 	
-	can_move[PT_ELEC][PT_E182] = 2;
+	if (isFromMyMod)
+	{
+		can_move[PT_ELEC][PT_POLO] = 2;
+	}
 	can_move[PT_ELEC][PT_E185] = 2;
 	can_move[PT_E185][PT_YEST] = 0; // moving type = "E185", type at destination = yeast
 
@@ -6050,6 +6053,7 @@ Simulation::Simulation():
 	player2.comm = 0;
 	
 	sim_max_pressure = 4.0f; // on breakable wall
+	isFromMyMod = true;
 
 	init_can_move();
 	clear_sim();

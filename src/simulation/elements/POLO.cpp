@@ -1,5 +1,11 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_POLO PT_POLO 182
+
+/*
+TODO: 
+	- "stronger version" a powder created by mixing E182 (POLO) with E185 (???) that is stronger?
+*/
+
 Element_POLO::Element_POLO()
 {
 	Identifier = "DEFAULT_PT_POLO";
@@ -30,7 +36,7 @@ Element_POLO::Element_POLO()
 	HeatConduct = 251;
 	Description = "Polonium, highly radioactive. Decays into NEUT and heats up.";
 
-	Properties = PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC|PROP_DEADLY;
+	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC |PROP_DEADLY;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -47,6 +53,7 @@ Element_POLO::Element_POLO()
 
 #define COOLDOWN 15
 #define LIMIT 5
+
 
 //#TPT-Directive ElementHeader Element_POLO static int update(UPDATE_FUNC_ARGS)
 int Element_POLO::update(UPDATE_FUNC_ARGS)
@@ -67,7 +74,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 			}
 		}
 
-		if (r && !(rand()%100))
+		if (r && !(rand()%100 || sim->isFromMyMod && (r & 0xFF) != PT_ELEC))
 		{
 			int s = sim->create_part(-3, x, y, PT_NEUT);
 			if (s >= 0)
@@ -95,6 +102,11 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 		parts[i].tmp2++;
 		sim->kill_part(r>>8);
 	}
+	else if (sim->isFromMyMod && (r & 0xFF) == PT_ELEC && !(rand()%25))
+	{
+		s = parts[i].tmp;
+		if (s) parts[i].tmp --;
+	}
 	if (parts[i].temp < 388.15f)
 	{
 		parts[i].temp += 0.2f;
@@ -118,3 +130,51 @@ int Element_POLO::graphics(GRAPHICS_FUNC_ARGS)
 }
 
 Element_POLO::~Element_POLO() {}
+
+
+/* # TPT-Directive ElementHeader Element_E182 static int update(UPDATE_FUNC_ARGS)
+int Element_E182::update(UPDATE_FUNC_ARGS)
+{
+	const int cooldown = 15;
+	const int limit = 5;
+	int r, s;
+	r = sim->photons[y][x];
+	if(parts[i].tmp < limit && !parts[i].life)
+	{
+		if (!(rand()%10000) && !parts[i].tmp)
+		{
+			s = sim->create_part(-3, x, y, PT_NEUT);
+			if(s >= 0) {
+				parts[i].life = cooldown;
+				parts[i].tmp ++;
+
+				parts[i].temp = ((parts[i].temp + parts[s].temp) + 600.0f) / 2.0f;
+				parts[s].temp = parts[i].temp;
+			}
+		}
+
+		if (r && (r & 0xFF) != PT_ELEC && !(rand()%100))
+		{
+			s = sim->create_part(-3, x, y, PT_NEUT);
+			if(s >= 0) {
+				parts[i].temp = ((parts[i].temp + parts[r>>8].temp + parts[r>>8].temp) + 600.0f) / 3.0f;
+				parts[i].life = cooldown;
+				parts[i].tmp ++;
+
+				parts[r>>8].temp = parts[i].temp;
+
+				parts[s].temp = parts[i].temp;
+				parts[s].vx = parts[r>>8].vx;
+				parts[s].vy = parts[r>>8].vy;
+			}
+		}
+	}
+	if ((r & 0xFF) == PT_ELEC && !(rand()%25))
+	{
+		s = parts[i].tmp;
+		if (s) parts[i].tmp --;
+	}
+	return 0;
+}
+
+*/

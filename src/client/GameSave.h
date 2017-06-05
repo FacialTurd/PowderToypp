@@ -52,6 +52,7 @@ public:
 	bool aheatEnable;
 	bool sextraLoopsCA;
 	bool paused;
+	bool isFromMyMod;
 	int gravityMode;
 	int airMode;
 	int edgeMode;

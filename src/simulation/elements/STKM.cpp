@@ -382,7 +382,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	        sim->bmap[(int)(playerp->legs[13]+0.5)/CELL][(int)(playerp->legs[12]+0.5)/CELL]==WL_DETECT)
 		sim->set_emap((int)(playerp->legs[12]+0.5)/CELL, (int)(playerp->legs[13]+0.5)/CELL);
 
-	int rndstore, randpool = 0;
+	int rndstore, randpool = 0, under_wall;
 	//Searching for particles near head
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
@@ -442,12 +442,19 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					}
 				}
 
-				if (sim->bmap[(ry+y)/CELL][(rx+x)/CELL]==WL_FAN)
+				under_wall = sim->bmap[(ry+y)/CELL][(rx+x)/CELL];
+				switch (under_wall)
+				{
+				case WL_FAN:
 					playerp->elem = SPC_AIR;
-				else if (sim->bmap[(ry+y)/CELL][(rx+x)/CELL]==WL_EHOLE)
+					break;
+				case WL_EHOLE:
 					playerp->rocketBoots = false;
-				else if (sim->bmap[(ry+y)/CELL][(rx+x)/CELL]==WL_GRAV /* && parts[i].type!=PT_FIGH */)
+					break;
+				case WL_GRAV: /* && parts[i].type!=PT_FIGH */
 					playerp->rocketBoots = true;
+					break;
+				}
 				if ((r&0xFF)==PT_PRTI)
 					Element_STKM::STKM_interact(sim, playerp, i, rx, ry);
 				if (!parts[i].type)//STKM_interact may kill STKM
