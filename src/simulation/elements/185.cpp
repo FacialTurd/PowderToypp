@@ -298,7 +298,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 		{
 			sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
 			is_warp = (sctype == PT_WARP);
-			if (!(rand()%140) && (is_warp ? ((int)(parts[i].temp) >> 6) : 1) > rand()%100) && !stmp)
+			if (!(rand()%140) && (is_warp ? (((int)(parts[i].temp) >> 6) : 1) > rand()%100) && !stmp)
 			{
 				if (!sctype)
 					s = sim->create_part(-3, x, y, PT_ELEC);
@@ -317,7 +317,8 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 				{
 					parts[i].life = cooldown;
 					parts[i].tmp = 1;
-					parts[i].temp += 10;
+					if (parts[i].temp < 450.0f)
+						parts[i].temp += 5.0f;
 					parts[s].temp = parts[i].temp;
 					if (sctype == PT_GRVT)
 						parts[s].tmp = 0;
@@ -339,7 +340,8 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 					s = sim->create_part(-3, x, y, PT_E186);
 				parts[i].life = cooldown;
 				parts[i].tmp ++;
-				parts[i].temp += (stmp >= 10) ? (stmp - 8) * 10 : 10;
+				if (parts[i].temp < 450.0f)
+					parts[i].temp += 5.0f;
 
 				parts[rr>>8].temp = parts[i].temp;
 				if (s >= 0)
