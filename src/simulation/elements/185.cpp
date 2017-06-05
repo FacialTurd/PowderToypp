@@ -298,7 +298,7 @@ int Element_E185::update(UPDATE_FUNC_ARGS)
 		{
 			sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
 			is_warp = (sctype == PT_WARP);
-			if (!(rand()%140) && (is_warp ? (((int)(parts[i].temp) >> 6) : 1) > rand()%100) && !stmp)
+			if (((is_warp ? (int)(parts[i].temp) >> 6 : 1) > rand() % 8192) && !stmp)
 			{
 				if (!sctype)
 					s = sim->create_part(-3, x, y, PT_ELEC);
