@@ -357,7 +357,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					{
 						switch (rtmp & 0xFF)
 						{
-							case 0: sim->E189_pause |=  0x01; break;
+							case 0:
+								if (Element_E189::maxPrior <= parts[i].ctype)
+								{
+									sim->E189_pause |= 0x81;
+									Element_E189::maxPrior = parts[i].ctype;
+								}
+							break;
 							case 1: sim->E189_pause |=  0x02; break;
 							case 2: sim->E189_pause |=  0x08; break;
 							case 3: sim->E189_pause &= ~0x08; break;
@@ -416,6 +422,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										case PT_NSCN: sim->elements[rrt].Properties2 &= ~tFlag; break;
 										case PT_INWR: sim->elements[rrt].Properties2 ^=  tFlag; break;
 									}
+								}
+							break;
+							case 12:
+								if (Element_E189::maxPrior < parts[i].ctype)
+								{
+									sim->E189_pause |= 0x80;
+									sim->E189_pause &= ~0x01;
+									Element_E189::maxPrior = parts[i].ctype;
 								}
 							break;
 							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'

@@ -5934,7 +5934,8 @@ void Simulation::AfterSim()
 		}
 		if (E189_pause & 0x0040)
 			Element_PHOT::ignite_flammable = !Element_PHOT::ignite_flammable;
-		E189_pause &= ~0x00000075;
+		E189_pause &= ~0x000000F5;
+		Element_E189::maxPrior = 0;
 	}
 	if (E189_FIGH_pause_check)
 	{
