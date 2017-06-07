@@ -340,6 +340,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											else
 												sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, PT_SPRK);
 											continue;
+										case 5:
+											if (rt == PT_WOOD)
+												sim->part_change_type(r, x+nxi+nxx, y+nyi+nyy, PT_SAWD);
+											continue;
 										}
 									}
 								}
