@@ -189,7 +189,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		{
 			for (rx=-1; rx<2; rx++)
 				for (ry=-1; ry<2; ry++)
-					if ((!rx != !ry) && BOUNDS_CHECK)
+					if ((rx || ry) && BOUNDS_CHECK)
 					{
 						r = pmap[y+ry][x+rx];
 						if (!r)
