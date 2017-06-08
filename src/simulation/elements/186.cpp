@@ -222,9 +222,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_INVIS:
 				parts[i].ctype = PT_NEUT;
 			case PT_PLUT:
-				if (parts[i].tmp2 > 0)
+				if (parts[r>>8].tmp2 > 0)
 				{
-					parts[i].tmp2 = 0;
+					parts[r>>8].tmp2 = 0;
 					sim->part_change_type(r>>8, x, y, PT_POLO);
 				}
 			case PT_SPNG:
