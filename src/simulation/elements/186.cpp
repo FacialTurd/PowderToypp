@@ -227,6 +227,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[r>>8].tmp2 = 0;
 					sim->part_change_type(r>>8, x, y, PT_POLO);
 				}
+				break;
 			case PT_SPNG:
 				sim->part_change_type(r>>8, x, y, PT_GEL);
 				parts[r>>8].tmp = parts[r>>8].life;
