@@ -7,11 +7,7 @@ Element_E186::Element_E186()
 	Colour = PIXPACK(0xDFEFFF);
 	MenuVisible = 0;
 	MenuSection = SC_NUCLEAR;
-#if defined(DEBUG) || defined(SNAPSHOT)
 	Enabled = 1;
-#else
-	Enabled = 0;
-#endif
 
 	Advection = 0.0f;
 	AirDrag = 0.00f * CFDS;
@@ -225,6 +221,12 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				break;
 			case PT_INVIS:
 				parts[i].ctype = PT_NEUT;
+			case PT_PLUT:
+				if (parts[i].tmp2 > 0)
+				{
+					parts[i].tmp2 = 0;
+					sim->part_change_type(r>>8, x, y, PT_POLO);
+				}
 			case PT_SPNG:
 				sim->part_change_type(r>>8, x, y, PT_GEL);
 				parts[r>>8].tmp = parts[r>>8].life;
