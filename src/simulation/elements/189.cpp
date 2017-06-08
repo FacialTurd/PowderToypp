@@ -192,8 +192,6 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 	{
 		switch (rtmp2)
 		{
-			case 0: // no photons operation
-				break;
 			case 1: // 50% turn left
 				if (rand() & 1)
 				{
@@ -330,6 +328,11 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 					if (part_phot->life < 0)
 						part_phot->life = 0;
 				}
+				break;
+			case 18: // photons diode output
+				part_phot->tmp2 = part_phot->ctype;
+				part_phot->ctype = 0x100;
+				sim->part_change_type(i, x, y, PT_E186);
 				break;
 		}
 	}
