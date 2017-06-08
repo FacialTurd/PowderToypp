@@ -313,7 +313,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 				{
 					parts[i].life = cooldown;
 					parts[i].tmp = 1;
-					if (parts[i].temp < 450.0f)
+					if (parts[i].temp < 520.0f)
 						parts[i].temp += 5.0f;
 					parts[s].temp = parts[i].temp;
 					if (sctype == PT_GRVT)
@@ -336,7 +336,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 					s = sim->create_part(-3, x, y, PT_E186);
 				parts[i].life = cooldown;
 				parts[i].tmp ++;
-				if (parts[i].temp < 450.0f)
+				if (parts[i].temp < 520.0f)
 					parts[i].temp += 5.0f;
 
 				parts[rr>>8].temp = parts[i].temp;
