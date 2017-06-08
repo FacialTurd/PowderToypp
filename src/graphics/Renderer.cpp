@@ -862,6 +862,7 @@ void Renderer::DrawWalls()
 				case 4:
 					{
 						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
 						for (int j = 0; j < CELL; j++)
 							for (int i = 0; i < CELL; i++)
 								if (i == j)
@@ -875,6 +876,7 @@ void Renderer::DrawWalls()
 				case 5:
 					{
 						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
 						for (int j = 0; j < CELL; j++)
 							for (int i = 0; i < CELL; i++)
 								if ((i << 1 ^ j) & 3)
@@ -957,6 +959,7 @@ void Renderer::DrawWalls()
 					case 4:
 						{
 							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
 							for (int j = 0; j < CELL; j++)
 								for (int i = 0; i < CELL; i++)
 									if (i == j)
@@ -971,6 +974,7 @@ void Renderer::DrawWalls()
 					case 5:
 						{
 							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
 							for (int j = 0; j < CELL; j++)
 								for (int i = 0; i < CELL; i++)
 									if ((i << 1 ^ j) & 3)
