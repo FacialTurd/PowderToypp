@@ -2470,8 +2470,9 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 
 	if (e == 2) //if occupy same space
 	{
-		if (parts[i].type == PT_PHOT)
+		switch (parts[i].type)
 		{
+		case PT_PHOT:  // type = 31
 			switch (r&0xFF)
 			{
 			case PT_PINVIS:
@@ -2568,30 +2569,28 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				}
 				break;
 			}
-		}
-		else if (parts[i].type == PT_NEUT)
-		{
+			break;
+		case PT_NEUT:  // type = 18
 			if ((r&0xFF) == PT_GLAS || (r&0xFF) == PT_BGLA)
 				if (rand() < RAND_MAX/10)
 					create_cherenkov_photon(i);
-		}
-		else if (parts[i].type == PT_ELEC)
-		{
+			break;
+		case PT_ELEC:  // type = 136
 			if ((r&0xFF) == PT_GLOW)
 			{
 				part_change_type(i, x, y, PT_PHOT);
 				parts[i].ctype = 0x3FFFFFFF;
 			}
-		}
-		else if (parts[i].type == PT_PROT)
-		{
+			break;
+		case PT_PROT:  // type = 173
 			if ((r&0xFF) == PT_INVIS)
 				part_change_type(i, x, y, PT_NEUT);
-		}
-		else if ((parts[i].type == PT_BIZR || parts[i].type == PT_BIZRG))
-		{
+			break;
+		case PT_BIZR:  // type = 103
+		case PT_BIZRG: // type = 104
 			if ((r&0xFF) == PT_FILT)
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
+			break;
 		}
 		return 1;
 	}
