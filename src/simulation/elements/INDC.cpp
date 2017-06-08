@@ -4,7 +4,7 @@ Element_INDC::Element_INDC()
 {
 	Identifier = "DEFAULT_PT_INDC";
 	Name = "INDC";
-	Colour = PIXPACK(0x6F6F8F);
+	Colour = PIXPACK(0x555555);
 	MenuVisible = 1;
 	MenuSection = SC_ELEC;
 	Enabled = 1;
