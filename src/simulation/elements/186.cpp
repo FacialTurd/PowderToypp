@@ -117,22 +117,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	{
 		if (!(rand()%60))
 		{
-			if (!parts[i].tmp)
-			{
-				if (!sctype)
-					s = sim->create_part(-3, x, y, PT_ELEC);
-				else
-					s = sim->create_part(-1, x, y, sctype);
-			}
+			if (!sctype || sctype == PT_E186)
+				s = sim->create_part(-3, x, y, PT_ELEC);
 			else
-			{
-				s = sim->create_part(-1, x, y, PT_E186);
-				if (s >= 0)
-				{
-					parts[s].tmp = parts[i].tmp - 1; // Meiosis???
-					parts[s].ctype = parts[i].ctype;
-				}
-			}
+				s = sim->create_part(-1, x, y, sctype);
 			if(s >= 0)
 			{
 				parts[i].temp += 400.0f;

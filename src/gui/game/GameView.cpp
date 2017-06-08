@@ -2469,7 +2469,13 @@ void GameView::OnDraw()
 			{
 				// if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
 				if (el_prop & PROP_CTYPE_WAVEL)
+				{
 					wavelengthGfx = (ctype&0x3FFFFFFF);
+					if (!(el_prop & PROP_CTYPE_INTG))
+					{
+						ctype = (ctype & 0x1FFFFFFF ^ 0x10000000) - 0x10000000;
+					}
+				}
 				
 				// if (type == PT_GLOW || type == PT_SOAP || type == PT_WIRE || type == PT_E187 || type == PT_E188)
 				if (el_prop & PROP_CTYPE_INTG)
