@@ -68,7 +68,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int destroy = (parts[r>>8].ctype==PT_PSCN) ? 1 : 0;
 						int nostop = (parts[r>>8].ctype==PT_INST) ? 1 : 0;
 						int spc_conduct = 0, ray_less = 0;
-						int colored = 0, noturn = 0, rt, tmp, tmp2;
+						int colored = 0, noturn = 0, rt;
+						static int tmp[4];
 						int max_turn = parts[i].tmp, tmpz = 0, tmpz2 = 0;
 						int r_incr = 1, pass_wall = 1;
 						if (max_turn <= 0)
@@ -118,11 +119,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								r_life = parts[r].life;
 								switch (r_life)
 								{
+								case 6:
+									if (spc_conduct == 5)
+										parts[r].temp = parts[i].temp;
 								case 13:
 									if (parts[r].tmp2 == 3)
 									{
-										tmp = parts[r].ctype;
-										tmp2 = parts[r].tmp;
+										tmp[0] = parts[r].ctype;
+										tmp[1] = parts[r].tmp;
 										for (nyy+=(2+tmpz2)*nyi, nxx+=(2+tmpz2)*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
 										{
 											if (!sim->InBounds(x+nxx, y+nyy))
@@ -130,7 +134,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											r = pmap[y+nyy][x+nxx];
 											if (!r)
 												continue;
-											parts[r>>8].dcolour = tmp;
+											parts[r>>8].dcolour = tmp[0];
 										}
 										goto break1a;
 									}
@@ -152,10 +156,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									{
 										if (!colored)
 											colored = 0x3FFFFFFF;
-										tmp = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+										tmp[0] = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
 										if (parts[r].tmp & 0x1)
-											tmp = ~tmp;
-										colored &= tmp;
+											tmp[0] = ~tmp[0];
+										colored &= tmp[0];
 										if (!colored)
 											goto break1a;
 									}
@@ -185,27 +189,28 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									if (!max_turn)
 										goto break1a;
 									nxx += nxi; nyy += nyi;
-									switch (parts[r].tmp & 7)
+									tmp[1] = parts[r].tmp & 0xF;
+									switch (tmp[1])
 									{
 									case 0: // turn right
-										tmp =  nxi;
+										tmp[0] = nxi;
 										nxi = -nyi;
-										nyi =  tmp;
+										nyi = tmp[0];
 										break;
 									case 1: // turn left
-										tmp =  nxi;
-										nxi =  nyi;
-										nyi = -tmp;
+										tmp[0] = nxi;
+										nxi = nyi;
+										nyi = -tmp[0];
 										break;
 									case 2: // "/" reflect
-										tmp =  nxi;
-										nxi =  nyi;
-										nyi =  tmp;
+										tmp[0] = nxi;
+										nxi = nyi;
+										nyi = tmp[0];
 										break;
 									case 3: // "\" reflect
-										tmp =  nxi;
+										tmp[0] = nxi;
 										nxi = -nyi;
-										nyi = -tmp;
+										nyi = -tmp[0];
 										break;
 									case 4: // go "/\"
 										nxi = 0; nyi = -1;
@@ -219,18 +224,36 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 7: // go "<"
 										nxi = -1; nyi = 0;
 										break;
+									case 8:
+									case 9:
+										while (nxx += nxi, nyy += nyi, BOUNDS_CHECK)
+										{
+											int front1 = pmap[y+nyy][x+nxx];
+											if (!front1) goto break1a;
+											else if ((front1 & 0xFF) == PT_FILT)
+											{
+												parts[front1>>8].life = 4;
+											}
+											else if ((front1 & 0xFF) == PT_ARAY)
+											{
+												parts[front1>>8].temp += (tmp2 == 8 ? 1 : -1) * parts[front1>>8].tmp2;
+												goto break1a;
+											}
+											else goto break1a;
+										}
+										goto break1a;
 									}
 									nxx -= nxi; nyy -= nyi;
 									max_turn--;
 									continue;
 								case 32:
-									tmp  = parts[r].tmp;
-									tmp2 = parts[r].tmp2;
-									switch (tmp2)
+									tmp[0] = parts[r].tmp;
+									tmp[1] = parts[r].tmp2;
+									switch (tmp[1])
 									{
 									case 0:
 										// temp_z1[8] = noturn;
-										noturn = (tmp >> (2 * noturn)) & 0x3;
+										noturn = (tmp[0] >> (3 * noturn)) & 0x7; // Easier for inputing hexadecimal?
 										if (noturn == 3)
 										{
 											goto break1a;
@@ -238,20 +261,19 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										break;
 									case 1:
 										// temp_z1[8] = tmp2 = nostop | (destroy << 1);
-										tmp2 = (tmp >> (2 * tmp2));
-										nostop = tmp2 & 0x1;
-										destroy = (tmp2 >> 1) & 0x1;
+										nostop  = (tmp[0] >> (nostop  ? 1 : 0)) & 0x1;
+										destroy = (tmp[0] >> (destroy ? 3 : 2)) & 0x1;
 										break;
 									case 2:
 										// temp_z1[8] = spc_conduct;
-										spc_conduct = tmp;
+										spc_conduct = tmp[0];
 										break;
 									case 3:
 										// temp_z1[8] = ray_less;
-										ray_less = ((tmp ^ 1) >> ray_less) & 0x1;
+										ray_less = ((tmp[0] ^ 1) >> ray_less) & 0x1;
 										break;
 									case 4:
-										tmpz2 = tmp;
+										tmpz2 = tmp[0];
 										break;
 									case 5:
 										pass_wall = !pass_wall;
@@ -343,6 +365,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										case 5:
 											if (rt == PT_WOOD)
 												sim->part_change_type(r, x+nxi+nxx, y+nyi+nyy, PT_SAWD);
+											else if (rt == PT_ARAY)
+												parts[r].temp = parts[i].temp;
 											continue;
 										}
 									}
