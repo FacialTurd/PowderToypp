@@ -237,6 +237,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											else if ((front1 & 0xFF) == PT_ARAY)
 											{
 												parts[front1>>8].temp += (tmp[1] == 8 ? 1 : -1) * parts[front1>>8].tmp2;
+												if (!(parts[front1>>8].temp >= 0)) parts[front1>>8].temp = 0;
 												goto break1a;
 											}
 											else goto break1a;
