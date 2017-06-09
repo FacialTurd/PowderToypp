@@ -139,25 +139,31 @@ int Element_E187::graphics(GRAPHICS_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_E187 static int createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
 int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
 {
-	int r, s;
+	if (sim->pfree < 0)
+		return 0;
+	int np = sim->pfree;
 	float r2, r3;
 	const int cooldown = 15;
-	s = sim->create_part(-3, x, y, PT_PHOT);
-	if(s >= 0) {
-		r2 = (rand()%128+128)/127.0f;
-		r3 = (rand()%360)*3.1415926f/180.0f;
-		parts[s].vx = r2*cosf(r3);
-		parts[s].vy = r2*sinf(r3);
-		parts[i].life = cooldown;
-		parts[i].tmp |= 0x1;
-		parts[s].life = rand()%480+480;
-		parts[s].tmp = 0x1;
-		parts[s].temp = parts[i].temp + 20;
-		if (tmp & 2)
-		{
-			parts[s].ctype = 0x1F<<(rand()%26);
-		}
-	}
+
+	parts[i].life = cooldown;
+	parts[i].tmp |= 0x1;
+
+	r2 = (rand()%128+128)/127.0f;
+	r3 = (rand()%360)*3.1415926f/180.0f;
+
+	// write particle data
+	parts[np].type = PT_PHOT;
+	parts[np].life = rand()%480+480;
+	parts[np].ctype = tmp & 2 ? 0x3FFFFFFF : 0x1F<<(rand()%26);
+	parts[np].x = (float)x;
+	parts[np].y = (float)y;
+	parts[np].vx = r2*cosf(r3);
+	parts[np].vy = r2*sinf(r3);
+	parts[np].temp = parts[i].temp + 20;
+	parts[np].tmp = 0x1;
+	parts[np].pavg[0] = parts[np].pavg[1] = 0.0f;
+	
+	sim->photons[y][x] = PT_PHOT | (np<<8);
 	return 0;
 }
 
