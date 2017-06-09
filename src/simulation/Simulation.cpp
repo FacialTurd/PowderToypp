@@ -2668,8 +2668,10 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		if (y<ny)
 		{
 			rr = pmap[y+1][x];
+			/*
 			if ((rr&0xFF) == PT_PINVIS)
 				rr = parts[rr>>8].tmp4;
+			*/
 			if ((rr&0xFF) == PT_CNCT) // check below CNCT for another CNCT
 				return 0;
 		}
@@ -4806,7 +4808,7 @@ killed:
 						goto movedone;
 				}
 				// liquids and powders
-				if (!do_move(i, x, y, fin_xf, fin_yf))
+				if (!do_move(i, x, y, fin_xf, fin_yf)) // stagnanted?
 				{
 					if (parts[i].type == PT_NONE)
 						continue;
@@ -4853,7 +4855,7 @@ killed:
 								goto movedone;
 							}
 						}
-						if (elements[t].Falldown>1 && !grav->ngrav_enable && gravityMode==0 && parts[i].vy>fabsf(parts[i].vx))
+						if (elements[t].Falldown>1 && !grav->ngrav_enable && gravityMode==0 && parts[i].vy>fabsf(parts[i].vx)) // liquid movement
 						{
 							s = 0;
 							// stagnant is true if FLAG_STAGNANT was set for this particle in previous frame
@@ -4902,7 +4904,7 @@ killed:
 							parts[i].vx *= elements[t].Collision;
 							parts[i].vy *= elements[t].Collision;
 						}
-						else if (elements[t].Falldown>1 && fabsf(pGravX*parts[i].vx+pGravY*parts[i].vy)>fabsf(pGravY*parts[i].vx-pGravX*parts[i].vy))
+						else if (elements[t].Falldown>1 && fabsf(pGravX*parts[i].vx+pGravY*parts[i].vy)>fabsf(pGravY*parts[i].vx-pGravX*parts[i].vy)) // liquid movement
 						{
 							float nxf, nyf, prev_pGravX, prev_pGravY, ptGrav = elements[t].Gravity;
 							s = 0;
