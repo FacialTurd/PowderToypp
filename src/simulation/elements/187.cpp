@@ -152,9 +152,11 @@ int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, P
 	r3 = (rand()%360)*3.1415926f/180.0f;
 
 	// write particle data
+	// tmp = 0 or 1 emits white PHOT
+	// tmp = 2 or 3 emits rainbow-colored PHOT
 	parts[np].type = PT_PHOT;
 	parts[np].life = rand()%480+480;
-	parts[np].ctype = tmp & 2 ? 0x3FFFFFFF : 0x1F<<(rand()%26);
+	parts[np].ctype = tmp & 2 ? 0x1F<<(rand()%26) : 0x3FFFFFFF;
 	parts[np].x = (float)x;
 	parts[np].y = (float)y;
 	parts[np].vx = r2*cosf(r3);
@@ -162,6 +164,7 @@ int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, P
 	parts[np].temp = parts[i].temp + 20;
 	parts[np].tmp = 0x1;
 	parts[np].pavg[0] = parts[np].pavg[1] = 0.0f;
+	parts[np].dcolour = 0; // clear deco color
 	
 	sim->photons[y][x] = PT_PHOT | (np<<8);
 	return 0;
