@@ -127,7 +127,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									{
 										tmp[0] = parts[r].ctype;
 										tmp[1] = parts[r].tmp;
-										for (nyy+=(2+tmpz2)*nyi, nxx+=(2+tmpz2)*nxi; tmp2--; nyy+=nyi, nxx+=nxi)
+										for (nyy+=(2+tmpz2)*nyi, nxx+=(2+tmpz2)*nxi; tmp[1]--; nyy+=nyi, nxx+=nxi)
 										{
 											if (!sim->InBounds(x+nxx, y+nyy))
 												break;
@@ -236,7 +236,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											}
 											else if ((front1 & 0xFF) == PT_ARAY)
 											{
-												parts[front1>>8].temp += (tmp2 == 8 ? 1 : -1) * parts[front1>>8].tmp2;
+												parts[front1>>8].temp += (tmp[1] == 8 ? 1 : -1) * parts[front1>>8].tmp2;
 												goto break1a;
 											}
 											else goto break1a;
