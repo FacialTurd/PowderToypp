@@ -22,6 +22,15 @@ public:
 			parts[r>>8].life = 4;
 		}
 	}
+	static void conductToSWCH (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?
+	{
+		if (parts[r>>8].life == 10)
+		{
+			parts[r>>8].ctype = r&0xFF;
+			sim->part_change_type(r>>8, x, y, PT_SPRK);
+			parts[r>>8].life = 4;
+		}
+	}
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
 	// static bool GetDecoration();
 };

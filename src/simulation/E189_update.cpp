@@ -1306,6 +1306,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						{
 							if ((r & 0xFF) == PT_INST)
 								sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);
+							else if ((r & 0xFF) == PT_SWCH)
+								conductToSWCH (sim, r, x+rx, y+ry, parts);
 							else if (sim->elements[r & 0xFF].Properties & PROP_CONDUCTS)
 								conductTo (sim, r, x+rx, y+ry, parts);
 						}
