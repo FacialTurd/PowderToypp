@@ -1603,7 +1603,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					else if (rt == PT_SWCH && rtmp & 0x100)
 					{
 						if (parts[r].life < 10)
-							parts[r].life = 10;
+							parts[r].life = (r > i ? 15 : 14);
 						else
 							parts[r].life = 9;
 					}

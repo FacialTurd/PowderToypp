@@ -145,11 +145,12 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		switch (cpart->ctype)
 		{
 		case 0:
-			if ((cpart->tmp2) & 0xFF)
+			tmp2v = cpart->tmp2;
+			if (tmp2v & 0xFF)
 			{
 				*colb += 0x50;
 			}
-			if ((cpart->tmp2 >> 8) & 0xFF)
+			if ((tmp2v >> 8) & 0xFF)
 			{
 				*colg += 0x50;
 			}
@@ -160,7 +161,12 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 				*colr = 0xFF; *colg = 0x5A; *colb = 0x65;
 				return 0;
 			}
+		case 26:
+			tmp2v = cpart->tmp >> 8;
+			goto def1;
 		default:
+			tmp2v = cpart->tmp2;
+		def1:
 			if (cpart->tmp2)
 			{
 				*colr = 0x65; *colg = 0xFF; *colb = 0x5A;
