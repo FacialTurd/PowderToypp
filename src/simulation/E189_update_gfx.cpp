@@ -167,7 +167,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		default:
 			tmp2v = cpart->tmp2;
 		def1:
-			if (cpart->tmp2)
+			if (tmp2v)
 			{
 				*colr = 0x65; *colg = 0xFF; *colb = 0x5A;
 				return 0;
