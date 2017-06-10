@@ -142,6 +142,9 @@ int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, P
 	if (sim->pfree < 0)
 		return 0;
 	int np = sim->pfree;
+	sim->pfree = parts[np].life;
+	if (np > sim->parts_lastActiveIndex)
+		sim->parts_lastActiveIndex = np;
 	float r2, r3;
 	const int cooldown = 15;
 
