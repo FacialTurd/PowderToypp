@@ -102,12 +102,18 @@ int Element_LIGH::update(UPDATE_FUNC_ARGS)
 				{
 				case PT_LIGH:
 				case PT_TESC:
+				case PT_INDI:
 					continue;
 				case PT_CLNE:
 				case PT_THDR:
 				case PT_DMND:
 				case PT_FIRE:
 					parts[r>>8].temp = restrict_flt(parts[r>>8].temp+powderful/10, MIN_TEMP, MAX_TEMP);
+					continue;
+				case PT_INDC:
+					parts[r>>8].life  = 4;
+					parts[r>>8].ctype = rt;
+					sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
 					continue;
 				case PT_DEUT:
 				case PT_PLUT:
@@ -141,10 +147,6 @@ int Element_LIGH::update(UPDATE_FUNC_ARGS)
 						sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
 						parts[r>>8].ctype = PT_HEAC;
 					}
-					break;
-				default:
-					if (sim->elements[rt].Properties2 & PROP_NODESTRUCT)
-						continue;
 					break;
 				}
 				if ((sim->elements[r&0xFF].Properties&PROP_CONDUCTS) && parts[r>>8].life==0)
