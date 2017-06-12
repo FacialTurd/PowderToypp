@@ -262,7 +262,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										break;
 									case 1:
 										// temp_z1[8] = tmp2 = nostop | (destroy << 1);
-										tmp[0]  ^= 0x15;
+										tmp[0]  ^= 0xAAAAAAAA;
 										nostop   = (tmp[0] >> (nostop   ? 1 : 0)) & 0x1;
 										destroy  = (tmp[0] >> (destroy  ? 3 : 2)) & 0x1;
 										ray_less = (tmp[0] >> (ray_less ? 5 : 4)) & 0x1;
