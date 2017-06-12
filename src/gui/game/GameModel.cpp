@@ -314,8 +314,8 @@ void GameModel::BuildMenus()
 	
 	{
 		Tool * tempTool = new ElementTool(PT_E189|(33<<8), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
-		menuList[SC_LIFE]->AddTool(tempTool);
-		Tool * tempTool = new ElementTool(PT_E189|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
+		menuList[SC_ELEC]->AddTool(tempTool);
+		tempTool = new ElementTool(PT_E189|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 
