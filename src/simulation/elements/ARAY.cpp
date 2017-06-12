@@ -254,24 +254,24 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									{
 									case 0:
 										// temp_z1[8] = noturn;
-										noturn = (tmp[0] >> (3 * noturn)) & 0x7; // Easier for inputing hexadecimal?
-										if (noturn == 3)
+										noturn = (tmp[0] >> (4 * noturn)) & 0x7; // Easier for inputing hexadecimal?
+										if (noturn >= 3)
 										{
 											goto break1a;
 										}
 										break;
 									case 1:
 										// temp_z1[8] = tmp2 = nostop | (destroy << 1);
-										nostop  = (tmp[0] >> (nostop  ? 1 : 0)) & 0x1;
-										destroy = (tmp[0] >> (destroy ? 3 : 2)) & 0x1;
+										tmp[0]  ^= 0x15;
+										nostop   = (tmp[0] >> (nostop   ? 1 : 0)) & 0x1;
+										destroy  = (tmp[0] >> (destroy  ? 3 : 2)) & 0x1;
+										ray_less = (tmp[0] >> (ray_less ? 5 : 4)) & 0x1;
 										break;
 									case 2:
 										// temp_z1[8] = spc_conduct;
 										spc_conduct = tmp[0];
 										break;
 									case 3:
-										// temp_z1[8] = ray_less;
-										ray_less = ((tmp[0] ^ 1) >> ray_less) & 0x1;
 										break;
 									case 4:
 										tmpz2 = tmp[0];
