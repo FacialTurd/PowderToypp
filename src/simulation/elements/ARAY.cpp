@@ -122,7 +122,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 6:
 									if (spc_conduct == 5)
 										parts[r].temp = parts[i].temp;
-									break;
+									continue;
 								case 13:
 									if (parts[r].tmp2 == 3)
 									{
@@ -139,7 +139,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										goto break1a;
 									}
-									
+									continue;
 								case 16:
 									if (parts[r /* actually: r>>8 */].ctype == 1)
 									{
