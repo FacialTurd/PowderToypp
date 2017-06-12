@@ -47,11 +47,13 @@ public:
 	int goltype[NGOL];
 	int grule[NGOL+1][10];
 	menu_section msections[SC_TOTAL];
+	int temporary_sim_variable[10];
 
 	int currentTick;
 	int replaceModeSelected;
 	int replaceModeFlags;
 	bool isFromMyMod;
+	bool isPrevFromMyMod;
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
@@ -175,7 +177,7 @@ public:
 		else if ((photons[y][x]>>8)==i)
 			photons[y][x] = 0;
 	}
-	void restrict_can_move();
+	void restrict_can_move(bool oldstate, bool newstate);
 	void kill_part(int i);
 	bool FloodFillPmapCheck(int x, int y, int type);
 	int flood_prop(int x, int y, size_t propoffset, PropertyValue propvalue, StructProperty::PropertyType proptype);

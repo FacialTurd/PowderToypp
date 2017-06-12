@@ -2977,6 +2977,14 @@ void Simulation::restrict_can_move()
 	{
 		can_move[PT_ELEC][PT_POLO] = 0;
 	}
+	if (isFromMyMod != isPrevFromMyMod)
+	{
+		int t;
+		t = Elements[PT_PIPE].HighPressureTransition;
+		Elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[0];
+		temporary_sim_variable[0] = t;
+		isPrevFromMyMod = isFromMyMod;
+	}
 }
 
 void Simulation::kill_part(int i)//kills particle number i
@@ -6093,8 +6101,11 @@ Simulation::Simulation():
 	player2.comm = 0;
 	
 	sim_max_pressure = 4.0f; // on breakable wall
+	isPrevFromMyMod = false;
 	isFromMyMod = true;
 
+	temporary_sim_variable[0] = NT; // on PIPE
+	
 	init_can_move();
 	clear_sim();
 
