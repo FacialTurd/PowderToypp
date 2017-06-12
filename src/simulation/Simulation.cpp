@@ -2980,9 +2980,14 @@ void Simulation::restrict_can_move()
 	if (isFromMyMod != isPrevFromMyMod)
 	{
 		int t;
+
 		t = elements[PT_PIPE].HighPressureTransition;
 		elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[0];
 		temporary_sim_variable[0] = t;
+		t = elements[PT_WIFI].HighPressureTransition;
+		elements[PT_WIFI].HighPressureTransition = temporary_sim_variable[1];
+		temporary_sim_variable[1] = t;
+
 		isPrevFromMyMod = isFromMyMod;
 	}
 }
@@ -6105,6 +6110,7 @@ Simulation::Simulation():
 	isFromMyMod = true;
 
 	temporary_sim_variable[0] = NT; // on PIPE
+	temporary_sim_variable[1] = NT; // on WIFI
 	
 	init_can_move();
 	clear_sim();
