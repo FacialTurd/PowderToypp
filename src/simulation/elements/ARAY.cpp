@@ -122,6 +122,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 6:
 									if (spc_conduct == 5)
 										parts[r].temp = parts[i].temp;
+									break;
 								case 13:
 									if (parts[r].tmp2 == 3)
 									{
