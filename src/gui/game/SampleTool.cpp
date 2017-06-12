@@ -68,10 +68,10 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 				{
 					int particleLife = sim->parts[sim->pmap[position.Y][position.X]>>8].life;
 					int menu_section_1 = SC_SPECIAL;
-					if (particleLife == 37)
+					if (particleLife == 33 || particleLife == 37)
 					{
 						particleType |= particleLife<<8;
-						menu_section_1 = SC_LIFE;
+						menu_section_1 = (particleLife == 37 ? SC_LIFE : SC_ELEC);
 					}
 
 					Menu * elemMenu = gameModel->GetMenuList()[menu_section_1];
