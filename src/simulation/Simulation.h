@@ -177,7 +177,7 @@ public:
 		else if ((photons[y][x]>>8)==i)
 			photons[y][x] = 0;
 	}
-	void restrict_can_move(bool oldstate, bool newstate);
+	void restrict_can_move(/* bool oldstate, bool newstate */);
 	void kill_part(int i);
 	bool FloodFillPmapCheck(int x, int y, int type);
 	int flood_prop(int x, int y, size_t propoffset, PropertyValue propvalue, StructProperty::PropertyType proptype);

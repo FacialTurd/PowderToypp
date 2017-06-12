@@ -2980,8 +2980,8 @@ void Simulation::restrict_can_move()
 	if (isFromMyMod != isPrevFromMyMod)
 	{
 		int t;
-		t = Elements[PT_PIPE].HighPressureTransition;
-		Elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[0];
+		t = elements[PT_PIPE].HighPressureTransition;
+		elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[0];
 		temporary_sim_variable[0] = t;
 		isPrevFromMyMod = isFromMyMod;
 	}
