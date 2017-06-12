@@ -2288,16 +2288,18 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				result = (parts[r>>8].life < 10) ? 2 : 0;
 			break;
 		case PT_INVIS:
-			float pressureResistance = 0.0f;
-			if (parts[r>>8].tmp > 0)
-				pressureResistance = (float)parts[r>>8].tmp;
-			else
-				pressureResistance = sim_max_pressure;
+			{
+				float pressureResistance = 0.0f;
+				if (parts[r>>8].tmp > 0)
+					pressureResistance = (float)parts[r>>8].tmp;
+				else
+					pressureResistance = sim_max_pressure;
 
-			if (pv[ny/CELL][nx/CELL] < -pressureResistance || pv[ny/CELL][nx/CELL] > pressureResistance)
-				result = 2;
-			else
-				result = 0;
+				if (pv[ny/CELL][nx/CELL] < -pressureResistance || pv[ny/CELL][nx/CELL] > pressureResistance)
+					result = 2;
+				else
+					result = 0;
+			}
 			break;
 		case PT_PINVIS:
 			if (parts[r>>8].life >= 10)
@@ -2315,7 +2317,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			}
 			else result = 0;
 			break;
-		case PT_PVOD:
+		case PT_VOID:
 			if (!parts[r>>8].ctype || (parts[r>>8].ctype==pt)!=(parts[r>>8].tmp&1))
 				result = 1;
 			else
@@ -2400,6 +2402,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			// This should never happen
 			// If it were to happen, try_move would interpret a 3 as a 1
 			result =  1;
+		}
 	}
 	if (bmap[ny/CELL][nx/CELL])
 	{
@@ -3367,7 +3370,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].tmp = 50;
 		break;
 	case PT_LIFE:
-		if (v<NGOL)
+		if (v < NGOL)
 		{
 			parts[i].tmp = grule[v+1][9] - 1;
 			parts[i].ctype = v;
@@ -3491,7 +3494,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	case PT_STKM2:
 	{
-		if (player2.spwn==0)
+		if (player2.spwn == 0)
 		{
 			parts[i].life = 100;
 			Element_STKM::STKM_init_legs(this, &player2, i);
@@ -3500,7 +3503,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		}
 		else
 		{
-			parts[i].type=0;
+			parts[i].type = 0;
 			return -1;
 		}
 		int spawnID = create_part(-3, x, y, PT_SPAWN2);
@@ -3512,7 +3515,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		unsigned char fcount = 0;
 		while (fcount < MAX_FIGHTERS && fcount < (fighcount+1) && fighters[fcount].spwn==1) fcount++;
-		if (fcount < MAX_FIGHTERS && fighters[fcount].spwn==0)
+		if (fcount < MAX_FIGHTERS && fighters[fcount].spwn == 0)
 		{
 			parts[i].life = 100;
 			parts[i].tmp = fcount;
@@ -3584,7 +3587,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	case PT_LIGH:
 	{
 		float gx, gy, gsize;
-
+		
 		if (v >= 0)
 		{
 			if (v > 55)
