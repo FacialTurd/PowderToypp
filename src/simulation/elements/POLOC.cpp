@@ -387,6 +387,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 						break;
 					case PT_POLC: // don't interacting itself
 						break;
+					}
 				}
 		return 0;
 	}
