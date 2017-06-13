@@ -1651,7 +1651,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						// if (sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED && rx && ry) // INWR, PTCT, NTCT, etc.
 						//	continue;
 						// EMBR_modifier = 0;
-						if (rctype != PT_LIGH || !(rand() & 15))
+						if (rctype != PT_LIGH || parts[r>>8].ctype == PT_TESC || !(rand() & 15))
 						{
 							nx = x+rx; ny = y+ry;
 							if (rctype == PT_EMBR) // use by EMBR (explosion spark) emitter
