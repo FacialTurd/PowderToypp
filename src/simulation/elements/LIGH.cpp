@@ -111,9 +111,12 @@ int Element_LIGH::update(UPDATE_FUNC_ARGS)
 					parts[r>>8].temp = restrict_flt(parts[r>>8].temp+powderful/10, MIN_TEMP, MAX_TEMP);
 					continue;
 				case PT_INDC:
-					parts[r>>8].life  = 4;
-					parts[r>>8].ctype = rt;
-					sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
+					if (!parts[r>>8].life)
+					{
+						parts[r>>8].life  = 4;
+						parts[r>>8].ctype = rt;
+						sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
+					}
 					continue;
 				case PT_DEUT:
 				case PT_PLUT:

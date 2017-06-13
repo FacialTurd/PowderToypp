@@ -1635,7 +1635,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		{
 		rctype = parts[i].ctype;
 		int rctypeExtra = rctype >> 8;
-		int EMBR_modifier;
+		// int EMBR_modifier;
 		rctype &= 0xFF;
 		if (!rctype)
 			return return_value;
@@ -1650,32 +1650,34 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					{
 						// if (sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED && rx && ry) // INWR, PTCT, NTCT, etc.
 						//	continue;
-						EMBR_modifier = 0;
+						// EMBR_modifier = 0;
 						if (rctype != PT_LIGH || !(rand() & 15))
 						{
 							nx = x+rx; ny = y+ry;
 							if (rctype == PT_EMBR) // use by EMBR (explosion spark) emitter
 							{
 								rr = pmap[ny][nx];
-								if ((rr & 0xFF) == PT_GLAS)
-								{
-									ny += ry; nx += rx;
-									EMBR_modifier |= 1;
-								}
+								if ((rr & 0xFF) != PT_GLAS)
+									continue;
+								ny += ry; nx += rx;
 							}
 							int np = sim->create_part(-1, nx, ny, rctype, rctypeExtra);
 							if (np >= 0) {
 								parts[np].vx = rtmp*rx; parts[np].vy = rtmp*ry;
 								parts[np].dcolour = parts[i].dcolour;
-								if ((rctype & 0xFF) == PT_PHOT && (np > i)) // like E189 (life = 11)
+								switch (rctype)
 								{
-									parts[np].flags |= FLAG_SKIPMOVE;
-								}
-								else if (EMBR_modifier & 1)
-								{
+								case PT_PHOT:
+									if (np > i) parts[np].flags |= FLAG_SKIPMOVE; // like E189 (life = 11)
+									break;
+								case PT_LIGH:
+									parts[np].tmp = atan2(-ry, (float)rx)/M_PI*360;
+									break;
+								case PT_EMBR:
 									parts[np].temp = parts[rr>>8].temp; // set temperature to EMBR
 									if (parts[rr>>8].life > 0)
 										parts[np].life = parts[rr>>8].life;
+									break;
 								}
 							}
 						}
