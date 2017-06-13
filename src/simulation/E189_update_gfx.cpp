@@ -58,7 +58,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		*colb += ptmp;
 		break;
 	case 9:
-		*colr = *colb = 255 - (int)(0.0091f * cpart->temp);
+		*colr = *colb = 255 - (int)(0.02102f * cpart->temp);
 		// *colg = 0xFF;
 		*firea = 90; *firer = *colr; *fireg = *colg; *fireb = *colb;
 		*pixel_mode = PMODE_NONE;

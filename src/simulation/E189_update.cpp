@@ -301,12 +301,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp = 0; // only preventing because negative tmp doesn't save
 		break;
 	case 9: // VIBR-like explosion
-		if (parts[i].temp >= 9600)
+		if (parts[i].temp > (MAX_TEMP - 12))
 		{
 			sim->part_change_type(i, x, y, PT_VIBR);
 			parts[i].temp = MAX_TEMP;
-			parts[i].life = 750;
-			parts[i].tmp2 = 0;
+			parts[i].life = 1000;
+			// parts[i].tmp2 = 0;
 			sim->emp2_trigger_count ++;
 		}
 		parts[i].temp += 12;
@@ -683,15 +683,17 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 			break;
 		break2a:
-			for (rtmp = 0; rtmp < 4; rtmp++)
+			for (rii = 0; rii < 4; rii++)
 			{
 				if (BOUNDS_CHECK)
 				{
-					rx = tron_rx[rtmp];
-					ry = tron_ry[rtmp];
-					r = pmap[y+ry][x+rx];
-					if ((r&0xFF) == PT_VIRS || (r&0xFF) == PT_VRSS || (r&0xFF) == PT_VRSG) // if is virus
-						parts[r>>8].pavg[0] = 10;
+					rx = tron_rx[rii];
+					ry = tron_ry[rii];
+					rr = pmap[y+ry][x+rx];
+					if ((rr&0xFF) == PT_VIRS || (rr&0xFF) == PT_VRSS || (rr&0xFF) == PT_VRSG) // if is virus
+					{
+						parts[r>>8].pavg[0] += 10;
+					}
 				}
 			}
 			break;
