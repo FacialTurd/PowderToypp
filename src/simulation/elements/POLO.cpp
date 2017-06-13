@@ -102,11 +102,6 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 		parts[i].tmp2++;
 		sim->kill_part(r>>8);
 	}
-	else if (sim->isFromMyMod && (r & 0xFF) == PT_ELEC && !(rand()%25))
-	{
-		int s = parts[i].tmp;
-		if (s) parts[i].tmp --;
-	}
 	if (parts[i].temp < 388.15f)
 	{
 		parts[i].temp += 0.2f;
