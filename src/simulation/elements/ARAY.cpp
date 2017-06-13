@@ -374,7 +374,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											if (rt == PT_HEAC && parts[r].temp > sim->elements[PT_HEAC].HighTemperature)
 											{
 												sim->part_change_type(r, x+rx, y+ry, PT_LAVA);
-												parts[r>>8].ctype = PT_HEAC;
+												parts[r].ctype = PT_HEAC;
 											}
 											continue;
 										}
