@@ -1671,7 +1671,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									if (np > i) parts[np].flags |= FLAG_SKIPMOVE; // like E189 (life = 11)
 									break;
 								case PT_LIGH:
-									parts[np].tmp = atan2(-ry, (float)rx)/M_PI*360;
+									parts[np].tmp = atan2(-ry, (float)rx)/M_PI*180;
 									break;
 								case PT_EMBR:
 									parts[np].temp = parts[rr>>8].temp; // set temperature to EMBR
