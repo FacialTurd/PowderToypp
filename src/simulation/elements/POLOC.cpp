@@ -9,7 +9,7 @@ TODO:
 Element_POLC::Element_POLC()
 {
 	Identifier = "DEFAULT_PT_POLC";
-	Name = "POLC";
+	Name = "POL2";
 	Colour = PIXPACK(0x447722);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
@@ -362,16 +362,31 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];
-					if ((r & 0xFF) == PT_POLO && !(rand()%40))
+					if (!r) continue;
+					switch (r & 0xFF)
 					{
-						if (rand()%4)
+					case PT_URAN: case PT_PLUT:
+						if (parts[r>>8].tmp2 >= 10)
 						{
-							parts[i].tmp = 0;
-							parts[i].tmp2 = 0; // clear absorbed PROT?
-							parts[r>>8].temp = (R_TEMP+273.15f);
+							parts[r>>8].tmp = 0;
+							parts[r>>8].tmp2 = 0;
+							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
 						}
-						parts[r>>8].tmp = 0;
-					}
+						break;
+					case PT_POLO:
+						if (!(rand()%40))
+						{
+							if (rand()%4)
+							{
+								parts[i].tmp = 0;
+								parts[r>>8].tmp2 = 0; // clear absorbed PROT?
+								parts[r>>8].temp = (R_TEMP+273.15f);
+							}
+							parts[r>>8].tmp = 0;
+						}
+						break;
+					case PT_POLC: // don't interactiving itself
+						break;
 				}
 		return 0;
 	}
