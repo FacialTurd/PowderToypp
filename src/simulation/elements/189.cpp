@@ -516,7 +516,7 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 				sim->part_change_type(r, rx, ry, PT_VIBR);
 		case PT_VIBR:
 			parts[r].life = 1000;
-			parts[r].tmp += 1000;
+			parts[r].tmp += triggerCount << 9;
 			parts[r].tmp2 = 0;
 			break;
 		case PT_URAN:
