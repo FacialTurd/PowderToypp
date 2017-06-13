@@ -385,7 +385,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 							parts[r>>8].tmp = 0;
 						}
 						break;
-					case PT_POLC: // don't interactiving itself
+					case PT_POLC: // don't interacting itself
 						break;
 				}
 		return 0;
