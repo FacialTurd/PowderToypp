@@ -511,16 +511,13 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 			if (Probability::randFloat() < prob_breakElectronics)
 				sim->create_part(r, rx, ry, PT_PLSM);
 			break;
-		case PT_VIBR:
-			if (Probability::randFloat() < prob_breakElectronics * 0.2)
-				sim->part_change_type(r, rx, ry, PT_BVBR);
-			break;
 		case PT_BVBR:
 			if (Probability::randFloat() < prob_breakElectronics * 0.1)
-			{
 				sim->part_change_type(r, rx, ry, PT_VIBR);
-				parts[r].life = 1000;
-			}
+		case PT_VIBR:
+			parts[r].life = 1000;
+			parts[r].tmp += 1000;
+			parts[r].tmp2 = 0;
 			break;
 		case PT_URAN:
 			if (Probability::randFloat() < prob_breakElectronics)
