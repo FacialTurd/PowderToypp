@@ -371,9 +371,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												parts[r].temp = parts[i].temp;
 											continue;
 										case 6: // melting HEAC
-											if (rt == PT_HEAC && parts[i].temp > sim->elements[PT_HEAC].HighTemperature)
+											if (rt == PT_HEAC && parts[r].temp > sim->elements[PT_HEAC].HighTemperature)
 											{
-												sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
+												sim->part_change_type(r, x+rx, y+ry, PT_LAVA);
 												parts[r>>8].ctype = PT_HEAC;
 											}
 											continue;
