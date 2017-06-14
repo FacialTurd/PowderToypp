@@ -1797,7 +1797,8 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										rr = pmap[y+2*ry][x+2*rx];
 										if (!rr && parts[r>>8].tmp > 0)
 										{
-											sim->create_part(-1, x+2*rx, y+2*ry, PT_RFRG);
+											rii = sim->create_part(-1, x+2*rx, y+2*ry, PT_RFRG);
+											if (rii >= 0) parts[r>>8].tmp --;
 										}
 										else if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 > 0)
 										{
