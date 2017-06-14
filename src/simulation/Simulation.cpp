@@ -2987,6 +2987,9 @@ void Simulation::restrict_can_move()
 		t = elements[PT_WIFI].HighPressureTransition;
 		elements[PT_WIFI].HighPressureTransition = temporary_sim_variable[1];
 		temporary_sim_variable[1] = t;
+		t = elements[PT_STOR].Hardness;
+		elements[PT_STOR].Hardness = temporary_sim_variable[2];
+		temporary_sim_variable[2] = t;
 
 		isPrevFromMyMod = isFromMyMod;
 	}
@@ -6111,6 +6114,7 @@ Simulation::Simulation():
 
 	temporary_sim_variable[0] = NT; // on PIPE
 	temporary_sim_variable[1] = NT; // on WIFI
+	temporary_sim_variable[2] = 0;  // STOR's Hardness
 	
 	init_can_move();
 	clear_sim();
