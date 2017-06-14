@@ -134,6 +134,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						parts[s].life = 0;
 				}
 				break;
+			/*
 			case PT_CAUS:
 				{
 					sim->part_change_type(r>>8, x, y, PT_SPRK); // probably inverse for NEUT???
@@ -141,6 +142,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[r>>8].ctype = PT_RFRG;
 				}
 				break;
+			*/
 			case PT_FILT:
 				sim->part_change_type(i, x, y, PT_PHOT);
 				parts[i].ctype = 0x3FFFFFFF;
