@@ -135,6 +135,7 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 			rrx = rx * rad;
 			if (x+rrx >= 0 && x+rrx < XRES && y+rry >= 0 && y+rry < YRES && !Element_HEAC::CheckLine<Element_HEAC::IsInsulator>(sim, x, y, x+rrx, y+rry, isInsulator))
 			{
+				r = pmap[y+rry][x+rrx];
 				if (r)
   				{
 					if (sim->elements[r&0xFF].HeatConduct > 0)
