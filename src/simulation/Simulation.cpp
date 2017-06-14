@@ -2979,17 +2979,19 @@ void Simulation::restrict_can_move()
 	}
 	if (isFromMyMod != isPrevFromMyMod)
 	{
+		int o1 = isFromMyMod ? 0 : 5;
+		int p1 = isPrevFromMyMod ? 0 : 5;
 		int t;
 
 		t = elements[PT_PIPE].HighPressureTransition;
-		elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[0];
-		temporary_sim_variable[0] = t;
+		elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[p1];
+		temporary_sim_variable[o1] = t;
 		t = elements[PT_WIFI].HighPressureTransition;
-		elements[PT_WIFI].HighPressureTransition = temporary_sim_variable[1];
-		temporary_sim_variable[1] = t;
+		elements[PT_WIFI].HighPressureTransition = temporary_sim_variable[p1+1];
+		temporary_sim_variable[o1+1] = t;
 		t = elements[PT_STOR].Hardness;
-		elements[PT_STOR].Hardness = temporary_sim_variable[2];
-		temporary_sim_variable[2] = t;
+		elements[PT_STOR].Hardness = temporary_sim_variable[p1+2];
+		temporary_sim_variable[o1+2] = t;
 
 		isPrevFromMyMod = isFromMyMod;
 	}
