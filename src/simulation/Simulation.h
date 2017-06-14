@@ -171,7 +171,7 @@ public:
 		else if ((!pmap[y][x] || elements[t].Properties2 & PROP_INVISIBLE))
 			pmap[y][x] = t|(i<<8);
 	}
-	inline void pmap_remove(unsigned int i, int x, int y, int PT_PINVIS)
+	inline void pmap_remove(unsigned int i, int x, int y)
 	{
 		// NB: all arguments are assumed to be within bounds
 		if ((pmap[y][x]>>8)==i)
