@@ -85,6 +85,18 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						break;
 				}
 				break;
+			case 2:
+				if (parts[i].life == 1)
+				{
+					if (!r)
+					{
+						sim->create_part(i, x, y, parts[i].tmp & 0xFF, parts[i].tmp >> 8);
+						return 1;
+					}
+					else
+						parts[i].life ++;
+				}
+				break;
 /*
 			case 44: // (300 - 0x100)
 				if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS)
@@ -167,7 +179,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_CAUS:
-				sim->create_part(r>>8, x, y, PT_RFRG); // probably inverse for NEUT???
+				sim->part_change_type(r>>8, x, y, PT_E186); // probably inverse for NEUT???
+				parts[r>>8].life = 128 + rand()%128;
+				parts[r>>8].ctype = 0x102;
+				parts[r>>8].vx = parts[r>>8].vy = 0.0f;
+				parts[r>>8].tmp = PT_RFRG;
 				break;
 			case PT_FILT:
 				sim->part_change_type(i, x, y, PT_PHOT);

@@ -22,7 +22,7 @@ Element_GRVT::Element_GRVT()
 	Flammable = 0;
 	Explosive = 0;
 	Meltable = 0;
-	Hardness = 1;
+	Hardness = 0; // 1;
 
 	Weight = -1;
 
