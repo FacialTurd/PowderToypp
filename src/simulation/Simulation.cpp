@@ -2771,7 +2771,7 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 		parts[i].y = nyf;
 		if (ny!=y || nx!=x)
 		{
-			pmap_remove (i, x, y, PT_PINVIS);
+			pmap_remove (i, x, y);
 			if (nx<CELL || nx>=XRES-CELL || ny<CELL || ny>=YRES-CELL)//kill_part if particle is out of bounds
 			{
 				kill_part(i);
@@ -2980,19 +2980,20 @@ void Simulation::restrict_can_move()
 	}
 	if (isFromMyMod != isPrevFromMyMod)
 	{
-		int o1 = isFromMyMod ? 0 : 5;
-		int p1 = isPrevFromMyMod ? 0 : 5;
 		int t;
 
-		t = elements[PT_PIPE].HighPressureTransition;
-		elements[PT_PIPE].HighPressureTransition = temporary_sim_variable[o1];
-		temporary_sim_variable[p1] = t;
-		t = elements[PT_WIFI].HighPressureTransition;
-		elements[PT_WIFI].HighPressureTransition = temporary_sim_variable[o1+1];
-		temporary_sim_variable[p1+1] = t;
-		t = elements[PT_STOR].Hardness;
-		elements[PT_STOR].Hardness = temporary_sim_variable[o1+2];
-		temporary_sim_variable[p1+2] = t;
+		int * iswappage[3] = {
+			&(elements[PT_PIPE].HighPressureTransition),
+			&(elements[PT_WIFI].HighPressureTransition),
+			&(elements[PT_STOR].Hardness)
+		};
+		
+		for (int i = 0; i < 3; i++)
+		{
+			t = *(iswappage[i]);
+			*(iswappage[i]) = temporary_sim_variable[i];
+			temporary_sim_variable[i] = t;
+		}
 
 		isPrevFromMyMod = isFromMyMod;
 	}
@@ -3003,7 +3004,7 @@ void Simulation::kill_part(int i)//kills particle number i
 	int x = (int)(parts[i].x+0.5f);
 	int y = (int)(parts[i].y+0.5f);
 	if (x>=0 && y>=0 && x<XRES && y<YRES) {
-		pmap_remove ((unsigned int)i, x, y, PT_PINVIS);
+		pmap_remove ((unsigned int)i, x, y);
 	}
 
 	if (parts[i].type == PT_NONE)
@@ -3123,7 +3124,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 		etrd_life0_count++;
 
 	parts[i].type = t;
-	pmap_remove(i, x, y, PT_PINVIS);
+	pmap_remove(i, x, y);
 	pmap_add(i, x, y, t);
 }
 
@@ -3313,7 +3314,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		int oldX = (int)(parts[p].x+0.5f);
 		int oldY = (int)(parts[p].y+0.5f);
-		pmap_remove(p, oldX, oldY, PT_PINVIS);
+		pmap_remove(p, oldX, oldY);
 		
 		if (parts[p].type == PT_STKM)
 		{
@@ -4637,7 +4638,7 @@ killed:
 						else
 							stickman->underp = part1;
 					}	
-					pmap_remove (i, x, y, PT_PINVIS);
+					pmap_remove (i, x, y);
 					if (nx<CELL || nx>=XRES-CELL || ny<CELL || ny>=YRES-CELL)
 					{
 						kill_part(i);
