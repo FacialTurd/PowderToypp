@@ -30,7 +30,8 @@ palette(save.palette),
 expanded(save.expanded),
 sim_max_pressure(save.sim_max_pressure),
 hasOriginalData(save.hasOriginalData),
-originalData(save.originalData)
+originalData(save.originalData),
+isFromMyMod(save.isFromMyMod)
 {
 	InitData();
 	if (save.expanded)
@@ -166,7 +167,7 @@ void GameSave::InitVars()
 	aheatEnable = false;
 	paused = false;
 	sextraLoopsCA = false;
-	isFromMyMod = true;
+	isFromMyMod = false;
 	gravityMode = 0;
 	airMode = 0;
 	edgeMode = 0;
@@ -534,6 +535,8 @@ void GameSave::readOPS(char * data, int dataLength)
 
 	std::vector<sign> tempSigns;
 
+	isFromMyMod = false;
+
 	while (bson_iterator_next(&iter))
 	{
 		CheckBsonFieldUser(iter, "parts", &partsData, &partsDataLen);
@@ -551,6 +554,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &sextraLoopsCA);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
+		CheckBsonFieldBool(iter, "is_git123hubs_mod", &isFromMyMod);
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
@@ -607,6 +611,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
 			}
 		}
+		// /*
 		else if (!strcmp(bson_iterator_key(&iter), "origin"))
 		{
 			if (bson_iterator_type(&iter)==BSON_OBJECT)
@@ -619,6 +624,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				}
 			}
 		}
+		// */
 		else if (!strcmp(bson_iterator_key(&iter), "sim_max_pressure"))
 		{
 			if (bson_iterator_type(&iter) == BSON_INT)
@@ -686,7 +692,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		}
 	}
 
-	isFromMyMod = (my_mod_id_2 == MOD_ID_2 || my_mod_id_2 == PARENT_MOD_ID_2);
+	isFromMyMod |= (my_mod_id_2 == MOD_ID_2 || my_mod_id_2 == PARENT_MOD_ID_2);
 	
 	//Read wall and fan data
 	if(wallData)
@@ -2406,6 +2412,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
 	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
+	bson_append_bool(&b, "is_git123hubs_mod", isFromMyMod);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);

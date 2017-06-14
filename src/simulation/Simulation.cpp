@@ -334,6 +334,7 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 	gameSave->aheatEnable = aheat_enable;
 	gameSave->sextraLoopsCA = extraLoopsCA;
 	gameSave->sim_max_pressure = sim_max_pressure;
+	gameSave->isFromMyMod = isFromMyMod = true;
 	// gameSave->PINV_wireless = wireless2;
 }
 
