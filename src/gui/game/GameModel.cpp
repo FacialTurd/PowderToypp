@@ -198,6 +198,7 @@ GameModel::~GameModel()
 	delete clipboard;
 	delete currentSave;
 	delete currentFile;
+	delete redoHistory;
 	//if(activeTools)
 	//	delete[] activeTools;
 }
