@@ -135,7 +135,6 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_CAUS:
-				if (!(rand()%4))
 				{
 					sim->part_change_type(r>>8, x, y, PT_SPRK); // probably inverse for NEUT???
 					parts[r>>8].life = 128 + rand()%128;
