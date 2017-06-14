@@ -135,12 +135,19 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 			rrx = rx * rad;
 			if (x+rrx >= 0 && x+rrx < XRES && y+rry >= 0 && y+rry < YRES && !Element_HEAC::CheckLine<Element_HEAC::IsInsulator>(sim, x, y, x+rrx, y+rry, isInsulator))
 			{
-				r = pmap[y+rry][x+rrx];
-				if (r && sim->elements[r&0xFF].HeatConduct > 0)
-				{
-					count++;
-					tempAgg += parts[r>>8].temp;
-				}
+				if (r)
+  				{
+					if (sim->elements[r&0xFF].HeatConduct > 0)
+					{
+						count++;
+						tempAgg += parts[r>>8].temp;
+					}
+					else if ((r&0xFF) == PT_E189 && parts[r>>8].life == 6)
+					{
+						parts[i].temp = parts[r>>8].temp;
+						goto conductFromHeater;
+					}
+  				}
 				r = sim->photons[y+rry][x+rrx];
 				if (r && sim->elements[r&0xFF].HeatConduct > 0)
 				{
@@ -154,7 +161,7 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 	if (count > 0)
 	{
 		parts[i].temp = tempAgg/count;
-
+		conductFromHeater:
 		for (int rx = -1; rx <= 1; rx++)
 		{
 			for (int ry = -1; ry <= 1; ry++)
