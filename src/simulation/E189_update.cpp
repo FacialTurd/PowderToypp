@@ -290,8 +290,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (parts[i].tmp > parts[r>>8].tmp)
 					{
 						int transfer = parts[i].tmp - parts[r>>8].tmp;
-						parts[r>>8].tmp += transfer/2;
-						parts[i].tmp -= transfer/2;
+						(transfer < 4) && (transfer = 1); // cmov ???
+						parts[r>>8].tmp += transfer;
+						parts[i].tmp -= transfer;
 						break;
 					}
 				}
@@ -1785,31 +1786,25 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 									}
 									break;
 								case PT_E189:
-									if (parts[r>>8].life == 15) // ACID/CAUS + GAS --> 3 RFRG
+									if (parts[r>>8].life == 38)
 									{
-										rr = pmap[y-ry][x-rx];
-										if ((rr&0xFF) == PT_CAUS || (rr&0xFF) == PT_ACID)
+										rctype = parts[r>>8].ctype;
+										if (rctype == PT_RFRG || rctype == PT_RFGL) // ACID/CAUS + GAS --> 3 RFRG
 										{
-											parts[r>>8].tmp2 ++;
-											sim->kill_part(rr>>8);
-										}
+											rr = pmap[y-ry][x-rx];
+											if ((rr&0xFF) == PT_CAUS || (rr&0xFF) == PT_ACID)
+											{
+												parts[r>>8].tmp2 ++;
+												sim->kill_part(rr>>8);
+											}
 
-										rr = pmap[y+2*ry][x+2*rx];
-										if (!rr && parts[r>>8].tmp > 0)
-										{
-											rii = sim->create_part(-1, x+2*rx, y+2*ry, PT_RFRG);
-											if (rii >= 0) parts[r>>8].tmp --;
-										}
-										else if ((rr&0xFF) == PT_RFRG || (rr&0xFF) == PT_RFGL)
-										{
-											parts[r>>8].tmp ++;
-											sim->kill_part(rr>>8);
-										}
-										else if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 > 0)
-										{
-											parts[r>>8].tmp2 --;
-											parts[r>>8].tmp += 3;
-											sim->kill_part(rr>>8);
+											rr = pmap[y+2*ry][x+2*rx];
+											if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 > 0)
+											{
+												parts[r>>8].tmp2 --;
+												parts[r>>8].tmp += 3;
+												sim->kill_part(rr>>8);
+											}
 										}
 									}
 								}
@@ -2187,6 +2182,45 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 	kill1:
 		sim->kill_part(i);
 		return return_value;
+	case 38: // particle transfer medium (diffusion)
+		rrx = rand();
+		rry = rand();
+		rctype = parts[i].ctype;
+		for (int trade = 0; trade < 4; trade++)
+		{
+			rx = rrx%3-1; ry = rry%3-1;
+			rrx >>= 2; rry >>= 2;
+			if (BOUNDS_CHECK && (rx || ry))
+			{
+				r = pmap[y+ry][x+rx];
+				if (!r)
+				{
+					if (rctype > 0 && rctype < PT_NUM)
+					{
+						ri = sim->create_part(i, x+rx, y+ry, rctype);
+						if (ri >= 0) parts[i].tmp--;
+					}
+					continue;
+				}
+				if ((r&0xFF)==PT_E189 && parts[i].life==38)
+				{
+					rii = (parts[r>>8].tmp - parts[i].tmp) >> 1;
+					parts[i].tmp += rii;
+					parts[r>>8].tmp -= rii;
+				}
+				else if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
+				{
+					if (!rctype)
+						parts[i].ctype = rctype = r&0xFF;
+					if (rctype == (r&0xFF))
+					{
+						sim->kill_part(r>>8);
+						parts[i].tmp++;
+					}
+				}
+			}
+		}
+		break;
 	}
 		
 	return return_value;

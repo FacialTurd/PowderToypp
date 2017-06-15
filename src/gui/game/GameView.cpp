@@ -2395,9 +2395,9 @@ void GameView::OnDraw()
 			"PRSINS", "PRSINS", "TRONI", "TRONO", "LASER", "DIRCH", "HEATER", "PHTDUP", "VIBR2", "VIBR2",
 			"DEBUG", "PHTEM", "SPREFL", "DECOR", "DECO2", "PRTINS", "LOGICG", "PHDIOD", "DECO3", "NOTGIN",
 			"PARTEM", "EXPANDER", "EN_REFL", "STKMJ", "MOV_DRAY", "EXT_DRAY", "BUTTON", "STKSET", "RAY_REFL", "TRONE",
-			"TRONF", "TRONDL", "E189F32", "WIFI2", "FILTINC", "RNMRAY", "TMP2_T", "L_ANT"
+			"TRONF", "TRONDL", "E189F32", "WIFI2", "FILTINC", "RNMRAY", "TMP2_T", "L_ANT", "PART_TR"
 		};
-		const int maxE189Type = 37;
+		const int maxE189Type = 38;
 		static const int E189IntM[] = {0x81055020, 0x00000026};
 		//Draw info about simulation under cursor
 		int wavelengthGfx = 0, alpha = 255;
