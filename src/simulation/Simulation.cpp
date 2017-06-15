@@ -4721,7 +4721,7 @@ killed:
 					parts[i].flags |= FLAG_STAGNANT;
 					if (t==PT_NEUT && 100>(rand()%1000))
 					{
-						kill_part(i);
+						kill_part(i); // only NEUT???
 						continue;
 					}
 					r = pmap[fin_y][fin_x];
@@ -4793,8 +4793,8 @@ killed:
 					}
 					else
 					{
-						if (t!=PT_NEUT && t!=PT_E186) // E186 without reflection loss (NEUT-like)
-							kill_part(i);
+						if (t!=PT_NEUT /* && t!=PT_E186 */)
+							kill_part(i); // only NEUT???
 						continue;
 					}
 					if (!(parts[i].ctype&0x3FFFFFFF) && t == PT_PHOT)
