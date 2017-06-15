@@ -2197,8 +2197,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				{
 					if (rtmp > 0 && rctype > 0 && rctype < PT_NUM)
 					{
-						ri = sim->create_part(-1, x+rx, y+ry, rctype);
-						if (ri >= 0) rtmp--;
+						ri = sim->create_part(-1, x+rx, y+ry, rctype); // acts like CLNE ?
+						if (ri >= 0)
+						{
+							parts[ri].temp = parts[i].temp;
+							rtmp--;
+						}
 					}
 					continue;
 				}
