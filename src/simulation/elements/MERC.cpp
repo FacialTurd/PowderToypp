@@ -122,7 +122,7 @@ int Element_MERC::update(UPDATE_FUNC_ARGS)
 					parts[i].tmp -= temp/2;
 				}
 			}
-			else if ((r&0xFF)==PT_E187 && !parts[r>>8].ctype && sim->pv[y/CELL][x/CELL] > 100.0f)
+			else if ((r&0xFF)==PT_E187 && parts[i].life>0 && sim->pv[y/CELL][x/CELL] > 100.0f && !parts[r>>8].ctype && !(rand()%100))
 			{
 				sim->part_change_type(i, x, y, PT_E187);
 				parts[i].ctype = 0;
