@@ -4793,7 +4793,7 @@ killed:
 					}
 					else
 					{
-						if (t!=PT_NEUT)
+						if (t!=PT_NEUT && t!=PT_E186) // E186 without reflection loss (NEUT-like)
 							kill_part(i);
 						continue;
 					}
