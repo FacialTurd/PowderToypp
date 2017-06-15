@@ -2462,6 +2462,10 @@ void GameView::OnDraw()
 					{
 						ctype &= 0x1FF;
 					}
+					else if (partlife == 38)
+					{
+						ctype &= 0xFF;
+					}
 					break;
 				}
 			}
