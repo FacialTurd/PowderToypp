@@ -2202,7 +2202,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 					continue;
 				}
-				if ((r&0xFF)==PT_E189 && parts[r>>8].life==38)
+				if ((r&0xFF)==PT_E189 && parts[r>>8].life==38 && parts[r>>8].ctype == rctype)
 				{
 					rii = (parts[r>>8].tmp - rtmp) >> 1;
 					rtmp += rii;
