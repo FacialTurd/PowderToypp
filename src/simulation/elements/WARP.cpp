@@ -52,7 +52,7 @@ int Element_WARP::update(UPDATE_FUNC_ARGS)
 	int trade, r, rx, ry;
 	if (parts[i].tmp2>2000)
 	{
-		parts[i].temp = 10000;
+		parts[i].temp = (MAX_TEMP + 1); // 10000;
 		sim->pv[y/CELL][x/CELL] += (parts[i].tmp2/5000) * CFDS;
 		if (!(rand()%50))
 			sim->create_part(-3, x, y, PT_ELEC);
