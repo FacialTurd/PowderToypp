@@ -89,7 +89,7 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 					parts[i].vx = 3.0f*cosf(a);
 					parts[i].vy = 3.0f*sinf(a);
 					// if(parts[i].ctype == 0x3FFFFFFF)
-					if (~parts[i].ctype & 0x3FFFFFFF)
+					if (!(~parts[i].ctype & 0x3FFFFFFF))
 						parts[i].ctype = 0x1F<<(rand()%26);
 					if (parts[i].life)
 						parts[i].life++; //Delay death
