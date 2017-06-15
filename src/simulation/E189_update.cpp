@@ -2198,14 +2198,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (rtmp > 0 && rctype > 0 && rctype < PT_NUM)
 					{
 						ri = sim->create_part(-1, x+rx, y+ry, rctype);
-						if (ri >= 0) parts[i].tmp--;
+						if (ri >= 0) rtmp--;
 					}
 					continue;
 				}
 				if ((r&0xFF)==PT_E189 && parts[i].life==38)
 				{
-					rii = (parts[r>>8].tmp - parts[i].tmp) >> 1;
-					parts[i].tmp += rii;
+					rii = (parts[r>>8].tmp - rtmp) >> 1;
+					rtmp += rii;
 					parts[r>>8].tmp -= rii;
 				}
 				else if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
@@ -2215,11 +2215,12 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (rctype == (r&0xFF))
 					{
 						sim->kill_part(r>>8);
-						parts[i].tmp++;
+						rtmp++;
 					}
 				}
 			}
 		}
+		parts[i].tmp = rtmp;
 		break;
 	}
 		
