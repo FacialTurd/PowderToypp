@@ -2195,7 +2195,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 				{
-					if (rctype > 0 && rctype < PT_NUM)
+					if (rtmp > 0 && rctype > 0 && rctype < PT_NUM)
 					{
 						ri = sim->create_part(-1, x+rx, y+ry, rctype);
 						if (ri >= 0) parts[i].tmp--;
