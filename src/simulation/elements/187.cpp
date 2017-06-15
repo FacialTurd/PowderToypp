@@ -41,8 +41,8 @@ Element_E187::Element_E187()
 	LowPressureTransition = NT;
 	HighPressure = IPH;
 	HighPressureTransition = NT;
-	LowTemperature = 160.0f;
-	LowTemperatureTransition = PT_E188;
+	LowTemperature = ITL;
+	LowTemperatureTransition = NT;
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
@@ -52,7 +52,7 @@ Element_E187::Element_E187()
 
 //#TPT-Directive ElementHeader Element_E187 static int update(UPDATE_FUNC_ARGS)
 int Element_E187::update(UPDATE_FUNC_ARGS)
-{ // for both ISZS and ISOZ
+{ // for both 'E187' and 'E188'
 	int r, rx, ry, stmp, stmp2, rt;
 	switch (parts[i].ctype) {
 	case 0:
@@ -67,6 +67,17 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 			if ((r & 0xFF) == PT_PHOT && !(rand()%100))
 			{
 				Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+			}
+			if (stmp & 4)
+			{
+				parts[i].vx = 0; parts[i].vy = 0;
+				if (parts[i].temp >= 300.0f)
+					parts[i].tmp &= ~0x4;
+			}
+			else
+			{
+				if (parts[i].temp < 160.0f)
+					parts[i].tmp |= 0x4;
 			}
 		}
 		break;
