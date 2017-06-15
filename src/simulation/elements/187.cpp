@@ -56,17 +56,19 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 	int r, rx, ry, stmp, stmp2, rt;
 	switch (parts[i].ctype) {
 	case 0:
-		if (!parts[i].life)
 		{
 			stmp = parts[i].tmp;
-			if (!(rand()%10000) && !(stmp & 1))
+			if (!parts[i].life)
 			{
-				Element_E187::createPhotons(sim, i, x, y, stmp, parts);
-			}
-			r = sim->photons[y][x];
-			if ((r & 0xFF) == PT_PHOT && !(rand()%100))
-			{
-				Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+				if (!(rand()%10000) && !(stmp & 1))
+				{
+					Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+				}
+				r = sim->photons[y][x];
+				if ((r & 0xFF) == PT_PHOT && !(rand()%100))
+				{
+					Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+				}
 			}
 			if (stmp & 4)
 			{
