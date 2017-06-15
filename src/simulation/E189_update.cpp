@@ -2197,7 +2197,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				{
 					if (rctype > 0 && rctype < PT_NUM)
 					{
-						ri = sim->create_part(i, x+rx, y+ry, rctype);
+						ri = sim->create_part(-1, x+rx, y+ry, rctype);
 						if (ri >= 0) parts[i].tmp--;
 					}
 					continue;
