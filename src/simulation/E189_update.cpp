@@ -1794,14 +1794,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 											rr = pmap[y-ry][x-rx];
 											if ((rr&0xFF) == PT_CAUS || (rr&0xFF) == PT_ACID)
 											{
-												parts[r>>8].tmp2 += 4;
+												parts[r>>8].tmp2 += 8;
 												sim->kill_part(rr>>8);
 											}
 
 											rr = pmap[y+2*ry][x+2*rx];
-											if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 >= 4)
+											if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 >= 8)
 											{
-												parts[r>>8].tmp2 -= 4;
+												parts[r>>8].tmp2 -= 8;
 												parts[r>>8].tmp += 3;
 												sim->kill_part(rr>>8);
 											}
