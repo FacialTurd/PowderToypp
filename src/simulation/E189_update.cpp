@@ -51,7 +51,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				for (rx=-1; rx<2; rx++) {
 					for (ry=-1; ry<2; ry++) {
 						if ((!rx != !ry) && BOUNDS_CHECK) {
-							if((pmap[y+ry][x+rx]&0xFF)==PT_E189)
+							if((pmap[y+ry][x+rx]&0xFF)==ELEM_MULTIPP)
 								ttan++;
 						}
 					}
@@ -74,7 +74,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			r = pmap[ry][rx];
 			rii = parts[r >> 8].life;
 			rrx = rii >> 1;
-			if ((r & 0xFF) == PT_E189 && (rrx == 1 || rrx == 15))
+			if ((r & 0xFF) == ELEM_MULTIPP && (rrx == 1 || rrx == 15))
 			{
 				ri = r >> 8;
 				if (rii == 31) // delay
@@ -270,7 +270,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];
-					bool not_self = !((r&0xFF) == PT_E189 && parts[r>>8].life == 8);
+					bool not_self = !((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 8);
 					if ((r&0xFF) != PT_VIBR && (r&0xFF) != PT_BVBR && not_self)
 						continue;
 					if (not_self)
@@ -325,7 +325,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						rt = r & 0xFF;
 						if (!r || (sim->elements[rt].Properties2 & PROP_NODESTRUCT) || rt == PT_VIBR || rt == PT_BVBR || rt == PT_WARP || rt == PT_SPRK)
 							continue;
-						if (rt == PT_E189)
+						if (rt == ELEM_MULTIPP)
 						{
 							if (parts[r>>8].life == 8)
 							{
@@ -337,7 +337,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 						if (!(rndstore & 0x7))
 						{
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_E189);
+							sim->part_change_type(r>>8, x+rx, y+ry, ELEM_MULTIPP);
 							parts[r>>8].life = 8;
 							parts[r>>8].tmp = 21000;
 						}
@@ -485,11 +485,11 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[i].tmp ^= 1; break;
 							case 2:
 								rr = pmap[y-ry][x-rx];
-								if ((rr & 0xFF) == PT_E189)
+								if ((rr & 0xFF) == ELEM_MULTIPP)
 									sim->kill_part(rr >> 8);
 								else
 								{
-									ri = sim->create_part(-1,x-rx,y-ry,PT_E189,12);
+									ri = sim->create_part(-1,x-rx,y-ry,ELEM_MULTIPP,12);
 									if (ri >= 0)
 										parts[ri].tmp = 3;
 								}
@@ -677,7 +677,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if ((r & 0xFF) == PT_E189 && parts[r>>8].life == 16)
+						if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 16)
 							r = pmap[y+2*ry][x+2*rx];
 						if ((r & 0xFF) == PT_SPRK)
 							goto break2a;
@@ -738,7 +738,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							rii = parts[r>>8].tmp2;
 							if (rii & (r>>8)>i) // If the other particle hasn't been life updated
 								rii--;
-							if ((r&0xFF) == PT_E189 && parts[r>>8].life == 16 && parts[r>>8].ctype == 5 && !rii)
+							if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 16 && parts[r>>8].ctype == 5 && !rii)
 							{
 								parts[r>>8].tmp2 = (r>>8) > i ? 10 : 9;
 							}
@@ -867,9 +867,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								rrx = tron_rx[rr];
 								rry = tron_ry[rr];
 								ri = pmap[y+rry][x+rrx];
-								if ((ri & 0xFF) == PT_E189 && parts[ri>>8].life == 17) // using "PHOT diode"
+								if ((ri & 0xFF) == ELEM_MULTIPP && parts[ri>>8].life == 17) // using "PHOT diode"
 								{
-									rii = sim->create_part(-1, x-rx, y-ry, PT_E189, 24);
+									rii = sim->create_part(-1, x-rx, y-ry, ELEM_MULTIPP, 24);
 									rtmp = (direction << 2) | rr;
 									if (rii >= 0)
 									{
@@ -881,9 +881,9 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 											parts[rii].flags |= FLAG_SKIPMOVE; // set wait flag
 									}
 									r = pmap[y-rry][x-rrx]; // variable "r" value override
-									if ((r & 0xFF) == PT_E189 && parts[r>>8].life == 25)
+									if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 25)
 									{
-										rii = sim->create_part(-1, x-rx-rrx, y-ry-rry, PT_E189, 24);
+										rii = sim->create_part(-1, x-rx-rrx, y-ry-rry, ELEM_MULTIPP, 24);
 										if (rii >= 0)
 										{
 											parts[rii].ctype = rtmp ^ 2;
@@ -966,7 +966,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					{
 						r = pmap[y+ry][x+rx];
 						rr = ((r>>8) > i) ? (parts[r>>8].tmp) : (parts[r>>8].tmp2);
-						if ((r & 0xFF) == PT_E189 && parts[r>>8].life == 19 && rr == 9)
+						if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 19 && rr == 9)
 						{
 							parts[i].tmp2 = 1;
 							return return_value;
@@ -983,7 +983,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
-							if (rctype == 14 ? (r & 0xFF) == PT_WIFI : ((r & 0xFF) == PT_E189 && parts[r>>8].life == 33) )
+							if (rctype == 14 ? (r & 0xFF) == PT_WIFI : ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 33) )
 							{
 								parts[r>>8].temp = restrict_flt(parts[r>>8].temp + rdif, MIN_TEMP, MAX_TEMP);
 							}
@@ -1127,7 +1127,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										docontinue = parts[r>>8].tmp;
 										parts[r>>8].tmp = 1;
 										continue;
-									case PT_E189:
+									case ELEM_MULTIPP:
 										if (parts[r>>8].life == 3)
 										{
 											r = pmap[ny+ry][nx+rx];
@@ -1706,7 +1706,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 							rr = pmap[y-ry][x-rx];
 							rt = rr & 0xFF;
 							rr >>= 8;
-							if (rt == PT_E189 && parts[rr].life == 30)
+							if (rt == ELEM_MULTIPP && parts[rr].life == 30)
 							{
 								if ((parts[rr].tmp >> 20) == 3)
 								{
@@ -1785,7 +1785,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 										parts[r>>8].life += 10;
 									}
 									break;
-								case PT_E189:
+								case ELEM_MULTIPP:
 									if (parts[r>>8].life == 38)
 									{
 										rctype = parts[r>>8].ctype;
@@ -1870,7 +1870,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					sim->kill_part(i); break;
 				}
 			}
-			else if ((rr&0xFF) == PT_E189 && parts[rii = rr>>8].life == 16 && parts[rii].ctype == 11)
+			else if ((rr&0xFF) == ELEM_MULTIPP && parts[rii = rr>>8].life == 16 && parts[rii].ctype == 11)
 			{
 				sim->kill_part(i); break;
 			}
@@ -1879,7 +1879,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			else
 			{
 				sim->pmap[y][x] = 0; // what stacked particle?
-				sim->pmap[ry_dest][rx_dest] = (i << 8) | PT_E189; // actual is particle's index shift left by 8 plus particle's type
+				sim->pmap[ry_dest][rx_dest] = (i << 8) | ELEM_MULTIPP; // actual is particle's index shift left by 8 plus particle's type
 				parts[i].x = rx_dest;
 				parts[i].y = ry_dest;
 			}
@@ -1950,7 +1950,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 				for (rr = 0; rr < 4; rr++)
 				{
 					r = pmap[y + tron_ry[rr]][x + tron_rx[rr]];
-					if ((r & 0xFF) == PT_E189 && parts[r >> 8].life == 3)
+					if ((r & 0xFF) == ELEM_MULTIPP && parts[r >> 8].life == 3)
 					{
 						ri = r >> 8;
 						parts[ri].tmp &= 0xE0000;
@@ -1967,7 +1967,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			int direction = (rr + (rtmp >> 17)) & 0x3;
 			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
 			rii = parts[r >> 8].life;
-			if ((r & 0xFF) == PT_E189 && rii == 3)
+			if ((r & 0xFF) == ELEM_MULTIPP && rii == 3)
 			{
 				ri = r >> 8;
 				parts[ri].tmp &= 0xE0000;
@@ -2002,7 +2002,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 			int direction = (rr + (rtmp >> 17)) & 0x3;
 			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
 			rii = parts[r >> 8].life;
-			if ((r & 0xFF) == PT_E189 && (rii & ~0x1) == 2)
+			if ((r & 0xFF) == ELEM_MULTIPP && (rii & ~0x1) == 2)
 			{
 				ri = r >> 8;
 				parts[ri].tmp |= (rtmp & 0x1FF9F) | (direction << 5);
@@ -2092,7 +2092,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						{
 							parts[r>>8].ctype = rrx;
 						}
-						else if ((r&0xFF) == PT_E189)
+						else if ((r&0xFF) == ELEM_MULTIPP)
 						{
 							int p_life = parts[r>>8].life;
 							if (p_life == 20 || p_life == 35 || p_life == 36)
@@ -2222,7 +2222,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 						continue;
 					}
-					if ((r&0xFF)==PT_E189 && parts[r>>8].life==38)
+					if ((r&0xFF)==ELEM_MULTIPP && parts[r>>8].life==38)
 					{
 						rii = rctype | rctypeExtra<<8;
 						if (!(parts[r>>8].ctype&0xFF) && rctype)
