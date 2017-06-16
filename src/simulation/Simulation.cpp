@@ -2164,7 +2164,7 @@ void Simulation::init_can_move()
 		}
 
 		//SAWD cannot be displaced by other powders
-		if (elements[movingType].Properties & TYPE_PART)
+		if (elements[movingType].Properties & TYPE_PART && (movingType != PT_POLO && movingType != PT_POLC))
 			can_move[movingType][PT_SAWD] = 0;
 	}
 	//a list of lots of things PHOT can move through
