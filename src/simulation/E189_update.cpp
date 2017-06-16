@@ -1794,14 +1794,14 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 											rr = pmap[y-ry][x-rx];
 											if ((rr&0xFF) == PT_CAUS || (rr&0xFF) == PT_ACID)
 											{
-												parts[r>>8].tmp2 ++;
+												parts[r>>8].tmp2 += 4;
 												sim->kill_part(rr>>8);
 											}
 
 											rr = pmap[y+2*ry][x+2*rx];
-											if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 > 0)
+											if ((rr&0xFF) == PT_GAS && parts[r>>8].tmp2 >= 4)
 											{
-												parts[r>>8].tmp2 --;
+												parts[r>>8].tmp2 -= 4;
 												parts[r>>8].tmp += 3;
 												sim->kill_part(rr>>8);
 											}
@@ -2183,16 +2183,19 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		sim->kill_part(i);
 		return return_value;
 	case 38: // particle transfer medium (diffusion)
-		rrx = rand();
-		rry = rand();
 		{
+			static char k1[4][4] = {{0,0,0,0},{0,0,1,2},{0,2,0,1},{0,1,2,0}};
+			rrx = parts[i].tmp2 & 0x3;
 			rctype = parts[i].ctype;
 			int rctypeExtra = rctype >> 8;
 			rctype &= 0xFF;
 			for (int trade = 0; trade < 4; trade++)
 			{
-				rx = rrx%3-1; ry = rry%3-1;
-				rrx >>= 2; rry >>= 2;
+				if (!(trade & 1)) rndstore = rand();
+				rx = rndstore%3-1;
+				rndstore >>= 3;
+				ry = rndstore%3-1;
+				rndstore >>= 3;
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];
@@ -2212,7 +2215,13 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 					if ((r&0xFF)==PT_E189 && parts[r>>8].life==38 && parts[r>>8].ctype == (rctype | rctypeExtra<<8))
 					{
-						rii = (parts[r>>8].tmp - rtmp) >> 1;
+						rry = parts[r>>8].tmp2 & 0x3;
+						switch (k1[rrx][rry])
+						{
+							case 0: rii = (parts[r>>8].tmp - rtmp) >> 1; break;
+							case 1: rii = -rtmp; break;
+							case 2: rii = parts[r>>8].tmp; break;
+						}
 						rtmp += rii;
 						parts[r>>8].tmp -= rii;
 					}
