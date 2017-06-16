@@ -2184,8 +2184,17 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 		return return_value;
 	case 38: // particle transfer medium (diffusion)
 		{
-			static char k1[4][4] = {{0,0,0,0},{0,0,1,2},{0,2,0,1},{0,1,2,0}};
-			rrx = parts[i].tmp2 & 0x3;
+			static char k1[8][8] = {
+				{0,1,2,2,1,3,3,3},
+				{2,0,1,2,1,3,3,3},
+				{1,2,0,2,1,3,3,3},
+				{1,1,1,0,1,3,3,3},
+				{2,2,2,2,0,3,3,3},
+				{3,3,3,3,3,3,3,3},
+				{3,3,3,3,3,3,3,3},
+				{3,3,3,3,3,3,3,3}
+			};
+			rrx = parts[i].tmp2 & 0x7;
 			rctype = parts[i].ctype;
 			int rctypeExtra = rctype >> 8;
 			rctype &= 0xFF;
@@ -2201,7 +2210,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 					{
-						if (rtmp > 0 && rctype)
+						if (rtmp > 0 && rctype && rrx != 3)
 						{
 							ri = sim->create_part(-1, x+rx, y+ry, rctype); // acts like CLNE ?
 							if (ri >= 0)
@@ -2213,17 +2222,24 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						}
 						continue;
 					}
-					if ((r&0xFF)==PT_E189 && parts[r>>8].life==38 && parts[r>>8].ctype == (rctype | rctypeExtra<<8))
+					if ((r&0xFF)==PT_E189 && parts[r>>8].life==38)
 					{
-						rry = parts[r>>8].tmp2 & 0x3;
-						switch (k1[rrx][rry])
+						rii = rctype | rctypeExtra<<8;
+						if (!rctype)
+							parts[r>>8].ctype = rii;
+						if (parts[r>>8].ctype == rii)
 						{
-							case 0: rii = (parts[r>>8].tmp - rtmp) >> 1; break;
-							case 1: rii = -rtmp; break;
-							case 2: rii = parts[r>>8].tmp; break;
+							rry = parts[r>>8].tmp2 & 0x7;
+							switch (k1[rrx][rry])
+							{
+								case 0: rii = (parts[r>>8].tmp - rtmp) >> 1; break;
+								case 1: rii = -rtmp; break;
+								case 2: rii = parts[r>>8].tmp; break;
+								default: rii = 0;
+							}
+							rtmp += rii;
+							parts[r>>8].tmp -= rii;
 						}
-						rtmp += rii;
-						parts[r>>8].tmp -= rii;
 					}
 					else if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
 					{
@@ -2236,7 +2252,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								parts[i].ctype |= rctypeExtra << 8;
 							}
 						}
-						if (rctype == (r&0xFF) && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].ctype))
+						if (rctype == (r&0xFF) && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].ctype) && rrx != 4)
 						{
 							sim->kill_part(r>>8);
 							rtmp++;
