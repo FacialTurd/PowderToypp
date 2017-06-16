@@ -2225,7 +2225,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					if ((r&0xFF)==PT_E189 && parts[r>>8].life==38)
 					{
 						rii = rctype | rctypeExtra<<8;
-						if (!rctype)
+						if (!(parts[r>>8].ctype&0xFF) && rctype)
 							parts[r>>8].ctype = rii;
 						if (parts[r>>8].ctype == rii)
 						{
