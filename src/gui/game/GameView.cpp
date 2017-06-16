@@ -2429,7 +2429,7 @@ void GameView::OnDraw()
 			{
 				switch (type)
 				{
-				case PT_E189:
+				case ELEM_MULTIPP:
 					if (partlife == 4 || partlife == 7 || partlife == 11)
 						wavelengthGfx = (ctype&0x3FFFFFFF);
 					/*
@@ -2522,7 +2522,7 @@ void GameView::OnDraw()
 				}
 				else
 				{
-					if (type == PT_E189)
+					if (type == ELEM_MULTIPP)
 					{
 						if (partlife >= 0 && partlife <= maxE189Type)
 						{
@@ -2540,10 +2540,10 @@ void GameView::OnDraw()
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
 						sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
-					else if (type == PT_E189 && (partlife == 20 || partlife == 35))
+					else if (type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
-						if ((ctype&0xFF) == PT_E189 && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
+						if ((ctype&0xFF) == ELEM_MULTIPP && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
 							sampleInfo << E189Modes[ctype>>8];
 						else
 							sampleInfo << c->ElementResolve(ctype&0xFF, ctype>>8);
@@ -2588,7 +2588,7 @@ void GameView::OnDraw()
 					{
 					/* conditions:
 					  ( type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON || type == PT_VIBR || type == PT_VIRS
-					 || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_E189 ) */
+					 || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS || type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == ELEM_MULTIPP ) */
 						sampleInfo << ", Tmp2: " << sample_particle->tmp2;
 					}
 				}
@@ -2601,7 +2601,7 @@ void GameView::OnDraw()
 						case 1:
 						{
 							sampleInfo << ", Type: ";
-							// int tempType = (type == PT_E189 ? (0x10000 | partlife) : type);
+							// int tempType = (type == ELEM_MULTIPP ? (0x10000 | partlife) : type);
 							tempvar = type;
 						}
 						break;
@@ -2680,7 +2680,7 @@ void GameView::OnDraw()
 					sampleInfo << c->ElementResolve(type, -1) << " with " << c->ElementResolve(ctype, (int)sample_particle->tmp4 /*pavg[1]*/);
 				else if (type == PT_LIFE)
 					sampleInfo << c->ElementResolve(type, ctype);
-				else if (type == PT_E189)
+				else if (type == ELEM_MULTIPP)
 				{
 					if (partlife >= 0 && partlife <= maxE189Type)
 					{

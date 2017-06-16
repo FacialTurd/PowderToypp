@@ -72,7 +72,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 	{
 		int new_part_life = parts[i].life;
 		int new_part_ctype = parts[i].ctype;
-		size_t offset1 = ((new_part_ctype & 0xFF) == PT_E189) ? offsetof(Particle, ctype) : offsetof(Particle, life);
+		size_t offset1 = ((new_part_ctype & 0xFF) == ELEM_MULTIPP) ? offsetof(Particle, ctype) : offsetof(Particle, life);
 		for (int rx =-1; rx <= 1; rx++)
 			for (int ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))

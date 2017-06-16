@@ -210,7 +210,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 			case PT_EMP:
 				if (!(rand() % 1000) && parts[i].temp >= 2000)
 				{
-					sim->create_part(r>>8, x+rx, y+ry, PT_E189, 8);
+					sim->create_part(r>>8, x+rx, y+ry, ELEM_MULTIPP, 8);
 					parts[r>>8].tmp = 21000;
 				}
 				return 0;

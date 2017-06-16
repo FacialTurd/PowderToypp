@@ -64,7 +64,7 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 			}
 			else
 			{
-				if (particleType == PT_E189)
+				if (particleType == ELEM_MULTIPP)
 				{
 					int particleLife = sim->parts[sim->pmap[position.Y][position.X]>>8].life;
 					int menu_section_1 = SC_SPECIAL;

@@ -219,7 +219,7 @@ int Element_TRON::graphics(GRAPHICS_FUNC_ARGS)
 int Element_TRON::new_tronhead(Simulation * sim, int x, int y, int i, int direction)
 {
 	int r = sim->pmap[y][x];
-	if ((r & 0xFF) == PT_E189 && sim->parts[r>>8].life == 2)
+	if ((r & 0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 2)
 	{
 		int ri = r >> 8;
 		sim->parts[ri].tmp &= 0xE0000;
@@ -313,7 +313,7 @@ bool Element_TRON::checkE189(Simulation * sim, int x, int y, int dir)
 	int rx = x + tron_rx[dir];
 	int ry = y + tron_ry[dir];
 	int r = sim->pmap[ry][rx];
-	if ((r&0xFF) == PT_E189 && sim->parts[r>>8].life == 2)
+	if ((r&0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 2)
 	{
 		return true;
 	}

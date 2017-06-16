@@ -72,7 +72,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 								if (!rr)
 									continue;
 								nt = rr & 0xFF;
-								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && (nt!=PT_E189 || (parts[rr >> 8].life&~0x1)!=8)
+								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && (nt!=ELEM_MULTIPP || (parts[rr >> 8].life&~0x1)!=8)
 									&& (nt!=PT_SPRK || !(sim->elements[parts[rr>>8].ctype].Properties2 & PROP_NODESTRUCT)))
 								{
 									sim->kill_part(rr >> 8);

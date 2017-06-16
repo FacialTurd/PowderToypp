@@ -224,7 +224,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 				if (ppos >= 0 && ppos < NGOL)
 					tempPartColor = Element_LIFE::Element_GOL_colour[ppos];
 				break;
-			case PT_E189:
+			case ELEM_MULTIPP:
 				if (ppos >= 0 && ppos < NUM_SPC)
 					tempPartColor = special_colors[ppos];
 				break;

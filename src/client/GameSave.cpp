@@ -2316,7 +2316,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				if (particles[i].type == PT_HEAC || particles[i].type == PT_SAWD || particles[i].type == PT_POLO
 					|| particles[i].type == PT_RFRG || particles[i].type == PT_RFGL || particles[i].type == PT_LSNS
 #ifdef MOD_ID_2
-					|| particles[i].type == PT_POLC || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == PT_E189
+					|| particles[i].type == PT_POLC || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == ELEM_MULTIPP
 #endif
 				)
 				{

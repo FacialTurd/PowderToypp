@@ -23,7 +23,7 @@ int Tool_Tool9::Perform(Simulation * sim, Particle * cpart, int x, int y, float 
 	{
 		if (zx2 + zy2 > 4.0) // if cabs (z) > 2.0 then render
 		{
-			int npart = sim->create_part(-1, x, y, PT_E189, 18);
+			int npart = sim->create_part(-1, x, y, ELEM_MULTIPP, 18);
 			if (npart >= 0)
 			{
 				// ctype = red, tmp = green, tmp2 = blue

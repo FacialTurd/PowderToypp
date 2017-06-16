@@ -133,7 +133,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 					}
 					else
 					{
-						while ((r&0xFF)==PT_E189)
+						while ((r&0xFF)==ELEM_MULTIPP)
 						{
 							if (parts[r>>8].life != 5)
 								break;

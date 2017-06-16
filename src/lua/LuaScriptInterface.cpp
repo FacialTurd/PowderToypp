@@ -944,7 +944,7 @@ int LuaScriptInterface::simulation_partCreate2(lua_State * l)
 		int part_value2 = lua_tointeger(l, 6);
 		if (part_type == PT_LIFE || part_type == PT_FILT)
 			luacon_sim->parts[newID2].tmp = part_value2;
-		else if (part_type == PT_WIFI || part_type == PT_PRTI || part_type == PT_PRTO || part_type == PT_E189 && part_value == 33)
+		else if (part_type == PT_WIFI || part_type == PT_PRTI || part_type == PT_PRTO || part_type == ELEM_MULTIPP && part_value == 33)
 			luacon_sim->parts[newID2].temp = part_value2 * 100.0f;
 		else if (part_type == PT_PUMP || part_type == PT_GPMP || part_type == PT_PSNS || part_type == PT_TSNS || part_type == PT_DLAY || part_type == PT_FRAY || part_type == PT_RPEL)
 		{
@@ -2348,13 +2348,13 @@ int LuaScriptInterface::simulation_createDebugComponent (lua_State * l)
 		int __dx = luaL_checkinteger(l, 4);
 		int __dy = luaL_checkinteger(l, 5);
 		luacon_sim->create_part(-1, __x++, __y, PT_METL);
-		i = luacon_sim->create_part(-1, __x++, __y, PT_E189, 10);
+		i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);
 		if (i >= 0)
 			luacon_sim->parts[i].ctype = (__dx & 0xFFFF) | (__dy << 16);
 			luacon_sim->parts[i].tmp = 0x0100;
 		while (*__str)
 		{
-			i = luacon_sim->create_part(-1, __x++, __y, PT_E189, 10);
+			i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);
 			if (i < 0) break;
 			luacon_sim->parts[i].ctype = (int)(*__str & 0xFF);
 			__str++;

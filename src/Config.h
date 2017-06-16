@@ -27,6 +27,9 @@
 #define SNAPSHOT_ID 0
 #endif
 
+// ELEM_MULTIPP == PT_E189
+#define ELEM_MULTIPP 189
+
 // Mod ID, used on the http://starcatcher.us/TPT build server
 // The build server will compile for all platforms for you, and send updates in game
 // See jacob1 to get a mod ID

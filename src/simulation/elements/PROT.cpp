@@ -96,7 +96,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		else change = 0.0f;
 		parts[under>>8].temp = restrict_flt(parts[under>>8].temp + change, MIN_TEMP, MAX_TEMP);
 		break;
-	case PT_E189:
+	case ELEM_MULTIPP:
 		if (parts[under>>8].life == 10 && parts[under>>8].temp > 1273.0f)
 		{
 			sim->kill_part(i);

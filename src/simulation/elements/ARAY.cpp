@@ -114,7 +114,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								}
 								continue;
 							}
-							else if (rt == PT_E189)
+							else if (rt == ELEM_MULTIPP)
 							{
 								r_life = parts[r].life;
 								switch (r_life)

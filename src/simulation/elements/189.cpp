@@ -423,7 +423,7 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 		case PT_GOLD:
 			if (Probability::randFloat() < prob_breakElectronics)
 			{
-				sim->create_part(r, rx, ry, PT_E189, 8);
+				sim->create_part(r, rx, ry, ELEM_MULTIPP, 8);
 				parts[r].tmp = 21000;
 			}
 			break;
@@ -523,7 +523,7 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 			if (Probability::randFloat() < prob_breakElectronics)
 				sim->part_change_type(r, rx, ry, PT_PLUT);
 			break;
-		case PT_E189:
+		case ELEM_MULTIPP:
 			switch (parts[r].life)
 			{
 			case 0:
@@ -600,7 +600,7 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 	coord_stack[coord_stack_size][1] = y;
 	coord_stack_size++;
 	
-	if ((parts[i].type != PT_E189) || (parts[i].life != 26) || parts[i].tmp)
+	if ((parts[i].type != ELEM_MULTIPP) || (parts[i].life != 26) || parts[i].tmp)
 	{
 		delete[] coord_stack;
 		return;
@@ -617,7 +617,7 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 		while (x1 >= 0)
 		{
 			r = pmap[y][x1-1];
-			if ((r&0xFF) != PT_E189 || parts[r>>8].life != 26)
+			if ((r&0xFF) != ELEM_MULTIPP || parts[r>>8].life != 26)
 			{
 				break;
 			}
@@ -627,7 +627,7 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 		while (x2 < XRES)
 		{
 			r = pmap[y][x2+1];
-			if ((r&0xFF) != PT_E189 || parts[r>>8].life != 26)
+			if ((r&0xFF) != ELEM_MULTIPP || parts[r>>8].life != 26)
 			{
 				break;
 			}
@@ -647,7 +647,7 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1-1; x<=x2+1; x++)
 			{
 				r = pmap[y-1][x];
-				if ((r&0xFF) == PT_E189 && parts[r>>8].life == 26 && !parts[r>>8].tmp)
+				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y-1;
@@ -663,7 +663,7 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1-1; x<=x2+1; x++)
 			{
 				r = pmap[y+1][x];
-				if ((r&0xFF) == PT_E189 && parts[r>>8].life == 26 && !parts[r>>8].tmp)
+				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y+1;

@@ -2235,15 +2235,15 @@ void Simulation::init_can_move()
 
 	can_move[PT_E186][PT_BRMT] = 3;
 	
-	can_move[PT_PROT][PT_E189] = 3;
-	can_move[PT_GRVT][PT_E189] = 3;
-	can_move[PT_NEUT][PT_E189] = 3;
-	can_move[PT_ELEC][PT_E189] = 3;
-	can_move[PT_E186][PT_E189] = 3;
+	can_move[PT_PROT][ELEM_MULTIPP] = 3;
+	can_move[PT_GRVT][ELEM_MULTIPP] = 3;
+	can_move[PT_NEUT][ELEM_MULTIPP] = 3;
+	can_move[PT_ELEC][ELEM_MULTIPP] = 3;
+	can_move[PT_E186][ELEM_MULTIPP] = 3;
 
-	can_move[PT_STKM][PT_E189] = 3;
-	can_move[PT_STKM2][PT_E189] = 3;
-	can_move[PT_FIGH][PT_E189] = 3;
+	can_move[PT_STKM][ELEM_MULTIPP] = 3;
+	can_move[PT_STKM2][ELEM_MULTIPP] = 3;
+	can_move[PT_FIGH][ELEM_MULTIPP] = 3;
 	restrict_can_move();
 	
 	// can_move[PT_CNCT][PT_E191] = 0;
@@ -2333,7 +2333,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					return 0;
 			}
 			break;
-		case PT_E189:
+		case ELEM_MULTIPP:
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
 				switch (rlife)
@@ -2501,7 +2501,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			case PT_FILT:
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
 				return 1;
-			case PT_E189:
+			case ELEM_MULTIPP:
 				switch (parts[r>>8].life)
 				{
 				case 5:
@@ -2605,7 +2605,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
 			break;
 		case PT_E186:
-			if (parts[i].ctype == 0x100 && (r&0xFF) != PT_E189) // exit from E189 area
+			if (parts[i].ctype == 0x100 && (r&0xFF) != ELEM_MULTIPP) // exit from E189 area
 			{
 				parts[i].ctype = parts[i].tmp2;
 				parts[i].tmp2 = 0;
@@ -2665,8 +2665,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			return 0;
 		}
 		break;
-	case PT_E189:
-		if (parts[i].type == PT_E186) // PT_E189 (life=17) eats PT_E186
+	case ELEM_MULTIPP:
+		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
 		{
 			kill_part(i);
 			return 0;
@@ -3167,7 +3167,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			parts[index].ctype = PT_DUST;
 			return index;
 		}
-		if (p == -2 && type == PT_E189)
+		if (p == -2 && type == ELEM_MULTIPP)
 		{
 			if (parts[index].life == 10)
 			{
@@ -3237,7 +3237,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		{
 			//If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
 			/* int */ drawOn = pmap[y][x]&0xFF;
-			if (drawOn == PT_E189)
+			if (drawOn == ELEM_MULTIPP)
 			{
 				E189ID = pmap[y][x]>>8;
 				if (parts[E189ID].life == 26 && !parts[E189ID].tmp)
@@ -3250,7 +3250,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 					retcode = -1;
 				drawOnE189Ctype:
 					parts[E189ID].ctype = t;
-					if ((t == PT_LIFE && v >= 0 && v < NGOL) || t == PT_E189)
+					if ((t == PT_LIFE && v >= 0 && v < NGOL) || t == ELEM_MULTIPP)
 						parts[E189ID].ctype |= v << 8;
 					return retcode;
 				}
@@ -3631,7 +3631,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].tmp2 = 4;
 		break;
 	}
-	case PT_E189:
+	case ELEM_MULTIPP:
 	{
 		parts[i].life = v;
 		break;
@@ -4261,7 +4261,7 @@ void Simulation::UpdateParticles(int start, int end)
 						if (t==PT_ICEI || t==PT_LAVA || t==PT_SNOW)
 							parts[i].ctype = parts[i].type;
 						if (!(t==PT_ICEI && parts[i].ctype==PT_FRZW ||
-							(t==PT_VIRS || t==PT_VRSS || t==PT_VRSG) && parts[i].tmp4==PT_E189 // don't clear VIRS-infected E189's life
+							(t==PT_VIRS || t==PT_VRSS || t==PT_VRSG) && parts[i].tmp4==ELEM_MULTIPP // don't clear VIRS-infected E189's life
 						))
 							parts[i].life = 0;
 						if (t == PT_FIRE)
@@ -5855,11 +5855,11 @@ void Simulation::BeforeSim()
 		
 		// make E189 work
 #if 0
-		if(elementCount[PT_E189] > 0)
+		if(elementCount[ELEM_MULTIPP] > 0)
 		{
 			for (int i = 0; i <= parts_lastActiveIndex; i++)
 			{
-				if(parts[i].type == PT_E189)
+				if(parts[i].type == ELEM_MULTIPP)
 				{
 					switch (parts[i].life)
 					{

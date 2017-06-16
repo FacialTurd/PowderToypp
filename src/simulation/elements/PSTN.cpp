@@ -105,7 +105,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF) == PT_PSTN || ((r&0xFF) == PT_E189 && parts[r>>8].life == 12 && (parts[r>>8].tmp & 4)))
+					if ((r&0xFF) == PT_PSTN || ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 12 && (parts[r>>8].tmp & 4)))
 					{
 						bool movedPiston = false;
 						bool foundEnd = false;
@@ -136,7 +136,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 									pistonCount += floor((parts[r>>8].temp-268.15)/10);// How many tens of degrees above 0 C, rounded to nearest ten degrees. Can be negative.
 								}
 							}
-							else if(!E189Push && ((r&0xFF) == PT_E189 && parts[r>>8].life == 12 && (parts[r>>8].tmp & 4)))
+							else if(!E189Push && ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 12 && (parts[r>>8].tmp & 4)))
 							{
 								pistonCount += floor((parts[r>>8].temp-268.15)/10);
 								E189Push = true;

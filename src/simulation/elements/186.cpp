@@ -55,7 +55,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	if (sctype >= 0x100) // don't create SPC_AIR particle
 	{
 		r = pmap[y][x];
-		if ((r & 0xFF) != PT_E189)
+		if ((r & 0xFF) != ELEM_MULTIPP)
 		{
 			slife = parts[i].life;
 			switch (sctype - 0x100)
