@@ -289,8 +289,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					}
 					if (parts[i].tmp > parts[r>>8].tmp)
 					{
-						int transfer = parts[i].tmp - parts[r>>8].tmp;
-						(transfer < 4) && (transfer = 1); // cmov ???
+						int transfer = (parts[i].tmp - parts[r>>8].tmp) >> 1;
+						(transfer < 2) && (transfer = 1); // maybe CMOV instruction?
 						parts[r>>8].tmp += transfer;
 						parts[i].tmp -= transfer;
 						break;
