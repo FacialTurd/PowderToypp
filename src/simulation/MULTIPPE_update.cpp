@@ -2222,40 +2222,64 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						}
 						continue;
 					}
-					if ((r&0xFF)==ELEM_MULTIPP && parts[r>>8].life==38)
+					switch (r&0xFF)
 					{
-						rii = rctype | rctypeExtra<<8;
-						if (!(parts[r>>8].ctype&0xFF) && rctype)
-							parts[r>>8].ctype = rii;
-						if (parts[r>>8].ctype == rii)
+					case ELEM_MULTIPP:
+						if (parts[r>>8].life==38)
 						{
-							rry = parts[r>>8].tmp2 & 0x7;
-							switch (k1[rrx][rry])
+							rii = rctype | rctypeExtra<<8;
+							if (!(parts[r>>8].ctype&0xFF) && rctype)
+								parts[r>>8].ctype = rii;
+							if (parts[r>>8].ctype == rii)
 							{
-								case 0: rii = (parts[r>>8].tmp - rtmp) >> 1; break;
-								case 1: rii = -rtmp; break;
-								case 2: rii = parts[r>>8].tmp; break;
-								default: rii = 0;
+								rry = parts[r>>8].tmp2 & 0x7;
+								switch (k1[rrx][rry])
+								{
+									case 0: rii = (parts[r>>8].tmp - rtmp) >> 1; break;
+									case 1: rii = -rtmp; break;
+									case 2: rii = parts[r>>8].tmp; break;
+									default: rii = 0;
+								}
+								rtmp += rii;
+								parts[r>>8].tmp -= rii;
 							}
-							rtmp += rii;
-							parts[r>>8].tmp -= rii;
 						}
-					}
-					else if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
-					{
+						break;
+					case PT_PCLN:
+					case PT_PBCN:
+						if (parts[r>>8].life != 10)
+							break;
+					case PT_CLNE:
+					case PT_BCLN:
 						if (!rctype)
 						{
-							parts[i].ctype = rctype = r&0xFF;
+							parts[i].ctype = rctype = parts[r>>8].ctype;
 							if (rctype == PT_LAVA)
 							{
-								rctypeExtra = parts[r>>8].ctype;
+								rctypeExtra = parts[r>>8].tmp;
 								parts[i].ctype |= rctypeExtra << 8;
 							}
 						}
-						if (rctype == (r&0xFF) && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].ctype) && rrx != 4)
+						if (rctype == parts[r>>8].ctype && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].tmp))
+							rtmp += 5;
+						break;
+					default:
+						if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
 						{
-							sim->kill_part(r>>8);
-							rtmp++;
+							if (!rctype)
+							{
+								parts[i].ctype = rctype = r&0xFF;
+								if (rctype == PT_LAVA)
+								{
+									rctypeExtra = parts[r>>8].ctype;
+									parts[i].ctype |= rctypeExtra << 8;
+								}
+							}
+							if (rctype == (r&0xFF) && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].ctype) && rrx != 4)
+							{
+								sim->kill_part(r>>8);
+								rtmp++;
+							}
 						}
 					}
 				}
