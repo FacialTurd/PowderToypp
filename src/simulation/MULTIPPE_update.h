@@ -1,14 +1,14 @@
-#ifndef __E189_UPDATE_H__
-#define __E189_UPDATE_H__
+#ifndef __MULTIPPE_Update_H__
+#define __MULTIPPE_Update_H__
 
 class Simulation;
 class Renderer;
 struct Particle;
-class E189_Update
+class MULTIPPE_Update
 {
 public:
-	E189_Update() { }
-	virtual ~E189_Update() { }
+	MULTIPPE_Update() { }
+	virtual ~MULTIPPE_Update() { }
 	static int update(UPDATE_FUNC_ARGS);
 	static int graphics(GRAPHICS_FUNC_ARGS);
 	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);

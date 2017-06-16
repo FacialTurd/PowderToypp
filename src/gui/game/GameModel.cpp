@@ -19,7 +19,7 @@
 #include "GameModelException.h"
 #include "Format.h"
 #include "Favorite.h"
-// #include "simulation/E189_update.h"
+// #include "simulation/MULTIPPE_Update.h"
 
 GameModel::GameModel():
 	clipboard(NULL),
@@ -314,9 +314,9 @@ void GameModel::BuildMenus()
 	}
 	
 	{
-		Tool * tempTool = new ElementTool(PT_E189|(33<<8), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
+		Tool * tempTool = new ElementTool(ELEM_MULTIPP|(33<<8), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
 		menuList[SC_ELEC]->AddTool(tempTool);
-		tempTool = new ElementTool(PT_E189|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
+		tempTool = new ElementTool(ELEM_MULTIPP|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 
@@ -953,7 +953,7 @@ void GameModel::SetDecoration(bool decorationState /*, bool no_tip */ )
 }
 
 #if 0
-void E189_Update::SetDecoration(bool decorationState)
+void MULTIPPE_Update::SetDecoration(bool decorationState)
 {
 	GameModel::SetDecoration(bool decorationState, true);
 }
@@ -965,7 +965,7 @@ bool GameModel::GetDecoration()
 }
 
 #if 0
-bool E189_Update::GetDecoration()
+bool MULTIPPE_Update::GetDecoration()
 {
 	return GameModel::GetDecoration();
 }

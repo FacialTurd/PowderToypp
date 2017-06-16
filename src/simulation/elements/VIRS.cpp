@@ -62,7 +62,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 			int rt = parts[i].tmp4;
 			// if ((rt >> 16) == 1)
 			// {
-			//	sim->part_change_type(i,x,y,PT_E189);
+			//	sim->part_change_type(i,x,y,ELEM_MULTIPP);
 			//	parts[i].life = rt & 0xFFFF;
 			// }
 			// else
@@ -121,14 +121,14 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				//transforms things into virus here
 				else if ((r&0xFF) != PT_VIRS && (r&0xFF) != PT_VRSS && (r&0xFF) != PT_VRSG && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT)
 					&& ((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT))
-					&& ((r&0xFF) != PT_E189 || (rlife&~0x1) != 0x8 && (rlife != 16 || parts[r>>8].ctype != 4)))
+					&& ((r&0xFF) != ELEM_MULTIPP || (rlife&~0x1) != 0x8 && (rlife != 16 || parts[r>>8].ctype != 4)))
 				{
 					if (!(rndstore & 0x7))
 					{
 						// parts[r>>8].tmp4 = parts[r>>8].tmp2;
 						{
 							int rt = r&0xFF;
-							// if (rt == PT_E189)
+							// if (rt == ELEM_MULTIPP)
 							//	parts[r>>8].tmp4 = 0x10000 | parts[r>>8].life;
 							// else
 							parts[r>>8].tmp4 = (r&0xFF);

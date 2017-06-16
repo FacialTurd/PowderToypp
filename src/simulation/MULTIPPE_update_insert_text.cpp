@@ -1,11 +1,11 @@
 #include "simulation/Elements.h"
-#include "simulation/E189_update.h"
+#include "simulation/MULTIPPE_Update.h"
 #include <iostream>
 #include "font.h"
 
-void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int iy)
+void MULTIPPE_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int iy)
 {
-	Element_E189::useDefaultPart = false;
+	Element_MULTIPP::useDefaultPart = false;
 	int tab_size = 80;
 	// simulation, index, position (x2), direction (x2)
 	int ct_x = (sim->parts[i].ctype & 0xFFFF), ct_y = ((sim->parts[i].ctype >> 16) & 0xFFFF);
@@ -22,7 +22,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 	{
 		x += ix; y += iy;
 		int r = sim->pmap[y][x];
-		if ((r&0xFF) != PT_E189) // if not "E189" break loop
+		if ((r&0xFF) != ELEM_MULTIPP) // if not "E189" break loop
 			break;
 		pack = sim->parts[r>>8].life;
 		chr_1 = sim->parts[r>>8].ctype;
@@ -104,7 +104,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				break;
 				case 18: // trampoline 3 ... N
 					r = sim->pmap[y+iy][x+ix];
-					if ((r & 0xFF) == PT_E189)
+					if ((r & 0xFF) == ELEM_MULTIPP)
 					{
 						chr_1 = sim->parts[r>>8].life;
 						if (chr_1 & ~0x1 == 0x2)
@@ -206,7 +206,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				break;
 				case 28: // if counter is non-zero then trampoline
 					r = sim->pmap[y+iy][x+ix];
-					if ((r & 0xFF) == PT_E189)
+					if ((r & 0xFF) == ELEM_MULTIPP)
 					{
 						pack = sim->parts[r>>8].life;
 						if (pack & ~0x1 == 0x2)
@@ -217,7 +217,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 					if (counter) { x += ix; y += iy; }
 				break;
 				case 29: // if counter is zero then trampoline
-					if ((r & 0xFF) == PT_E189)
+					if ((r & 0xFF) == ELEM_MULTIPP)
 					{
 						pack = sim->parts[r>>8].life;
 						if (pack & ~0x1 == 0x2)
@@ -235,7 +235,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				break;
 				case 32: // set counter value / set error flag
 					r = sim->pmap[y+iy][x+ix];
-					if ((r & 0xFF) == PT_E189)
+					if ((r & 0xFF) == ELEM_MULTIPP)
 					{
 						pack = sim->parts[r>>8].life;
 						if (pack == 12)
@@ -262,7 +262,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 36: // add constant
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter += (short)sim->parts[r>>8].ctype;
@@ -273,7 +273,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 37: // subtract constant
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter -= (short)sim->parts[r>>8].ctype;
@@ -284,7 +284,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 38: // multiply constant
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter *= (short)sim->parts[r>>8].ctype;
@@ -295,7 +295,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 39: // bitwise and
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter &= (short)sim->parts[r>>8].ctype;
@@ -306,7 +306,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 40: // bitwise or
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter |= (short)sim->parts[r>>8].ctype;
@@ -317,7 +317,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 41: // bitwise xor
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter ^= (short)sim->parts[r>>8].ctype;
@@ -328,7 +328,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 42: // bitwise shift
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						pack = sim->parts[r>>8].ctype;
@@ -396,7 +396,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 56: // get parameter
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						counter = calls[cfptr + sim->parts[r>>8].ctype][0];
@@ -407,7 +407,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				case 57: // set parameter
 					r = sim->pmap[y+iy][x+ix];
 					pack = sim->parts[r>>8].life;
-					if ((r & 0xFF) == PT_E189 && pack == 12)
+					if ((r & 0xFF) == ELEM_MULTIPP && pack == 12)
 					{
 						x += ix; y += iy;
 						calls[cfptr + sim->parts[r>>8].ctype][0] = counter;
@@ -448,42 +448,42 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				esc = 4;
 				break;
 			case 259: // random character
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (rand() & 0xFF), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (rand() & 0xFF), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 260: // random ASCII
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 95 + ' '), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 95 + ' '), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 261: // random number
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 10 + '0'), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 10 + '0'), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 262: // random uppercase
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 26 + 'A'), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 26 + 'A'), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 263: // random lowercase
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 26 + 'a'), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (rand() % 26 + 'a'), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 264: // random mixed alphabet
 				pack = rand();
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, ((pack >> 1) % 26 + ((pack % 2) << 5) + 'A'), (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, ((pack >> 1) % 26 + ((pack % 2) << 5) + 'A'), (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 265: // random mixed alphanumeric
 				pack = rand() % 62;
 				pack += ((pack > 36) ? 29 : (pack > 10) ? 87 : '0');
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, pack, (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, pack, (it_r << 16) | (it_g << 8) | it_b);
 				break;
 #ifdef EXT_FUNC_1
 			case 266:
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, counter & 0xFF, (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, counter & 0xFF, (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 267:
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, calls[call_ptr-1][0] & 0xFF, (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, calls[call_ptr-1][0] & 0xFF, (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 268: // print number
 				chr_1 = (int)counter;
 				pack = (it_r << 16) | (it_g << 8) | it_b;
 				if (chr_1 < 0)
 				{
-					chr_1 = -chr_1; ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, '-', pack);
+					chr_1 = -chr_1; ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, '-', pack);
 				}
 				do
 				{
@@ -492,16 +492,16 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				}
 				while (chr_1);
 				while (tmp)
-					ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, __digits[--tmp], pack);
+					ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, __digits[--tmp], pack);
 				break;
 #endif
 			case 269: // random punctuation (exclude space)
 				pack = rand() & 31;
 				pack += ((pack < 15) ? '!' : (pack < 22) ? 43 : (pack < 28) ? 69 : 95);
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, pack, (it_r << 16) | (it_g << 8) | it_b);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, pack, (it_r << 16) | (it_g << 8) | it_b);
 				break;
 			case 270:
-				Element_E189::useDefaultPart = !Element_E189::useDefaultPart;
+				Element_MULTIPP::useDefaultPart = !Element_MULTIPP::useDefaultPart;
 				break;
 			case 271: // horizontal tab
 				diff = (ct_x - it_x) % tab_size;
@@ -513,7 +513,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				break;
 			default:
 				if (chr_1 >= 0 && chr_1 <= 255)
-					ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, chr_1, (it_r << 16) | (it_g << 8) | it_b);
+					ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, chr_1, (it_r << 16) | (it_g << 8) | it_b);
 				else
 					std::cerr << "Invalid character" << std::endl;
 			}
@@ -550,10 +550,10 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 				break;
 			case 5: // packed
 				pack = (it_r << 16) | (it_g << 8) | it_b;
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, chr_1 & 0xFF, pack);
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 8) & 0xFF, pack);
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 16) & 0xFF, pack);
-				ct_x = E189_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 24) & 0xFF, pack);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, chr_1 & 0xFF, pack);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 8) & 0xFF, pack);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 16) & 0xFF, pack);
+				ct_x = MULTIPPE_Update::AddCharacter(sim, ct_x, ct_y, (chr_1 >> 24) & 0xFF, pack);
 				break;
 			case 6: // set horizontal tab size
 				tab_size = chr_1;
@@ -566,7 +566,7 @@ void E189_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int i
 	std::cout << "output complete!" << std::endl;
 }
 
-int E189_Update::AddCharacter(Simulation *sim, int x, int y, int c, int rgb)
+int MULTIPPE_Update::AddCharacter(Simulation *sim, int x, int y, int c, int rgb)
 {
 	static int color_parts[4] = { PT_NONE, PT_TUNG, PT_SHLD1, PT_NWHL }; // particle colors
 	
@@ -593,7 +593,7 @@ int E189_Update::AddCharacter(Simulation *sim, int x, int y, int c, int rgb)
 					{
 						_rt = sim->parts[_ri].ctype & 0xFF; // reserved by sparked adamantium
 					}
-					if (_rt == PT_E189 && sim->parts[_ri].life == 13)
+					if (_rt == ELEM_MULTIPP && sim->parts[_ri].life == 13)
 					{
 						if (~ba & 3) // ba & 3 != 3, also only ba == 1 or ba == 2
 						{
@@ -629,12 +629,12 @@ int E189_Update::AddCharacter(Simulation *sim, int x, int y, int c, int rgb)
 				else
 				{
 				_E189_recreatePixel:
-					if (!Element_E189::useDefaultPart)
-						_r = sim->create_part(-1, xi, yj, PT_E189, 13); // type = 65549 (0x0001000D)
+					if (!Element_MULTIPP::useDefaultPart)
+						_r = sim->create_part(-1, xi, yj, ELEM_MULTIPP, 13); // type = 65549 (0x0001000D)
 					else
 						_r = sim->create_part(-1, xi, yj, color_parts[ba & 3]);
 				}
-				if (!Element_E189::useDefaultPart && _r >= 0)
+				if (!Element_MULTIPP::useDefaultPart && _r >= 0)
 				{
 					sim->parts[_r].ctype = ((ba & 3) * 0x55000000) | (rgb & 0x00FFFFFF);
 				}

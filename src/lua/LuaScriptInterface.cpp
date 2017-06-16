@@ -2494,11 +2494,11 @@ int LuaScriptInterface::stickman_flags(lua_State * l)
 {
 	if (lua_gettop(l) < 1)
 	{
-		lua_pushinteger(l, luacon_sim->E189_FIGH_pause);
+		lua_pushinteger(l, luacon_sim->Extra_FIGH_pause);
 		return 1;
 	}
 	int flags = luaL_checkinteger(l, 1);
-	luacon_sim->E189_FIGH_pause = flags;
+	luacon_sim->Extra_FIGH_pause = flags;
 	return 0;
 }
 

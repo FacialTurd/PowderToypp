@@ -84,18 +84,18 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	playerp->frames++;
 
 	//Temperature handling
-	if (parts[i].temp<243 && !(sim->E189_FIGH_pause & 16))
+	if (parts[i].temp<243 && !(sim->Extra_FIGH_pause & 16))
 		parts[i].life -= 1;
 	if ((parts[i].temp<309.6f) && (parts[i].temp>=243))
 		parts[i].temp += 1;
 
 	//Death
 	pressure = sim->pv[y/CELL][x/CELL];
-	if (pressure < 0.0f && (sim->E189_FIGH_pause & 0x100))
+	if (pressure < 0.0f && (sim->Extra_FIGH_pause & 0x100))
 	{
 		pressure = -pressure;
 	}
-	if (parts[i].life<1 || (pressure>=4.5f && !(sim->E189_FIGH_pause & 16) && (playerp->elem != SPC_AIR && playerp->elem != SPC_VACUUM)) ) //If his HP is less than 0 or there is very big wind...
+	if (parts[i].life<1 || (pressure>=4.5f && !(sim->Extra_FIGH_pause & 16) && (playerp->elem != SPC_AIR && playerp->elem != SPC_VACUUM)) ) //If his HP is less than 0 or there is very big wind...
 	{
 		if (playerp->elem != PT_FIGH)
 		{
@@ -137,7 +137,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	gvx += sim->gravx[((int)parts[i].y/CELL)*(XRES/CELL)+((int)parts[i].x/CELL)];
 	gvy += sim->gravy[((int)parts[i].y/CELL)*(XRES/CELL)+((int)parts[i].x/CELL)];
 	
-	if (sim->E189_FIGH_pause & 0x200) // anti-gravity ?
+	if (sim->Extra_FIGH_pause & 0x200) // anti-gravity ?
 	{
 		gvx = -gvx;
 		gvy = -gvy;
@@ -254,7 +254,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			playerp->accs[6] -= rocketBootsFeetEffect*rby;
 			playerp->accs[3] += rocketBootsFeetEffect*rbx;
 			playerp->accs[7] += rocketBootsFeetEffect*rbx;
-			if (!(sim->E189_FIGH_pause & 0x400))
+			if (!(sim->Extra_FIGH_pause & 0x400))
 			{
 				for (int leg=0; leg<2; leg++)
 				{
@@ -307,7 +307,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			playerp->accs[6] += rocketBootsFeetEffect*rby;
 			playerp->accs[3] -= rocketBootsFeetEffect*rbx;
 			playerp->accs[7] -= rocketBootsFeetEffect*rbx;
-			if (!(sim->E189_FIGH_pause & 0x400))
+			if (!(sim->Extra_FIGH_pause & 0x400))
 			{
 				for (int leg=0; leg<2; leg++)
 				{
@@ -347,7 +347,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			playerp->accs[6] -= rocketBootsFeetEffectV*rbx;
 			playerp->accs[3] -= rocketBootsFeetEffectV*rby;
 			playerp->accs[7] -= rocketBootsFeetEffectV*rby;
-			if (!(sim->E189_FIGH_pause & 0x400))
+			if (!(sim->Extra_FIGH_pause & 0x400))
 			{
 				for (int leg=0; leg<2; leg++)
 				{
@@ -395,9 +395,9 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				if (!r && !sim->bmap[(y+ry)/CELL][(x+rx)/CELL])
 					continue;
 				
-				if (!(sim->E189_FIGH_pause & 32))
+				if (!(sim->Extra_FIGH_pause & 32))
 					STKM_set_element(sim, playerp, r&0xFF);
-				if (!(sim->E189_FIGH_pause & 16))
+				if (!(sim->Extra_FIGH_pause & 16))
 				{
 					if ((r&0xFF) == PT_PLNT && parts[i].life<100) //Plant gives him 5 HP
 					{
@@ -416,7 +416,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					}
 				}
 
-				if ((r&0xFF) == PT_E189)
+				if ((r&0xFF) == ELEM_MULTIPP)
 				{
 					if (!randpool)
 					{
@@ -428,7 +428,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 						STKM_set_life_1(sim, r>>8, i);
 					}
 					rndstore >>= 2;
-					if (parts[r>>8].life == 27 && !(sim->E189_FIGH_pause & 32))
+					if (parts[r>>8].life == 27 && !(sim->Extra_FIGH_pause & 32))
 					{
 						ctype = parts[r>>8].ctype;
 						int xctype = ctype >> 9;
@@ -632,7 +632,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	if (!parts[i].type)
 		return 1;
 
-	if (playerp->elem == PT_FIGH && !(sim->E189_FIGH_pause & 8))
+	if (playerp->elem == PT_FIGH && !(sim->Extra_FIGH_pause & 8))
 		playerp->elem = playerp->pelem;
 	parts[i].ctype = playerp->elem;
 	return 0;
@@ -649,7 +649,7 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 	{
 		if ((r&0xFF) == PT_PINVIS)
 			r = sim->parts[r>>8].tmp4;
-		if (!(sim->E189_FIGH_pause & 16))
+		if (!(sim->Extra_FIGH_pause & 16))
 		{
 			if ((r&0xFF)==PT_SPRK && playerp->elem!=PT_LIGH) //If on charge
 			{
@@ -677,7 +677,7 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 				sim->parts[i].life -= 1;
 		}
 		
-		if ((r&0xFF) == PT_E189)
+		if ((r&0xFF) == ELEM_MULTIPP)
 		{
 			STKM_set_life_1(sim, r>>8, i);
 			if (sim->parts[r>>8].life == 23)
@@ -777,7 +777,7 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 	}
 	if (element == PT_TESC || element == PT_LIGH)
 		playerp->elem = PT_LIGH;
-	if (playerp->elem != PT_FIGH && element == PT_FIGH && (sim->E189_FIGH_pause & 8))
+	if (playerp->elem != PT_FIGH && element == PT_FIGH && (sim->Extra_FIGH_pause & 8))
 	{
 		playerp->pelem = playerp->elem;
 		playerp->elem = PT_FIGH;

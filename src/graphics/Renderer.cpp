@@ -1551,7 +1551,7 @@ void Renderer::render_parts()
 				}
 				if(pixel_mode & PSPEC_STICKMAN)
 				{
-					int STKM_grav_flag = sim->E189_FIGH_pause & 0x200;
+					int STKM_grav_flag = sim->Extra_FIGH_pause & 0x200;
 					int legr, legg, legb, cplayer_elem;
 					playerst *cplayer;
 					if(t==PT_STKM)

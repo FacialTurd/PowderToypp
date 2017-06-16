@@ -1,9 +1,9 @@
 #include "simulation/Elements.h"
-#include "simulation/E189_update.h"
+#include "simulation/MULTIPPE_Update.h"
 #include "Probability.h"
 
-//#TPT-Directive ElementClass Element_E189 PT_E189 189
-Element_E189::Element_E189()
+//#TPT-Directive ElementClass Element_MULTIPP PT_E189 189
+Element_MULTIPP::Element_MULTIPP()
 {
 	Identifier = "DEFAULT_PT_E189";
 	Name = "E189";
@@ -49,27 +49,27 @@ Element_E189::Element_E189()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	Update = &E189_Update::update;
-	Graphics = &E189_Update::graphics;
-	IconGenerator = &Element_E189::iconGen;
+	Update = &MULTIPPE_Update::update;
+	Graphics = &MULTIPPE_Update::graphics;
+	IconGenerator = &Element_MULTIPP::iconGen;
 	// Notice: Exotic solid!
 	// Properties without PROP_LIFE_DEC and PROP_LIFE_KILL_DEC, has reason.
 }
 
-//#TPT-Directive ElementHeader Element_E189 static bool useDefaultPart
-bool Element_E189::useDefaultPart = false;
+//#TPT-Directive ElementHeader Element_MULTIPP static bool useDefaultPart
+bool Element_MULTIPP::useDefaultPart = false;
 
-//#TPT-Directive ElementHeader Element_E189 static int Arrow_keys
-int Element_E189::Arrow_keys = 0; // Note: TPT uses SDL
+//#TPT-Directive ElementHeader Element_MULTIPP static int Arrow_keys
+int Element_MULTIPP::Arrow_keys = 0; // Note: TPT uses SDL
 
-//#TPT-Directive ElementHeader Element_E189 static int maxPrior
-int Element_E189::maxPrior = 0;
+//#TPT-Directive ElementHeader Element_MULTIPP static int maxPrior
+int Element_MULTIPP::maxPrior = 0;
 
-// #TPT-Directive ElementHeader Element_E189 static float StrengthMultipler
-// float Element_E189::StrengthMultipler = 1.0f;
+// #TPT-Directive ElementHeader Element_MULTIPP static float StrengthMultipler
+// float Element_MULTIPP::StrengthMultipler = 1.0f;
 
-//#TPT-Directive ElementHeader Element_E189 static void HSV2RGB(int ctype, int *r, int *g, int *b)
-void Element_E189::HSV2RGB (int ctype, int *r, int *g, int *b)
+//#TPT-Directive ElementHeader Element_MULTIPP static void HSV2RGB(int ctype, int *r, int *g, int *b)
+void Element_MULTIPP::HSV2RGB (int ctype, int *r, int *g, int *b)
 {
 	int ptmp = ctype;
 	float tmpr, tmpg, tmpb;
@@ -121,8 +121,8 @@ void Element_E189::HSV2RGB (int ctype, int *r, int *g, int *b)
 }
 
 
-//#TPT-Directive ElementHeader Element_E189 static VideoBuffer * iconGen(int, int, int)
-VideoBuffer * Element_E189::iconGen(int toolID, int width, int height)
+//#TPT-Directive ElementHeader Element_MULTIPP static VideoBuffer * iconGen(int, int, int)
+VideoBuffer * Element_MULTIPP::iconGen(int toolID, int width, int height)
 {
 	VideoBuffer * newTexture = new VideoBuffer(width, height);
 	
@@ -151,17 +151,17 @@ VideoBuffer * Element_E189::iconGen(int toolID, int width, int height)
 	return newTexture;
 }
 
-//#TPT-Directive ElementHeader Element_E189 static void interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189)
-void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189) // photons direction/type changer
+//#TPT-Directive ElementHeader Element_MULTIPP static void interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
+void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other) // photons direction/type changer
 {
-	int rtmp = part_E189->tmp, rtmp2 = part_E189->tmp2, rct = part_E189->ctype, mask = 0x3FFFFFFF;
+	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype, mask = 0x3FFFFFFF;
 	int ctype, r1, r2, r3, temp;
 	float rvx, rvy, rvx2, rvy2, rdif, multipler = 1.0f;
 	long long int lsb;
 	if (rtmp)
 	{
 		rvx = (float)rtmp2 / 1000.0f;
-		rvy = (float)part_E189->tmp3 / 1000.0f;
+		rvy = (float)part_other->tmp3 / 1000.0f;
 		switch (rtmp)
 		{
 		case 1:
@@ -256,12 +256,12 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 				part_phot->tmp &= ~0x1;
 				break;
 			case 13: // set PHOT life
-				part_phot->life = part_E189->ctype;
+				part_phot->life = part_other->ctype;
 				break;
 			case 14: // PHOT life extender (positive)
 				if (part_phot->life > 0)
 				{
-					part_phot->life += part_E189->ctype;
+					part_phot->life += part_other->ctype;
 					if (part_phot->life < 0)
 						part_phot->life = 0;
 				}
@@ -269,7 +269,7 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 			case 15: // PHOT life extender (negative)
 				if (part_phot->life > 0)
 				{
-					part_phot->life -= part_E189->ctype;
+					part_phot->life -= part_other->ctype;
 					if (part_phot->life <= 0)
 						sim->kill_part(i);
 				}
@@ -327,7 +327,7 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 			case 17: // PHOT life multipler
 				if (part_phot->life > 0)
 				{
-					part_phot->life *= part_E189->ctype;
+					part_phot->life *= part_other->ctype;
 					if (part_phot->life < 0)
 						part_phot->life = 0;
 				}
@@ -341,10 +341,10 @@ void Element_E189::interactDir(Simulation* sim, int i, int x, int y, Particle* p
 	}
 }
 
-//#TPT-Directive ElementHeader Element_E189 static void duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189)
-void Element_E189::duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_E189)
+//#TPT-Directive ElementHeader Element_MULTIPP static void duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
+void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 {
-	int rtmp = part_E189->tmp, ri;
+	int rtmp = part_other->tmp, ri;
 	if (!rtmp)
 		return;
 	float rvx = (float)(((rtmp ^ 0x08) & 0x0F) - 0x08);
@@ -360,15 +360,15 @@ void Element_E189::duplicatePhotons(Simulation* sim, int i, int x, int y, Partic
 	sim->parts[ri].vy = rvy * rdif / 16.0f;
 	sim->parts[ri].temp = part_phot->temp;
 	sim->parts[ri].tmp  = part_phot->tmp;
-	sim->parts[ri].life = part_E189->tmp2;
-	if (part_E189->ctype)
-		sim->parts[ri].ctype = part_E189->ctype;
+	sim->parts[ri].life = part_other->tmp2;
+	if (part_other->ctype)
+		sim->parts[ri].ctype = part_other->ctype;
 	else
 		sim->parts[ri].ctype = part_phot->ctype;
 }
 
-//#TPT-Directive ElementHeader Element_E189 static int EMPTrigger(Simulation *sim, int triggerCount)
-int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
+//#TPT-Directive ElementHeader Element_MULTIPP static int EMPTrigger(Simulation *sim, int triggerCount)
+int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
 {
 	int t, ct, rx, ry, r1;
 	Particle *parts = sim->parts;
@@ -584,8 +584,8 @@ int Element_E189::EMPTrigger(Simulation *sim, int triggerCount)
 	}
 }
 
-//#TPT-Directive ElementHeader Element_E189 static void FloodButton(Simulation *sim, int i, int x, int y)
-void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
+//#TPT-Directive ElementHeader Element_MULTIPP static void FloodButton(Simulation *sim, int i, int x, int y)
+void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 {
 	int coord_stack_limit = XRES*YRES;
 	unsigned short (*coord_stack)[2];
@@ -680,4 +680,4 @@ void Element_E189::FloodButton(Simulation *sim, int i, int x, int y)
 	delete[] coord_stack;
 }
 
-Element_E189::~Element_E189() {}
+Element_MULTIPP::~Element_MULTIPP() {}

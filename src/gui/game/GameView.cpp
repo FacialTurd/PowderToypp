@@ -2183,11 +2183,11 @@ void GameView::UpdateDrawMode()
 void GameView::UpdateToolStrength()
 {
 	if (shiftBehaviour)
-		c->SetToolStrength(10.0f /* * Element_E189::StrengthMultipler */);
+		c->SetToolStrength(10.0f /* * Element_MULTIPP::StrengthMultipler */);
 	else if (ctrlBehaviour)
-		c->SetToolStrength(.1f /* * Element_E189::StrengthMultipler */);
+		c->SetToolStrength(.1f /* * Element_MULTIPP::StrengthMultipler */);
 	else
-		c->SetToolStrength(1.0f /* * Element_E189::StrengthMultipler */);
+		c->SetToolStrength(1.0f /* * Element_MULTIPP::StrengthMultipler */);
 }
 
 void GameView::SetSaveButtonTooltips()

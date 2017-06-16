@@ -99,8 +99,8 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp&TRON_HEAD)
 	{
 		int firstdircheck = 0,seconddir,seconddircheck = 0,lastdir,lastdircheck = 0;
-		bool firstE189, secondE189, lastE189;
-		int secondE189dir, lastE189dir;
+		bool firstTRONInput_, secondTRONInput_, lastTRONInput_;
+		int secondTRONInput_dir, lastTRONInput_dir;
 		int direction = (parts[i].tmp>>5 & 0x3);
 		int originaldir = direction;
 
@@ -117,25 +117,25 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 
 		//check in front
 		//do sight check
-		firstE189 = Element_TRON::checkE189(sim,x,y,originaldir);
-		secondE189dir = (originaldir + ((rand()%2)*2)+1) % 4;
-		secondE189 = Element_TRON::checkE189(sim,x,y,secondE189dir);
-		lastE189dir = (secondE189dir + 2) % 4;
-		lastE189 = Element_TRON::checkE189(sim,x,y,lastE189dir);
-		if (firstE189)
+		firstTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,originaldir);
+		secondTRONInput_dir = (originaldir + ((rand()%2)*2)+1) % 4;
+		secondTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,secondTRONInput_dir);
+		lastTRONInput_dir = (secondTRONInput_dir + 2) % 4;
+		lastTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,lastTRONInput_dir);
+		if (firstTRONInput_)
 		{
 			direction = originaldir;
-			goto E189checked;
+			goto TRONInput_checked;
 		}
-		else if (secondE189)
+		else if (secondTRONInput_)
 		{
-			direction = secondE189dir;
-			goto E189checked;
+			direction = secondTRONInput_dir;
+			goto TRONInput_checked;
 		}
-		else if (lastE189)
+		else if (lastTRONInput_)
 		{
-			direction = lastE189dir;
-			goto E189checked;
+			direction = lastTRONInput_dir;
+			goto TRONInput_checked;
 		}
 		
 		firstdircheck = Element_TRON::trymovetron(sim,x,y,direction,i,parts[i].tmp2);
@@ -165,7 +165,7 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 		if (lastdircheck > seconddircheck && lastdircheck > firstdircheck)
 			direction = lastdir;
 
-		E189checked:
+		TRONInput_checked:
 		//now try making new head, even if it fails
 		if (Element_TRON::new_tronhead(sim,x + tron_rx[direction],y + tron_ry[direction],i,direction) == -1)
 		{
@@ -307,8 +307,8 @@ bool Element_TRON::canmovetron(Simulation * sim, int r, int len)
 	return false;
 }
 
-//#TPT-Directive ElementHeader Element_TRON static bool checkE189(Simulation * sim, int x, int y, int dir)
-bool Element_TRON::checkE189(Simulation * sim, int x, int y, int dir)
+//#TPT-Directive ElementHeader Element_TRON static bool checkTRONInput_(Simulation * sim, int x, int y, int dir)
+bool Element_TRON::checkTRONInput_(Simulation * sim, int x, int y, int dir)
 {
 	int rx = x + tron_rx[dir];
 	int ry = y + tron_ry[dir];

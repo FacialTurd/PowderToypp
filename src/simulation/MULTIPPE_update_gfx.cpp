@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#include "simulation/E189_update.h"
+#include "simulation/MULTIPPE_Update.h"
 
 pixel tempPartColor;
 
@@ -16,7 +16,7 @@ pixel special_colors [NUM_SPC] = {
 	PIXPACK(0xF9F906), PIXPACK(0xFF00FF), PIXPACK(0xFF00FF), PIXPACK(0x0CD00C)
 };
 
-int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
+int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 {
 	static char excitedtable [16] = {  0, 8, 2,10,12, 4,14, 6, 3,11, 1, 9,15, 7,13, 5 };
 	int ptmp, ppos, pexc1, temp, tmp2v;
@@ -103,7 +103,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 			break;
 		case 2:
 			{
-			Element_E189::HSV2RGB (cpart->ctype, colr, colg, colb);
+			Element_MULTIPP::HSV2RGB (cpart->ctype, colr, colg, colb);
 			*cola = ~(cpart->tmp) & 0xFF;
 			break;
 			}
@@ -115,7 +115,7 @@ int E189_Update::graphics(GRAPHICS_FUNC_ARGS)
 		switch (cpart->tmp2 >> 24)
 		{
 		case 0:
-			Element_E189::HSV2RGB (cpart->ctype, colr, colg, colb);
+			Element_MULTIPP::HSV2RGB (cpart->ctype, colr, colg, colb);
 			*cola = ~(cpart->tmp2 >> 16) & 0xFF;
 			break;
 		case 1:

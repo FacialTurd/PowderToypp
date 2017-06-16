@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
-#include "simulation/E189_update.h"
+#include "simulation/MULTIPPE_Update.h"
 
 #ifdef _MSC_VER
 unsigned msvc_ctz(unsigned a)
@@ -24,7 +24,7 @@ unsigned msvc_clz(unsigned a)
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 
-int E189_Update::update(UPDATE_FUNC_ARGS)
+int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
 	static int tron_rx[4] = {-1, 0, 1, 0};
@@ -359,18 +359,18 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						switch (rtmp & 0xFF)
 						{
 							case 0:
-								if (Element_E189::maxPrior <= parts[i].ctype)
+								if (Element_MULTIPP::maxPrior <= parts[i].ctype)
 								{
-									sim->E189_pause |= 0x81;
-									Element_E189::maxPrior = parts[i].ctype;
+									sim->SimExtraFunc |= 0x81;
+									Element_MULTIPP::maxPrior = parts[i].ctype;
 								}
 							break;
-							case 1: sim->E189_pause |=  0x02; break;
-							case 2: sim->E189_pause |=  0x08; break;
-							case 3: sim->E189_pause &= ~0x08; break;
-							case 4: sim->E189_pause |=  0x10; break;
-							case 5: sim->E189_pause |=  0x20; break;
-							case 6: sim->E189_pause |=  0x40; break;
+							case 1: sim->SimExtraFunc |=  0x02; break;
+							case 2: sim->SimExtraFunc |=  0x08; break;
+							case 3: sim->SimExtraFunc &= ~0x08; break;
+							case 4: sim->SimExtraFunc |=  0x10; break;
+							case 5: sim->SimExtraFunc |=  0x20; break;
+							case 6: sim->SimExtraFunc |=  0x40; break;
 							case 7:
 								if (parts[i].temp < 273.15f)
 									parts[i].temp = 273.15f;
@@ -426,17 +426,17 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 								}
 							break;
 							case 12:
-								if (Element_E189::maxPrior < parts[i].ctype)
+								if (Element_MULTIPP::maxPrior < parts[i].ctype)
 								{
-									sim->E189_pause |= 0x80;
-									sim->E189_pause &= ~0x01;
-									Element_E189::maxPrior = parts[i].ctype;
+									sim->SimExtraFunc |= 0x80;
+									sim->SimExtraFunc &= ~0x01;
+									Element_MULTIPP::maxPrior = parts[i].ctype;
 								}
 							break;
 							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
-							E189_Update::InsertText(sim, i, x, y, -rx, -ry);
+							MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
 					}
 				}
 		break;
@@ -805,16 +805,16 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 						{
 							rtmp = parts[i].tmp;
 							if (rtmp >= 0)
-								sim->E189_FIGH_pause_check |= 1 << (rtmp < 31 ? (rtmp > 0 ? rtmp : 0) : 31);
+								sim->Extra_FIGH_pause_check |= 1 << (rtmp < 31 ? (rtmp > 0 ? rtmp : 0) : 31);
 							else
-								sim->E189_pause |= 4;
+								sim->SimExtraFunc |= 4;
 							return return_value;
 						}
 					}
 			break;
 		case 9:
 			if (rtmp >= 0)
-				rt = 1 & (sim->E189_FIGH_pause >> (rtmp & 0x1F));
+				rt = 1 & (sim->Extra_FIGH_pause >> (rtmp & 0x1F));
 			else
 				rt = (int)(sim->no_generating_BHOL);
 			for (rr = 0; rr < 4; rr++)
@@ -1546,7 +1546,7 @@ int E189_Update::update(UPDATE_FUNC_ARGS)
 					}
 			return return_value;
 		case 25: // arrow key detector
-			rrx = Element_E189::Arrow_keys; // current state
+			rrx = Element_MULTIPP::Arrow_keys; // current state
 			rry = (parts[i].flags >> 16); // previous state
 			switch (rtmp)
 			{
