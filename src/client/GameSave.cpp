@@ -536,6 +536,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	std::vector<sign> tempSigns;
 
 	isFromMyMod = false;
+	int modver = 0;
 
 	while (bson_iterator_next(&iter))
 	{
@@ -555,6 +556,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldBool(iter, "is_git123hubs_mod", &isFromMyMod);
+		CheckBsonFieldInt(iter, "modver", &modver); // reserved by next mod version
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
@@ -693,6 +695,8 @@ void GameSave::readOPS(char * data, int dataLength)
 	}
 
 	isFromMyMod |= (my_mod_id_2 == MOD_ID_2 || my_mod_id_2 == PARENT_MOD_ID_2);
+	if (!modver && isFromMyMod)
+		modver = 1;
 	
 	//Read wall and fan data
 	if(wallData)
@@ -1193,6 +1197,12 @@ void GameSave::readOPS(char * data, int dataLength)
 							particles[newIndex].tmp2 = 0;
 						}
 						break;
+/*
+					case 189: // reserved by next mod version
+						if (modver == 1)
+							particles[newIndex].type = ELEM_MULTIPP;
+						break;
+*/
 					}
 					//note: PSv was used in version 77.0 and every version before, add something in PSv too if the element is that old
 					newIndex++;
