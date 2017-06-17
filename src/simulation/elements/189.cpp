@@ -528,7 +528,8 @@ int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
 			if (!(rand()%200))
 			{
 				sim->part_change_type(r, rx, ry, PT_CFLM);
-				parts[i].life = rand()%150+100;
+				parts[r].life = rand()%150+100;
+				parts[r].temp = MAX_TEMP;
 			}
 			break;
 		case ELEM_MULTIPP:
