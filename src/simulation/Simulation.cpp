@@ -102,9 +102,13 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 			{
 				tempPart.ctype = partMap[tempPart.ctype];
 			}
-		if (tempPart.type == PT_PIPE || tempPart.type == PT_PPIP)
+		if (tempPart.type == PT_PIPE || tempPart.type == PT_PPIP || tempPart.type == PT_STOR)
 		{
 			tempPart.tmp = partMap[tempPart.tmp&0xFF] | (tempPart.tmp&~0xFF);
+		}
+		else if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSS || tempPart.type == PT_VRSG) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
+		{
+			tempPart.tmp4 = partMap[tempPart.tmp4];
 		}
 
 		//Replace existing
