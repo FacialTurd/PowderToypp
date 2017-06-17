@@ -523,6 +523,11 @@ int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
 			if (Probability::randFloat() < prob_breakElectronics)
 				sim->part_change_type(r, rx, ry, PT_PLUT);
 			break;
+		case PT_C5:
+		case PT_ANAR:
+			if (!(rand()%200))
+				sim->part_change_type(r, rx, ry, PT_CFLM);
+			break;
 		case ELEM_MULTIPP:
 			switch (parts[r].life)
 			{
