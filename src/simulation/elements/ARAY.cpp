@@ -376,6 +376,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												sim->part_change_type(r, x+nxi+nxx, y+nyi+nyy, PT_LAVA);
 												parts[r].ctype = PT_HEAC;
 											}
+											else if ((rt == PT_VIBR || rt == PT_BVBR) && !parts[r].life) // VIBR Explosion?
+												parts[r].life = 750;
 											continue;
 										}
 									}
