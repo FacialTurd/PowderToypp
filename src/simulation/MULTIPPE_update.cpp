@@ -2287,6 +2287,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp = rtmp;
 		}
 		break;
+	default: // reserved by Lua
+		return_value = 0;
 	}
 		
 	return return_value;
