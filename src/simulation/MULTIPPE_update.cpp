@@ -223,7 +223,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		r = sim->photons[y][x];
 		rndstore = rand();
-		if (r)
+		if (r && r != PT_GRVT)
 		{
 			parts[i].tmp += 2;
 			if (parts[r>>8].temp > 370.0f)

@@ -2679,7 +2679,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		else if (parts[r>>8].life == 8)
 		{
-			parts[r>>8].tmp += (int)(parts[i].temp + 0.5f);
+			parts[r>>8].tmp += (int)(parts[i].temp + 0.5f) << 2;
 			kill_part(i);
 			return 0;
 		}
