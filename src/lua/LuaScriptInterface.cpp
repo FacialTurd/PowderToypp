@@ -1025,7 +1025,7 @@ int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)
 		float yy = (float)lua_tonumber(l, 3); // new y
 		int i = lua_tointeger(l, 4);
 		int FIGH_tmp;
-		if(i < 0 || i >= NPART) // check parent index
+		if(i < 0 || i >= NPART || i == ni) // check parent index
 		{
 			lua_pushinteger(l, -1);
 			return 1;
