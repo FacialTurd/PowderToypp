@@ -2136,10 +2136,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				unsigned short fieldDesc = 0;
 				int fieldDescLoc = 0, tempTemp, vTemp;
 				int desc2Pos = 0, desc2Data = 0;
-				bool tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 
 				//Turn pmap entry into a particles index
 				i = i>>8;
+				
+				bool tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 
 				//Store saved particle index+1 for this partsptr index (0 means not saved)
 				partsSaveIndex[i] = (partsCount++) + 1;
