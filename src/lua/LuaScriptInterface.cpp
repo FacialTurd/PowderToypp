@@ -1031,6 +1031,11 @@ int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)
 			return 1;
 		}
 		int t = luacon_sim->parts[i].type;
+		if (!t)
+		{
+			lua_pushinteger(l, -2);
+			return 1;
+		}
 		int tt = (t != PT_SPRK ? t : PT_METL); // SPRK hack
 		int x = (int)(luacon_sim->parts[i].x + 0.5f); // parent x
 		int y = (int)(luacon_sim->parts[i].y + 0.5f); // parent y
