@@ -17,6 +17,10 @@
 
 #define CHANNELS ((int)(MAX_TEMP-73)/100+2)
 
+#ifndef PT_PINVIS
+#define PT_PINVIS 192
+#endif
+
 class Snapshot;
 class SimTool;
 class Brush;
@@ -47,10 +51,13 @@ public:
 	int goltype[NGOL];
 	int grule[NGOL+1][10];
 	menu_section msections[SC_TOTAL];
+	int temporary_sim_variable[10];
 
 	int currentTick;
 	int replaceModeSelected;
 	int replaceModeFlags;
+	bool isFromMyMod;
+	bool isPrevFromMyMod;
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
@@ -60,9 +67,11 @@ public:
 	bool elementRecount;
 	int elementCount[PT_NUM];
 	int ISWIRE;
+	int ISWIRE2;
 	bool force_stacking_check;
 	int emp_decor;
 	int emp_trigger_count;
+	int emp2_trigger_count;
 	bool etrd_count_valid;
 	int etrd_life0_count;
 	int lightningRecreate;
@@ -77,11 +86,17 @@ public:
 	int portal_rx[8];
 	int portal_ry[8];
 	int wireless[CHANNELS][2];
+	int wireless2[CHANNELS][16];
+	// int wireless2[128][2];
 	//Gol sim
 	int CGOL;
 	int GSPEED;
 	unsigned char gol[YRES][XRES];
 	unsigned short gol2[YRES][XRES][9];
+	unsigned char lloopsrule[8][8][8][8][8];
+	int extraLoopsCA;
+	int extraLoopsType;
+	// int INVS_hardness_tmp; // unused
 	//Air sim
 	float (*vx)[XRES/CELL];
 	float (*vy)[XRES/CELL];
@@ -97,6 +112,8 @@ public:
 	unsigned char emap[YRES/CELL][XRES/CELL];
 	float fvx[YRES/CELL][XRES/CELL];
 	float fvy[YRES/CELL][XRES/CELL];
+	int breakable_wall_count;
+	float sim_max_pressure;
 	//Particles
 	Particle parts[NPART];
 	int pmap[YRES][XRES];
@@ -109,10 +126,14 @@ public:
 	int aheat_enable;
 	int water_equal_test;
 	int sys_pause;
+	int SimExtraFunc;
+	int Extra_FIGH_pause_check;
+	int Extra_FIGH_pause;
 	int framerender;
 	int pretty_powder;
 	int sandcolour;
 	int sandcolour_frame;
+	bool no_generating_BHOL;
 
 	int Load(GameSave * save);
 	int Load(int x, int y, GameSave * save);
@@ -140,6 +161,26 @@ public:
 	}
 	void create_cherenkov_photon(int pp);
 	void create_gain_photon(int pp);
+
+	inline void pmap_add(int i, int x, int y, int t)
+	{
+		// NB: all arguments are assumed to be within bounds
+		if (elements[t].Properties & TYPE_ENERGY)
+			photons[y][x] = t|(i<<8);
+		else if ((!pmap[y][x] || elements[t].Properties2 & PROP_INVISIBLE))
+			pmap[y][x] = t|(i<<8);
+	}
+	inline void pmap_remove(unsigned int i, int x, int y)
+	{
+		// NB: all arguments are assumed to be within bounds
+		if ((pmap[y][x]>>8)==i)
+			pmap[y][x] = 0;
+		else if ((pmap[y][x]&0xFF)==PT_PINVIS && (unsigned int)(parts[pmap[y][x]>>8].tmp4>>8)==i)
+			parts[pmap[y][x]>>8].tmp4 = 0;
+		else if ((photons[y][x]>>8)==i)
+			photons[y][x] = 0;
+	}
+	void restrict_can_move(/* bool oldstate, bool newstate */);
 	void kill_part(int i);
 	bool FloodFillPmapCheck(int x, int y, int type);
 	int flood_prop(int x, int y, size_t propoffset, PropertyValue propvalue, StructProperty::PropertyType proptype);
@@ -159,6 +200,7 @@ public:
 	void create_arc(int sx, int sy, int dx, int dy, int midpoints, int variance, int type, int flags);
 	void UpdateParticles(int start, int end);
 	void SimulateGoL();
+	void SimulateLLoops();
 	void RecalcFreeParticles();
 	void CheckStacking();
 	void BeforeSim();
