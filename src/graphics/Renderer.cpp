@@ -1455,33 +1455,19 @@ void Renderer::render_parts()
 				//Apply decoration colour
 				if(!(colour_mode & ~COLOUR_GRAD) && decorations_enable && deca)
 				{
-					if (deca >= 255) // 为什么仅仅对数据进行了排序，处理速度就快了将近一倍还要多呢？
+					deca++;
+					if(!(pixel_mode & NO_DECO))
 					{
-						if(!(pixel_mode & NO_DECO))
-						{
-							colr = decr; colg = decg; colb = decb;
-						}
-						
-						if(pixel_mode & DECO_FIRE)
-						{
-							firer = decr; fireg = decg; fireb = decb;
-						}
+						colr = (deca*decr + (256-deca)*colr) >> 8;
+						colg = (deca*decg + (256-deca)*colg) >> 8;
+						colb = (deca*decb + (256-deca)*colb) >> 8;
 					}
-					else
-					{
-						if(!(pixel_mode & NO_DECO))
-						{
-							colr = (deca*decr + (255-deca)*colr) >> 8;
-							colg = (deca*decg + (255-deca)*colg) >> 8;
-							colb = (deca*decb + (255-deca)*colb) >> 8;
-						}
 
-						if(pixel_mode & DECO_FIRE)
-						{
-							firer = (deca*decr + (255-deca)*firer) >> 8;
-							fireg = (deca*decg + (255-deca)*fireg) >> 8;
-							fireb = (deca*decb + (255-deca)*fireb) >> 8;
-						}
+					if(pixel_mode & DECO_FIRE)
+					{
+						firer = (deca*decr + (256-deca)*firer) >> 8;
+						fireg = (deca*decg + (256-deca)*fireg) >> 8;
+						fireb = (deca*decb + (256-deca)*fireb) >> 8;
 					}
 				}
 
