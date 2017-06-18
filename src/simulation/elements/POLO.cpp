@@ -36,7 +36,7 @@ Element_POLO::Element_POLO()
 	HeatConduct = 251;
 	Description = "Polonium, highly radioactive. Decays into NEUT and heats up.";
 
-	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC |PROP_DEADLY;
+	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC|PROP_DEADLY;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
