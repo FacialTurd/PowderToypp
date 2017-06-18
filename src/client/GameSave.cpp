@@ -1073,7 +1073,6 @@ void GameSave::readOPS(char * data, int dataLength)
 								particles[newIndex].tmp4 |= tempData;
 							}
 						}
-						/*
 						if (tempDesc & 0x20)
 						{
 							if (i+1 >= partsDataLen) goto fail;
@@ -1081,7 +1080,6 @@ void GameSave::readOPS(char * data, int dataLength)
 							tempData |= ((unsigned)partsData[i++]) << 16;
 							particles[newIndex].life |= tempData;
 						}
-						*/
 					}
 
 					//Particle specific parsing:
@@ -1168,12 +1166,19 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 						break;
 					case PT_CRAY:
-						if (savedVersion < 91)
+						if (!modver)
 						{
-							if (particles[newIndex].tmp2)
+							if (savedVersion < 91)
 							{
-								particles[newIndex].ctype |= particles[newIndex].tmp2<<8;
-								particles[newIndex].tmp2 = 0;
+								if (particles[newIndex].tmp2)
+								{
+									particles[newIndex].ctype |= particles[newIndex].tmp2<<8;
+									particles[newIndex].tmp2 = 0;
+								}
+							}
+							if (!particles[newIndex].life)
+							{
+								particles[newIndex].life = -1;
 							}
 						}
 						break;
@@ -2131,6 +2136,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				unsigned short fieldDesc = 0;
 				int fieldDescLoc = 0, tempTemp, vTemp;
 				int desc2Pos = 0, desc2Data = 0;
+				bool tempB;
 
 				//Turn pmap entry into a particles index
 				i = i>>8;
@@ -2164,21 +2170,18 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				//Life (optional), 1 to 2 bytes
 				if(particles[i].life)
 				{
+					tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 					int life = particles[i].life;
-					/*
-					if (particles[i].type != ELEM_MULTIPP)
+					if (tempB)
 					{
-					*/
 						if (life > 0xFFFF)
 							life = 0xFFFF;
 						else if (life < 0)
 							life = 0;
-					/*
 					}
-					*/
 					fieldDesc |= 1 << 1;
 					partsData[partsDataLen++] = life;
-					if (life & 0xFF00)
+					if (life & 0xFFFFFF00)
 					{
 						fieldDesc |= 1 << 2;
 						partsData[partsDataLen++] = life >> 8;
@@ -2316,13 +2319,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 						}
 					}
 					
-					/*
-					if (particles[i].type == ELEM_MULTIPP && particles[i].life & 0xFFFF0000)
+					if ((particles[i].life & 0xFFFF0000) && tempB)
 					{
 						partsData[partsDataOffset++] = (particles[i].life >> 24) & 0xFF;
 						partsData[partsDataOffset++] = (particles[i].life >> 16) & 0xFF;
 					}
-					*/
 					
 					//Write the extra field descriptor
 					if (desc2Data)

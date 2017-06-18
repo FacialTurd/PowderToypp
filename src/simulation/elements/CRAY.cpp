@@ -101,7 +101,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 									if (colored)
 										parts[nr].dcolour = colored;
 									parts[nr].temp = parts[i].temp;
-									if (new_part_life > 0)
+									if (new_part_life >= 0)
 										*((int*)(((char*)&parts[nr]) + offset1)) = new_part_life;
 									if(!--partsRemaining)
 										docontinue = 0;
