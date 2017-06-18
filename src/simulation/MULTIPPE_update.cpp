@@ -308,6 +308,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].life = 1000;
 			// parts[i].tmp2 = 0;
 			sim->emp2_trigger_count ++;
+			return return_value;
 		}
 		parts[i].temp += 12;
 		{

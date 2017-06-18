@@ -2377,6 +2377,8 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				case PT_ELEC:
 					if (rlife == 5 || rlife == 22 && (tmp_flag & 2))
 						return 2;
+					else if (rlife == 8)
+						return 1;
 					return 0;
 				case PT_GRVT:
 					if (rlife == 22 && (tmp_flag & 4))
@@ -2672,6 +2674,12 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	case ELEM_MULTIPP:
 		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
 		{
+			kill_part(i);
+			return 0;
+		}
+		else if (parts[r>>8].life == 8)
+		{
+			parts[r>>8].tmp += (int)(parts[i].temp + 0.5f);
 			kill_part(i);
 			return 0;
 		}
