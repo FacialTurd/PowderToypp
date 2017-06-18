@@ -1580,7 +1580,8 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 				c->ResetAir();
 			break;
 		case 'm':
-			alternateState = 4;
+			if (showDebug)
+				alternateState = 4;
 			break;
 		case 'c':
 			if(ctrl)
