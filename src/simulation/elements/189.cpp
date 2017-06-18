@@ -365,6 +365,11 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 		sim->parts[ri].ctype = part_other->ctype;
 	else
 		sim->parts[ri].ctype = part_phot->ctype;
+	if (rtmp & 0x10000)
+	{
+		sim->parts[ri].flags |= FLAG_PHOTDECO;
+		sim->parts[ri].dcolour = part_phot->dcolour;
+	}
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static int EMPTrigger(Simulation *sim, int triggerCount)
