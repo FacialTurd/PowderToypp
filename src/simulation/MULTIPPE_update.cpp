@@ -235,8 +235,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		// Pressure absorption code
 		{
 			float *pv1 = &sim->pv[y/CELL][x/CELL];
-			parts[i].tmp += *pv1 > 0.0f ? (int)(10.0f * *pv1) : 0.0f;
-			*pv1 = 0.0f;
+			if (*pv1 > 0.15f || *pv1 < 0.15f)
+			{
+				parts[i].tmp += *pv1 > 0.0f ? (int)(10.0f * *pv1) : 0.0f;
+				*pv1 = 0.0f;
+			}
 		}
 		// Neighbor check loop
 		for (rx=-1; rx<2; rx++)
