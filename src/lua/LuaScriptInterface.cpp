@@ -709,6 +709,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"velocityX", simulation_velocityX},
 		{"velocityY", simulation_velocityY},
 		{"gravMap", simulation_gravMap},
+		{"blockAir", simulation_blockair},
 		{"createParts", simulation_createParts},
 		{"createLine", simulation_createLine},
 		{"createBox", simulation_createBox},
@@ -1391,6 +1392,24 @@ int LuaScriptInterface::simulation_gravMap(lua_State* l)
 	}
 
 	set_map(x, y, width, height, value, 5);
+	return 0;
+}
+
+int LuaScriptInterface::simulation_blockair(lua_State* l)
+{
+	int argCount = lua_gettop(l);
+	luaL_checktype(l, 1, LUA_TNUMBER);
+	luaL_checktype(l, 2, LUA_TNUMBER);
+	int x = lua_tointeger(l, 1);
+	int y = lua_tointeger(l, 2);
+	if (x*CELL<0 || y*CELL<0 || x*CELL>=XRES || y*CELL>=YRES)
+		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
+
+	int z = lua_tointeger(l, 3);
+	if (z == 0 || z == 2)
+		luacon_sim->air->bmap_blockair[y][x] = 1;
+	if (z == 1 || z == 2)
+		luacon_sim->air->bmap_blockairh[y][x] = 0x8;
 	return 0;
 }
 
