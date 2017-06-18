@@ -1046,6 +1046,7 @@ int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)
 			if (t == PT_FIGH)
 				luacon_sim->parts[p].tmp = FIGH_tmp;
 		}
+		lua_pushinteger(l, p);
 		return 1;
 	}
 	lua_pushinteger(l, -1);
