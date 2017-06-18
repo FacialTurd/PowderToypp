@@ -3647,6 +3647,9 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].tmp2 = 4;
 		break;
 	}
+	case PT_CRAY:
+		parts[i].life = -1;
+		break;
 	case ELEM_MULTIPP:
 	{
 		parts[i].life = v;

@@ -2136,7 +2136,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				unsigned short fieldDesc = 0;
 				int fieldDescLoc = 0, tempTemp, vTemp;
 				int desc2Pos = 0, desc2Data = 0;
-				bool tempB;
+				bool tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 
 				//Turn pmap entry into a particles index
 				i = i>>8;
@@ -2170,9 +2170,8 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				//Life (optional), 1 to 2 bytes
 				if(particles[i].life)
 				{
-					tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 					int life = particles[i].life;
-					if (tempB)
+					if (!tempB)
 					{
 						if (life > 0xFFFF)
 							life = 0xFFFF;
@@ -2181,7 +2180,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					}
 					fieldDesc |= 1 << 1;
 					partsData[partsDataLen++] = life;
-					if (life & 0xFFFFFF00)
+					if (life & 0xFF00)
 					{
 						fieldDesc |= 1 << 2;
 						partsData[partsDataLen++] = life >> 8;
@@ -2319,7 +2318,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 						}
 					}
 					
-					if ((particles[i].life & 0xFFFF0000) && tempB)
+					if (tempB && (particles[i].life & 0xFFFF0000))
 					{
 						partsData[partsDataOffset++] = (particles[i].life >> 24) & 0xFF;
 						partsData[partsDataOffset++] = (particles[i].life >> 16) & 0xFF;
