@@ -4466,7 +4466,7 @@ void Simulation::UpdateParticles(int start, int end)
 #if !defined(RENDERER) && defined(LUACONSOLE)
 			if (lua_el_mode[parts[i].type] && lua_el_mode[parts[i].type] != 3)
 			{
-				if (luacon_elementReplacement(this, i, x, y, surround_space, nt, parts, pmap) || t != parts[i].type)
+				if (luacon_elementReplacement(this, i, x, y, surround_space, nt, parts, pmap) || t != parts[i].type || t == ELEM_MULTIPP)
 					continue;
 				// Need to update variables, in case they've been changed by Lua
 				x = (int)(parts[i].x+0.5f);

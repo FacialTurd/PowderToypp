@@ -2,6 +2,11 @@
 #include "simulation/Air.h"
 #include "simulation/MULTIPPE_Update.h"
 
+#ifdef LUACONSOLE
+#include "lua/LuaScriptInterface.h"
+#include "lua/LuaScriptHelper.h"
+#endif
+
 #ifdef _MSC_VER
 unsigned msvc_ctz(unsigned a)
 {
@@ -2287,8 +2292,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp = rtmp;
 		}
 		break;
+#if !defined(RENDERER) && defined(LUACONSOLE)
 	default: // reserved by Lua
-		return_value = 0;
+		if (lua_el_mode[parts[i].type] == 1)
+			return_value = 0;
+#endif
 	}
 		
 	return return_value;
