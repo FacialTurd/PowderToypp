@@ -1,11 +1,5 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_POLO PT_POLO 182
-
-/*
-TODO: 
-	- "stronger version" a powder created by mixing E182 (POLO) with E185 (POLC) that is stronger?
-*/
-
 Element_POLO::Element_POLO()
 {
 	Identifier = "DEFAULT_PT_POLO";
