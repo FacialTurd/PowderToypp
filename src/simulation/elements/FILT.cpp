@@ -205,6 +205,35 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			int x = my_ctz (filtWl);
 			return ((origWl >> x) | (origWl << (30 - x))) & mask;
 		}
+		case (FILT_NORMAL_OPERATIONS + 5): // addition
+			return ((origWl + filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 6): // subtraction
+			return ((origWl - filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 7): // multiplication
+			return ((origWl * filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 8): // binary to BCD
+		{
+			int t1 = origWl & 0x1FFFFFFF;
+			int t2 = 0x20000000;
+			for (int t3 = 0; t3 < 7; t3++)
+			{
+				t2 |= (origWl % 10) << (4 * t3);
+				origWl /= 10;
+			}
+			return t2;
+		}
+		case (FILT_NORMAL_OPERATIONS + 9): // BCD to binary
+		{
+			int t1 = 0x20000000;
+			int t2 = 1;
+			for (int t3 = 0; t3 < 7; t3++)
+			{
+				t1 += (origWl & 0xF) * t2;
+				t2 *= 10;
+				origWl >>= 4;
+			}
+			return t1;
+		}
 		default:
 			return filtWl;
 	}
