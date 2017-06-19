@@ -2323,6 +2323,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					{
 						partsData[partsDataOffset++] = (particles[i].life >> 24) & 0xFF;
 						partsData[partsDataOffset++] = (particles[i].life >> 16) & 0xFF;
+						desc2Data |= (1 << 5);
 					}
 					
 					//Write the extra field descriptor
