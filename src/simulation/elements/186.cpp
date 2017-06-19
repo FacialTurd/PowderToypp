@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
 //Temp particle used for graphics
-Particle tpart;
+Particle tpart_phot;
 
 //#TPT-Directive ElementClass Element_E186 PT_E186 186
 Element_E186::Element_E186()
@@ -48,7 +48,7 @@ Element_E186::Element_E186()
 	Update = &Element_E186::update;
 	Graphics = &Element_E186::graphics;
 	
-	memset(&tpart, 0, sizeof(Particle));
+	memset(&tpart_phot, 0, sizeof(Particle));
 }
 
 //#TPT-Directive ElementHeader Element_E186 static int update(UPDATE_FUNC_ARGS)
@@ -270,9 +270,9 @@ int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
 	if (cpart->ctype == 0x100)
 	{
 		// Emulate the PHOT graphics
-		tpart.ctype = cpart->tmp2;
-		tpart.flags = cpart->flags;
-		Element_PHOT::graphics(ren, &tpart, nx, ny, pixel_mode, cola, colr, colg, colb, firea, firer, fireg, fireb);
+		tpart_phot.ctype = cpart->tmp2;
+		tpart_phot.flags = cpart->flags;
+		Element_PHOT::graphics(ren, &tpart_phot, nx, ny, pixel_mode, cola, colr, colg, colb, firea, firer, fireg, fireb);
 		return 0;
 	}
 	*firea = 70;
