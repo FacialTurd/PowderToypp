@@ -2489,6 +2489,7 @@ void GameView::OnDraw()
 			
 			if (showDebug)
 			{
+				static const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 					sampleInfo << "Molten " << c->ElementResolve(ctype, -1);
 				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
@@ -2498,7 +2499,6 @@ void GameView::OnDraw()
 				else if (type == PT_FILT)
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
-					const char* filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
 					if (parttmp>=0 && parttmp<=11)
 						sampleInfo << " (" << filtModes[parttmp]; // << ")";
 					else
@@ -2539,15 +2539,17 @@ void GameView::OnDraw()
 					if (wavelengthGfx || partint)
 						sampleInfo << " (" << ctype << ")";
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV)
-						sampleInfo << " (" << c->ElementResolve(ctype&0xFF, ctype>>8) << ")";
-					else if (type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
+					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
-						if ((ctype&0xFF) == ELEM_MULTIPP && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
+						if ((ctype&0xFF) == ELEM_MULTIPP && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
 							sampleInfo << E189Modes[ctype>>8];
 						else
 							sampleInfo << c->ElementResolve(ctype&0xFF, ctype>>8);
+						if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= 11)
+						{
+							sampleInfo << " (" << filtModes[parttmp] << ")";
+						}
 						sampleInfo << ")";
 					}
 					else if (partstr)
