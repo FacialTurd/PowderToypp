@@ -110,7 +110,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 		{
 			tempPart.tmp = partMap[tempPart.tmp&0xFF] | (tempPart.tmp&~0xFF);
 		}
-		if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSS || tempPart.type == PT_VRSG) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
+		if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSG || tempPart.type == PT_VRSS) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
 		{
 			tempPart.tmp4 = partMap[tempPart.tmp4];
 		}
@@ -2172,7 +2172,7 @@ void Simulation::init_can_move()
 		}
 
 		//SAWD cannot be displaced by other powders
-		if (elements[movingType].Properties & TYPE_PART && (movingType != PT_POLO && movingType != PT_POLC))
+		if (elements[movingType].Properties & TYPE_PART)
 			can_move[movingType][PT_SAWD] = 0;
 	}
 	//a list of lots of things PHOT can move through
