@@ -134,15 +134,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						parts[s].life = 0;
 				}
 				break;
-			/*
 			case PT_CAUS:
-				{
-					sim->part_change_type(r>>8, x, y, PT_SPRK); // probably inverse for NEUT???
-					parts[r>>8].life = 128 + rand()%128;
-					parts[r>>8].ctype = PT_RFRG;
-				}
+				sim->part_change_type(r>>8, x, y, PT_RFRG); // probably inverse for NEUT???
+				parts[r>>8].tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
 				break;
-			*/
 			case PT_FILT:
 				sim->part_change_type(i, x, y, PT_PHOT);
 				parts[i].ctype = 0x3FFFFFFF;
