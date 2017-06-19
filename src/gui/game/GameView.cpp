@@ -2545,10 +2545,12 @@ void GameView::OnDraw()
 						if ((ctype&0xFF) == ELEM_MULTIPP && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
 							sampleInfo << E189Modes[ctype>>8];
 						else
-							sampleInfo << c->ElementResolve(ctype&0xFF, ctype>>8);
-						if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= 11)
 						{
-							sampleInfo << " (" << filtModes[parttmp] << ")";
+							sampleInfo << c->ElementResolve(ctype&0xFF, ctype>>8);
+							if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= 11)
+							{
+								sampleInfo << " (" << filtModes[ctype>>8] << ")";
+							}
 						}
 						sampleInfo << ")";
 					}
