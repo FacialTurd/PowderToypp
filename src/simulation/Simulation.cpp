@@ -3302,7 +3302,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			else if (drawOn == PT_CRAY)
 			{
 				parts[pmap[y][x]>>8].ctype = t;
-				if (t == PT_LIFE && v >= 0 && v < NGOL)
+				if (t == PT_LIFE && v >= 0 && v < NGOL || t == ELEM_MULTIPP)
 					parts[pmap[y][x]>>8].ctype |= v<<8;
 				if (t == PT_LIGH)
 					parts[pmap[y][x]>>8].ctype |= 30<<8;
