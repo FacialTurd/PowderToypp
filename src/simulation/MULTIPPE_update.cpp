@@ -1361,7 +1361,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							else
 								parts[r>>8].life = rrx;
 						}
-						else if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS)
+						else if (sim->elements[r&0xFF].Properties & PROP_CONDUCTS || (r&0xFF) == PT_INST)
 						{
 							if (rry)
 								parts[r>>8].life = 0;
