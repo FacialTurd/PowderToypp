@@ -3971,6 +3971,12 @@ void Simulation::UpdateParticles(int start, int end)
 			float gel_scale = 1.0f;
 			if (t==PT_GEL)
 				gel_scale = parts[i].tmp*2.55f;
+			/*
+			else if (t==ELEM_MULTIPP || t==PT_PINVIS)
+			{
+				goto updatefunc_part;
+			}
+			*/
 
 			if (!legacy_enable)
 			{
