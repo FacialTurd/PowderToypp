@@ -5887,29 +5887,6 @@ void Simulation::BeforeSim()
 				}
 			}
 		}
-		
-		// make E189 work
-#if 0
-		if(elementCount[ELEM_MULTIPP] > 0)
-		{
-			for (int i = 0; i <= parts_lastActiveIndex; i++)
-			{
-				if(parts[i].type == ELEM_MULTIPP)
-				{
-					switch (parts[i].life)
-					{
-						case 13:
-						case 18:
-							break;
-						case 16:
-							if (parts[i].tmp2) // use "tmp2" attribute for life value, because "life", "ctype" and "tmp" attributes is used for other purpose.
-								parts[i].tmp2--;
-							break;
-					}
-				}
-			}
-		}
-#endif
 
 		// update PPIP tmp?
 		if (Element_PPIP::ppip_changed)
@@ -5962,17 +5939,6 @@ void Simulation::BeforeSim()
 			}
 			ISWIRE2--;
 		}
-		
-#if 0
-		if (ISWIRE2 > 0)
-		{
-			for (int q = 0; q < 128; q++) // 128 * 32 = 4096 channels
-			{
-				wireless2[q][0] = wireless2[q][1];
-			}
-			ISWIRE--;
-		}
-#endif
 
 		// spawn STKM and STK2
 		if (!player.spwn && player.spawnID >= 0)
