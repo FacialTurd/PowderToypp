@@ -370,10 +370,18 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_HEAC)
 											{
 												parts[r].temp = parts[i].temp;
-												if (rt == PT_BRAY && !(parts[r].tmp >> 1))
+												if (rt == PT_BRAY)
 												{
-													parts[r].tmp = 1;
-													parts[r].life = 1020;
+													if (nostop && !(parts[r].tmp >> 1))
+													{
+														parts[r].tmp = 1;
+														parts[r].life = 1020;
+													}
+													else if (destroy)
+													{
+														parts[r].tmp = 2;
+														parts[r].life = 1;
+													}
 												}
 											}
 											continue;
