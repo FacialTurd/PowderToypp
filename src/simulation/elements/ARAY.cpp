@@ -368,7 +368,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											if (rt == PT_WOOD)
 												sim->part_change_type(r, x+nxi+nxx, y+nyi+nyy, PT_SAWD);
 											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_HEAC)
+											{
 												parts[r].temp = parts[i].temp;
+												if (rt == PT_BRAY && !(parts[r].tmp >> 1))
+												{
+													parts[r].tmp = 1;
+													parts[r].life = 1020;
+												}
+											}
 											continue;
 										case 6: // melting HEAC
 											if (rt == PT_HEAC && parts[r].temp > sim->elements[PT_HEAC].HighTemperature)
