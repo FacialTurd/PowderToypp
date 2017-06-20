@@ -2241,7 +2241,7 @@ void Simulation::init_can_move()
 	can_move[PT_ELEC][PT_POLC] = 2;
 	can_move[PT_POLC][PT_YEST] = 0; // moving type = "POLC", type at destination = yeast
 
-	can_move[PT_E186][PT_BRMT] = 3;
+	// can_move[PT_E186][PT_BRMT] = 3;
 	
 	can_move[PT_PROT][ELEM_MULTIPP] = 3;
 	can_move[PT_GRVT][ELEM_MULTIPP] = 3;
@@ -2391,6 +2391,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				}
 			}
 			return 0; // otherwise. Note using "return", no "break".
+		/*
 		case PT_BRMT:
 			if (pt == PT_E186)
 			{
@@ -2400,6 +2401,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					result = 0;
 			}
 			break;
+		*/
 		case PT_SPRK:
 			if (pt == PT_DEST)
 			{
