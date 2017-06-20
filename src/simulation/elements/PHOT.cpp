@@ -58,8 +58,11 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 		sim->kill_part(i);
 		return 1;
 	}
-	if (ignite_flammable && parts[i].temp > 506)
-		if (!(rand()%10)) Element_FIRE::update(UPDATE_FUNC_SUBCALL_ARGS);
+	if (ignite_flammable)
+	{
+		if (parts[i].temp > 506 && !(rand()%10))
+			Element_FIRE::update(UPDATE_FUNC_SUBCALL_ARGS);
+	}
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 			if (BOUNDS_CHECK) {

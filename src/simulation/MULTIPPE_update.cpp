@@ -363,80 +363,87 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					{
 						switch (rtmp & 0xFF)
 						{
-							case 0:
-								if (Element_MULTIPP::maxPrior <= parts[i].ctype)
+						case 0:
+							if (Element_MULTIPP::maxPrior <= parts[i].ctype)
+							{
+								sim->SimExtraFunc |= 0x81;
+								Element_MULTIPP::maxPrior = parts[i].ctype;
+							}
+							break;
+						case 1: sim->SimExtraFunc |=  0x02; break;
+						case 2: sim->SimExtraFunc |=  0x08; break;
+						case 3: sim->SimExtraFunc &= ~0x08; break;
+						case 4: sim->SimExtraFunc |=  0x10; break;
+						case 5: sim->SimExtraFunc |=  0x20; break;
+						case 6:
+							switch (parts[r>>8].ctype)
+							{
+								case PT_NTCT: Element_PHOT::ignite_flammable = 0;
+								case PT_PTCT: Element_PHOT::ignite_flammable = 1;
+								default: sim->SimExtraFunc |= 0x40;
+							}
+							break;
+						case 7:
+							if (parts[i].temp < 273.15f)
+								parts[i].temp = 273.15f;
+							rdif = (int)(parts[i].temp - 272.65f);
+							if (parts[r>>8].ctype != PT_INST)
+								rdif /= 100.0f;
+							sim->sim_max_pressure += rdif;
+							if (sim->sim_max_pressure > 256.0f)
+								sim->sim_max_pressure = 256.0f;
+							break;
+						case 8:
+							if (parts[i].temp < 273.15f)
+								parts[i].temp = 273.15f;
+							rdif = (int)(parts[i].temp - 272.65f);
+							if (parts[r>>8].ctype != PT_INST)
+								rdif /= 100.0f;
+							sim->sim_max_pressure -= rdif;
+							if (sim->sim_max_pressure < 0.0f)
+								sim->sim_max_pressure = 0.0f;
+							break;
+						case 9: // set sim_max_pressure
+							if (parts[i].temp < 273.15f)
+								parts[i].temp = 273.15f;
+							if (parts[i].temp > 273.15f + 256.0f)
+								parts[i].temp = 273.15f + 256.0f;
+							sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
+							break;
+						case 10: // reset currentTick
+							sim->lightningRecreate -= sim->currentTick;
+							if (sim->lightningRecreate < 0)
+								sim->lightningRecreate = 0;
+							sim->currentTick = 0;
+							if (parts[r>>8].ctype == PT_INST)
+								sim->elementRecount = true;
+							break;
+						case 11:
+							rctype = parts[r>>8].ctype;
+							rr = pmap[y-ry][x-rx];
+							{
+								int rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
+								switch (rr & 0xFF)
 								{
-									sim->SimExtraFunc |= 0x81;
-									Element_MULTIPP::maxPrior = parts[i].ctype;
+									case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
+									case PT_CRAY: tFlag = PROP_CTYPE_WAVEL; break;
+									case PT_DRAY: tFlag = PROP_CTYPE_SPEC; break;
 								}
-							break;
-							case 1: sim->SimExtraFunc |=  0x02; break;
-							case 2: sim->SimExtraFunc |=  0x08; break;
-							case 3: sim->SimExtraFunc &= ~0x08; break;
-							case 4: sim->SimExtraFunc |=  0x10; break;
-							case 5: sim->SimExtraFunc |=  0x20; break;
-							case 6: sim->SimExtraFunc |=  0x40; break;
-							case 7:
-								if (parts[i].temp < 273.15f)
-									parts[i].temp = 273.15f;
-								rdif = (int)(parts[i].temp - 272.65f);
-								if (parts[r>>8].ctype != PT_INST)
-									rdif /= 100.0f;
-								sim->sim_max_pressure += rdif;
-								if (sim->sim_max_pressure > 256.0f)
-									sim->sim_max_pressure = 256.0f;
-							break;
-							case 8:
-								if (parts[i].temp < 273.15f)
-									parts[i].temp = 273.15f;
-								rdif = (int)(parts[i].temp - 272.65f);
-								if (parts[r>>8].ctype != PT_INST)
-									rdif /= 100.0f;
-								sim->sim_max_pressure -= rdif;
-								if (sim->sim_max_pressure < 0.0f)
-									sim->sim_max_pressure = 0.0f;
-							break;
-							case 9: // set sim_max_pressure
-								if (parts[i].temp < 273.15f)
-									parts[i].temp = 273.15f;
-								if (parts[i].temp > 273.15f + 256.0f)
-									parts[i].temp = 273.15f + 256.0f;
-								sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
-							break;
-							case 10: // reset currentTick
-								sim->lightningRecreate -= sim->currentTick;
-								if (sim->lightningRecreate < 0)
-									sim->lightningRecreate = 0;
-								sim->currentTick = 0;
-								if (parts[r>>8].ctype == PT_INST)
-									sim->elementRecount = true;
-							break;
-							case 11:
-								rctype = parts[r>>8].ctype;
-								rr = pmap[y-ry][x-rx];
+								switch (rctype)
 								{
-									int rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
-									switch (rr & 0xFF)
-									{
-										case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
-										case PT_CRAY: tFlag = PROP_CTYPE_WAVEL; break;
-										case PT_DRAY: tFlag = PROP_CTYPE_SPEC; break;
-									}
-									switch (rctype)
-									{
-										case PT_PSCN: sim->elements[rrt].Properties2 |=  tFlag; break;
-										case PT_NSCN: sim->elements[rrt].Properties2 &= ~tFlag; break;
-										case PT_INWR: sim->elements[rrt].Properties2 ^=  tFlag; break;
-									}
+									case PT_PSCN: sim->elements[rrt].Properties2 |=  tFlag; break;
+									case PT_NSCN: sim->elements[rrt].Properties2 &= ~tFlag; break;
+									case PT_INWR: sim->elements[rrt].Properties2 ^=  tFlag; break;
 								}
+							}
 							break;
-							case 12:
-								if (Element_MULTIPP::maxPrior < parts[i].ctype)
-								{
-									sim->SimExtraFunc |= 0x80;
-									sim->SimExtraFunc &= ~0x01;
-									Element_MULTIPP::maxPrior = parts[i].ctype;
-								}
+						case 12:
+							if (Element_MULTIPP::maxPrior < parts[i].ctype)
+							{
+								sim->SimExtraFunc |= 0x80;
+								sim->SimExtraFunc &= ~0x01;
+								Element_MULTIPP::maxPrior = parts[i].ctype;
+							}
 							break;
 							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'
 						}
