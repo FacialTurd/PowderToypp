@@ -97,7 +97,12 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		parts[under>>8].temp = restrict_flt(parts[under>>8].temp + change, MIN_TEMP, MAX_TEMP);
 		break;
 	case ELEM_MULTIPP:
-		if (parts[under>>8].life == 10 && parts[under>>8].temp > 1273.0f)
+		if (parts[under>>8].life == 6)
+		{
+			parts[i].temp = parts[under>>8].temp;
+			goto no_temp_change;
+		}
+		else if (parts[under>>8].life == 10 && parts[under>>8].temp > 1273.0f)
 		{
 			sim->kill_part(i);
 			return 1;
@@ -132,6 +137,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
  
 
 	//if this proton has collided with another last frame, change it into a heavier element
+	no_temp_change:
 	if (parts[i].tmp)
 	{
 		int newID, element;
