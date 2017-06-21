@@ -658,7 +658,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		
 		// add adjacent pixels to stack
 		if (y >= 1)
-			for (x=x1-1; x<=x2+1; x++)
+			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y-1][x];
 				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
@@ -674,7 +674,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 				}
 			}
 		if (y < YRES-1)
-			for (x=x1-1; x<=x2+1; x++)
+			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y+1][x];
 				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
