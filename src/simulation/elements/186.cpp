@@ -305,8 +305,10 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, Partic
 	phot->x = (float)nx;
 	phot->y = (float)ny;
 	phot->type = PT_PHOT;
+	phot->ctype = phot->tmp2;
+	phot->tmp2 = 0;
 	sim->photons[ny][nx] = PT_PHOT|(i<<8);
-	return 1;
+	// return;
 }
 
 
