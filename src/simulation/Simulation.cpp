@@ -2367,7 +2367,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				case PT_E186:
 					if (rlife == 5 || rlife == 10)
 						return 2; // corrected code
-					if (rlife == 17)
+					if (rlife == 17 || rlife == 34)
 						return 1;
 					return 0;
 				case PT_PROT:
@@ -2680,8 +2680,12 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	case ELEM_MULTIPP:
 		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
 		{
-			kill_part(i);
-			return 0;
+			if (parts[r>>8].life == 17)
+			{
+				kill_part(i);
+				return 0;
+			}
+			return 1;
 		}
 		else if (parts[r>>8].life == 8)
 		{
