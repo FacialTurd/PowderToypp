@@ -121,6 +121,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		r = pmap[y][x];
 		if (r)
 		{
+			int slife;
 			switch (r&0xFF)
 			{
 			case PT_PLSM:
