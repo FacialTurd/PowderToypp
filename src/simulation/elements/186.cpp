@@ -65,8 +65,15 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			slife = parts[i].life;
 			switch (sctype - 0x100)
 			{
+			case 0:
+				if (!(parts[i].tmp2&0x3FFFFFFF))
+				{
+					sim->kill_part(i);
+					return 1;
+				}
+				break;
 			case 1:
-				switch (rand() & 3)
+				switch (rand()%4)
 				{
 					case 0:
 						sim->part_change_type(i, x, y, PT_PHOT);
