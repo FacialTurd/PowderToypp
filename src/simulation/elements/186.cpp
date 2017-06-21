@@ -302,6 +302,19 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, Partic
 	if ((sim->photons[y][x]>>8) == i)
 		sim->photons[y][x] = 0;
 	int nx = x + other1->tmp, ny = y + other1->tmp2;
+	if (edgeMode == 2)
+	{
+		// maybe sim->remainder_p ?
+		nx = (nx-CELL) % (XRES-2*CELL) + CELL;
+		(nx < CELL) && (nx += (XRES-2*CELL));
+		ny = (ny-CELL) % (YRES-2*CELL) + CELL;
+		(ny < CELL) && (ny += (YRES-2*CELL));
+	}
+	else if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
+	{
+		sim->kill_part(i);
+		return;
+	}
 	phot->x = (float)nx;
 	phot->y = (float)ny;
 	phot->type = PT_PHOT;
