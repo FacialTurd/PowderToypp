@@ -54,25 +54,29 @@ Element_E186::Element_E186()
 //#TPT-Directive ElementHeader Element_E186 static int update(UPDATE_FUNC_ARGS)
 int Element_E186::update(UPDATE_FUNC_ARGS)
 {
-	int r, s, slife, sctype;
+	int r, s, sctype;
 	float r2, r3;
 	sctype = parts[i].ctype;
 	if (sctype >= 0x100) // don't create SPC_AIR particle
 	{
 		r = pmap[y][x];
-		if ((r & 0xFF) != ELEM_MULTIPP)
+		switch (sctype - 0x100)
 		{
-			slife = parts[i].life;
-			switch (sctype - 0x100)
+		case 0:
+			if (!(parts[i].tmp2&0x3FFFFFFF))
 			{
-			case 0:
-				if (!(parts[i].tmp2&0x3FFFFFFF))
-				{
-					sim->kill_part(i);
-					return 1;
-				}
-				break;
-			case 1:
+				sim->kill_part(i);
+				return 1;
+			}
+			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 34)
+			{
+				transportPhotons(sim, i, x, y, &parts[i], &parts[r>>8]);
+				return 1;
+			}
+			break;
+		case 1:
+			if ((r&0xFF) != ELEM_MULTIPP)
+			{
 				switch (rand()%4)
 				{
 					case 0:
@@ -90,8 +94,8 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						parts[i].tmp = 0;
 						break;
 				}
-				break;
 			}
+			break;
 		}
 		return 0;
 	}
@@ -289,6 +293,19 @@ int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
 
 	*pixel_mode |= FIRE_ADD;
 	return 0;
+}
+
+//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, Particle *phot, Particle *other1)
+void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, Particle *phot, Particle *other1)
+{
+	if ((sim->photons[y][x]>>8) == i)
+		sim->photons[y][x] = 0;
+	int nx = x + other1->tmp2, ny = y + other1->tmp3;
+	phot->x = (float)nx;
+	phot->y = (float)ny;
+	phot->type = PT_PHOT;
+	sim->photons[ny][nx] = PT_PHOT|(i<<8);
+	return 1;
 }
 
 
