@@ -2430,20 +2430,15 @@ void GameView::OnDraw()
 			{
 				switch (type)
 				{
+				case PT_E186:
+					if (ctype == 0x100)
+						wavelengthGfx = sample_particle->tmp2;
+					break;
 				case ELEM_MULTIPP:
 					if (partlife == 4 || partlife == 7 || partlife == 11)
-						wavelengthGfx = (ctype&0x3FFFFFFF);
-					/*
-					else if (partlife == 5)
 					{
-						int partfilt = parttmp;
-						int partfilt2 = sample_particle->tmp2;
-						if (partfilt >= 1 && partfilt <= 6 && partfilt != 5)
-							wavelengthGfx = (ctype&0x3FFFFFFF);
-						if (partfilt == 5 || partfilt == 8 || !partfilt && ((0x0002E000 >> partfilt2) & 1))
-							partint = 1;
+						wavelengthGfx = (ctype&0x3FFFFFFF);
 					}
-					*/
 					else if (partlife == 13)
 					{
 						if (sample_particle->tmp2 == 0x1)
@@ -2467,6 +2462,8 @@ void GameView::OnDraw()
 					{
 						ctype &= 0xFF;
 					}
+					if (wavelengthGfx)
+						partint = 1;
 					break;
 				}
 			}
@@ -2479,6 +2476,7 @@ void GameView::OnDraw()
 					if (!(el_prop & PROP_CTYPE_INTG))
 					{
 						ctype = (ctype & 0x1FFFFFFF ^ 0x10000000) - 0x10000000;
+						partint |= (wavelengthGfx ? 1 : 0);
 					}
 				}
 				
@@ -2536,7 +2534,7 @@ void GameView::OnDraw()
 					}
 					else
 						sampleInfo << c->ElementResolve(type, ctype);
-					if (wavelengthGfx || partint)
+					if (partint)
 						sampleInfo << " (" << ctype << ")";
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))

@@ -34,7 +34,7 @@ Element_E186::Element_E186()
 	Description = "Experimental element.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_RADIOACTIVE|PROP_LIFE_KILL_DEC;
-	Properties2 |= PROP_NOWAVELENGTHS;
+	Properties2 |= PROP_NOWAVELENGTHS | PROP_CTYPE_SPEC;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
