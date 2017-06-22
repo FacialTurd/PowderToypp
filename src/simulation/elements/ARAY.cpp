@@ -225,16 +225,20 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 7: // go "<"
 										nxi = -1; nyi = 0;
 										break;
+									case 10: // "-" reflect
+										nyi = -nyi;
+										break;
+									case 11: // "|" reflect
+										nxi = -nxi;
+										break;
 									case 8:
 									case 9:
 										while (nxx += nxi, nyy += nyi, BOUNDS_CHECK)
 										{
 											int front1 = pmap[y+nyy][x+nxx];
 											if (!front1) goto break1a;
-											else if ((front1 & 0xFF) == PT_FILT)
-											{
+											if ((front1 & 0xFF) == PT_FILT)
 												parts[front1>>8].life = 4;
-											}
 											else if ((front1 & 0xFF) == PT_ARAY)
 											{
 												float ftemp = parts[front1>>8].temp + (tmp[1] == 8 ? 1 : -1) * parts[r].tmp2;
@@ -244,6 +248,22 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											else goto break1a;
 										}
 										goto break1a;
+									case 12:
+									case 13:
+										{
+											int nxi2 = (tmp[1] == 12 ? -nyi : nyi);
+											int nyi2 = (tmp[1] == 12 ? nxi : -nxi);
+											tmp[2] = nxx; tmp[3] = nyy;
+											while (nxx += nxi2, nyy += nyi2, BOUNDS_CHECK)
+											{
+												r = pmap[y+nyy][x+nxx];
+												if (!r) break;
+												if ((r & 0xFF) == PT_FILT)
+													parts[r>>8].ctype = colored;
+											}
+											nxx = tmp[2] - nxi; nyy = tmp[3] - nyi;
+										}
+										continue;
 									}
 									nxx -= nxi; nyy -= nyi;
 									max_turn--;
