@@ -189,6 +189,31 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			part_phot->vx = rdif * cosf(rvx2);
 			part_phot->vy = rdif * sinf(rvx2);
 			break;
+		case 5: // FILT wavelength changer
+			if (!rvx && !rvy)
+			{
+				rvx = part_phot->vx;
+				rvy = part_phot->vy;
+				sim->kill_part(i);
+			}
+			r1 = 1, r2 = 1;
+			if (rvx < 0)
+			{
+				rvx = -rvx; r1 = -r1; r2 = -r2;
+			}
+			if (rvy < 0)
+			{
+				rvy = -rvy; r1 = -r1;
+			}
+			r3 = (2 * rvy > rvx ? r1 * r2 : 0);
+			(2 * rvx > rvy) || (r2 = 0);
+			while (x += r2, y += r3, sim->InBounds(x, y))
+			{
+				r1 = sim->pmap[y][x];
+				if ((r1&0xFF) != PT_FILT) break;
+				sim->parts[r1>>8].ctype = part_phot->ctype;
+			}
+			break;
 		}
 	}
 	else
@@ -375,6 +400,7 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 //#TPT-Directive ElementHeader Element_MULTIPP static int EMPTrigger(Simulation *sim, int triggerCount)
 int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
 {
+#ifndef NO_SPC_ELEM_EXPLODE
 	int t, ct, rx, ry, r1;
 	Particle *parts = sim->parts;
 	
@@ -596,6 +622,7 @@ int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
 			break;
 		}
 	}
+#endif /* NO_SPC_ELEM_EXPLODE */
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void FloodButton(Simulation *sim, int i, int x, int y)
