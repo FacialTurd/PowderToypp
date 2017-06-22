@@ -2432,7 +2432,10 @@ void GameView::OnDraw()
 				{
 				case PT_E186:
 					if (ctype == 0x100)
+					{
 						wavelengthGfx = sample_particle->tmp2;
+						el_prop |= PROP_DEBUG_USE_TMP2;
+					}
 					break;
 				case ELEM_MULTIPP:
 					if (partlife == 4 || partlife == 7 || partlife == 11)
