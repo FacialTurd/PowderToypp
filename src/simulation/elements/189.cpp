@@ -207,6 +207,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			}
 			r3 = (2 * rvy > rvx ? r1 * r2 : 0);
 			(2 * rvx > rvy) || (r2 = 0);
+			x = (int)(part_other->x+0.5f);
+			y = (int)(part_other->y+0.5f);
 			while (x += r2, y += r3, sim->InBounds(x, y))
 			{
 				r1 = sim->pmap[y][x];
