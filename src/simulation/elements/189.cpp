@@ -189,26 +189,26 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			part_phot->vx = rdif * cosf(rvx2);
 			part_phot->vy = rdif * sinf(rvx2);
 			break;
-		case 5: // FILT wavelength changer
-			if (!rvx && !rvy)
+		case 5: // FILT wavelength changer (check 8 directions)
+			x = (int)(part_other->x+0.5f);
+			y = (int)(part_other->y+0.5f);
+			if (rtmp2 <= 0)
 			{
 				rvx = part_phot->vx;
 				rvy = part_phot->vy;
 				sim->kill_part(i);
+				r1 = 1, r2 = 1;
+				(rvx < 0) && (rvx = -rvx, r1 = -r1, r2 = -r2);
+				(rvy < 0) && (rvy = -rvy, r1 = -r1);
+				r3 = (2 * rvy > rvx ? r1 * r2 : 0);
+				(2 * rvx > rvy) || (r2 = 0);
 			}
-			r1 = 1, r2 = 1;
-			if (rvx < 0)
+			else
 			{
-				rvx = -rvx; r1 = -r1; r2 = -r2;
+				rtmp2 = (rtmp2-1) & 7;
+				r2 = sim->portal_rx[rtmp2];
+				r3 = sim->portal_ry[rtmp2];
 			}
-			if (rvy < 0)
-			{
-				rvy = -rvy; r1 = -r1;
-			}
-			r3 = (2 * rvy > rvx ? r1 * r2 : 0);
-			(2 * rvx > rvy) || (r2 = 0);
-			x = (int)(part_other->x+0.5f);
-			y = (int)(part_other->y+0.5f);
 			while (x += r2, y += r3, sim->InBounds(x, y))
 			{
 				r1 = sim->pmap[y][x];
