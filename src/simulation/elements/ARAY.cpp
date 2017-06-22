@@ -257,9 +257,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											while (nxx += nxi2, nyy += nyi2, BOUNDS_CHECK)
 											{
 												r = pmap[y+nyy][x+nxx];
-												if (!r) break;
-												if ((r & 0xFF) == PT_FILT)
-													parts[r>>8].ctype = colored;
+												if ((r&0xFF) != PT_FILT) break;
+												parts[r>>8].ctype = colored;
 											}
 											nxx = tmp[2] - nxi; nyy = tmp[3] - nyi;
 										}
