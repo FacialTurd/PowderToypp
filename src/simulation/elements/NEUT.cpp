@@ -171,6 +171,17 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
+				case ELEM_MULTIPP:
+					if (parts[r>>8].life == 5 && parts[r>>8].tmp == 6) // NEUT bounding
+					{
+						switch (parts[r>>8].tmp2)
+						{
+							case 0: parts[i].vx = fabsf(parts[i].vx); break;
+							case 1: parts[i].vy = fabsf(parts[i].vy); break;
+							case 2: parts[i].vx = -fabsf(parts[i].vx); break;
+							case 3: parts[i].vy = -fabsf(parts[i].vy); break;
+						}
+					}
 				default:
 					break;
 				}
