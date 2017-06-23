@@ -155,14 +155,17 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 20:
 									if (!(modFlag & 1))
 									{
-										if (!colored)
-											colored = 0x3FFFFFFF;
-										tmp[0] = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
-										if (parts[r].tmp & 0x1)
-											tmp[0] = ~tmp[0];
-										colored &= tmp[0];
-										if (!colored)
-											goto break1a;
+										if (!destroy)
+										{
+											if (!colored)
+												colored = 0x3FFFFFFF;
+											tmp[0] = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+											if (parts[r].tmp2 & 0x1)
+												tmp[0] = ~tmp[0];
+											colored &= tmp[0];
+											if (!colored)
+												goto break1a;
+										}
 									}
 									else
 									{
