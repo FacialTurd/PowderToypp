@@ -49,7 +49,7 @@ Element_NEUT::Element_NEUT()
 //#TPT-Directive ElementHeader Element_NEUT static int update(UPDATE_FUNC_ARGS)
 int Element_NEUT::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, boundf = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
@@ -174,18 +174,18 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 				case ELEM_MULTIPP:
 					if (parts[r>>8].life == 5 && parts[r>>8].tmp == 6) // NEUT bounding
 					{
-						switch (parts[r>>8].tmp2)
-						{
-							case 0: parts[i].vx = fabsf(parts[i].vx); break;
-							case 1: parts[i].vy = fabsf(parts[i].vy); break;
-							case 2: parts[i].vx = -fabsf(parts[i].vx); break;
-							case 3: parts[i].vy = -fabsf(parts[i].vy); break;
-						}
+						boundf |= 1 << (parts[r>>8].tmp2 & 3);
 					}
 				default:
 					break;
 				}
 			}
+	if (boundf)
+	{
+		float multipler;
+		(boundf & 0x5) && (parts[i].vx = (((boundf) & 1) - ((boundf >> 2) & 1)) * fabsf(parts[i].vx));
+		(boundf & 0xA) && (parts[i].vy = (((boundf >> 1) & 1) - ((boundf >> 3) & 1)) * fabsf(parts[i].vy));
+	}
 	return 0;
 }
 
