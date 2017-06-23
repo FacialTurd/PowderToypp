@@ -99,7 +99,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 								parts[r>>8].life --;
 							break;
 						case PT_E187:
-							if (!parts[r>>8].ctype && !(rand()%200))
+							if (parts[i].tmp > 1 && !parts[r>>8].ctype && !(rand()%200))
 							{
 								parts[r>>8].tmp &= 0xFFFFFFFE;
 								sim->pv[y/CELL][x/CELL] += 3.0f;
