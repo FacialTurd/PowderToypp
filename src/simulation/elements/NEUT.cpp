@@ -171,21 +171,10 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
-				case ELEM_MULTIPP:
-					if (parts[r>>8].life == 5 && parts[r>>8].tmp == 6) // NEUT bounding
-					{
-						boundf |= 1 << (parts[r>>8].tmp2 & 3);
-					}
 				default:
 					break;
 				}
 			}
-	if (boundf)
-	{
-		float multipler;
-		(boundf & 0x5) && (parts[i].vx = (((boundf) & 1) - ((boundf >> 2) & 1)) * fabsf(parts[i].vx));
-		(boundf & 0xA) && (parts[i].vy = (((boundf >> 1) & 1) - ((boundf >> 3) & 1)) * fabsf(parts[i].vy));
-	}
 	return 0;
 }
 
