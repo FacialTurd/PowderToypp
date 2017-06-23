@@ -2598,8 +2598,10 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		case PT_NEUT:  // type = 18
 			if ((r&0xFF) == PT_GLAS || (r&0xFF) == PT_BGLA)
+			{
 				if (rand() < RAND_MAX/10)
 					create_cherenkov_photon(i);
+			}
 			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 5 && parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
 				Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
 			break;
