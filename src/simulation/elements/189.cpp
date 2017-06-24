@@ -158,6 +158,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 	int ctype, r1, r2, r3, temp;
 	float rvx, rvy, rvx2, rvy2, rdif, multipler = 1.0f;
 	long long int lsb;
+	int arr1[4] = {1,0,-1,0};
+	int arr2[4] = {0,1,0,-1};
 	if (rtmp)
 	{
 		rvx = (float)rtmp2 / 1000.0f;
@@ -369,6 +371,20 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->vx = r1 * sim->portal_rx[rct&7];
 				part_phot->vy = r1 * sim->portal_ry[(rct>>3)&7];
 				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
+				break;
+			case 20:
+				rvx = part_phot->vx;
+				rvy = part_phot->vy;
+				r1 = (rvx >= rvy) ? 0 : 1;
+				(rvx < -rvy) && (r1 ^= 3);
+				// (rvx <= rvy && rvx <= -rvy) && (r1 = 2);
+				if ((rct ^ r1) & 1) // if direction is perpendicular to "ELEM_MULTIPP"
+				{
+					part_other->ctype ^= 1;
+					r1 = (r1 + ((rct & 2) | 1)) & 0x3;
+				}
+				part_phot->vx = (float)((rct >> 4) * arr1[r1]);
+				part_phot->vy = (float)((rct >> 4) * arr2[r1]);
 				break;
 		}
 	}
