@@ -1683,6 +1683,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								{
 								case PT_PHOT:
 									if (np > i) parts[np].flags |= FLAG_SKIPMOVE; // like E189 (life = 11)
+									parts[np].temp = parts[i].temp;
 									break;
 								case PT_LIGH:
 									parts[np].tmp = atan2(-ry, (float)rx)/M_PI*180;
