@@ -283,12 +283,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->tmp &= ~0x1;
 				break;
 			case 13: // set PHOT life
-				part_phot->life = part_other->ctype;
+				part_phot->life = rct;
 				break;
 			case 14: // PHOT life extender (positive)
 				if (part_phot->life > 0)
 				{
-					part_phot->life += part_other->ctype;
+					part_phot->life += rct;
 					if (part_phot->life < 0)
 						part_phot->life = 0;
 				}
@@ -296,7 +296,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			case 15: // PHOT life extender (negative)
 				if (part_phot->life > 0)
 				{
-					part_phot->life -= part_other->ctype;
+					part_phot->life -= rct;
 					if (part_phot->life <= 0)
 						sim->kill_part(i);
 				}
@@ -354,7 +354,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			case 17: // PHOT life multipler
 				if (part_phot->life > 0)
 				{
-					part_phot->life *= part_other->ctype;
+					part_phot->life *= rct;
 					if (part_phot->life < 0)
 						part_phot->life = 0;
 				}
