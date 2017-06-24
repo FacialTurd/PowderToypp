@@ -54,7 +54,7 @@ Element_E187::Element_E187()
 int Element_E187::update(UPDATE_FUNC_ARGS)
 { // for both 'E187' and 'E188'
 	int r, rx, ry, stmp, stmp2, rt;
-	static int table1 = {-2,-1,-1,0,0,1,1,2};
+	static int table1[8] = {-2,-1,-1,0,0,1,1,2};
 	switch (parts[i].ctype) {
 	case 0:
 		{
@@ -100,18 +100,11 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 				{
 					r = pmap[y+ry][x+rx];
 					if (!r)
-						break;
-					switch (r & 0xFF)
+						continue;
+					if ((r&0xFF) == PT_E187 && !parts[r>>8].ctype && !(rand()%40))
 					{
-					case PT_E187:
-						if (!parts[r>>8].ctype && !(rand()%40))
-						{
-							parts[r>>8].tmp &= 0xFFFFFFFE;
-							sim->pv[y/CELL][x/CELL] += 3.0f;
-						}
-						break;
-					default:
-						break;
+						parts[r>>8].tmp &= 0xFFFFFFFE;
+						sim->pv[y/CELL][x/CELL] += 3.0f;
 					}
 				}
 			}
