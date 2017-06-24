@@ -28,6 +28,7 @@ unsigned msvc_clz(unsigned a)
 
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
+// FLAG_SKIPMOVE: not only implemented for PHOT
 
 int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {

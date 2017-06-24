@@ -2521,8 +2521,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
 					break;
 				case 7:
-					if (!(parts[i].flags & FLAG_SKIPMOVE))
-						Element_MULTIPP::duplicatePhotons(this, i, nx, ny, &parts[i], &parts[r>>8]);
+					Element_MULTIPP::duplicatePhotons(this, i, nx, ny, &parts[i], &parts[r>>8]); // already check by FLAG_SKIPMOVE
 					break;
 				}
 				return 1;
@@ -2602,8 +2601,17 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				if (rand() < RAND_MAX/10)
 					create_cherenkov_photon(i);
 			}
-			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 5 && parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
-				Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
+			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 5)
+			{
+				if (parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
+					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
+				else if (!parts[r>>8].tmp && parts[r>>8].tmp2 == 18)
+				{
+					parts[i].ctype = 0x100;
+					parts[i].tmp2 = 0x3FFFFFFF;
+					part_change_type(i, x, y, PT_E186);
+				}
+			}
 			break;
 		case PT_ELEC:  // type = 136
 			if ((r&0xFF) == PT_GLOW)
