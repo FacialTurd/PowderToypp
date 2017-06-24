@@ -364,6 +364,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->ctype = 0x100;
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
+			case 19: // beam splitter (switch)
+				r1 = rtmp2 >> 6;
+				part_phot->vx = r1 * sim->portal_rx[rtmp2&7];
+				part_phot->vy = r1 * sim->portal_ry[(rtmp2>>3)&7];
+				part_other->tmp2 = r1<<6 | ((rtmp2&7)<<3) | ((rtmp2>>3)&7);
+				break;
 		}
 	}
 }
