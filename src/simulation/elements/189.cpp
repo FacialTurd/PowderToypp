@@ -368,7 +368,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				r1 = rct >> 6;
 				part_phot->vx = r1 * sim->portal_rx[rct&7];
 				part_phot->vy = r1 * sim->portal_ry[(rct>>3)&7];
-				part_other->tmp2 = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
+				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
 				break;
 		}
 	}
