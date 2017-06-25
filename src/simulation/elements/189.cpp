@@ -224,7 +224,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 	{
 		switch (rtmp2)
 		{
-			case 1: // 50% turn left
+			case 1: // beam splitter (50% turn left)
 				if (rand() & 1)
 				{
 					rdif = part_phot->vx;
@@ -232,7 +232,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 					part_phot->vy = -rdif;
 				}
 				break;
-			case 2: // 50% turn right
+			case 2: // beam splitter (50% turn right)
 				if (rand() & 1)
 				{
 					rdif = part_phot->vx;
@@ -378,19 +378,25 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				r1 = (rvx >= rvy) ? 0 : 1;
 				(rvx < -rvy) && (r1 ^= 3);
 				// (rvx <= rvy && rvx <= -rvy) && (r1 = 2);
-				if (!(rct & 0x4))
+				switch ((rct>>2) & 0x3)
 				{
+				case 0:
 					if ((rct ^ r1) & 1) // if direction is perpendicular to "ELEM_MULTIPP"
 					{
 						part_other->ctype ^= 1;
 						r1 = (r1 + ((rct & 2) | 1)) & 0x3;
 					}
-				}
-				else
-				{
+					break;
+				case 1:
 					r2 = (rct << 1) | 1;
 					r1 = (rct & 0x2 ? r2 - r1 : r2 + r1) & 0x3;
 					part_other->ctype ^= 1;
+					break;
+				case 2:
+					part_other->ctype &= ~0x3;
+					part_other->ctype |= (r1^2);
+					r1 = rct & 0x3;
+					break;
 				}
 				part_phot->vx = (float)((rct >> 4) * arr1[r1]);
 				part_phot->vy = (float)((rct >> 4) * arr2[r1]);
