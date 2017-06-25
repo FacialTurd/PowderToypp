@@ -389,7 +389,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				else
 				{
 					r2 = (rct << 1) | 1;
-					r1 = (rct & 0x2 ? r2 + r1 : r2 - r1) & 0x3;
+					r1 = (rct & 0x2 ? r2 - r1 : r2 + r1) & 0x3;
 					part_other->ctype ^= 1;
 				}
 				part_phot->vx = (float)((rct >> 4) * arr1[r1]);
