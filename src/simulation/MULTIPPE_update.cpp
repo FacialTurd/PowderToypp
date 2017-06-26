@@ -1763,7 +1763,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									{
 										rr = pmap[y-ry][x-rx];
 										rt = rr & 0xFF;
-										if (rt == PT_WATR || rt == PT_DSTW || rt == PT_SLTW || rt == PT_CBNW || rt == PT_WTRV)
+										if (rt == PT_WATR || rt == PT_DSTW || rt == PT_SLTW || rt == PT_CBNW || rt == PT_FRZW || rt == PT_WTRV)
 										{
 											rr >>= 8;
 											if(!(rand()%3))
