@@ -11,9 +11,9 @@ Tool_Tool13::Tool_Tool13()
 
 int Tool_Tool13::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
 {
-	int t = sim->is_wire_off(x/CELL, y/CELL);
+	int t = sim->bmap[y][x];
 	sim->set_emap(x/CELL, y/CELL);
-	return t;
+	return t != sim->bmap[y][x];
 }
 
 Tool_Tool13::~Tool_Tool13() {}
