@@ -315,19 +315,21 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
 											break;
 											case ELEM_MULTIPP:
-												if (parts[front1 >> 8].life == 5)
+												while ((front1&0xFF) == ELEM_MULTIPP && parts[front1>>8].life == 5)
 												{
 													if (!destroy)
 													{
-														parts[r].tmp  = 1;
-														parts[r].tmp2 = tmp[0]*nxi;
-														parts[r].tmp3 = tmp[0]*nyi;
+														parts[front1 >> 8].tmp  = 1;
+														parts[front1 >> 8].tmp2 = tmp[0]*nxi;
+														parts[front1 >> 8].tmp3 = tmp[0]*nyi;
 													}
 													else
 													{
-														parts[r].tmp  = 0;
-														parts[r].tmp2 = 0;
+														parts[front1 >> 8].tmp  = 0;
+														parts[front1 >> 8].tmp2 = 0;
 													}
+													nxx += nxi; nyy += nyi;
+													front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 												}
 											break;
 											}
