@@ -80,7 +80,6 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 			}
 			else
 			{
-				int displaced = 0;
 				if (parts[i].temp < 160.0f)
 					parts[i].tmp |= 0x4;
 				for (int trade = 0; trade < 5; trade++) // mixing this with GLOW/ISOZ
@@ -100,7 +99,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 						parts[r>>8].y = y;
 						pmap[y][x] = r;
 						pmap[y+ry][x+rx] = (i<<8)|parts[i].type;
-						displaced = 1;
+						return 1;
 					}
 					else if ((r&0xFF) == PT_E187 && parts[r>>8].ctype && parts[r>>8].tmp && !(rand()%40))
 					{
@@ -108,7 +107,6 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 						sim->pv[y/CELL][x/CELL] += 3.0f;
 					}
 				}
-				return displaced;
 			}
 		}
 		break;
