@@ -244,7 +244,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				rvx = part_phot->vx;
 				rvy = (rand() & 1) ? 1.0 : -1.0;
 				part_phot->vx =  rvy * part_phot->vy;
-				part_phot->vy = -rvy * rdif;
+				part_phot->vy = -rvy * rvx;
 				break;
 			case 4: // turn left + go straight + turn right = 100%
 				r1 = rand() % 3;
@@ -253,7 +253,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 					rvx = part_phot->vx;
 					rvy = (r1 & 1) ? 1.0 : -1.0;
 					part_phot->vx =  rvy * part_phot->vy;
-					part_phot->vy = -rvy * rdif;
+					part_phot->vy = -rvy * rvx;
 				}
 				break;
 			case 5: // random "energy" particle
