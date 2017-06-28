@@ -119,23 +119,6 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								r_life = parts[r].life;
 								switch (r_life)
 								{
-								case 5:
-									if (spc_conduct == 5)
-									{
-										if (!destroy)
-										{
-											parts[r].tmp  = 1;
-											parts[r].tmp2 = 3000*nxi;
-											parts[r].tmp3 = 3000*nyi;
-										}
-										else
-										{
-											parts[r].tmp  = 0;
-											parts[r].tmp2 = 0;
-										}
-									}
-									docontinue = nostop;
-									continue;
 								case 6:
 									if (spc_conduct == 5)
 										parts[r].temp = parts[i].temp;
@@ -330,6 +313,22 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											break;
 											case PT_INVIS:
 												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
+											break;
+											case ELEM_MULTIPP:
+												if (parts[front1 >> 8].life == 5)
+												{
+													if (!destroy)
+													{
+														parts[r].tmp  = 1;
+														parts[r].tmp2 = tmp[0]*nxi;
+														parts[r].tmp3 = tmp[0]*nyi;
+													}
+													else
+													{
+														parts[r].tmp  = 0;
+														parts[r].tmp2 = 0;
+													}
+												}
 											break;
 											}
 										}
