@@ -379,8 +379,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						case 6:
 							switch (parts[r>>8].ctype)
 							{
-								case PT_NTCT: Element_PHOT::ignite_flammable = 0;
-								case PT_PTCT: Element_PHOT::ignite_flammable = 1;
+								case PT_NTCT: Element_PHOT::ignite_flammable = 0; break;
+								case PT_PTCT: Element_PHOT::ignite_flammable = 1; break;
 								default: sim->SimExtraFunc |= 0x40;
 							}
 							break;
