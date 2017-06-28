@@ -308,6 +308,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											int front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 											switch (front1 & 0xFF)
 											{
+											case PT_NONE:
+												sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, PT_BRAY);
+											break;
 											case PT_FRAY:
 												tmpz2 += parts[front1 >> 8].tmp;
 											break;
@@ -331,6 +334,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													nxx += nxi; nyy += nyi;
 													front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 												}
+												nxx -= nxi; nyy -= nyi;
 											break;
 											}
 										}
