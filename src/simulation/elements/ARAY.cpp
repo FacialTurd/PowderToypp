@@ -318,7 +318,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
 											break;
 											case ELEM_MULTIPP:
-												while ((front1&0xFF) == ELEM_MULTIPP && parts[front1>>8].life == 5)
+												while (BOUNDS_CHECK && (front1&0xFF) == ELEM_MULTIPP && parts[front1>>8].life == 5)
 												{
 													if (!destroy)
 													{
@@ -334,6 +334,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													nxx += nxi; nyy += nyi;
 													front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 												}
+												if (!nostop) goto break1a;
 												nxx -= nxi; nyy -= nyi;
 											break;
 											}
