@@ -119,6 +119,23 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								r_life = parts[r].life;
 								switch (r_life)
 								{
+								case 5:
+									if (spc_conduct == 5)
+									{
+										if (!destroy)
+										{
+											parts[r].tmp  = 1;
+											parts[r].tmp2 = 3000*nxi;
+											parts[r].tmp3 = 3000*nyi;
+										}
+										else
+										{
+											parts[r].tmp  = 0;
+											parts[r].tmp2 = 0;
+										}
+									}
+									docontinue = nostop;
+									continue;
 								case 6:
 									if (spc_conduct == 5)
 										parts[r].temp = parts[i].temp;
