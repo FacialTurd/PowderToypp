@@ -83,7 +83,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 				int displaced = 0;
 				if (parts[i].temp < 160.0f)
 					parts[i].tmp |= 0x4;
-				for (int trade = 0; trade < 4; trade++) // mixing this with GLOW/ISOZ
+				for (int trade = 0; trade < 5; trade++) // mixing this with GLOW/ISOZ
 				{
 					if (!(trade%2)) rndstore = rand();
 					rx = table1[rndstore&7];
@@ -91,6 +91,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 					ry = table1[rndstore&7];
 					rndstore >>= 3;
 					r = sim->pmap[y+ry][x+rx];
+					if (!(r && (rx || ry))) continue;
 					if ((r&0xFF) == PT_GLOW || (r&0xFF) == PT_ISOZ)
 					{
 						parts[i].x = parts[r>>8].x;
@@ -101,35 +102,18 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 						pmap[y+ry][x+rx] = (i<<8)|parts[i].type;
 						displaced = 1;
 					}
+					else if ((r&0xFF) == PT_E187 && parts[r>>8].ctype && parts[r>>8].tmp && !(rand()%40))
+					{
+						parts[i].tmp &= 0xFFFFFFFE;
+						sim->pv[y/CELL][x/CELL] += 3.0f;
+					}
 				}
 				return displaced;
 			}
 		}
 		break;
-	case 1:
-		if (parts[i].tmp)
-		{
-			for (int trade = 0; trade < 5; trade++)
-			{
-				if (!(trade%2)) rndstore = rand();
-				rx = table1[rndstore&7];
-				rndstore >>= 3;
-				ry = table1[rndstore&7];
-				rndstore >>= 3;
-				if (BOUNDS_CHECK && (rx || ry))
-				{
-					r = pmap[y+ry][x+rx];
-					if (!r)
-						continue;
-					if ((r&0xFF) == PT_E187 && !parts[r>>8].ctype && !(rand()%40))
-					{
-						parts[r>>8].tmp &= 0xFFFFFFFE;
-						sim->pv[y/CELL][x/CELL] += 3.0f;
-					}
-				}
-			}
-		}
-		break;
+	// case 1:
+	//	break;
 	default:
 		break;
 	}
