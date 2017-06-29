@@ -154,7 +154,7 @@ VideoBuffer * Element_MULTIPP::iconGen(int toolID, int width, int height)
 //#TPT-Directive ElementHeader Element_MULTIPP static void interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other) // photons direction/type changer
 {
-	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype, mask = 0x3FFFFFFF;
+	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype;
 	int ctype, r1, r2, r3, temp;
 	float rvx, rvy, rvx2, rvy2, rdif, multipler = 1.0f;
 	long long int lsb;
@@ -240,11 +240,15 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 					part_phot->vy = rdif;
 				}
 				break;
-			case 3: // 50% turn left, 50% turn right
+			case 3:
+				// 50% turn left, 50% turn right
+				// or 50% go straight, 50% go backward
 				rvx = part_phot->vx;
-				rvy = (rand() & 1) ? 1.0 : -1.0;
-				part_phot->vx =  rvy * part_phot->vy;
-				part_phot->vy = -rvy * rvx;
+				rvy = part_phot->vy;
+				(rct & 1) || (rdif = rvx, rvx = rvy, rvy = -rdif);
+				rdif = (rand() & 1) ? 1.0 : -1.0;
+				part_phot->vx = rdif * rvx;
+				part_phot->vy = rdif * rvy;
 				break;
 			case 4: // turn left + go straight + turn right = 100%
 				r1 = rand() % 3;
