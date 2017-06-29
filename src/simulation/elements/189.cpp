@@ -222,6 +222,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 	}
 	else
 	{
+		int mask = 0x3FFFFFFF;
 		switch (rtmp2)
 		{
 			case 1: // beam splitter (50% turn left)
