@@ -2277,6 +2277,19 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (rctype == parts[r>>8].ctype && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].tmp))
 							rtmp += 5;
 						break;
+					case PT_SPNG:
+						rctype || (parts[i].ctype = rctype = PT_WATR);
+						if (rctype == PT_WATR || rctype == PT_DSTW || rctype == PT_CBNW)
+						{
+							if (sim->pv[y/CELL][x/CELL]<=3 && sim->pv[y/CELL][x/CELL]>=-3)
+							{
+								rtmp += parts[r>>8].life, parts[r>>8].life = 0;
+							}
+							else
+							{
+								parts[r>>8].life += rtmp, rtmp = 0;
+							}
+						}
 					default:
 						if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
 						{
