@@ -203,42 +203,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					}
 				}
 				break;
-/*
-			case PT_TUNG:
-			case PT_BRMT:
-				if (((r & 0xFF) == PT_TUNG || parts[r >> 8].ctype == PT_TUNG) && !(rand()%50))
-				{
-					sim->create_part(r>>8, x, y, PT_E187);
-				}
-				break;
-*/
 			case PT_INVIS:
 				parts[i].ctype = PT_NEUT;
-			/*
-			case PT_PLUT:
-				if (parts[r>>8].tmp2 > 0)
-				{
-					parts[r>>8].tmp2 = 0;
-					sim->part_change_type(r>>8, x, y, PT_POLO);
-				}
-				break;
-			*/
 			case PT_SPNG:
 				sim->part_change_type(r>>8, x, y, PT_GEL);
 				parts[r>>8].tmp = parts[r>>8].life;
 				break;
-			/* viruses has replication? */
-			case PT_VRSS:
-				if (parts[r>>8].tmp4 == PT_EXOT) // if is infected EXOT
-					sim->create_part(r>>8, x, y, PT_CLNE);
-				else if (parts[r>>8].tmp4 == PT_ETRD) // if is infected ETRD
-					sim->create_part(r>>8, x, y, PT_PCLN);
-				break;
 			case PT_VIRS:
-				if (parts[r>>8].tmp4 == PT_EXOT) // if is infected EXOT
-					sim->create_part(r>>8, x, y, PT_BCLN);
-				else if (parts[r>>8].tmp4 == PT_ETRD) // if is infected ETRD
-					sim->create_part(r>>8, x, y, PT_PBCN);
+			case PT_VRSS:
+			case PT_VRSG:
+				parts[r>>8].tmp4 = PT_NONE;
 				break;
 			default:
 				break;
