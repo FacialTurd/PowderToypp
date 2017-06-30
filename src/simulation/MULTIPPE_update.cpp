@@ -692,7 +692,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 16)
 							r = pmap[y+2*ry][x+2*rx];
-						if ((r & 0xFF) == PT_SPRK)
+						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 							goto break2a;
 					}
 			break;
@@ -706,7 +706,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					rr = pmap[y+ry][x+rx];
 					if ((rr&0xFF) == PT_VIRS || (rr&0xFF) == PT_VRSS || (rr&0xFF) == PT_VRSG) // if is virus
 					{
-						parts[r>>8].pavg[0] += 10;
+						// VIRS.cpp: .pavg[0] measures how many frames until it is cured (0 if still actively spreading and not being cured)
+						(rtmp < 0) && (rtmp = 10);
+						parts[rr>>8].pavg[0] = (float)rtmp;
 					}
 				}
 			}
