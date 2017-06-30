@@ -704,10 +704,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					rx = tron_rx[rii];
 					ry = tron_ry[rii];
 					rr = pmap[y+ry][x+rx];
-					if ((rr&0xFF) == PT_VIRS || (rr&0xFF) == PT_VRSS || (rr&0xFF) == PT_VRSG) // if is virus
+					if (((rr&0xFF) == PT_VIRS || (rr&0xFF) == PT_VRSS || (rr&0xFF) == PT_VRSG) && !parts[rr>>8].pavg[0]) // if is virus
 					{
 						// VIRS.cpp: .pavg[0] measures how many frames until it is cured (0 if still actively spreading and not being cured)
-						(rtmp < 0) && (rtmp = 10);
+						(rtmp <= 0) && (rtmp = 10);
 						parts[rr>>8].pavg[0] = (float)rtmp;
 					}
 				}
