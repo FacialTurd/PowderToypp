@@ -2278,16 +2278,20 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rtmp += 5;
 						break;
 					case PT_SPNG:
-						rctype || (parts[i].ctype = rctype = PT_WATR);
-						if (rctype == PT_WATR || rctype == PT_DSTW || rctype == PT_CBNW)
+					case PT_GEL:
 						{
-							if (sim->pv[y/CELL][x/CELL]<=3 && sim->pv[y/CELL][x/CELL]>=-3)
+							int * absorb_ptr = (r & 0xFF) == PT_SPNG ? &parts[r>>8].life : &parts[r>>8].tmp;
+							rctype || (parts[i].ctype = rctype = PT_WATR);
+							if (rctype == PT_WATR || rctype == PT_DSTW || rctype == PT_CBNW)
 							{
-								rtmp += parts[r>>8].life, parts[r>>8].life = 0;
-							}
-							else
-							{
-								parts[r>>8].life += rtmp, rtmp = 0;
+								if (sim->pv[y/CELL][x/CELL]<=3 && sim->pv[y/CELL][x/CELL]>=-3)
+								{
+									rtmp += *absorb_ptr, *absorb_ptr = 0;
+								}
+								else
+								{
+									*absorb_ptr += rtmp, rtmp = 0;
+								}
 							}
 						}
 					default:
