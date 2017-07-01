@@ -1041,7 +1041,7 @@ void Renderer::render_gravlensing(pixel * source)
 			gy = (int)(ny-sim->gravy[co]*0.875f+0.5f);
 			bx = (int)(nx-sim->gravx[co]+0.5f);
 			by = (int)(ny-sim->gravy[co]+0.5f);
-			if(rx > 0 && rx < XRES && ry > 0 && ry < YRES && gx > 0 && gx < XRES && gy > 0 && gy < YRES && bx > 0 && bx < XRES && by > 0 && by < YRES)
+			if(rx >= 0 && rx < XRES && ry >= 0 && ry < YRES && gx >= 0 && gx < XRES && gy >= 0 && gy < YRES && bx >= 0 && bx < XRES && by >= 0 && by < YRES)
 			{
 				t = dst[ny*(VIDXRES)+nx];
 				r = PIXR(src[ry*(VIDXRES)+rx]) + PIXR(t);
@@ -1399,18 +1399,19 @@ void Renderer::render_parts()
 				//Apply decoration colour
 				if(!(colour_mode & ~COLOUR_GRAD) && decorations_enable && deca)
 				{
+					deca++;
 					if(!(pixel_mode & NO_DECO))
 					{
-						colr = (deca*decr + (255-deca)*colr) >> 8;
-						colg = (deca*decg + (255-deca)*colg) >> 8;
-						colb = (deca*decb + (255-deca)*colb) >> 8;
+						colr = (deca*decr + (256-deca)*colr) >> 8;
+						colg = (deca*decg + (256-deca)*colg) >> 8;
+						colb = (deca*decb + (256-deca)*colb) >> 8;
 					}
 
 					if(pixel_mode & DECO_FIRE)
 					{
-						firer = (deca*decr + (255-deca)*firer) >> 8;
-						fireg = (deca*decg + (255-deca)*fireg) >> 8;
-						fireb = (deca*decb + (255-deca)*fireb) >> 8;
+						firer = (deca*decr + (256-deca)*firer) >> 8;
+						fireg = (deca*decg + (256-deca)*fireg) >> 8;
+						fireb = (deca*decb + (256-deca)*fireb) >> 8;
 					}
 				}
 
