@@ -1419,7 +1419,7 @@ void GameController::OpenSaveWindow()
 			}
 			else
 			{
-				SaveInfo tempSave(0, 0, 0, 0, gameModel->GetUser().Username, "");
+				SaveInfo tempSave(0, 0, 0, 0, 0, gameModel->GetUser().Username, "");
 				tempSave.SetGameSave(gameSave);
 				new ServerSaveActivity(tempSave, new SaveUploadedCallback(this));
 			}
@@ -1466,7 +1466,7 @@ void GameController::SaveAsCurrent()
 			}
 			else
 			{
-				SaveInfo tempSave(0, 0, 0, 0, gameModel->GetUser().Username, "");
+				SaveInfo tempSave(0, 0, 0, 0, 0, gameModel->GetUser().Username, "");
 				tempSave.SetGameSave(gameSave);
 				new ServerSaveActivity(tempSave, true, new SaveUploadedCallback(this));
 			}
