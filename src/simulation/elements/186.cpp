@@ -239,7 +239,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					float velocity2 = powf(parts[r>>8].vx, 2.0f)+powf(parts[r>>8].vy, 2.0f);
 					if (velocity1 + velocity2 > 15.0f && !pmap[y+ry][x+rx])
 					{
-						if (parts[i].life)
+						if (!parts[r>>8].life)
+							parts[i].life = 0;
+						else if (parts[i].life)
 							parts[i].life += parts[r>>8].life; // merge this with PROT's life.
 						sim->part_change_type(r>>8, x, y, PT_BOMB);
 					}
