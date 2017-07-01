@@ -2295,6 +2295,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									*absorb_ptr += rtmp, rtmp = 0;
 								}
 							}
+							else if (rctype == PT_GEL && (r&0xFF) == PT_GEL && parts[r>>8].tmp < 2)
+								sim->part_change_type(r>>8, x+rx, y+ry, parts[r>>8].tmp == 1 ? PT_WATR : PT_NONE);
 						}
 					default:
 						if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
