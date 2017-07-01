@@ -175,6 +175,10 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
+				case ELEM_MULTIPP:
+					if (parts[r>>8].tmp & 8)
+						parts[i].vx = 0, parts[i].vy = 0;
+					break;
 				default:
 					break;
 				}
