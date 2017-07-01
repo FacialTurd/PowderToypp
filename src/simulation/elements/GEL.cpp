@@ -134,9 +134,9 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 						}
 						else if (*ctype == PT_GEL)
 						{
-							if (parts[r>>8].tmp <= 1)
+							if (parts[i].tmp <= 1)
 							{
-								if (parts[r>>8].tmp <= 0)
+								if (parts[i].tmp <= 0)
 									sim->kill_part(i);
 								else
 									sim->part_change_type(i, x, y, PT_WATR);
