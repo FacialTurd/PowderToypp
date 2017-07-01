@@ -2280,37 +2280,21 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rtmp += 5;
 						break;
 					case PT_SPNG:
-					case PT_GEL:
+						rctype || (parts[i].ctype = rctype = PT_WATR);
+						if (rctype == PT_WATR || rctype == PT_DSTW || rctype == PT_CBNW)
 						{
-							int * absorb_ptr = (r & 0xFF) == PT_SPNG ? &parts[r>>8].life : &parts[r>>8].tmp;
-							rctype || (parts[i].ctype = rctype = PT_WATR);
-							if (rctype == PT_WATR || rctype == PT_DSTW || rctype == PT_CBNW)
+							int * absorb_ptr = &parts[r>>8].life;
+							if (sim->pv[y/CELL][x/CELL]<=3 && sim->pv[y/CELL][x/CELL]>=-3)
 							{
-								if (sim->pv[y/CELL][x/CELL]<=3 && sim->pv[y/CELL][x/CELL]>=-3)
-								{
-									rtmp += *absorb_ptr, *absorb_ptr = 0;
-								}
-								else
-								{
-									*absorb_ptr += rtmp, rtmp = 0;
-									if ((r&0xFF) == PT_GEL && *absorb_ptr > 100) // GEL has absorption limit
-									{
-										rtmp = *absorb_ptr - 100; *absorb_ptr = 100;
-									}
-								}
+								rtmp += *absorb_ptr, *absorb_ptr = 0;
 							}
-							else if (rctype == PT_GEL && (r&0xFF) == PT_GEL)
+							else
 							{
-								if (parts[r>>8].tmp == 1)
-								{
-									float tempTemp = parts[r>>8].temp;
-									sim->create_part(r>>8, x+rx, y+ry, PT_WATR);
-									parts[r>>8].temp = tempTemp;
-								}
-								else if (parts[r>>8].tmp <= 0)
-									sim->kill_part(r>>8);
+								*absorb_ptr += rtmp, rtmp = 0;
 							}
 						}
+					case PT_GEL: // reserved by GEL.cpp
+						break;
 					default:
 						if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
 						{
