@@ -2293,10 +2293,23 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								else
 								{
 									*absorb_ptr += rtmp, rtmp = 0;
+									if ((r&0xFF) == PT_GEL && *absorb_ptr > 100) // GEL has absorption limit
+									{
+										rtmp = *absorb_ptr - 100; *absorb_ptr = 100;
+									}
 								}
 							}
-							else if (rctype == PT_GEL && (r&0xFF) == PT_GEL && parts[r>>8].tmp < 2)
-								sim->part_change_type(r>>8, x+rx, y+ry, parts[r>>8].tmp == 1 ? PT_WATR : PT_NONE);
+							else if (rctype == PT_GEL && (r&0xFF) == PT_GEL)
+							{
+								if (parts[r>>8].tmp == 1)
+								{
+									float tempTemp = parts[r>>8].temp;
+									sim->create_part(r>>8, x+rx, y+ry, PT_WATR);
+									parts[r>>8].temp = tempTemp;
+								}
+								else if (parts[r>>8].tmp <= 0)
+									sim->kill_part(r>>8);
+							}
 						}
 					default:
 						if (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS))
