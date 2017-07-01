@@ -2309,8 +2309,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							if (rctype == (r&0xFF) && (rctype != PT_LAVA || rctypeExtra == parts[r>>8].ctype) && rrx != 4)
 							{
-								sim->kill_part(r>>8);
 								rtmp++;
+								sim->kill_part(r>>8);
 							}
 						}
 					}
