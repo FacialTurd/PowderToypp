@@ -141,11 +141,23 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									continue;
 								case 16:
-									if (parts[r /* actually: r>>8 */].ctype == 1)
+									if (parts[r].ctype == 1)
 									{
 										if (!parts[r].tmp && r > i) // If the other particle hasn't been life updated
 											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
+									}
+									else if (parts[r].ctype == 27)
+									{
+										if (destroy)
+										{
+											parts[r].pavg[1] = parts[i].tmp;
+										}
+										else if (parts[r].pavg[0])
+										{
+											nyy += parts[r].tmp * nxi;
+											nxx -= parts[r].tmp * nyi;
+										}
 									}
 									docontinue = nostop;
 									continue;
