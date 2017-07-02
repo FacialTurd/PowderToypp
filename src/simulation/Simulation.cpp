@@ -2627,7 +2627,13 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		case PT_BIZR:  // type = 103
 		case PT_BIZRG: // type = 104
 			if ((r&0xFF) == PT_FILT)
+			{
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
+			/*
+				pmap[y][x] = parts[i].cdcolour;
+				parts[i].cdcolour = r;
+			*/
+			}
 			break;
 		case PT_E186:
 			if (parts[i].ctype == 0x100 && (r&0xFF) != ELEM_MULTIPP) // exit from E189 area
@@ -2690,6 +2696,13 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			return 0;
 		}
 		break;
+	/*
+	case PT_BIZR:
+	case PT_BIZRG:
+		pmap[y][x] = parts[i].cdcolour;
+		parts[i].cdcolour = r;
+		break;
+	*/
 	case ELEM_MULTIPP:
 		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
 		{
