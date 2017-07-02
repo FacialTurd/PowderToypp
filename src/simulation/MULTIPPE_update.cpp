@@ -1717,21 +1717,21 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									parts[rr>>8].tmp = 0; // hackish, if tmp isn't 0 the FIRE might turn into DSTW 
 									break;
 								case PT_THRM:
-									sim->part_change_type(r>>8,x+rx,y+ry,PT_LAVA);
+									sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
 									parts[rr>>8].life = 400;
 									parts[rr>>8].temp = MAX_TEMP;
 									parts[rr>>8].ctype = PT_THRM;
 									parts[rr>>8].tmp = 20;
 									break;
-								case PT_SPRK:
-									if (parts[rr>>8].ctype == PT_RBDM || parts[rr>>8].ctype == PT_LRBD)
+								case PT_FWRK:
 									{
-										parts[rr>>8].life += 40;
-										sim->part_change_type(rr>>8, x+rx, y+ry, parts[rr>>8].ctype);
+										PropertyValue propv;
+										propv.Integer = PT_DUST;
+										sim->flood_prop(x+rx, y+ry, offsetof(Particle, ctype), propv, StructProperty::Integer);
 									}
 									break;
-								case PT_FWRK:
-									parts[rr>>8].ctype = PT_DUST;
+								case PT_RBDM: // exclude rubidium
+								case PT_LRBD:
 									break;
 								}
 							}
