@@ -1705,7 +1705,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								{
 								case PT_SPRK:
 									rrt = parts[rr>>8].ctype;
-									break;
 								default:
 									if (!(sim->elements[rrt].Flammable || sim->elements[rrt].Explosive))
 										break;
