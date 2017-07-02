@@ -1675,7 +1675,58 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								rr = pmap[ny][nx];
 								if ((rr & 0xFF) != PT_GLAS)
 									continue;
-								ny += ry; nx += rx;
+								ny += ry, nx += rx;
+							}
+							else if (rctype == PT_FIRE || rctype == PT_PLSM)
+							{
+								rr = pmap[ny][nx];
+								while (BOUNDS_CHECK && (rr&0xFF) == PT_PSTN && parts[rr>>8].life)
+								{
+									ny += ry, nx += rx, rr = pmap[ny][nx];
+								}
+								int rrt = rr&0xFF;
+								switch (rrt)
+								{
+								case PT_NONE:
+									break;
+								case PT_SPRK:
+									rrt = parts[rr>>8].ctype;
+									if (rrt <= 0 && rrt >= PT_NUM) break;
+								default:
+									if (!(sim->elements[rrt].Flammable || sim->elements[rrt].Explosive))
+										break;
+								case PT_BANG:
+								case PT_COAL:
+								case PT_BCOL:
+								case PT_FIRW:
+									sim->part_change_type(rr>>8, nx, ny, rctype);
+									parts[rr>>8].life = rand()%50+150;
+									parts[rr>>8].temp = restrict_flt(parts[rr>>8].temp + 5 * sim->elements[rrt].Flammable, MIN_TEMP, MAX_TEMP);
+									parts[rr>>8].ctype = 0; // hackish, if ctype isn't 0 the PLSM might turn into NBLE later
+									parts[rr>>8].tmp = 0; // hackish, if tmp isn't 0 the FIRE might turn into DSTW 
+									break;
+								case PT_THRM:
+									sim->part_change_type(r>>8, nx, ny, PT_LAVA);
+									parts[rr>>8].life = 400;
+									parts[rr>>8].temp = MAX_TEMP;
+									parts[rr>>8].ctype = PT_THRM;
+									parts[rr>>8].tmp = 20;
+									break;
+								case PT_FWRK:
+									{
+										PropertyValue propv;
+										propv.Integer = PT_DUST;
+										sim->flood_prop(nx, ny, offsetof(Particle, ctype), propv, StructProperty::Integer);
+									}
+									break;
+								case PT_IGNT:
+									parts[rr>>8].tmp = 1;
+									break;
+								case PT_FUSE:
+								case PT_FSEP:
+									parts[rr>>8].life = 39;
+									break;
+								}
 							}
 							int np = sim->create_part(-1, nx, ny, rctype, rctypeExtra);
 							if (np >= 0) {
@@ -1697,52 +1748,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									break;
 								}
 							}
-							else if (rctype == PT_FIRE || rctype == PT_PLSM) // set off explosives
-							{
-								rr = pmap[ny][nx];
-								int rrt = rr&0xFF;
-								switch (rrt)
-								{
-								case PT_SPRK:
-									rrt = parts[rr>>8].ctype;
-								default:
-									if (!(sim->elements[rrt].Flammable || sim->elements[rrt].Explosive))
-										break;
-								case PT_BANG:
-								case PT_COAL:
-								case PT_BCOL:
-								case PT_FIRW:
-									sim->part_change_type(rr>>8, nx, ny, rctype);
-									parts[rr>>8].life = rand()%50+150;
-									parts[rr>>8].temp = restrict_flt(parts[rr>>8].temp + 5 * sim->elements[rrt].Flammable, MIN_TEMP, MAX_TEMP);
-									parts[rr>>8].ctype = 0; // hackish, if ctype isn't 0 the PLSM might turn into NBLE later
-									parts[rr>>8].tmp = 0; // hackish, if tmp isn't 0 the FIRE might turn into DSTW 
-									break;
-								case PT_THRM:
-									sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
-									parts[rr>>8].life = 400;
-									parts[rr>>8].temp = MAX_TEMP;
-									parts[rr>>8].ctype = PT_THRM;
-									parts[rr>>8].tmp = 20;
-									break;
-								case PT_FWRK:
-									{
-										PropertyValue propv;
-										propv.Integer = PT_DUST;
-										sim->flood_prop(x+rx, y+ry, offsetof(Particle, ctype), propv, StructProperty::Integer);
-									}
-									break;
-								case PT_IGNT:
-									parts[rr>>8].tmp = 1;
-									break;
-								case PT_FUSE:
-								case PT_FSEP:
-									parts[rr>>8].life = 39;
-									break;
-								}
-							}
-						}
 						// return return_value;
+						}
 					}
 				}
 		}
