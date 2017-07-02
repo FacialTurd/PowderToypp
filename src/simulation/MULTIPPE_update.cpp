@@ -1634,9 +1634,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				parts[i].flags &= ~FLAG_SKIPMOVE;
 				return return_value;
 			}
-			parts[r].pavg[0] = parts[r].pavg[1];
-			if (parts[r].pavg[1])
-				parts[r].pavg[1] -= 1;
+			parts[i].pavg[0] = parts[i].pavg[1];
+			if (parts[i].pavg[1])
+				parts[i].pavg[1] -= 1;
 			break;
 		}
 		break;
