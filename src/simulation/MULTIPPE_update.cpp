@@ -1701,13 +1701,27 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							{
 								rr = pmap[ny][nx];
 								int rrt = rr&0xFF;
-								if (sim->elements[rrt].Flammable || sim->elements[rrt].Explosive || rrt == PT_BANG)
+								switch (rrt)
 								{
+								default:
+									if (!(sim->elements[rrt].Flammable || sim->elements[rrt].Explosive))
+										break;
+								case PT_BANG:
+								case PT_COAL:
+								case PT_BCOL:
 									sim->part_change_type(rr>>8, nx, ny, rctype);
 									parts[rr>>8].life = rand()%50+150;
 									parts[rr>>8].temp = restrict_flt(parts[rr>>8].temp + 5 * sim->elements[rrt].Flammable, MIN_TEMP, MAX_TEMP);
 									parts[rr>>8].ctype = 0; // hackish, if ctype isn't 0 the PLSM might turn into NBLE later
-									parts[rr>>8].tmp = 0; // hackish, if tmp isn't 0 the FIRE might turn into DSTW later
+									parts[rr>>8].tmp = 0; // hackish, if tmp isn't 0 the FIRE might turn into DSTW 
+									break;
+								case PT_THRM:
+									sim->part_change_type(r>>8,x+rx,y+ry,PT_LAVA);
+									parts[rr>>8].life = 400;
+									parts[rr>>8].temp = MAX_TEMP;
+									parts[rr>>8].ctype = PT_THRM;
+									parts[rr>>8].tmp = 20;
+									break;
 								}
 							}
 						}
