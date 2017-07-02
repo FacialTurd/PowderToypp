@@ -1703,6 +1703,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								int rrt = rr&0xFF;
 								switch (rrt)
 								{
+								case PT_SPRK:
+									rrt = parts[rr>>8].ctype;
+									break;
 								default:
 									if (!(sim->elements[rrt].Flammable || sim->elements[rrt].Explosive))
 										break;
@@ -1730,8 +1733,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										sim->flood_prop(x+rx, y+ry, offsetof(Particle, ctype), propv, StructProperty::Integer);
 									}
 									break;
-								case PT_RBDM: // exclude rubidium
-								case PT_LRBD:
+								case PT_IGNT:
+									parts[rr>>8].tmp = 1;
+									break;
+								case PT_FUSE:
+								case PT_FSEP:
+									parts[rr>>8].life = 39;
 									break;
 								}
 							}
