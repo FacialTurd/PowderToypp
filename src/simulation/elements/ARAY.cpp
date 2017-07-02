@@ -158,6 +158,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											nyy += parts[r].tmp * nxi;
 											nxx -= parts[r].tmp * nyi;
 										}
+										continue;
 									}
 									docontinue = nostop;
 									continue;
