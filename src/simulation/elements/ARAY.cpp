@@ -149,11 +149,17 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									else if (parts[r].ctype == 27)
 									{
+										bool bef1 = (r > i) && !(parts[r].flags & FLAG_SKIPMOVE);
 										if (destroy)
 										{
+											if (bef1)
+											{
+												parts[r].pavg[0] = parts[r].pavg[1];
+												parts[r].flags |= FLAG_SKIPMOVE;
+											}
 											parts[r].pavg[1] = parts[i].tmp;
 										}
-										else if (parts[r].pavg[0])
+										else if (parts[r].pavg[bef1 ? 1 : 0])
 										{
 											nyy += parts[r].tmp * nxi;
 											nxx -= parts[r].tmp * nyi;

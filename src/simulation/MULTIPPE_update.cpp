@@ -1628,6 +1628,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			break;
+		case 27:
+			if (parts[i].flags & FLAG_SKIPMOVE)
+			{
+				parts[i].flags &= ~FLAG_SKIPMOVE;
+				return return_value;
+			}
+			parts[r].pavg[0] = parts[r].pavg[1];
+			if (parts[r].pavg[1])
+				parts[r].pavg[1] -= 1;
+			break;
 		}
 		break;
 			

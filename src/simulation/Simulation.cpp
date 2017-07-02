@@ -6025,23 +6025,6 @@ void Simulation::AfterSim()
 		Extra_FIGH_pause ^= Extra_FIGH_pause_check;
 		Extra_FIGH_pause_check = 0;
 	}
-	{
-		int i = Element_MULTIPP::q1;
-		while (i >= 0)
-		{
-			if (parts[i].type == ELEM_MULTIPP)
-			{
-				parts[i].pavg[0] = parts[i].pavg[1];
-				if (parts[i].pavg[1])
-					parts[i].pavg[1] -= 1;
-				i = parts[i].cdcolour;
-				parts[i].cdcolour = -1;
-			}
-			else
-				i--;
-		}
-		Element_MULTIPP::q1 = -1;
-	}
 }
 
 Simulation::~Simulation()
