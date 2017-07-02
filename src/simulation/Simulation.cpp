@@ -6032,8 +6032,10 @@ void Simulation::AfterSim()
 			if (parts[i].type == ELEM_MULTIPP)
 			{
 				parts[i].pavg[0] = parts[i].pavg[1];
-				parts[i].pavg[1] -= 1;
+				if (parts[i].pavg[1])
+					parts[i].pavg[1] -= 1;
 				i = parts[i].cdcolour;
+				parts[i].cdcolour = -1;
 			}
 			else
 				i--;
