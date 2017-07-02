@@ -1709,6 +1709,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								case PT_BANG:
 								case PT_COAL:
 								case PT_BCOL:
+								case PT_FIRW:
 									sim->part_change_type(rr>>8, nx, ny, rctype);
 									parts[rr>>8].life = rand()%50+150;
 									parts[rr>>8].temp = restrict_flt(parts[rr>>8].temp + 5 * sim->elements[rrt].Flammable, MIN_TEMP, MAX_TEMP);
@@ -1721,6 +1722,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									parts[rr>>8].temp = MAX_TEMP;
 									parts[rr>>8].ctype = PT_THRM;
 									parts[rr>>8].tmp = 20;
+									break;
+								case PT_SPRK:
+									if (parts[rr>>8].ctype == PT_RBDM || parts[rr>>8].ctype == PT_LRBD)
+									{
+										parts[rr>>8].life += 40;
+										sim->part_change_type(rr>>8, x+rx, y+ry, parts[rr>>8].ctype);
+									}
+									break;
+								case PT_FWRK:
+									parts[rr>>8].ctype = PT_DUST;
 									break;
 								}
 							}
