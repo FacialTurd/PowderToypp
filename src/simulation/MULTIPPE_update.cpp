@@ -957,34 +957,25 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 13:
-			if (parts[i].tmp2)
-			{
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
-						if (BOUNDS_CHECK && (rx || ry))
-						{
-							r = pmap[y+ry][x+rx];
-							if ((r & 0xFF) == PT_NSCN)
-								sim->create_part(r>>8,x+rx,y+ry,PT_PSCN);
-							if ((r & 0xFF) == PT_PSCN)
-							{
-								parts[r>>8].ctype = PT_NSCN; // for different type
-								sim->part_change_type(r>>8, x, y, PT_SPRK);
-								parts[r>>8].life = 4;
-							}
-						}
-				parts[i].tmp2 = 0;
-			}
+			rii = parts[i].tmp2;
+			parts[i].tmp2 = 0;
 			for (rx = -2; rx <= 2; rx++)
 				for (ry = -2; ry <= 2; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						rr = ((r>>8) > i) ? (parts[r>>8].tmp) : (parts[r>>8].tmp2);
-						if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 19 && rr == 9)
+						if ((r&0xFF) == PT_SPRK)
 						{
-							parts[i].tmp2 = 1;
-							return return_value;
+							if (parts[r>>8].ctype == PT_NSCN)
+								parts[r>>8].tmp ^= 1;
+							if (parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
+								parts[i].tmp2 |= 1;
+						}
+						else if (rii && (r&0xFF) == PT_NSCN)
+						{
+							parts[r>>8].tmp ^= 1;
+							if (!parts[r>>8].tmp)
+								conductTo (sim, r, x+rx, y+ry, parts);
 						}
 					}
 			break;
