@@ -967,7 +967,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if ((r&0xFF) == PT_SPRK)
 						{
 							if (parts[r>>8].ctype == PT_NSCN)
-								parts[r>>8].tmp ^= 1;
+								parts[r>>8].tmp ^= (rii & 1);
 							if (parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
 								parts[i].tmp2 |= 1;
 						}
