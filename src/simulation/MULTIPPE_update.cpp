@@ -1255,15 +1255,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									continue1c:
 									if ((r&0xFF) == PT_FILT)
 									{
+										rry = rii;
 										rrx = parts[r>>8].ctype & 0x1FFFFFFF;
-										for (; rrx && rii < CHANNELS; rii++)
+										for (; rrx && rry < CHANNELS; rry++)
 										{
 											if (rrx & 1)
-												sim->wireless[rii][1] = 1;
+												sim->wireless[rry][1] = 1;
 											rrx >>= 1;
 										}
 										r = pmap[ny += ry][nx += rx];
-										if (BOUNDS_CHECK)
+										rii += 29;
+										if (BOUNDS_CHECK && rii < CHANNELS)
 											goto continue1c;
 									}
 								}
