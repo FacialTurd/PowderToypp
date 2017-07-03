@@ -141,14 +141,38 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									continue;
 								case 16:
-									if (parts[r].ctype == 1)
+									switch (parts[r].ctype)
 									{
+									case 1:
 										if (!parts[r].tmp && r > i) // If the other particle hasn't been life updated
 											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
-									}
-									else if (parts[r].ctype == 27)
-									{
+										break;
+									case 20:
+										{
+											nyy += 2 * nyi; nxx += 2 * nxi;
+											int front1 = pmap[y+nyy][x+nxx];
+											while (BOUNDS_CHECK && (front1&0xFF) == PT_FILT)
+											{
+												parts[front1>>8].life = 4;
+												nyy += nyi; nxx += nxi;
+												front1 = pmap[y+nyy][x+nxx];
+											}
+											if ((front1&0xFF) == PT_DLAY)
+											{
+												tmp[0] = parts[r].tmp2 + (r < i); // delay time
+												if (tmp[0] <= 0)
+													tmp[0] += parts[r].tmp; // add pulse time
+												front1 >>= 8;
+												tmp[1] = parts[front1].life - (front1 > i);
+												if (tmp[1] == 0 && front1 > i)
+													Element_DLAY::update (sim, front1, x+nxx, y+nyy, 0, 0, parts, pmap);
+												if (tmp[1] <= 0)
+													parts[front1].life = tmp[0] + (front1 > i);
+											}
+										}
+										goto break1a;
+									case 27:
 										bool bef1 = (r > i) && !(parts[r].flags & FLAG_SKIPMOVE);
 										if (destroy)
 										{

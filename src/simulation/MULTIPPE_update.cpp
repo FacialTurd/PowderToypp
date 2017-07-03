@@ -1625,7 +1625,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			break;
-		case 27:
+		case 27: // powered BRAY shifter
 			if (parts[i].flags & FLAG_SKIPMOVE)
 			{
 				parts[i].flags &= ~FLAG_SKIPMOVE;
