@@ -1252,6 +1252,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									if (rii < 0) rii = 0;
 									r = pmap[ny += ry][nx += rx];
 									sim->ISWIRE = 2;
+									continue1c:
 									if ((r&0xFF) == PT_FILT)
 									{
 										rrx = parts[r>>8].ctype & 0x1FFFFFFF;
@@ -1261,6 +1262,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												sim->wireless[rii][1] = 1;
 											rrx >>= 1;
 										}
+										r = pmap[ny += ry][nx += rx];
+										if (BOUNDS_CHECK)
+											goto continue1c;
 									}
 								}
 								break;
