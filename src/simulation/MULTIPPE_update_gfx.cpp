@@ -162,7 +162,7 @@ int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 				return 0;
 			}
 		case 20:
-			tmp2v = !tmp2v;
+			tmp2v = cpart->tmp2 ? 0 : 1;
 			goto def1;
 		case 26:
 			tmp2v = cpart->tmp >> 8;
