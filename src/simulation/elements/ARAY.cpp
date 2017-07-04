@@ -174,9 +174,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											{
 												if (tmp[0] == 1)
 												{
-													parts[front1].life = 4;
-													parts[front1].ctype = PT_INST;
-													sim->part_change_type(front1, x+nxx, y+nyy, PT_SPRK);
+													parts[front1>>8].life = 4;
+													parts[front1>>8].ctype = PT_INST;
+													sim->part_change_type(front1>>8, x+nxx, y+nyy, PT_SPRK);
 												}
 											}
 										}
