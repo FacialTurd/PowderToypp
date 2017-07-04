@@ -158,17 +158,26 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												nyy += nyi; nxx += nxi;
 												front1 = pmap[y+nyy][x+nxx];
 											}
+											tmp[0] = parts[r].tmp2 + (r < i); // delay time
+											if (tmp[0] <= 0)
+												tmp[0] += parts[r].tmp; // add pulse time
 											if ((front1&0xFF) == PT_DLAY)
 											{
-												tmp[0] = parts[r].tmp2 + (r < i); // delay time
-												if (tmp[0] <= 0)
-													tmp[0] += parts[r].tmp; // add pulse time
 												front1 >>= 8;
 												tmp[1] = parts[front1].life - (front1 > i);
 												if (tmp[1] == 0 && front1 > i)
 													Element_DLAY::update (sim, front1, x+nxx, y+nyy, 0, 0, parts, pmap);
 												if (tmp[1] <= 0)
 													parts[front1].life = tmp[0] + (front1 > i);
+											}
+											else if ((front1&0xFF) == PT_INST)
+											{
+												if (tmp[0] == 1)
+												{
+													parts[front1].life = 4;
+													parts[front1].ctype = PT_INST;
+													sim->part_change_type(front1, x+nxx, y+nyy, PT_SPRK);
+												}
 											}
 										}
 										goto break1a;

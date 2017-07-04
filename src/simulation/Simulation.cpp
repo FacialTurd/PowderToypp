@@ -3901,6 +3901,13 @@ void Simulation::UpdateParticles(int start, int end)
 			}
 			if (bmap[y/CELL][x/CELL]==WL_DETECT && emap[y/CELL][x/CELL]<8)
 				set_emap(x/CELL, y/CELL);
+			/*
+			if (parts[i].flags&FLAG_SKIPMOVE)
+			{
+				parts[i].flags &= ~FLAG_SKIPMOVE;
+				continue;
+			}
+			*/
 
 			//adding to velocity from the particle's velocity
 			vx[y/CELL][x/CELL] = vx[y/CELL][x/CELL]*elements[t].AirLoss + elements[t].AirDrag*parts[i].vx;
