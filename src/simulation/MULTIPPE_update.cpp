@@ -1169,7 +1169,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									{
 										rii = pmap[rry][rrx];
 										if ((rii&0xFF) == PT_BRAY)
-											rii = 0, sim->kill_part(rii>>8);
+											sim->kill_part(rii>>8), rii = 0;
 										if (!rii)
 										{
 											rrx += rxi, rry += ryi;
