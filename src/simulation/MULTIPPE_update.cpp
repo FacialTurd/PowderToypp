@@ -1168,7 +1168,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									while (sim->InBounds(rrx, rry))
 									{
 										rii = pmap[rry][rrx];
-										if (!rii || (rii&0xFF) == PT_BRAY)
+										if ((rii&0xFF) == PT_BRAY)
+											rii = 0, sim->kill_part(rii>>8);
+										if (!rii)
 										{
 											rrx += rxi, rry += ryi;
 											continue;
@@ -1187,7 +1189,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											{
 												if (rtmp == PT_PSCN)
 													nrx = nx + rxi, nry = ny + ryi;
-												else break;
+												else
+													sim->kill_part(rii>>8);
 											}
 											parts[rii>>8].x = (float)nrx;
 											parts[rii>>8].y = (float)nry;
