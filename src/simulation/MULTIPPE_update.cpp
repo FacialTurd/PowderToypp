@@ -1154,6 +1154,50 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								}
 								continue;
 							}
+							else if ((r & 0xFF) == ELEM_MULTIPP)
+							{
+								if (parts[r>>8].life == 28 && (parts[r>>8].tmp & 0xC) == 0x4 && !(rx && ry))
+								{
+									int dir = parts[r>>8].tmp;
+									int rxi = 0, ryi = 0;
+									if (dir & 2)
+										rxi = (dir == 7 ? -1 : 1);
+									else
+										ryi = (dir == 4 ? -1 : 1);
+									rrx = nx + rxi, rry = ny + ryi;
+									while (sim->InBounds(rrx, rry))
+									{
+										rii = pmap[rry][rrx];
+										if (!rii)
+										{
+											rrx += rxi, rry += ryi;
+											continue;
+										}
+										if ((rii&0xFF) == ELEM_MULTIPP && parts[rii>>8].life == 28)
+										{
+											// use "rtmp"
+											int nrx = rrx, nry = rry;
+											if (rtmp == PT_PSCN)
+												nrx += rxi, nry += ryi;
+											else if (rtmp == PT_NSCN)
+												nrx -= rxi, nry -= ryi;
+											else
+												break;
+											if (pmap[nry][nrx])
+											{
+												if (rtmp == PT_PSCN)
+													nrx = nx + rxi, nry = ny + ryi;
+												else break;
+											}
+											parts[rii>>8].x = (float)nrx;
+											parts[rii>>8].y = (float)nry;
+											pmap[nry][nrx] = rii;
+											pmap[rry][rrx] = 0;
+										}
+										break;
+									}
+								}
+							}
 						}
 				parts[i].tmp2 = 0;
 			}
