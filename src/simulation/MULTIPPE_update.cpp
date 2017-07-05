@@ -1168,7 +1168,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									while (sim->InBounds(rrx, rry))
 									{
 										rii = pmap[rry][rrx];
-										if (!rii)
+										if (!rii || (rii&0xFF) == PT_BRAY)
 										{
 											rrx += rxi, rry += ryi;
 											continue;
