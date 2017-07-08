@@ -446,6 +446,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								Element_MULTIPP::maxPrior = parts[i].ctype;
 							}
 							break;
+						case 0x7F:
+#if defined(WIN) && !defined(__GNUC__)
+							// no tested
+							__asm pushfd
+							__asm or dword ptr [esp], 0x100
+							__asm popfd
+#else
+							__asm__ __volatile ("pushf; orl $0x100, (%esp); popf")
+#endif
+							return return_value;
 							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
