@@ -446,20 +446,22 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								Element_MULTIPP::maxPrior = parts[i].ctype;
 							}
 							break;
-						case 0x7F:
+						default:
+							if ((rtmp & 0xFF) == 0x7F)
+							{
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
-							__asm
-							{
-								pushfd
-								or dword ptr [esp], 0x100
-								popfd
-							}
+								__asm
+								{
+									pushfd
+									or dword ptr [esp], 0x100
+									popfd
+								}
 #else
-							__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");
+								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");
 #endif
-							return return_value;
-							// 'decorations_enable' 属于 'Renderer', 不是 'Simulation'
+								return return_value;
+							}
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
 							MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
