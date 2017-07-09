@@ -451,8 +451,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							{
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
-								__asm
-								{
+								__asm {
 									pushfd
 									or dword ptr [esp], 0x100
 									popfd
