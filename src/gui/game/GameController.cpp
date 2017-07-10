@@ -745,20 +745,27 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 				}
 			}
 		}
-		switch(key)
+		if (!gameView->GetPlacingSave())
 		{
-		case SDLK_UP:
-			Element_MULTIPP::Arrow_keys |= 0x1;
-			break;
-		case SDLK_LEFT:
-			Element_MULTIPP::Arrow_keys |= 0x2;
-			break;
-		case SDLK_DOWN:
-			Element_MULTIPP::Arrow_keys |= 0x4;
-			break;
-		case SDLK_RIGHT:
-			Element_MULTIPP::Arrow_keys |= 0x8;
-			break;
+			switch(key)
+			{
+			case SDLK_UP:
+				Element_MULTIPP::Arrow_keys |= 0x1;
+				break;
+			case SDLK_LEFT:
+				Element_MULTIPP::Arrow_keys |= 0x2;
+				break;
+			case SDLK_DOWN:
+				Element_MULTIPP::Arrow_keys |= 0x4;
+				break;
+			case SDLK_RIGHT:
+				Element_MULTIPP::Arrow_keys |= 0x8;
+				break;
+			case SDLK_KP_ENTER:
+			case SDLK_RETURN:
+				Element_MULTIPP::Arrow_keys |= 0x10;
+				break;
+			}
 		}
 	}
 		
@@ -795,6 +802,10 @@ bool GameController::KeyRelease(int key, Uint16 character, bool shift, bool ctrl
 		{
 			sim->player.comm = (int)(sim->player.comm)&7;
 			Element_MULTIPP::Arrow_keys &= ~0x4;
+		}
+		if (key == SDLK_KP_ENTER || key == SDLK_RETURN)
+		{
+			Element_MULTIPP::Arrow_keys &= ~0x10;
 		}
 
 		if (key == SDLK_d || key == SDLK_a)
