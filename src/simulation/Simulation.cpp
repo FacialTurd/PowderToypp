@@ -21,6 +21,8 @@
 #include "Sample.h"
 #include "Snapshot.h"
 
+#include "gui/interface/Engine.h"
+
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
 #include "lua/LuaScriptHelper.h"
@@ -6024,7 +6026,9 @@ void Simulation::AfterSim()
 		}
 		if (SimExtraFunc & 0x0040)
 			Element_PHOT::ignite_flammable = !Element_PHOT::ignite_flammable;
-		SimExtraFunc &= ~0x000000F5;
+		if (SimExtraFunc & 0x0100)
+			ui::Engine::Ref().Exit(); // fast exit?
+		SimExtraFunc &= ~0x000001F5;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)

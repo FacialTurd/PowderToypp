@@ -447,7 +447,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						default:
-							if ((rtmp & 0xFF) == 0x7F)
+							if ((rtmp & 0xFF) == 0x7E)
+							{
+								sim->SimExtraFunc |= 0x100;
+							}
+							else if ((rtmp & 0xFF) == 0x7F)
 							{
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
