@@ -1625,6 +1625,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		case 25: // arrow key detector
 			rrx = Element_MULTIPP::Arrow_keys; // current state
 			rry = (parts[i].flags >> 16); // previous state
+			if (rtmp & 0x10)
+			{
+				rtmp &= ~0x10;
+				rrx = (rrx & 0x10) ? 0xF : 0;
+			}
 			switch (rtmp)
 			{
 				case 0: break;
