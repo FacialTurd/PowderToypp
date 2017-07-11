@@ -1708,8 +1708,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			break;
 		case 28: // edge detector / SPRK signal lengthener
 			rrx = parts[i].tmp2;
-			(parts[i].tmp2 & 0xFF) && (parts[i].tmp2--);
-			(parts[i].tmp2 & 0xFE) || (parts[i].tmp2 &= 0xFF);
+			parts[i].tmp2 = (rrx & 0xFE) && (rrx - 1) : 0;
 			switch (rtmp & 7)
 			{
 				case 0: rry = (rrx & ~0xFF); break; // positive edge detector
@@ -1717,6 +1716,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 2: rry = (rrx & 0xFF); break; // lengthener
 				case 3: rry = rrx >= 2 && rrx <= 0xFF; break; // shortener
 				case 4: rry = (rrx & ~0xFF) || ((rrx & 0xFF) == 1); break; // double edge detector
+				case 5: rry = (rrx == 0x101); // single SPRK detector
 				default: return return_value;
 			}
 			rrx &= ~1;
