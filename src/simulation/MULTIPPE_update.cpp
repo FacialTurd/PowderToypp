@@ -1711,12 +1711,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp2 = (rrx & 0xFE ? rrx - 1 : 0);
 			switch (rtmp & 7)
 			{
-				case 0: rry = rrx >= 0x102 && rrx <= 0x1FF; break; // positive edge detector
-				case 1: rry = ((rrx & 0xFF) == 1); break; // negative edge detector
+				case 0: rry = rrx >= 0x102; break; // positive edge detector
+				case 1: rry = (rrx & 0xFF) == 1; break; // negative edge detector
 				case 2: rry = (rrx & 0xFF); break; // lengthener
 				case 3: rry = rrx >= 2 && rrx <= 0xFF; break; // shortener
 				case 4: rry = (rrx & ~0xFF) || ((rrx & 0xFF) == 1); break; // double edge detector
-				case 5: rry = (rrx == 0x101); // single SPRK detector
+				case 5: rry = rrx == 0x101; // single SPRK detector
 				default: return return_value;
 			}
 			rrx &= 0xFE;
