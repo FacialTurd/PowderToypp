@@ -266,12 +266,12 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										nxi = nyi;
 										nyi = -tmp[0];
 										break;
-									case 2: // "/" reflect
+									case 2: // "\" reflect
 										tmp[0] = nxi;
 										nxi = nyi;
 										nyi = tmp[0];
 										break;
-									case 3: // "\" reflect
+									case 3: // "/" reflect
 										tmp[0] = nxi;
 										nxi = -nyi;
 										nyi = -tmp[0];
