@@ -1635,6 +1635,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 0: break;
 				case 1: rry = rrx & ~rry; break; // start pressing key
 				case 2: rry &= ~rrx; break; // end pressing key
+				case 3: (rrx & (rrx-1) & 0xF) && (rrx = 0); break; // check single arrow key, maybe optimize to cmovcc?
 				default:
 					return return_value;
 			}
@@ -1704,6 +1705,43 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].pavg[0] = parts[i].pavg[1];
 			if (parts[i].pavg[1])
 				parts[i].pavg[1] -= 1;
+			break;
+		case 28: // edge detector / SPRK signal lengthener
+			rrx = parts[i].tmp2;
+			(parts[i].tmp2 & 0xFF) && (parts[i].tmp2--);
+			(parts[i].tmp2 & 0xFE) || (parts[i].tmp2 &= 0xFF);
+			switch (rtmp & 7)
+			{
+				case 0: rry = (rrx & ~0xFF); break; // positive edge detector
+				case 1: rry = ((rrx & 0xFF) == 1); break; // negative edge detector
+				case 2: rry = (rrx & 0xFF); break; // lengthener
+				case 3: rry = (rrx & 0xFF) >= 2 && (rrx & 0xFF) <= 0xFF; break; // shortener
+				case 4: rry = (rrx & ~0xFF) || ((rrx & 0xFF) == 1); break; // double edge detector
+				case 5: rry = (rrx == 1); break; // delayer
+				default: return return_value;
+			}
+			rrx &= ~1;
+			for (rx=-2; rx<3; rx++)
+			for (ry=-2; ry<3; ry++)
+			if (BOUNDS_CHECK && (rx || ry))
+			{
+				r = pmap[y+ry][x+rx];
+				if (!r)
+					continue;
+				pavg = sim->parts_avg(i,r>>8,PT_INSL);
+				if (pavg != PT_INSL && pavg != PT_INDI)
+				{
+					rt = r & 0xFF;
+					if (rt == PT_SPRK && parts[r>>8].life == 3 && parts[r>>8].ctype == PT_PSCN)
+					{
+						parts[i].tmp2 = rrx ? 9 : 0x109;
+					}
+					else if (rt == PT_NSCN && rry)
+					{
+						conductTo (sim, r, x+rx, y+ry, parts);
+					}
+				}
+			}
 			break;
 		}
 		break;
