@@ -119,6 +119,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								r_life = parts[r].life;
 								switch (r_life)
 								{
+								case 2:
+									tmp[0] = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
+									if ((tmp[0]&0xFF) == PT_SWCH)
+									{
+										docontinue = 0;
+										parts[tmp[0]>>8].life = destroy ? 9 : 10;
+									}
+									continue;
 								case 6:
 									if (spc_conduct == 5)
 										parts[r].temp = parts[i].temp;
