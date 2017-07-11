@@ -1717,7 +1717,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 2: rry = (rrx & 0xFF); break; // lengthener
 				case 3: rry = (rrx & 0xFF) >= 2 && (rrx & 0xFF) <= 0xFF; break; // shortener
 				case 4: rry = (rrx & ~0xFF) || ((rrx & 0xFF) == 1); break; // double edge detector
-				case 5: rry = (rrx == 1); break; // delayer
 				default: return return_value;
 			}
 			rrx &= ~1;
