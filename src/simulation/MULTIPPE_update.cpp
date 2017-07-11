@@ -1719,7 +1719,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 5: rry = (rrx == 0x101); // single SPRK detector
 				default: return return_value;
 			}
-			rrx &= ~1;
+			rrx &= 0xFE;
 			for (rx=-2; rx<3; rx++)
 			for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
