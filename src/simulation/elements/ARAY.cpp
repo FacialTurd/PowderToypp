@@ -65,8 +65,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
 						bool isBlackDeco = false;
-						int destroy = (parts[r>>8].ctype==PT_PSCN) ? 1 : 0;
-						int nostop = (parts[r>>8].ctype==PT_INST) ? 1 : 0;
+						int inputType = parts[r>>8].ctype;
+						int destroy = (inputType == PT_PSCN) ? 1 : 0;
+						int nostop = (inputType == PT_INST) ? 1 : 0;
 						int spc_conduct = 0, ray_less = 0;
 						int colored = 0, noturn = 0, rt;
 						static int tmp[4];
@@ -123,8 +124,19 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									tmp[0] = pmap[y+2*nyi+nyy][x+2*nxi+nxx];
 									if ((tmp[0]&0xFF) == PT_SWCH)
 									{
+										nyy += 2 * nyi; nxx += 2 * nxi;
+										if (inputType == PT_INWR)
+											destroy = parts[tmp[0]>>8].life >= 10;
+										tmp[1] = destroy ? 9 : 10;
 										docontinue = 0;
-										parts[tmp[0]>>8].life = destroy ? 9 : 10;
+									continue1a:
+										parts[tmp[0]>>8].life = tmp[1];
+										nyy += nyi; nxx += nxi;
+										if (!BOUNDS_CHECK)
+											break;
+										tmp[0] = pmap[y+nyy][x+nxx];
+										if (tmp[0]&0xFF) == PT_SWCH)
+											goto continue1a;
 									}
 									continue;
 								case 6:

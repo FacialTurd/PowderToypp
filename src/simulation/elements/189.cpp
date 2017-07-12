@@ -409,6 +409,9 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->vx = (float)((rct >> 4) * arr1[r1]);
 				part_phot->vy = (float)((rct >> 4) * arr2[r1]);
 				break;
+			case 21: // skip movement for one frame
+				part_phot->flags |= FLAG_SKIPMOVE;
+				break;
 		}
 	}
 }
