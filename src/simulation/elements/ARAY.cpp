@@ -135,7 +135,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										if (!BOUNDS_CHECK)
 											break;
 										tmp[0] = pmap[y+nyy][x+nxx];
-										if (tmp[0]&0xFF) == PT_SWCH)
+										if ((tmp[0]&0xFF) == PT_SWCH)
 											goto continue1a;
 									}
 									continue;
