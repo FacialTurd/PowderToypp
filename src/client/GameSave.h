@@ -7,6 +7,7 @@
 #include "Misc.h"
 
 #include "bson/BSON.h"
+#include "json/json.h"
 #include "simulation/Sign.h"
 #include "simulation/Particle.h"
 
@@ -62,7 +63,10 @@ public:
 	//Element palette
 	typedef std::pair<std::string, int> PaletteItem;
 	std::vector<PaletteItem> palette;
-	
+
+	// author information
+	Json::Value authors;
+
 	GameSave();
 	GameSave(GameSave & save);
 	GameSave(int width, int height);
@@ -113,7 +117,8 @@ private:
 	void readOPS(char * data, int dataLength);
 	void readPSv(char * data, int dataLength);
 	char * serialiseOPS(unsigned int & dataSize);
-	//serialisePSv();
+	void ConvertJsonToBson(bson *b, Json::Value j);
+	void ConvertBsonToJson(bson_iterator *b, Json::Value *j);
 };
 
 #endif
