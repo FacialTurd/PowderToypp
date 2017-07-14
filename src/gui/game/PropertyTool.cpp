@@ -1,9 +1,9 @@
 #include <iostream>
 #include <sstream>
+#include "Tool.h"
+#include "client/Client.h"
 #include "gui/Style.h"
 #include "gui/game/Brush.h"
-#include "simulation/Simulation.h"
-#include "Tool.h"
 #include "gui/interface/Window.h"
 #include "gui/interface/Button.h"
 #include "gui/interface/Label.h"
@@ -11,6 +11,7 @@
 #include "gui/interface/DropDown.h"
 #include "gui/interface/Keys.h"
 #include "gui/dialogues/ErrorMessage.h"
+#include "simulation/Simulation.h"
 
 class PropertyWindow: public ui::Window
 {
@@ -35,7 +36,7 @@ public:
 		OkayAction(PropertyWindow * prompt_) { prompt = prompt_; }
 		void ActionCallback(ui::Button * sender)
 		{
-			ui::Engine::Ref().CloseWindow();
+			prompt->CloseActiveWindow();
 			if(prompt->textField->GetText().length())
 				prompt->SetProperty();
 			prompt->SelfDestruct();
@@ -91,7 +92,7 @@ sim(sim_)
 	AddComponent(textField);
 	FocusComponent(textField);
 
-	ui::Engine::Ref().ShowWindow(this);
+	MakeActiveWindow();
 }
 
 int PropertyWindow::convertFromHex(const char * str)
@@ -261,13 +262,13 @@ void PropertyWindow::SetProperty()
 
 void PropertyWindow::OnTryExit(ExitMethod method)
 {
-	ui::Engine::Ref().CloseWindow();
+	CloseActiveWindow();
 	SelfDestruct();
 }
 
 void PropertyWindow::OnDraw()
 {
-	Graphics * g = ui::Engine::Ref().g;
+	Graphics * g = GetGraphics();
 
 	g->clearrect(Position.X-2, Position.Y-2, Size.X+3, Size.Y+3);
 	g->drawrect(Position.X, Position.Y, Size.X, Size.Y, 200, 200, 200, 255);

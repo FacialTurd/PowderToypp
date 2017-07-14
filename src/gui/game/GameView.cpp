@@ -138,7 +138,7 @@ public:
 	void Draw(const ui::Point& screenPos)
 	{
 		ui::Button::Draw(screenPos);
-		Graphics * g = ui::Engine::Ref().g;
+		Graphics * g = GetGraphics();
 		drawn = true;
 
 		if(showSplit)
@@ -2215,7 +2215,7 @@ void GameView::SetSaveButtonTooltips()
 
 void GameView::OnDraw()
 {
-	Graphics * g = ui::Engine::Ref().g;
+	Graphics * g = GetGraphics();
 	if (ren)
 	{
 		ren->clearScreen(1.0f);
