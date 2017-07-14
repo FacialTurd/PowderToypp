@@ -533,8 +533,8 @@ int LuaScriptInterface::interface_showWindow(lua_State * l)
 int LuaScriptInterface::interface_closeWindow(lua_State * l)
 {
 	LuaWindow * window = Luna<LuaWindow>::check(l, 1);
-	if(window && ui::Engine::Ref().GetWindow()==window->GetWindow())
-		ui::Engine::Ref().CloseWindow();
+	if (window)
+		window->GetWindow()->CloseActiveWindow();
 	return 0;
 }
 
@@ -899,7 +899,12 @@ int LuaScriptInterface::simulation_partChangeType(lua_State * l)
 int LuaScriptInterface::simulation_partCreate(lua_State * l)
 {
 	int newID = lua_tointeger(l, 1);
-	if(newID >= NPART || newID < -3)
+	if (newID >= NPART || newID < -3)
+	{
+		lua_pushinteger(l, -1);
+		return 1;
+	}
+	if (newID >= 0 && !luacon_sim->parts[newID].type)
 	{
 		lua_pushinteger(l, -1);
 		return 1;
