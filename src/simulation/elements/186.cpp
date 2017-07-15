@@ -243,7 +243,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[i].ctype = PT_NEUT;
 				}
 */
-				if ((r&0xFF) == PT_PROT)
+				if ((r&0xFF) == PT_PROT && !pmap[y+ry][x+rx])
 				{
 					if (parts[r>>8].tmp > 250)
 					{
@@ -252,7 +252,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					}
 					float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
 					float velocity2 = powf(parts[r>>8].vx, 2.0f)+powf(parts[r>>8].vy, 2.0f);
-					if (velocity1 + velocity2 > 15.0f && !pmap[y+ry][x+rx])
+					if (velocity1 + velocity2 > 15.0f)
 					{
 						if (!parts[r>>8].life)
 							parts[i].life = 0;
