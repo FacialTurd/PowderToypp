@@ -224,6 +224,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_VRSG:
 				parts[r>>8].tmp4 = PT_NONE;
 				break;
+			case PT_LAVA:
+				if (parts[r>>8].ctype == PT_POLO && !(rand()&0xFF))
+					parts[r>>8].ctype = PT_POLC;
+				break;
 			default:
 				break;
 			}
