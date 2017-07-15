@@ -245,6 +245,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 */
 				if ((r&0xFF) == PT_PROT)
 				{
+					if (parts[r>>8].tmp > 250)
+					{
+						sim->part_change_type(r>>8, x, y, PT_POLC);
+						return 1;
+					}
 					float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
 					float velocity2 = powf(parts[r>>8].vx, 2.0f)+powf(parts[r>>8].vy, 2.0f);
 					if (velocity1 + velocity2 > 15.0f && !pmap[y+ry][x+rx])
