@@ -247,18 +247,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				{
 					if (parts[r>>8].tmp > 250)
 					{
-						sim->part_change_type(r>>8, x, y, PT_POLC);
-						return 1;
-					}
-					float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
-					float velocity2 = powf(parts[r>>8].vx, 2.0f)+powf(parts[r>>8].vy, 2.0f);
-					if (velocity1 + velocity2 > 15.0f)
-					{
-						if (!parts[r>>8].life)
-							parts[i].life = 0;
-						else if (parts[i].life)
-							parts[i].life += parts[r>>8].life; // merge this with PROT's life.
-						sim->part_change_type(r>>8, x, y, PT_BOMB);
+						int element = PT_POLC;
+						if (parts[r>>8].tmp > 1000 && (fabsf(parts[r>>8].vx) + fabsf(parts[r>>8].vy)) > 8)
+							element = PT_BOMB;
+						sim->part_change_type(r>>8, x, y, element);
+						return 0;
 					}
 				}
 			}
