@@ -96,6 +96,15 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			break;
+		case 2:
+			if (parts[i].tmp2)
+				parts[i].tmp2--;
+			else
+			{
+				parts[i].ctype = parts[i].tmp & 0x3FFFFFFF;
+				parts[i].tmp = (unsigned int)(parts[i].tmp) >> 30;
+			}
+			return 1; // 1 means no movement
 		}
 		return 0;
 	}
