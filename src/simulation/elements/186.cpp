@@ -103,6 +103,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			{
 				parts[i].ctype = parts[i].tmp & 0x3FFFFFFF;
 				parts[i].tmp = (unsigned int)(parts[i].tmp) >> 30;
+				sim->part_change_type(i, x, y, PT_PHOT);
 			}
 			return 1; // 1 means no movement
 		}
