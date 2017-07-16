@@ -23,7 +23,7 @@ Element::Element():
 	Explosive(0),
 	Meltable(0),
 	Hardness(30),
-	PhotonReflectWavelengths(0x3FFFFFFF),
+	PhotonReflectWavelengths(0xFFFFFFFF),
 
 	Weight(50),
 
@@ -42,7 +42,6 @@ Element::Element():
 	LowTemperatureTransition(NT),
 	HighTemperature(ITH),
 	HighTemperatureTransition(NT),
-	PhotonReflectWavelengths(0xFFFFFFFF),
 
 	Update(NULL),
 	Graphics(&Element::defaultGraphics),
