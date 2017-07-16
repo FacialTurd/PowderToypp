@@ -23,6 +23,7 @@ Element_NONE::Element_NONE()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 1;
+	PhotonReflectWavelengths = ~0;
 
 	Weight = 100;
 
