@@ -255,6 +255,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						if (parts[r>>8].tmp > 1000 && (fabsf(parts[r>>8].vx) + fabsf(parts[r>>8].vy)) > 8)
 							element = PT_BOMB;
 						sim->part_change_type(r>>8, x, y, element);
+						parts[r>>8].tmp = 0;
 						return 0;
 					}
 				}
