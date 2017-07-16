@@ -1497,11 +1497,11 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 #if defined(DEBUG) || defined(SNAPSHOT)
 		case 'a':
-		  if (ctrl)
+			if (ctrl)
 			{
-			  std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
-			  new InformationMessage("Save authorship info", authorString, true);
-		  }
+				  std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
+				  new InformationMessage("Save authorship info", authorString, true);
+		  	}
 		  break;
 #endif
 		case 'r':
