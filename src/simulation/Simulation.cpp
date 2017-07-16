@@ -4822,7 +4822,7 @@ killed:
 						continue;
 					}
 
-					if (r&0xFF)
+					if (!(elements[t].Properties2 & PROP_NOWAVELENGTHS))
 						parts[i].ctype &= elements[r&0xFF].PhotonReflectWavelengths;
 
 					if (get_normal_interp(t, parts[i].x, parts[i].y, parts[i].vx, parts[i].vy, &nrx, &nry))
