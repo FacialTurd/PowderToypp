@@ -1248,7 +1248,7 @@ int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 			return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
 		i = pmap[i][y]>>8;
 	}
-	if (i>=0 && i<NPART && !(luacon_sim->elements[parts[i].type].Properties2 & PROP_NODESTRUCT))
+	if (i>=0 && i<NPART && !(luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_NODESTRUCT))
 		luacon_sim->kill_part(i);
 	return 0;
 }
