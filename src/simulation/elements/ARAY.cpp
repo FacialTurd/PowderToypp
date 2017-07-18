@@ -367,6 +367,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										spc_conduct = tmp[0];
 										break;
 									case 3:
+										if ((sim->portal_rx[tmp[0]] != nxi) || (sim->portal_ry[tmp[0]] != nyi))
+											goto break1a;
 										break;
 									case 4:
 										tmpz2 = tmp[0];
