@@ -63,6 +63,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_duplicateParticle(lua_State * l);
 	static int simulation_partID(lua_State * l);
 	static int simulation_partKill(lua_State * l);
+	static int simulation_partKillDestroyable(lua_State * l);
 	static int simulation_pressure(lua_State * l);
 	static int simulation_velocityX(lua_State * l);
 	static int simulation_velocityY(lua_State * l);
