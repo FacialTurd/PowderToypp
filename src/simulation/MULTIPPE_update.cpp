@@ -449,6 +449,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						case 13: // heal/harm stickmans lifes
 							{
 								int lifeincx = parts[i].ctype;
+								rctype = parts[r>>8].ctype;
 								if (rctype == PT_INST)
 								{
 									parts[sim->player.self_ID].life = 0;
