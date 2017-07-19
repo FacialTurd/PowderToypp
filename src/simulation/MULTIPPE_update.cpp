@@ -449,12 +449,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						case 13: // heal/harm stickmans lifes
 							{
 								int lifeincx = parts[i].ctype;
-								if (sim->player.spwn)
-									if (parts[sim->player.self_ID].type == PT_STKM)
-										parts[sim->player.self_ID].life += lifeincx;
-								if (sim->player2.spwn)
-									if (parts[sim->player2.self_ID].type == PT_STKM2)
-										parts[sim->player2.self_ID].life += lifeincx;
+								if (rctype == PT_INST)
+								{
+									parts[sim->player.self_ID].life = 0;
+									parts[sim->player2.self_ID].life = 0;
+								}
+								else if (rctype == PT_NSCN)
+									lifeincx = -lifeincx;
+								if (parts[sim->player.self_ID].type == PT_STKM)
+									parts[sim->player.self_ID].life += lifeincx;
+								if (parts[sim->player2.self_ID].type == PT_STKM2)
+									parts[sim->player2.self_ID].life += lifeincx;
 							}
 							break;
 						default:
