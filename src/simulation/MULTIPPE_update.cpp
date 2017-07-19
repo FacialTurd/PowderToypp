@@ -446,6 +446,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								Element_MULTIPP::maxPrior = parts[i].ctype;
 							}
 							break;
+						case 13: // heal/harm stickmans lifes
+							{
+								int lifeincx = parts[i].ctype;
+								if (sim->player.spwn)
+									if (parts[sim->player.self_ID].type == PT_STKM)
+										parts[sim->player.self_ID].life += lifeincx;
+								if (sim->player2.spwn)
+									if (parts[sim->player2.self_ID].type == PT_STKM2)
+										parts[sim->player2.self_ID].life += lifeincx;
+							}
+							break;
 						default:
 							if ((rtmp & 0xFF) == 0x7E)
 							{
