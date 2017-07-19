@@ -1636,7 +1636,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 1: rry = rrx & ~rry; break; // start pressing key
 				case 2: rry &= ~rrx; break; // end pressing key
 				case 3: (rrx & (rrx-1) & 0xF) && (rrx = 0); break; // check single arrow key, maybe optimize to cmovcc?
-				case 4: rrx &= (rrx >> 2) & 5; rrx |= (rrx << 2); break;
+				case 4: rrx &= (rrx >> 2) & 3; rrx |= (rrx << 2); break;
 				case 5: case 6:
 					rrx &= 0xF; rrx |= (rrx << 4); rrx &= (rrx >> (rtmp == 5 ? 1 : 3));
 				break;
