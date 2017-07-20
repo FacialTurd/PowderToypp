@@ -134,33 +134,6 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			int slife;
 			switch (r&0xFF)
 			{
-			case PT_PLSM:
-				if (!(rand()%30))
-				{
-					s = sim->create_part(r>>8, x, y, PT_PLSM);
-					if (s >= 0)
-						parts[s].ctype = PT_NBLE;
-				}
-				break;
-			case PT_CO2:
-				if (!(rand()%10))
-				{
-					parts[r>>8].temp = MAX_TEMP;
-					sim->pv[y/CELL][x/CELL] += 256.0f;
-				}
-				break;
-			case PT_O2:
-				if (!(rand()%20))
-				{
-					sim->create_part(r>>8, x, y, PT_PLSM);
-					s = sim->create_part(-3, x, y, PT_E186);
-					slife = parts[i].life;
-					if (slife)
-						parts[s].life = slife + 30;
-					else
-						parts[s].life = 0;
-				}
-				break;
 			case PT_CAUS:
 				sim->part_change_type(r>>8, x, y, PT_RFRG); // probably inverse for NEUT???
 				parts[r>>8].tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
@@ -215,10 +188,6 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				break;
 			case PT_INVIS:
 				parts[i].ctype = PT_NEUT;
-			case PT_SPNG:
-				sim->part_change_type(r>>8, x, y, PT_GEL);
-				parts[r>>8].tmp = parts[r>>8].life;
-				break;
 			case PT_VIRS:
 			case PT_VRSS:
 			case PT_VRSG:
