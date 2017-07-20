@@ -185,9 +185,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	case 17: // reserved for 186.cpp and Simulation.cpp
 	case 18: // decoration only, no update function
 	case 22: // reserved for Simulation.cpp
-	case 23: // reserved for stickmans
+	case 23: // reserved for stickmen
 	case 25: // reserved for E189's life = 16, ctype = 10.
-	case 27: // reserved for stickmans
+	case 27: // reserved for stickmen
 	case 32: // reserved for ARAY / BRAY
 		return return_value;
 	case 6: // heater
@@ -446,7 +446,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								Element_MULTIPP::maxPrior = parts[i].ctype;
 							}
 							break;
-						case 13: // heal/harm stickmans lifes
+						case 13: // heal/harm stickmen lifes
 							{
 								int lifeincx = parts[i].ctype;
 								rctype = parts[r>>8].ctype;
@@ -461,6 +461,29 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									parts[sim->player.self_ID].life += lifeincx;
 								if (parts[sim->player2.self_ID].type == PT_STKM2)
 									parts[sim->player2.self_ID].life += lifeincx;
+							}
+							break;
+						case 14: // set stickman's element power
+							rctype = parts[r>>8].ctype;
+							rii = parts[i].ctype;
+							if (rctype == PT_METL || rctype == PT_INWR)
+							{
+								rii >>= ((sim->player2.rocketBoots ? 4 : 0) + (sim->player.rocketBoots ? 2 : 0));
+								sim->player.rocketBoots  = rii & 1;
+								sim->player2.rocketBoots = rii & 2;
+							}
+							else
+							{
+								if (!rii)
+								{
+									rrx = pmap[y-ry][x-rx];
+									if ((rrx&0xFF) == PT_CRAY)
+										rii = parts[rrx>>8].ctype;
+								}
+								if (rctype == PT_PSCN || rctype == PT_INST)
+									Element_STKM::STKM_set_element(sim, &sim->player, rii);
+								if (rctype == PT_NSCN || rctype == PT_INST)
+									Element_STKM::STKM_set_element(sim, &sim->player2, rii);
 							}
 							break;
 						default:
