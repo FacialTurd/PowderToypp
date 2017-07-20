@@ -749,14 +749,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 5:
-			if (!parts[i].tmp2)
+			if (parts[i].tmp2 < 2)
 			{
 				for (rx = -1; rx < 2; rx++)
 					for (ry = -1; ry < 2; ry++)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
-							if ((r & 0xFF) == PT_SPRK && parts[r>>8].life <= 3 || !(rx && ry) && sim->emap[(y+ry)/CELL][(x+rx)/CELL] == 15)
+							if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3 || !(rx && ry) && sim->emap[(y+ry)/CELL][(x+rx)/CELL] == 15)
 							{
 								parts[i].tmp2 = 10;
 								goto break2b;
