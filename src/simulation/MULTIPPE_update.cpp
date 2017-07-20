@@ -481,9 +481,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										rii = parts[rrx>>8].ctype;
 								}
 								if (rctype == PT_PSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element(sim, &sim->player, rii);
+									Element_STKM::STKM_set_element(sim, &sim->player, rii),
+									sim->player.__flags |= 2;
 								if (rctype == PT_NSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element(sim, &sim->player2, rii);
+									Element_STKM::STKM_set_element(sim, &sim->player2, rii),
+									sim->player2.__flags |= 2;
 							}
 							break;
 						default:
