@@ -754,7 +754,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
+						if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3 || !(rx && ry) && sim->emap[(y+ry)/CELL][(x+rx)/CELL] >= 8)
 						{
 							parts[i].tmp2 = 10;
 							goto break2b;
