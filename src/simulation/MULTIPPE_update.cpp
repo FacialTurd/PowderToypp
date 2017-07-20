@@ -468,9 +468,21 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rii = parts[i].ctype;
 							if (rctype == PT_METL || rctype == PT_INWR)
 							{
-								rii >>= ((sim->player2.rocketBoots ? 4 : 0) + (sim->player.rocketBoots ? 2 : 0));
-								sim->player.rocketBoots  = rii & 1;
-								sim->player2.rocketBoots = rii & 2;
+								if (sim->player2.spwn)
+								{
+									if (sim->player.spwn)
+									{
+										rrx = (sim->player2.rocketBoots ? 4 : 0) + (sim->player.rocketBoots ? 2 : 0);
+										sim->player.rocketBoots  = (rii >> (rrx++)) & 1;
+									}
+									else
+										rrx = (sim->player2.rocketBoots ? 11 : 10);
+									sim->player2.rocketBoots = (rii >> rrx) & 1;
+								}
+								else if (sim->player.spwn)
+								{
+									sim->player.rocketBoots = (rii >> (sim->player.rocketBoots ? 9 : 8)) & 1;
+								}
 							}
 							else
 							{
