@@ -128,6 +128,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						}
 					}
 					k4 <<= 1;
+					k3 = -k3;
 				}
 			}
 			break;
