@@ -145,20 +145,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_EXOT:
 				if (!(rand()%3))
 				{
-					if (rand()&1)
-					{
-						if (rand()%100)
-							sim->part_change_type(r>>8, x, y, PT_ISOZ);
-						else
-							sim->part_change_type(r>>8, x, y, PT_E187);
-					}
-					else
-					{
-						sim->part_change_type(r>>8, x, y, PT_WARP);
-						parts[r>>8].life = 1000;
-						parts[r>>8].tmp2 = 10000;
-					}
-					parts[r>>8].temp += 300;
+					sim->part_change_type(r>>8, x, y, PT_WARP);
+					parts[r>>8].life = 1000;
+					parts[r>>8].tmp2 = 10000;
+					parts[r>>8].temp = parts[i].temp = MAX_TEMP;
 				}
 				break;
 			case PT_ISOZ:
@@ -187,7 +177,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_INVIS:
-				parts[i].ctype = PT_NEUT;
+				if (!parts[r>>8].tmp2)
+					parts[i].ctype = PT_NEUT;
+				break;
 			case PT_VIRS:
 			case PT_VRSS:
 			case PT_VRSG:
