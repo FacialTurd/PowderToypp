@@ -106,6 +106,31 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				sim->part_change_type(i, x, y, PT_PHOT);
 			}
 			return 1; // 1 means no movement
+		case 3:
+			{
+				int k1 = parts[i].tmp;
+				int k2 = parts[i].tmp2;
+				int k3 = 1, k4 = 1;
+				while (k4 <= 0x2)
+				{
+					if (k2 & k4)
+					{
+						s = sim->create_part(-1, x, y, PT_PHOT);
+						if (s >= 0)
+						{
+							parts[s].vx =  k3*parts[i].vy;
+							parts[s].vy = -k3*parts[i].vx;
+							parts[s].temp = parts[i].temp;
+							parts[s].life = parts[i].life;
+							parts[s].ctype = k1;
+							if (s > i)
+								parts[s].flags |= FLAG_SKIPMOVE;
+						}
+					}
+					k4 <<= 1;
+				}
+			}
+			break;
 		}
 		return 0;
 	}
