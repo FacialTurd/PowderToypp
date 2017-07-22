@@ -53,6 +53,8 @@ extern "C"
 }
 #include "socket/socket.lua.h"
 
+// #include "gui/game/Notification.h" // already in GameModel.h
+
 GameModel * luacon_model;
 GameController * luacon_controller;
 Simulation * luacon_sim;
@@ -460,6 +462,7 @@ void LuaScriptInterface::initInterfaceAPI()
 		{"closeWindow", interface_closeWindow},
 		{"addComponent", interface_addComponent},
 		{"removeComponent", interface_removeComponent},
+		{"addNotification", interface_addNotification},
 		{NULL, NULL}
 	};
 	luaL_register(l, "interface", interfaceAPIMethods);
@@ -537,6 +540,34 @@ int LuaScriptInterface::interface_closeWindow(lua_State * l)
 	LuaWindow * window = Luna<LuaWindow>::check(l, 1);
 	if (window)
 		window->GetWindow()->CloseActiveWindow();
+	return 0;
+}
+
+int LuaScriptInterface::interface_addNotification(lua_State * l)
+{
+	class LuaNotification : public Notification
+	{
+		lua_State * ls0;
+		int ref0;
+	public:
+		LuaNotification(lua_State *ls_, int ref_, std::string message) : Notification(message), ls0(ls_), ref0(ref_) {}
+		virtual ~LuaNotification() {
+			luaL_unref(ls0, LUA_REGISTRYINDEX, ref0);
+		}
+
+		virtual void Action()
+		{
+			lua_rawgeti(ls0, LUA_REGISTRYINDEX, ref0);
+			lua_pcall(ls0, 0, 0, 0);
+		}
+	};
+	luaL_checktype(l, 1, LUA_TSTRING);
+	luaL_checktype(l, 2, LUA_TFUNCTION);
+
+	lua_pushvalue(l, 2); // copy 2nd argument
+	int fn = luaL_ref(l, LUA_REGISTRYINDEX);
+
+	luacon_model->AddNotification(new LuaNotification(l, fn, std::string(lua_tostring(l, 1))));
 	return 0;
 }
 
