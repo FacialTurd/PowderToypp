@@ -109,26 +109,30 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		case 3:
 			{
 				int k1 = parts[i].tmp;
-				int k2 = parts[i].tmp2;
-				int k3 = 1, k4 = 1;
-				while (k4 <= 0x2)
+				int k2 = parts[i].tmp2 & 3;
+				int k3, k4;
+				while (k2)
 				{
-					if (k2 & k4)
+					k4 = k2 & -k2, k2 &= ~k4;
+					k3 = (k4 == 1 ? 1 : -1);
+					s = sim->create_part(-1, x, y, PT_PHOT);
+					if (s >= 0)
 					{
-						s = sim->create_part(-1, x, y, PT_PHOT);
-						if (s >= 0)
-						{
-							parts[s].vx =  k3*parts[i].vy;
-							parts[s].vy = -k3*parts[i].vx;
-							parts[s].temp = parts[i].temp;
-							parts[s].life = parts[i].life;
-							parts[s].ctype = k1;
-							if (s > i)
-								parts[s].flags |= FLAG_SKIPMOVE;
-						}
+						parts[s].vx =  k3*parts[i].vy;
+						parts[s].vy = -k3*parts[i].vx;
+						parts[s].temp = parts[i].temp;
+						parts[s].life = parts[i].life;
+						parts[s].ctype = k1;
+						if (s > i)
+							parts[s].flags |= FLAG_SKIPMOVE;
 					}
-					k4 <<= 1;
-					k3 = -k3;
+				}
+				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 10)
+				{
+					sim->part_change_type(i, x, y, PT_PHOT);
+					parts[i].ctype = k1;
+					parts[i].tmp = 0;
+					return 1;
 				}
 			}
 			break;
