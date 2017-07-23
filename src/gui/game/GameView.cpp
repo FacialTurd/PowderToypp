@@ -1497,7 +1497,9 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 #if defined(DEBUG) || defined(SNAPSHOT)
 		case 'a':
-			if (ctrl)
+			if ((Client::Ref().GetAuthUser().UserElevation == User::ElevationModerator
+			     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
+				 || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
 			{
 				  std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
 				  new InformationMessage("Save authorship info", authorString, true);
