@@ -98,12 +98,13 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			break;
 		case 2:
 			if (parts[i].tmp2)
-				parts[i].tmp2--;
-			else
 			{
-				parts[i].ctype = parts[i].tmp & 0x3FFFFFFF;
-				parts[i].tmp = (unsigned int)(parts[i].tmp) >> 30;
-				sim->part_change_type(i, x, y, PT_PHOT);
+				if (!--parts[i].tmp2)
+				{
+					parts[i].ctype = parts[i].tmp & 0x3FFFFFFF;
+					parts[i].tmp = (unsigned int)(parts[i].tmp) >> 30;
+					sim->part_change_type(i, x, y, PT_PHOT);
+				}
 			}
 			return 1; // 1 means no movement
 		case 3:
@@ -209,6 +210,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_INVIS:
 				if (!parts[r>>8].tmp2)
 					parts[i].ctype = PT_NEUT;
+				break;
+			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
+				parts[i].ctype = 0;
 				break;
 			case PT_VIRS:
 			case PT_VRSS:
