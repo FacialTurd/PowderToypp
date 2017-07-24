@@ -138,7 +138,7 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+rry][x+rrx];
 				if (r)
   				{
-					if (r && sim->elements[r&0xFF].HeatConduct > 0 && (parts[r>>8].type != PT_HSWC || parts[r>>8].life == 10))
+					if (sim->elements[r&0xFF].HeatConduct > 0 && (parts[r>>8].type != PT_HSWC || parts[r>>8].life == 10))
 					{
 						count++;
 						tempAgg += parts[r>>8].temp;
