@@ -166,6 +166,7 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 	{
 		parts[i].temp = tempAgg/count;
 
+	conductFromHeater:
 		for (int rx = -1; rx <= 1; rx++)
 		{
 			for (int ry = -1; ry <= 1; ry++)
