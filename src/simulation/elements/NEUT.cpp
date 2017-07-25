@@ -181,11 +181,13 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						parts[i].vx = 0, parts[i].vy = 0;
 					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
 					{
-						int tmp2;
-						if (Element_MULTIPP::Arrow_keys & 0x10 && (tmp2 = parts[r>>8].tmp2) >= 1 && tmp2 <= 8)
+						int tmp2 = parts[r>>8].tmp2;
+						int multipler = (tmp2 >> 4) + 1;
+						tmp2 &= 0x0F;
+						if (Element_MULTIPP::Arrow_keys & 0x10 && tmp2 >= 1 && tmp2 <= 8)
 						{
-							iX += sim->portal_rx[tmp2-1];
-							iY += sim->portal_ry[tmp2-1];
+							iX += multipler*sim->portal_rx[tmp2-1];
+							iY += multipler*sim->portal_ry[tmp2-1];
 						}
 					}
 					break;
