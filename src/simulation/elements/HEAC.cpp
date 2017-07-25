@@ -52,7 +52,7 @@ Element_HEAC::Element_HEAC()
 struct Element_HEAC::IsInsulator : public std::binary_function<Simulation*,int,bool> {
   bool operator() (Simulation* a, int b)
   {
-	  return b && (a->elements[b&0xFF].HeatConduct == 0 || ((b&0xFF) == PT_HSWC && a->parts[b>>8].life != 10));
+	  return b && (a->elements[b&0xFF].HeatConduct == 0 ? !((b&0xFF) == ELEM_MULTIPP && a->parts[b>>8].life == 6) : ((b&0xFF) == PT_HSWC && a->parts[b>>8].life != 10));
   }
 };
 //#TPT-Directive ElementHeader Element_HEAC static IsInsulator isInsulator
@@ -139,11 +139,19 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 			if (x+rrx >= 0 && x+rrx < XRES && y+rry >= 0 && y+rry < YRES && !Element_HEAC::CheckLine<Element_HEAC::IsInsulator>(sim, x, y, x+rrx, y+rry, isInsulator))
 			{
 				r = pmap[y+rry][x+rrx];
-				if (r && sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
-				{
-					count++;
-					tempAgg += parts[r>>8].temp;
-				}
+				if (r)
+  				{
+					if (sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
+					{
+						count++;
+						tempAgg += parts[r>>8].temp;
+					}
+					else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 6)
+					{
+						parts[i].temp = parts[r>>8].temp;
+						goto conductFromHeater;
+					}
+  				}
 				r = sim->photons[y+rry][x+rrx];
 				if (r && sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
 				{
