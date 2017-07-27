@@ -134,7 +134,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											parts[tmp[0]>>8].life = tmp[1];
 											nyy += nyi; nxx += nxi;
 											if (!BOUNDS_CHECK)
-												break;
+												goto break1a;
 											tmp[0] = pmap[y+nyy][x+nxx];
 										}
 										while ((tmp[0]&0xFF) == PT_SWCH);
