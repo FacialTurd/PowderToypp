@@ -129,14 +129,15 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											destroy = parts[tmp[0]>>8].life >= 10;
 										tmp[1] = destroy ? 9 : 10;
 										docontinue = 0;
-									continue1a:
-										parts[tmp[0]>>8].life = tmp[1];
-										nyy += nyi; nxx += nxi;
-										if (!BOUNDS_CHECK)
-											break;
-										tmp[0] = pmap[y+nyy][x+nxx];
-										if ((tmp[0]&0xFF) == PT_SWCH)
-											goto continue1a;
+										do
+										{
+											parts[tmp[0]>>8].life = tmp[1];
+											nyy += nyi; nxx += nxi;
+											if (!BOUNDS_CHECK)
+												break;
+											tmp[0] = pmap[y+nyy][x+nxx];
+										}
+										while ((tmp[0]&0xFF) == PT_SWCH);
 									}
 									continue;
 								case 6:
