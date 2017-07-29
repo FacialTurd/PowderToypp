@@ -725,11 +725,7 @@ void GameView::NotifyLastToolChanged(GameModel * sender)
 {
 	if (sender->GetLastTool())
 	{
-		if (sender->GetLastTool()->GetResolution() == CELL)
-			wallBrush = true;
-		else
-			wallBrush = false;
-
+		wallBrush = sender->GetLastTool()->GetBlocky();
 		if (sender->GetLastTool()->GetIdentifier().find("DEFAULT_TOOL_") != sender->GetLastTool()->GetIdentifier().npos)
 			toolBrush = true;
 		else
@@ -1864,7 +1860,7 @@ void GameView::OnTick(float dt)
 	if (foundSign)
 	{
 		const char* str = foundSign->text.c_str();
-		char type;
+		char type = '\0';
 		int pos = sign::splitsign(str, &type);
 		if (type == 'c' || type == 't' || type == 's')
 		{

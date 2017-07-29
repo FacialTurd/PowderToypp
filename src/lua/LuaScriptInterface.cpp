@@ -4042,7 +4042,6 @@ bool LuaScriptInterface::OnKeyRelease(int key, Uint16 character, bool shift, boo
 
 bool LuaScriptInterface::OnMouseTick()
 {
-	ui::Engine::Ref().LastTick(Platform::GetTime());
 	if (luacon_mousedown)
 		return luacon_mouseevent(luacon_mousex, luacon_mousey, luacon_mousebutton, LUACON_MPRESS, 0);
 	return true;
@@ -4057,7 +4056,6 @@ void LuaScriptInterface::OnTick()
 		lua_setfield(l, -2, "NUM_PARTS");
 	}
 	lua_pop(l, 1);
-	ui::Engine::Ref().LastTick(Platform::GetTime());
 	luacon_step(luacon_mousex, luacon_mousey);
 }
 
