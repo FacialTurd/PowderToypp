@@ -188,7 +188,7 @@ class LuaScriptInterface: public CommandInterface
 	static int platform_exeName(lua_State * l);
 	static int platform_restart(lua_State * l);
 	static int platform_openLink(lua_State * l);
-	static int platform_openMyTool(lua_State * l);
+	// static int platform_openMyTool(lua_State * l);
 	static int platform_clipboardCopy(lua_State * l);
 	static int platform_clipboardPaste(lua_State * l);
 

@@ -3862,7 +3862,7 @@ void LuaScriptInterface::initPlatformAPI()
 		{"exeName", platform_exeName},
 		{"restart", platform_restart},
 		{"openLink", platform_openLink},
-		{"openMyTool", platform_openMyTool},
+		// {"openMyTool", platform_openMyTool},
 		{"clipboardCopy", platform_clipboardCopy},
 		{"clipboardPaste", platform_clipboardPaste},
 		{NULL, NULL}
@@ -3915,6 +3915,13 @@ int LuaScriptInterface::platform_openLink(lua_State * l)
 	return 0;
 }
 
+/**********************************************************
+ * Error: 404 There isn't a GitHub Pages site here.       *
+ * When to do fixing flagged "git123hub" account problem? *
+ * Contract GitHub support: https://github.com/contact    *
+ **********************************************************/
+
+/*
 int LuaScriptInterface::platform_openMyTool(lua_State * l)
 {
 	int args = lua_gettop(l);
@@ -3939,6 +3946,7 @@ int LuaScriptInterface::platform_openMyTool(lua_State * l)
 	Platform::OpenURI((uri_str_head + uri_str));
 	return 0;
 }
+*/
 
 int LuaScriptInterface::platform_clipboardCopy(lua_State * l)
 {
