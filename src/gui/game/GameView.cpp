@@ -720,11 +720,7 @@ void GameView::NotifyLastToolChanged(GameModel * sender)
 {
 	if (sender->GetLastTool())
 	{
-		if (sender->GetLastTool()->GetResolution() == CELL)
-			wallBrush = true;
-		else
-			wallBrush = false;
-
+		wallBrush = sender->GetLastTool()->GetBlocky();
 		if (sender->GetLastTool()->GetIdentifier().find("DEFAULT_TOOL_") != sender->GetLastTool()->GetIdentifier().npos)
 			toolBrush = true;
 		else
@@ -1735,11 +1731,11 @@ void GameView::OnTick(float dt)
 		}
 	}
 
-	sign * foundSign = c->GetSignAt(mousePosition.X, mousePosition.Y);
-	if (foundSign)
+	int foundSignID = c->GetSignAt(mousePosition.X, mousePosition.Y);
+	if (foundSignID != -1)
 	{
-		const char* str = foundSign->text.c_str();
-		char type;
+		const char* str = c->GetSignText(foundSignID).c_str();;
+		char type = '\0';
 		int pos = sign::splitsign(str, &type);
 		if (type == 'c' || type == 't' || type == 's')
 		{
