@@ -2595,7 +2595,8 @@ void GameView::OnDraw()
 				if (!showDebugState)
 				{
 					sampleInfo << ", Life: " << partlife;
-					if (sample.particle.type != PT_RFRG && sample.particle.type != PT_RFGL)
+					if (!(el_prop & PROP_DEBUG_HIDE_TMP))
+					// if (sample.particle.type != PT_RFRG && sample.particle.type != PT_RFGL)
 						sampleInfo << ", Tmp: " << parttmp;
 
 					// only elements that use .tmp2 show it in the debug HUD

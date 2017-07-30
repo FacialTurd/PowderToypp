@@ -40,13 +40,14 @@
 #define PROP_NO_NBHL_GEN	0x20000000   // 2^29 
 
 // second properties flag:
-#define PROP_DEBUG_USE_TMP2		0x00000001	//  1 Use .tmp2 show it in the debug HUD
-#define PROP_ELEC_HEATING		0x00000002  //  2 Electricity heating effect
-#define PROP_NOWAVELENGTHS		0x00000004  //  4 Energy particle without wavelengths
-#define PROP_CTYPE_INTG			0x00000008	//  8 Show .ctype as integer
-#define PROP_CTYPE_WAVEL		0x00000010	// 16 Show .ctype as wavelengths
-#define PROP_CTYPE_SPEC			0x00000020	// 32 Special case for .ctype
-#define PROP_ENERGY_PART		0x00000040	// 64 VIBR absorb-able particle
+#define PROP_DEBUG_USE_TMP2		0x00000001	//   1 Use .tmp2 show it in the debug HUD
+#define PROP_ELEC_HEATING		0x00000002  //   2 Electricity heating effect
+#define PROP_NOWAVELENGTHS		0x00000004  //   4 Energy particle without wavelengths
+#define PROP_CTYPE_INTG			0x00000008	//   8 Show .ctype as integer
+#define PROP_CTYPE_WAVEL		0x00000010	//  16 Show .ctype as wavelengths
+#define PROP_CTYPE_SPEC			0x00000020	//  32 Special case for .ctype
+#define PROP_ENERGY_PART		0x00000040	//  64 VIBR absorb-able particle
+#define PROP_DEBUG_HIDE_TMP		0x00000080	// 128 .tmp is hidden from the debug HUD
 #define PROP_UNBREAKABLECLONE	0x00004000  // 2^14
 #define PROP_NODESTRUCT			0x00008000  // 2^15 Indestructible property
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it
