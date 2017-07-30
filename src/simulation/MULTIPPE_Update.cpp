@@ -2358,11 +2358,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if ((r & 0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
+						rii = (rtmp & 1) ? PROP_DEBUG_HIDE_TMP : PROP_DEBUG_USE_TMP2;
 						switch (parts[r>>8].ctype)
 						{
-							case PT_PSCN: sim->elements[rctype].Properties2 |=  PROP_DEBUG_USE_TMP2; break;
-							case PT_NSCN: sim->elements[rctype].Properties2 &= ~PROP_DEBUG_USE_TMP2; break;
-							case PT_INWR: sim->elements[rctype].Properties2 ^=  PROP_DEBUG_USE_TMP2; break;
+							case PT_PSCN: sim->elements[rctype].Properties2 |=  rii; break;
+							case PT_NSCN: sim->elements[rctype].Properties2 &= ~rii; break;
+							case PT_INWR: sim->elements[rctype].Properties2 ^=  rii; break;
 						}
 						return return_value;
 					}
