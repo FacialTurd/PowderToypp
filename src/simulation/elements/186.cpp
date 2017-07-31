@@ -137,6 +137,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			break;
+		case 4:
+			parts[i].temp = * (float*) &parts[i].tmp;
+			break;
 		}
 		return 0;
 	}

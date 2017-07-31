@@ -423,6 +423,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->ctype = 0x103;
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
+			case 23:
+				if (rct & 1)
+					part_phot->tmp = * (int*) &(part_phot->temp);
+				else
+					part_phot->tmp = * (int*) &(part_other->temp);
+				break;
 		}
 	}
 }
