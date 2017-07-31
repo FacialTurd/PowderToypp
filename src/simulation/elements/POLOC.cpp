@@ -170,7 +170,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 					case PT_POLO:
 						if (!(rand()%40))
 						{
-							if (rand()%4)
+							if (!(rand()%4))
 							{
 								parts[i].tmp = 0;
 								parts[r>>8].tmp2 = 0; // clear absorbed PROT?
