@@ -174,9 +174,9 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 							{
 								parts[i].tmp = 0;
 								parts[r>>8].tmp2 = 0; // clear absorbed PROT?
-								parts[r>>8].temp = (R_TEMP+273.15f);
 							}
 							parts[r>>8].tmp = 0;
+							parts[r>>8].temp *= 0.95;
 						}
 						break;
 					case PT_POLC: // don't interacting itself
