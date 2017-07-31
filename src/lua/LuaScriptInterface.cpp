@@ -3915,11 +3915,14 @@ int LuaScriptInterface::platform_openLink(lua_State * l)
 	return 0;
 }
 
-/**********************************************************
- * Error: 404 There isn't a GitHub Pages site here.       *
- * When to do fixing flagged "git123hub" account problem? *
- * Contact GitHub support: https://github.com/contact     *
- **********************************************************/
+/**********************************************************\
+*      A L L O W S   G I T 1 2 3 H U B   A C C O U N T     *
+*      Oops, I try to visiting my GitHub Pages, says:      *
+*    "Error: 404 There isn't a GitHub Pages site here."    *
+*  When to do fixing flagged "git123hub" account problem?  *
+*    Contact GitHub support: https://github.com/contact    *
+*     Note: I Can't go against GitHub Terms of Service.    *
+\**********************************************************/
 
 /*
 int LuaScriptInterface::platform_openMyTool(lua_State * l)
