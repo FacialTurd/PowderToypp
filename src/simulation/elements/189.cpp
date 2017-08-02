@@ -65,6 +65,9 @@ int Element_MULTIPP::Arrow_keys = 0; // Note: TPT uses SDL
 //#TPT-Directive ElementHeader Element_MULTIPP static int maxPrior
 int Element_MULTIPP::maxPrior = 0;
 
+//#TPT-Directive ElementHeader Element_MULTIPP static int * EngineFrameStart
+int * Element_MULTIPP::EngineFrameStart = NULL;
+
 // #TPT-Directive ElementHeader Element_MULTIPP static int q1
 // int Element_MULTIPP::q1 = -1; // removed
 

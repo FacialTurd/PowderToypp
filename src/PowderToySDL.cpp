@@ -764,10 +764,15 @@ void DoubleScreenDialog()
 void EngineProcess()
 {
 	double frameTimeAvg = 0.0f, correctedFrameTimeAvg = 0.0f;
+	int frameStart;
+	Element_MULTIPP::EngineFrameStart = &frameStart;
 	SDL_Event event;
 	while(engine->Running())
 	{
+	/* I might contact GitHub Support (allows account). please visit https://github.com/contact
 		int frameStart = SDL_GetTicks();
+	*/
+		frameStart = SDL_GetTicks();
 		if(engine->Broken()) { engine->UnBreak(); break; }
 		event.type = 0;
 		while (SDL_PollEvent(&event))

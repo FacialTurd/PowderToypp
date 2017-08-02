@@ -1,6 +1,7 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
 #include "simulation/MULTIPPE_Update.h"
+#include "SDLCompat.h" // SDL_Delay in SDL.h? 
 
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
@@ -499,6 +500,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									Element_STKM::STKM_set_element(sim, &sim->player2, rii),
 									sim->player2.__flags |= 2;
 							}
+							break;
+						case 15:
+							SDL_Delay(parts[i].ctype);
+							*(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
 							break;
 						default:
 							if ((rtmp & 0xFF) == 0x7E)
