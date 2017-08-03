@@ -28,12 +28,12 @@
 #include "lua/LuaScriptHelper.h"
 #endif
 
-int Simulation::Load(GameSave * save)
+int Simulation::Load(GameSave * save, bool includePressure)
 {
-	return Load(0, 0, save);
+	return Load(0, 0, save, includePressure);
 }
 
-int Simulation::Load(int fullX, int fullY, GameSave * save)
+int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure)
 {
 	int blockX, blockY, x, y, r;
 
@@ -217,25 +217,29 @@ int Simulation::Load(int fullX, int fullY, GameSave * save)
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
 				fvy[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelY[saveBlockY][saveBlockX];
 			}
-			pv[saveBlockY+blockY][saveBlockX+blockX] = save->pressure[saveBlockY][saveBlockX];
-			vx[saveBlockY+blockY][saveBlockX+blockX] = save->velocityX[saveBlockY][saveBlockX];
-			vy[saveBlockY+blockY][saveBlockX+blockX] = save->velocityY[saveBlockY][saveBlockX];
-			if (save->hasAmbientHeat)
-				hv[saveBlockY+blockY][saveBlockX+blockX] = save->ambientHeat[saveBlockY][saveBlockX];
+			if (includePressure)
+			{
+				pv[saveBlockY+blockY][saveBlockX+blockX] = save->pressure[saveBlockY][saveBlockX];
+				vx[saveBlockY+blockY][saveBlockX+blockX] = save->velocityX[saveBlockY][saveBlockX];
+				vy[saveBlockY+blockY][saveBlockX+blockX] = save->velocityY[saveBlockY][saveBlockX];
+				if (save->hasAmbientHeat)
+					hv[saveBlockY+blockY][saveBlockX+blockX] = save->ambientHeat[saveBlockY][saveBlockX];
+			}
 		}
 	}
 
 	gravWallChanged = true;
+	air->RecalculateBlockAirMaps();
 
 	return 0;
 }
 
-GameSave * Simulation::Save()
+GameSave * Simulation::Save(bool includePressure)
 {
-	return Save(0, 0, XRES-1, YRES-1);
+	return Save(0, 0, XRES-1, YRES-1, includePressure);
 }
 
-GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2)
+GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool includePressure)
 {
 	int blockX, blockY, blockX2, blockY2, blockW, blockH;
 	//Normalise incoming coords
@@ -319,11 +323,14 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2)
 				newSave->fanVelX[saveBlockY][saveBlockX] = fvx[saveBlockY+blockY][saveBlockX+blockX];
 				newSave->fanVelY[saveBlockY][saveBlockX] = fvy[saveBlockY+blockY][saveBlockX+blockX];
 			}
-			newSave->pressure[saveBlockY][saveBlockX] = pv[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->velocityX[saveBlockY][saveBlockX] = vx[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->velocityY[saveBlockY][saveBlockX] = vy[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->ambientHeat[saveBlockY][saveBlockX] = hv[saveBlockY+blockY][saveBlockX+blockX];
-			newSave->hasAmbientHeat = true;
+			if (includePressure)
+			{
+				newSave->pressure[saveBlockY][saveBlockX] = pv[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->velocityX[saveBlockY][saveBlockX] = vx[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->velocityY[saveBlockY][saveBlockX] = vy[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->ambientHeat[saveBlockY][saveBlockX] = hv[saveBlockY+blockY][saveBlockX+blockX];
+				newSave->hasAmbientHeat = true;
+			}
 		}
 	}
 
@@ -558,7 +565,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 		{
 			sample.WallType = bmap[y/CELL][x/CELL];
 		}
-		sample.AirPressure = pv[y/CELL][x/CELL];
+		sample.AirPressure = (int)air->bmap_blockair[y/CELL][x/CELL];
 		sample.AirTemperature = hv[y/CELL][x/CELL];
 		sample.AirVelocityX = vx[y/CELL][x/CELL];
 		sample.AirVelocityY = vy[y/CELL][x/CELL];
