@@ -203,20 +203,22 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										goto break1a;
 									case 27:
-										bool bef1 = (r > i) && !(parts[r].flags & FLAG_SKIPMOVE);
-										if (destroy)
 										{
-											if (bef1)
+											bool bef1 = (r > i) && !(parts[r].flags & FLAG_SKIPMOVE);
+											if (destroy)
 											{
-												parts[r].pavg[0] = parts[r].pavg[1];
-												parts[r].flags |= FLAG_SKIPMOVE;
+												if (bef1)
+												{
+													parts[r].pavg[0] = parts[r].pavg[1];
+													parts[r].flags |= FLAG_SKIPMOVE;
+												}
+												parts[r].pavg[1] = parts[i].tmp;
 											}
-											parts[r].pavg[1] = parts[i].tmp;
-										}
-										else if (parts[r].pavg[bef1 ? 1 : 0])
-										{
-											nyy += parts[r].tmp * nxi;
-											nxx -= parts[r].tmp * nyi;
+											else if (parts[r].pavg[bef1 ? 1 : 0])
+											{
+												nyy += parts[r].tmp * nxi;
+												nxx -= parts[r].tmp * nyi;
+											}
 										}
 										continue;
 									case 29: // Destroying FILT
