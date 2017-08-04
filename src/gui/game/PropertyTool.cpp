@@ -163,9 +163,19 @@ void PropertyWindow::SetProperty()
 					else
 					{
 						int type;
-						if (properties[property->GetOption().second].Type == StructProperty::ParticleType && (type = sim->GetParticleType(value)) != -1)
+						std::string vhead, vtail;
+						int v1, v2 = value.find(':');
+						if (properties[property->GetOption().second].Type == StructProperty::ParticleType && (type = sim->GetParticleType(vhead = value.substr(0, v2))) != -1)
 						{
 							v = type;
+							if (v2 != value.npos)
+							{
+								std::stringstream buffer;
+								buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
+								buffer << std::hex << value.substr(v2+1);
+								buffer >> v1;
+								v |= (v1 << 8);
+							}
 							
 #ifdef DEBUG
 							std::cout << "Got type from particle name" << std::endl;
