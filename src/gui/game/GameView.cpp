@@ -2836,6 +2836,8 @@ void GameView::OnDraw()
 
 				sampleInfo << "Air velocity X: " << sample.AirVelocityX << ", ";
 				sampleInfo << "velocity Y: " << sample.AirVelocityY;
+				if (sample.AirBlocked)
+					sampleInfo << ", blocking air";
 
 				textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
 				g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);

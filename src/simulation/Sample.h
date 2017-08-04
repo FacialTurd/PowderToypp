@@ -16,6 +16,7 @@ public:
 	float AirTemperature;
 	float AirVelocityX;
 	float AirVelocityY;
+	int AirBlocked;
 
 	int WallType;
 	float Gravity;
@@ -25,7 +26,7 @@ public:
 	int NumParts;
 	bool isMouseInSim;
 
-	SimulationSample() : particle(), ParticleID(0), PositionX(0), PositionY(0), AirPressure(0), AirTemperature(0), AirVelocityX(0), AirVelocityY(0), WallType(0), Gravity(0), GravityVelocityX(0), GravityVelocityY(0), NumParts(0), isMouseInSim(true) {}
+	SimulationSample() : particle(), ParticleID(0), PositionX(0), PositionY(0), AirPressure(0), AirTemperature(0), AirVelocityX(0), AirVelocityY(0), AirBlocked(0), WallType(0), Gravity(0), GravityVelocityX(0), GravityVelocityY(0), NumParts(0), isMouseInSim(true) {}
 };
 
 #endif
