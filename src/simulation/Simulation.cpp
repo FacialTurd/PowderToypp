@@ -569,6 +569,7 @@ SimulationSample Simulation::GetSample(int x, int y)
 		sample.AirTemperature = hv[y/CELL][x/CELL];
 		sample.AirVelocityX = vx[y/CELL][x/CELL];
 		sample.AirVelocityY = vy[y/CELL][x/CELL];
+		sample.AirBlocked = air->bmap_blockair[y/CELL][x/CELL];
 
 		if(grav->ngrav_enable)
 		{
