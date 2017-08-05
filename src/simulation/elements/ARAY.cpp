@@ -230,10 +230,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											while (sim->InBounds(x+nxx, y+nyy))
 											{
 												front1 = pmap[y+nyy][x+nxx];
-												if (rem1 && !(rem1--)) break;
 												if ((front1&0xFF) == PT_FILT)
 													sim->kill_part(front1>>8);
 												else if (!rem1) break;
+												if (rem1 && !--rem1) break;
 												nyy += nyi, nxx += nxi;
 											}
 										}
