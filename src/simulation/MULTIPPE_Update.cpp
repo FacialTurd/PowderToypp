@@ -1474,7 +1474,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								if (sim->elements[rr&0xFF].Properties & PROP_CONDUCTS)
 								{
 									parts[rr>>8].ctype = rr & 0xFF;
-									sim->part_change_type(rr>>8, x, y, PT_SPRK);
+									sim->part_change_type(rr>>8, x+2*rx, y+2*ry, PT_SPRK);
 									parts[rr>>8].life = parts[r>>8].tmp2;
 								}
 							}
