@@ -458,6 +458,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											goto break1a;
 										}
 										break;
+									case 8:
+										if (max_turn-- <= 0)
+											goto break1a;
+										nxx += tmp[0]*nxi, nyy += tmp[0]*nyi;
+										break;
 									}
 									tmpz = 1;
 									continue;
