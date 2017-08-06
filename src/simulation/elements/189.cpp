@@ -437,7 +437,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			case 24: // round coordinate to int.
-				part_phot->x = x; part_phot->y = y;
+				part_phot->x = (int)x; part_phot->y = (int)y;
 				break;
 		}
 	}
