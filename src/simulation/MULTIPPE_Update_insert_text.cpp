@@ -32,7 +32,7 @@ void MULTIPPE_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, i
 			{
 				if (esc == 0)
 					esc = 5;
-				else if (esc = 1)
+				else if (esc == 1)
 					bkup = 1;
 			}
 			else
