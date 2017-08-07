@@ -107,6 +107,15 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			sim->kill_part(i);
 			return 1;
 		}
+		else if (parts[under>>8].life == 11 && parts[under>>8].tmp2 == 1)
+		{
+			sim->part_change_type(i, x, y, PT_PHOT)
+			parts[i].x = x;
+			parts[i].y = y;
+			parts[i].life *= 2;
+			parts[i].ctype = 0x3FFFFFFF;
+			return 1;
+		}
 		break;
 	case PT_NONE:
 		//slowly kill if it's not inside an element
