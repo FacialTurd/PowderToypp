@@ -109,7 +109,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 		else if (parts[under>>8].life == 11 && parts[under>>8].tmp2 == 1)
 		{
-			sim->part_change_type(i, x, y, PT_PHOT)
+			sim->part_change_type(i, x, y, PT_PHOT);
 			parts[i].x = x;
 			parts[i].y = y;
 			parts[i].life *= 2;
