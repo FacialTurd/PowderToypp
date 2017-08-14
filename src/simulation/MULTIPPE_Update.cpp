@@ -78,6 +78,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			int direction = (rr + (rtmp >> 17)) & 0x3;
 			rx = x + tron_rx[direction];
 			ry = y + tron_ry[direction];
+		jump1a:
 			r = pmap[ry][rx];
 			rii = parts[r >> 8].life;
 			rrx = rii >> 1;
@@ -100,6 +101,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			else if ((r & 0xFF) == PT_METL || (r & 0xFF) == PT_PSCN || (r & 0xFF) == PT_NSCN)
 			{
 				conductTo (sim, r, rx, ry, parts);
+			}
+			else if ((r & 0xFF) == PT_ETRD)
+			{
+				rr = parts[r>>8].tmp; (rr <= 0) && (rr = 1);
+				rx += rr * tron_rx[direction];
+				ry += rr * tron_ry[direction];
+				if (sim->InBounds(rx, ry))
+					goto jump1a;
 			}
 		break1c:
 			rtmp &= 0xE0000;
