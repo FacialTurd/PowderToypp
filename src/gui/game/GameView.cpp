@@ -2843,6 +2843,19 @@ void GameView::OnDraw()
 				g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
 				g->drawtext(XRES-16-textWidth, __currPosY + 3, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
 				__currPosY += 15;
+
+				if (sample.WallType == WL_FAN)
+				{
+					sampleInfo.str(std::string());
+
+					sampleInfo << "fvx: " << ren->sim->fvx << ", ";
+					sampleInfo << "fvy: " << ren->sim->fvy;
+					
+					textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
+					g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
+					g->drawtext(XRES-16-textWidth, __currPosY + 3, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
+					__currPosY += 15;
+				}
 			}
 		}
 	}
