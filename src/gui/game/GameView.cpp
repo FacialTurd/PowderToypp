@@ -2834,8 +2834,8 @@ void GameView::OnDraw()
 			{
 				sampleInfo.str(std::string());
 
-				sampleInfo << "Air velocity X: " << sample.AirVelocityX << ", ";
-				sampleInfo << "velocity Y: " << sample.AirVelocityY;
+				sampleInfo << "Air velocity X: " << std::fixed << sample.AirVelocityX << ", ";
+				sampleInfo << "velocity Y: " << std::fixed << sample.AirVelocityY;
 				if (sample.AirBlocked)
 					sampleInfo << ", blocking air";
 
@@ -2848,8 +2848,8 @@ void GameView::OnDraw()
 				{
 					sampleInfo.str(std::string());
 
-					sampleInfo << "fvx: " << ren->sim->fvx << ", ";
-					sampleInfo << "fvy: " << ren->sim->fvy;
+					sampleInfo << "fvx: " << std::fixed << ren->sim->fvx[sample.PositionY/CELL][sample.PositionX/CELL] << ", ";
+					sampleInfo << "fvy: " << std::fixed << ren->sim->fvy[sample.PositionY/CELL][sample.PositionX/CELL];
 					
 					textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
 					g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
