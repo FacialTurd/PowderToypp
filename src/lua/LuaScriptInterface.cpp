@@ -3432,7 +3432,7 @@ int LuaScriptInterface::elements_isDestructible(lua_State * l) // input argument
 	t = lua_tointeger(l, 1);
 	if (t < 0 || t >= PT_NUM)
 		return luaL_error(l, "Invalid element");
-	lua_pushboolean(l, (luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_NODESTRUCT) == 0);
+	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_NODESTRUCT) == 0);
 	return 1;
 }
 
