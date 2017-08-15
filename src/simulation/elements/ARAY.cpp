@@ -553,7 +553,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												}
 												else if (inputType == PT_TESC)
 												{
-													if (parts[r].life > 0 && parts[r].life < 100)
+													if (parts[r].life > 0 && parts[r].life < (((int)parts[i].temp + 732) / 10))
 														parts[r].life += rand() % 300 + 200;
 												}
 												else if (!parts[r].life)
