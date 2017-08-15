@@ -150,6 +150,7 @@ class LuaScriptInterface: public CommandInterface
 	static int elements_property(lua_State * l);
 	static int elements_loadDefault(lua_State * l);
 	static int elements_free(lua_State * l);
+	static int elements_isDestructible(lua_State * l);
 
 	//Interface
 	void initInterfaceAPI();

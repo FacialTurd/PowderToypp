@@ -2875,6 +2875,7 @@ void LuaScriptInterface::initElementsAPI()
 		{"property", elements_property},
 		{"free", elements_free},
 		{"loadDefault", elements_loadDefault},
+		{"isDestructible", elements_isDestructible},
 		{NULL, NULL}
 	};
 	luaL_register(l, "elements", elementsAPIMethods);
@@ -3422,6 +3423,17 @@ int LuaScriptInterface::elements_free(lua_State * l)
 	lua_pop(l, 1);
 
 	return 0;
+}
+
+int LuaScriptInterface::elements_isDestructible(lua_State * l) // input argument: particle type, not particle ID
+{
+	int t;
+	luaL_checktype(l, 1, LUA_TNUMBER);
+	t = lua_tointeger(l, 1);
+	if (t < 0 || t >= PT_NUM)
+		return luaL_error(l, "Invalid element");
+	lua_pushboolean(l, (luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_NODESTRUCT) == 0);
+	return 1;
 }
 
 void LuaScriptInterface::initGraphicsAPI()
