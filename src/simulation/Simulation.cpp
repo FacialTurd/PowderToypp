@@ -2249,7 +2249,6 @@ void Simulation::init_can_move()
 	can_move[PT_TRON][PT_SWCH] = 3;
 	
 	can_move[PT_ELEC][PT_POLC] = 2;
-	can_move[PT_POLC][PT_YEST] = 0; // moving type = "POLC", type at destination = yeast
 	can_move[PT_GLOW][PT_E187] = 0;
 	
 	// can_move[PT_E186][PT_BRMT] = 3;
@@ -3709,6 +3708,10 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].life = v;
 		break;
 	}
+	case 194: // REP
+		parts[i].life = 10;
+		parts[i].tmp = 5;
+		break;
 	default:
 		break;
 	}
