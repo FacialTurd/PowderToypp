@@ -59,11 +59,13 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 			{
 				parts[rr].temp = tempTemp;
 				parts[rr].tmp  = parts[i].tmp + ((rand() % 10 - 1) >> 3);
-				parts[rr].life = (79 + rand() % 6) >> 2;
+				parts[rr].life = (199 + rand() % 6) >> 2;
 			}
 		}
 		sim->kill_part(i);
+		return 1;
 	}
+	return 0;
 }
 
 Element_REPP::~Element_REPP() {}
