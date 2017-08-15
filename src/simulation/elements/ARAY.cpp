@@ -328,19 +328,27 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										break;
 									case 8:
 									case 9:
-										while (nxx += nxi, nyy += nyi, BOUNDS_CHECK)
 										{
-											int front1 = pmap[y+nyy][x+nxx];
-											if (!front1) goto break1a;
-											if ((front1 & 0xFF) == PT_FILT)
-												parts[front1>>8].life = 4;
-											else if ((front1 & 0xFF) == PT_ARAY)
+											int tdiff = (tmp[1] == 8 ? 1 : -1) * parts[r].tmp2;
+											while (nxx += nxi, nyy += nyi, BOUNDS_CHECK)
 											{
-												float ftemp = parts[front1>>8].temp + (tmp[1] == 8 ? 1 : -1) * parts[r].tmp2;
-												parts[front1>>8].temp = restrict_flt(ftemp, MIN_TEMP, MAX_TEMP);
-												goto break1a;
+												int front1 = pmap[y+nyy][x+nxx];
+												if (!front1) goto break1a;
+												if ((front1 & 0xFF) == PT_FILT)
+													parts[front1>>8].life = 4;
+												else if ((front1 & 0xFF) == PT_ARAY)
+												{
+													float ftemp = parts[front1>>8].temp + tdiff;
+													parts[front1>>8].temp = restrict_flt(ftemp, MIN_TEMP, MAX_TEMP);
+													goto break1a;
+												}
+												else if ((front1 & 0xFF) == ELEM_MULTIPP)
+												{
+													if (parts[front1>>8].life == 28)
+														parts[front1>>8].tmp2 += tdiff;
+												}
+												else goto break1a;
 											}
-											else goto break1a;
 										}
 										goto break1a;
 									case 12:
@@ -545,6 +553,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												}
 												else if (!parts[r].life)
 													parts[r].life = 750;
+												else if (inputType == PT_TESC && parts[r].life > 0 && parts[r].life < 100)
+													parts[r].life += rand() % 300 + 200;
 											}
 											continue;
 										}
