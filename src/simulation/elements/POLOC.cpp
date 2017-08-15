@@ -55,7 +55,7 @@ Element_POLC::Element_POLC()
 //#TPT-Directive ElementHeader Element_POLC static int update(UPDATE_FUNC_ARGS)
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
-	int r, s, rx, ry, rr, sctype, stmp, trade, exot_id, exot_pos_x, exot_pos_y, prev_type = 0;
+	int r, s, rx, ry, rr, sctype, stmp, trade;
 	int rrx, rry, rrr;
 	bool is_warp;
 	const int cooldown = 15;

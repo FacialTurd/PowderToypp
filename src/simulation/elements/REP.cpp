@@ -52,7 +52,7 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 	float tempTemp = parts[i].temp;
 	if (parts[i].life <= 1)
 	{
-		for (s = parts[i].tmp; s > 0; s--)
+		for (int s = parts[i].tmp; s > 0; s--)
 		{
 			int rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_REPP);
 			if (rr >= 0)
