@@ -54,12 +54,11 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 	{
 		for (s = parts[i].tmp; s > 0; s--)
 		{
-			rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_REPP);
+			int rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_REPP);
 			if (rr >= 0)
 			{
 				parts[rr].temp = tempTemp;
 				parts[rr].tmp  = parts[i].tmp + ((rand() % 10 - 1) >> 3);
-				parts[rr].tmp2 = 1;
 				parts[rr].life = (79 + rand() % 6) >> 2;
 			}
 		}
