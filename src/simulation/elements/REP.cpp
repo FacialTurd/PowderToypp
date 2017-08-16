@@ -68,7 +68,7 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 	}
 	if (parts[i].tmp <= 0)
 	{
-		sim->kill_parts(i);
+		sim->kill_part(i);
 		return 1;
 	}
 	return 0;
