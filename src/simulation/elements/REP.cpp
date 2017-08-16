@@ -29,7 +29,7 @@ Element_REPP::Element_REPP()
 
 	Temperature = R_TEMP+0.0f	+273.15f;
 	HeatConduct = 70;
-	Description = "Replicating powder";
+	Description = "Replicating powder.";
 
 	Properties = TYPE_PART|PROP_LIFE_DEC;
 
@@ -49,22 +49,26 @@ Element_REPP::Element_REPP()
 //#TPT-Directive ElementHeader Element_REPP static int update(UPDATE_FUNC_ARGS)
 int Element_REPP::update(UPDATE_FUNC_ARGS)
 {
-	float tempTemp = parts[i].temp;
-	if (parts[i].life <= 1)
+	if (parts[i].life < 1)
 	{
-		for (int s = parts[i].tmp; s > 0; s--)
+		float tempTemp = parts[i].temp;
+		int rnd = rand();
+		int rx = (rnd % 7) - 3;
+		rnd >>= 3;
+		int ry = (rnd % 7) - 3;
+		if (!(rx || ry))
+			return 0;
+		int r = sim->create_part(-1, x + rx, y + ry, PT_REPP);
+		if (r >= 0)
 		{
-			int rr = sim->create_part(-1, x + rand()%7-3, y + rand()%7-3, PT_REPP);
-			if (rr >= 0)
-			{
-				parts[rr].temp = tempTemp;
-				parts[rr].tmp  = parts[i].tmp + ((rand() % 10 - 1) >> 3);
-				if (parts[rr].tmp > 8)
-					parts[rr].tmp = 8;
-				parts[rr].life = 32 + rand() % 8;
-			}
+			parts[r].temp = tempTemp;
 		}
-		sim->kill_part(i);
+		parts[i].tmp--;
+		parts[i].life = 10;
+	}
+	if (parts[i].tmp <= 0)
+	{
+		sim->kill_parts(i);
 		return 1;
 	}
 	return 0;
