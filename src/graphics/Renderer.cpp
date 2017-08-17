@@ -131,6 +131,48 @@ void Renderer::RenderBegin()
 	draw_other();
 	draw_grav_zones();
 	DrawSigns();
+	
+	if (sim->SimExtraFunc & 0x400)
+	{
+		pixel p; 
+		int i, nx, ny;
+		sim->SimExtraFunc &= ~0x400;
+		sim->sys_pause = true;
+		sim->emp_decor = 0;
+		ClearAccumulation();
+
+		// clear any particle
+		for (i = 0; i <= sim->parts_lastActiveIndex; i++) {
+			sim->kill_part(i);
+		}
+		// clear any walls
+		sim->breakable_wall_count = 0;
+		for (ny = 0; ny < YRES/CELL; ny++)
+		{
+			for (nx = 0; nx < XRES/CELL; nx++)
+			{
+				sim->bmap[ny][nx] = 0;
+			}
+		}
+		// clear any signs
+		for (int i = sim->signs.size()-1; i >= 0; i--)
+		{
+			sim->signs.erase(sim->signs.begin()+i);
+		}
+
+		for (ny = 0; ny < YRES; ny++)
+		{
+			for (nx = 0; nx < XRES; nx++)
+			{
+				i = sim->create_part(-1, nx, ny, PT_DMND);
+				if (i >= 0)
+				{
+					p = vid[ny*(VIDXRES)+nx];
+					sim->parts[i].dcolour = 0xFF000000 | (PIXR(p) << 16) | (PIXG(p) << 8) | PIXB(p); // all dcolour stores ARGB!
+				}
+			}
+		}
+	}
 
 	if(display_mode & DISPLAY_WARP)
 	{

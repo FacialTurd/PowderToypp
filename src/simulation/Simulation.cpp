@@ -3314,6 +3314,11 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 						parts[E189ID].ctype |= v << 8;
 					return retcode;
 				}
+				else if (parts[E189ID].life == 10 && t == PT_BIZR)
+				{
+					SimExtraFunc |= 0x400;
+					return -1;
+				}
 			}
 			if (drawOn == t)
 				return -1;
