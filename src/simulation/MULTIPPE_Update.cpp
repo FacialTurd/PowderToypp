@@ -515,6 +515,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							*(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
 							break;
 						default:
+							if ((rtmp & 0xFF) == 0x7D)
+							{
+								sim->SimExtraFunc |= 0x200;
+							}
 							if ((rtmp & 0xFF) == 0x7E)
 							{
 								sim->SimExtraFunc |= 0x100;

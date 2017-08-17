@@ -6023,7 +6023,11 @@ void Simulation::AfterSim()
 			Element_PHOT::ignite_flammable = !Element_PHOT::ignite_flammable;
 		if (SimExtraFunc & 0x0100)
 			ui::Engine::Ref().Exit(); // fast exit?
-		SimExtraFunc &= ~0x000001F5;
+		if (SimExtraFunc & 0x0200)
+		{
+			clear_sim(); emp_decor = 40;
+		}
+		SimExtraFunc &= ~0x000003F5;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)
