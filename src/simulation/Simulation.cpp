@@ -395,7 +395,7 @@ void Simulation::Restore(const Snapshot & snap)
 		parts[i].type = 0;
 	std::copy(snap.Particles.begin(), snap.Particles.end(), parts);
 	parts_lastActiveIndex = NPART-1;
-	RecalcFreeParticles();
+	RecalcFreeParticles(false);
 	std::copy(snap.PortalParticles.begin(), snap.PortalParticles.end(), &portalp[0][0][0]);
 	std::copy(snap.WirelessData.begin(), snap.WirelessData.end(), &wireless[0][0]);
 	std::copy(snap.Wireless2Data.begin(), snap.Wireless2Data.end(), &wireless2[0][0]);
@@ -5546,7 +5546,7 @@ void Simulation::SimulateLLoops()
 	//memset(gol2, 0, sizeof(gol2));
 }
 
-void Simulation::RecalcFreeParticles()
+void Simulation::RecalcFreeParticles(bool do_life_dec)
 {
 	int x, y, t;
 	int lastPartUsed = 0;
@@ -5610,7 +5610,7 @@ void Simulation::RecalcFreeParticles()
 			NUM_PARTS ++;
 
 			//decrease particle life
-			if (!sys_pause && !(SimExtraFunc & 2) || framerender)
+			if (do_life_dec && (!sys_pause && !(SimExtraFunc & 2) || framerender))
 			{
 				if (t<0 || t>=PT_NUM || !elements[t].Enabled)
 				{
@@ -5776,7 +5776,7 @@ void Simulation::BeforeSim()
 	sandcolour = (int)(20.0f*sin((float)sandcolour_frame*(M_PI/180.0f)));
 	sandcolour_frame = (sandcolour_frame+1)%360;
 
-	RecalcFreeParticles();
+	RecalcFreeParticles(true);
 
 	if (!sys_pause && !(SimExtraFunc & 2) || framerender)
 	{

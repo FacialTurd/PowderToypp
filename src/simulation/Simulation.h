@@ -201,7 +201,7 @@ public:
 	void UpdateParticles(int start, int end);
 	void SimulateGoL();
 	void SimulateLLoops();
-	void RecalcFreeParticles();
+	void RecalcFreeParticles(bool do_life_dec);
 	void CheckStacking();
 	void BeforeSim();
 	void AfterSim();
