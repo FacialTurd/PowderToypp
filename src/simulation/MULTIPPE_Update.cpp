@@ -363,6 +363,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		break;
 #endif /* NO_SPC_ELEM_EXPLODE */
 	case 10: // electronics debugger input [电子产品调试]
+		if ((rtmp & 0xFF) >= 0x70)
+			rtmp -= 0x6C;
+		else if ((rtmp & 0xFF) >= 0x10)
+			return return_value;
 		for (rx = -1; rx <= 1; rx++)
 			for (ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -514,16 +518,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							SDL_Delay(parts[i].ctype);
 							*(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
 							break;
-						default:
-							if ((rtmp & 0xFF) == 0x7D)
-							{
-								sim->SimExtraFunc |= 0x200;
-							}
-							if ((rtmp & 0xFF) == 0x7E)
-							{
-								sim->SimExtraFunc |= 0x100;
-							}
-							else if ((rtmp & 0xFF) == 0x7F)
+						case 17: sim->SimExtraFunc |= 0x200; break;
+						case 18: sim->SimExtraFunc |= 0x100; break;
+						case 19:
 							{
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
@@ -535,8 +532,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 #else
 								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");
 #endif
-								return return_value;
 							}
+							return return_value;
 						}
 						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
 							MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
