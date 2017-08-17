@@ -363,7 +363,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		break;
 #endif /* NO_SPC_ELEM_EXPLODE */
 	case 10: // electronics debugger input [电子产品调试]
-		if ((rtmp & 0xFF) >= 0x70)
+		if ((rtmp & 0xFF) >= 0x7C)
 			rtmp -= 0x6C;
 		else if ((rtmp & 0xFF) >= 0x10)
 			return return_value;
