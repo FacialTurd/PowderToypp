@@ -5552,6 +5552,9 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 	int lastPartUsed = 0;
 	int lastPartUnused = -1;
 	int * pmapp1, * pmapp2; // maybe wild pointers?
+	bool actual_life_dec = (
+		do_life_dec && (!sys_pause && !(SimExtraFunc & 2) || framerender)
+	);
 
 	memset(pmap, 0, sizeof(pmap));
 	memset(pmap_count, 0, sizeof(pmap_count));
@@ -5610,7 +5613,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 			NUM_PARTS ++;
 
 			//decrease particle life
-			if (do_life_dec && (!sys_pause && !(SimExtraFunc & 2) || framerender))
+			if (actual_life_dec)
 			{
 				if (t<0 || t>=PT_NUM || !elements[t].Enabled)
 				{
