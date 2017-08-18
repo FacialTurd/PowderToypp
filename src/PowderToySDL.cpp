@@ -984,12 +984,14 @@ void DelayOperation1(int ms){
 	SDL_Event event;
 	while (ms > 0)
 	{
+		if(engine->Broken()) { engine->UnBreak(); break; }
+		event.type = 0;
 		while (SDL_PollEvent(&event))
-			if(event.type == SDL_QUIT)
-			{
-				engine->Exit();
-				return;
-			}
+		{
+			EventProcess(event);
+			event.type = 0; //Clear last event
+		}
+		if(engine->Broken()) { engine->UnBreak(); break; }
 #ifdef OGLI
 		blit();
 #else
