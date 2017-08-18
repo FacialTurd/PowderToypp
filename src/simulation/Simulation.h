@@ -75,7 +75,8 @@ public:
 	bool etrd_count_valid;
 	int etrd_life0_count;
 	int lightningRecreate;
-	int totalExtraDelay;
+	int extraDelay;
+	int delayEnd;
 	//Stickman
 	playerst player;
 	playerst player2;

@@ -38,6 +38,10 @@
 #include "lua/TPTScriptInterface.h"
 #endif
 
+#ifdef USE_SDL
+#include "SDLCompat.h"
+#endif
+
 using namespace std;
 
 class GameController::SearchCallback: public ControllerCallback
@@ -1055,6 +1059,14 @@ void GameController::Update()
 		delete localBrowser;
 		localBrowser = NULL;
 	}
+
+#ifdef USE_SDL
+	if (sim->extraDelay && (sim->extraDelay = sim->delayEnd - SDL_GetTicks()) < 0)
+	{
+		sim->SimExtraFunc &= ~2;
+		sim->extraDelay = 0;
+	}
+#endif
 }
 
 void GameController::SetZoomEnabled(bool zoomEnabled)

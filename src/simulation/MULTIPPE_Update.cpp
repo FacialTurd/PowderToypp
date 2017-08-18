@@ -1,6 +1,7 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
-#include "simulation/MULTIPPE_Update.h"
+#include "simulation/Gravity.h"
+#include "simulation/MULTIPPE_Update.h" // link to Renderer
 // #include "SDLCompat.h" // SDL_Delay in SDL.h? 
 
 #ifdef LUACONSOLE
@@ -518,7 +519,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							// SDL_Delay(parts[i].ctype);
 							// *(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
 							sim->SimExtraFunc |= 0x800;
-							sim->totalExtraDelay += parts[i].ctype;
+							sim->extraDelay += parts[i].ctype;
 							break;
 						case 17: sim->SimExtraFunc |= 0x200; break;
 						case 18: sim->SimExtraFunc |= 0x100; break;
@@ -1835,6 +1836,18 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						conductTo (sim, r, x+rx, y+ry, parts);
 					}
 				}
+			}
+			break;
+		case 30: // get TPT options
+			switch (rtmp)
+			{
+				case 0: rr = sim->pretty_powder; break;			// get "P" option state
+				case 1: rr = ren->gravityFieldEnabled; break;	// get "G" option state
+				case 2: rr = ren->decorations_enable; break;	// get "D" option state
+				case 3: rr = sim->grav->ngrav_enable; break;	// get "N" option state
+				case 4: rr = sim->aheat_enable; break;			// get "A" option state
+				case 5: rr = sim->legacy_enable; break;			// check "Heat simulation"
+				case 6: rr = sim->water_equal_test; break;		// check "Heat simulation"
 			}
 			break;
 		}

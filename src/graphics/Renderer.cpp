@@ -15,6 +15,7 @@
 #include "lua/LuaScriptInterface.h"
 #include "lua/LuaScriptHelper.h"
 #endif
+#include "simulation/MULTIPPE_Update.h"
 extern "C"
 {
 #include "hmap.h"

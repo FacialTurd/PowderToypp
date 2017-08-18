@@ -2032,7 +2032,7 @@ void Simulation::clear_sim(void)
 	emp_trigger_count = 0;
 	emp2_trigger_count = 0;
 	SimExtraFunc = 0;
-	totalExtraDelay = 0;
+	extraDelay = 0;
 	Extra_FIGH_pause = 0;
 	breakable_wall_count = 0;
 	signs.clear();
@@ -6037,9 +6037,8 @@ void Simulation::AfterSim()
 		}
 		if (SimExtraFunc & 0x0800)
 		{
-			*(Element_MULTIPP::EngineFrameStart) += totalExtraDelay;
-			DelayOperation1(totalExtraDelay);
-			totalExtraDelay = 0;
+			*(Element_MULTIPP::EngineFrameStart) += extraDelay;
+			DelayOperation1(this, extraDelay);
 		}
 		SimExtraFunc &= ~0x00000BF5;
 		Element_MULTIPP::maxPrior = 0;
