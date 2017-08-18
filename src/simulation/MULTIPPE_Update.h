@@ -33,6 +33,6 @@ public:
 	}
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
 	// static bool GetDecoration();
-	Renderer * ren;
+	static Renderer * ren;
 };
 #endif

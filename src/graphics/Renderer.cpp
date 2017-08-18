@@ -2914,6 +2914,8 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	loadShaders();
 #endif
 	prepare_alpha(CELL, 1.0f);
+	
+	MULTIPPE_Update::ren = this;
 }
 
 void Renderer::CompileRenderMode()

@@ -1,1 +1,1 @@
-void DelayOperation1(int ms);
+void DelayOperation1(Simulation * sim, int ms);
