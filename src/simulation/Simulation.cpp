@@ -23,6 +23,8 @@
 
 #include "gui/interface/Engine.h"
 
+#include "simplugin.h"
+
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
 #include "lua/LuaScriptHelper.h"
@@ -2030,6 +2032,7 @@ void Simulation::clear_sim(void)
 	emp_trigger_count = 0;
 	emp2_trigger_count = 0;
 	SimExtraFunc = 0;
+	totalExtraDelay = 0;
 	Extra_FIGH_pause = 0;
 	breakable_wall_count = 0;
 	signs.clear();
@@ -6032,7 +6035,13 @@ void Simulation::AfterSim()
 		{
 			clear_sim(); emp_decor = 40;
 		}
-		SimExtraFunc &= ~0x000003F5;
+		if (SimExtraFunc & 0x0800)
+		{
+			*(Element_MULTIPP::EngineFrameStart) += totalExtraDelay;
+			DelayOperation1(totalExtraDelay);
+			totalExtraDelay = 0;
+		}
+		SimExtraFunc &= ~0x00000BF5;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)

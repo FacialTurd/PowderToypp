@@ -1,0 +1,1 @@
+void DelayOperation1(int ms);

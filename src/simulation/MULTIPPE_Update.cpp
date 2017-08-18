@@ -1,7 +1,7 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
 #include "simulation/MULTIPPE_Update.h"
-#include "SDLCompat.h" // SDL_Delay in SDL.h? 
+// #include "SDLCompat.h" // SDL_Delay in SDL.h? 
 
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
@@ -515,8 +515,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						case 15:
-							SDL_Delay(parts[i].ctype);
-							*(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
+							// SDL_Delay(parts[i].ctype);
+							// *(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
+							sim->SimExtraFunc |= 0x800;
+							sim->totalExtraDelay += parts[i].ctype;
 							break;
 						case 17: sim->SimExtraFunc |= 0x200; break;
 						case 18: sim->SimExtraFunc |= 0x100; break;

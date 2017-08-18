@@ -56,6 +56,8 @@ extern "C" {
 
 #include "client/HTTP.h"
 
+#include "simulation/simplugin.h"
+
 using namespace std;
 
 #define INCLUDE_SYSWM
@@ -972,6 +974,35 @@ void SigHandler(int signal)
 	case SIGABRT:
 		BlueScreen("Unexpected program abort");
 		break;
+	}
+}
+
+void DelayOperation1(int ms){
+	ui::Engine * engine = &ui::Engine::Ref();
+	int tick1 = SDL_GetTicks(), tick2;
+	// Delaying loop
+	SDL_Event event;
+	for (;;)
+	{
+		while (SDL_PollEvent(&event))
+			if(event.type == SDL_QUIT)
+			{
+				engine->Exit();
+				return;
+			}
+#ifdef OGLI
+		blit();
+#else
+		if(engine->Scale==2)
+			blit2(engine->g->vid, engine->Scale);
+		else
+			blit(engine->g->vid);
+#endif
+		SDL_Delay(ms > 20 ? 20 : ms);
+		if (ms <= 20)
+			break;
+		tick2 = SDL_GetTicks();
+		ms -= tick2 - tick1;
 	}
 }
 
