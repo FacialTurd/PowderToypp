@@ -1853,8 +1853,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case  7: rr = sim->air->airMode != 4; break;	// check "Air updating"
 				case  8: rr = !(sim->air->airMode & 2); break;	// check "Air velocity"
 				case  9: rr = !(sim->air->airMode & 1); break;	// check "Air pressure"
-				case 10: rr = !sim->gravityMode; break			// check "Vertical gravity mode"
-				case 11: rr = sim->gravityMode == 2; break		// check "Radial gravity mode"
+				case 10: rr = !sim->gravityMode; break;			// check "Vertical gravity mode"
+				case 11: rr = sim->gravityMode == 2; break;		// check "Radial gravity mode"
 			}
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
