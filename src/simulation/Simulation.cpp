@@ -6037,7 +6037,6 @@ void Simulation::AfterSim()
 		}
 		if (SimExtraFunc & 0x0800)
 		{
-			*(Element_MULTIPP::EngineFrameStart) += extraDelay;
 			DelayOperation1(this, extraDelay);
 		}
 		SimExtraFunc &= ~0x00000BF5;
