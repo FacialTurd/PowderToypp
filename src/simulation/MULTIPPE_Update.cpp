@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
-#include "simulation/Gravity.h"
+//#include "simulation/Gravity.h"
 #include "simulation/MULTIPPE_Update.h" // link to Renderer
 // #include "SDLCompat.h" // SDL_Delay in SDL.h? 
 
@@ -1843,13 +1843,18 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		case 30: // get TPT options
 			switch (rtmp)
 			{
-				case 0: rr = sim->pretty_powder; break;			// get "P" option state
-				case 1: rr = ren_->gravityFieldEnabled; break;	// get "G" option state
-				case 2: rr = ren_->decorations_enable; break;	// get "D" option state
-				case 3: rr = sim->grav->ngrav_enable; break;	// get "N" option state
-				case 4: rr = sim->aheat_enable; break;			// get "A" option state
-				case 5: rr = sim->legacy_enable; break;			// check "Heat simulation"
-				case 6: rr = sim->water_equal_test; break;		// check "Water equalization"
+				case  0: rr = sim->pretty_powder; break;		// get "P" option state
+				case  1: rr = ren_->gravityFieldEnabled; break;	// get "G" option state
+				case  2: rr = ren_->decorations_enable; break;	// get "D" option state
+				case  3: rr = sim->grav->ngrav_enable; break;	// get "N" option state
+				case  4: rr = sim->aheat_enable; break;			// get "A" option state
+				case  5: rr = !sim->legacy_enable; break;		// check "Heat simulation"
+				case  6: rr = sim->water_equal_test; break;		// check "Water equalization"
+				case  7: rr = sim->air->airMode != 4; break;	// check "Air updating"
+				case  8: rr = !(sim->air->airMode & 2); break;	// check "Air velocity"
+				case  9: rr = !(sim->air->airMode & 1); break;	// check "Air pressure"
+				case 10: rr = !sim->gravityMode; break			// check "Vertical gravity mode"
+				case 11: rr = sim->gravityMode == 2; break		// check "Radial gravity mode"
 			}
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
