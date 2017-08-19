@@ -9,6 +9,7 @@ class MULTIPPE_Update
 public:
 	MULTIPPE_Update() { }
 	virtual ~MULTIPPE_Update() { }
+	static Renderer * ren_;
 	static int update(UPDATE_FUNC_ARGS);
 	static int graphics(GRAPHICS_FUNC_ARGS);
 	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);
@@ -33,6 +34,5 @@ public:
 	}
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
 	// static bool GetDecoration();
-	static Renderer * ren;
 };
 #endif

@@ -23,6 +23,8 @@
 #include "gui/interface/Engine.h"
 #include "gui/interface/Point.h"
 
+#include "simulation/MULTIPPE_Update.h"
+
 
 GameModel::GameModel():
 	clipboard(NULL),
@@ -42,6 +44,7 @@ GameModel::GameModel():
 {
 	sim = new Simulation();
 	ren = new Renderer(ui::Engine::Ref().g, sim);
+	MULTIPPE_Update::ren_ = ren;
 
 	activeTools = regularToolset;
 

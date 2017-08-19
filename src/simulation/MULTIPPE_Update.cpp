@@ -28,6 +28,8 @@ unsigned msvc_clz(unsigned a)
 #define __builtin_clz msvc_clz
 #endif
 
+Renderer * MULTIPPE_Update::ren_;
+
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 // FLAG_SKIPMOVE: not only implemented for PHOT
@@ -1842,13 +1844,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			switch (rtmp)
 			{
 				case 0: rr = sim->pretty_powder; break;			// get "P" option state
-				case 1: rr = ren->gravityFieldEnabled; break;	// get "G" option state
-				case 2: rr = ren->decorations_enable; break;	// get "D" option state
+				case 1: rr = ren_->gravityFieldEnabled; break;	// get "G" option state
+				case 2: rr = ren_->decorations_enable; break;	// get "D" option state
 				case 3: rr = sim->grav->ngrav_enable; break;	// get "N" option state
 				case 4: rr = sim->aheat_enable; break;			// get "A" option state
 				case 5: rr = sim->legacy_enable; break;			// check "Heat simulation"
-				case 6: rr = sim->water_equal_test; break;		// check "Heat simulation"
+				case 6: rr = sim->water_equal_test; break;		// check "Water equalization"
 			}
+			if (rr)
+				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
 			break;
 		}
 		break;

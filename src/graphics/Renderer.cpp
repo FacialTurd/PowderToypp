@@ -15,7 +15,6 @@
 #include "lua/LuaScriptInterface.h"
 #include "lua/LuaScriptHelper.h"
 #endif
-#include "simulation/MULTIPPE_Update.h"
 extern "C"
 {
 #include "hmap.h"
@@ -31,7 +30,6 @@ extern "C"
 #define VIDXRES XRES
 #define VIDYRES YRES
 #endif
-
 
 void Renderer::RenderBegin()
 {
@@ -2914,8 +2912,6 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	loadShaders();
 #endif
 	prepare_alpha(CELL, 1.0f);
-	
-	MULTIPPE_Update::ren = this;
 }
 
 void Renderer::CompileRenderMode()
