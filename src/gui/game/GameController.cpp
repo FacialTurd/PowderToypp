@@ -1061,7 +1061,7 @@ void GameController::Update()
 	}
 
 #ifdef USE_SDL
-	if (sim->extraDelay && (sim->extraDelay = sim->delayEnd - SDL_GetTicks()) < 0)
+	if (sim->extraDelay && (sim->extraDelay = sim->delayEnd - SDL_GetTicks()) <= 0)
 	{
 		sim->SimExtraFunc &= ~2;
 		sim->extraDelay = 0;
