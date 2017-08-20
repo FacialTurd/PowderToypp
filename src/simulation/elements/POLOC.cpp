@@ -56,8 +56,7 @@ Element_POLC::Element_POLC()
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
 	int r, s, rx, ry, rr, sctype, stmp, trade;
-	int rrx, rry, rrr;
-	bool is_warp;
+	bool is_found = false, is_warp;
 	const int cooldown = 15;
 	const int limit = 20;
 	float tempTemp, tempPress;
@@ -131,38 +130,46 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 		s = parts[i].tmp;
 		parts[i].tmp -= s > 0 ? (s >> 3) + 1 : 0;
 	}
-	for (rx=-2; rx<3; rx++)
-		for (ry=-2; ry<3; ry++)
-			if (BOUNDS_CHECK && (rx || ry))
-			{
-				r = pmap[y+ry][x+rx];
-				if (!r) continue;
-				switch (r & 0xFF)
+	if (parts[i].ctype & ~0xFF)
+		parts[i].ctype -= 0x100;
+	else
+	{
+		for (rx=-2; rx<3; rx++)
+			for (ry=-2; ry<3; ry++)
+				if (BOUNDS_CHECK && (rx || ry))
 				{
-				case PT_URAN: case PT_PLUT:
-					if (parts[r>>8].tmp2 >= 10)
+					r = pmap[y+ry][x+rx];
+					if (!r) continue;
+					switch (r & 0xFF)
 					{
-						parts[r>>8].tmp = 0;
-						parts[r>>8].tmp2 = 0;
-						sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
-					}
-					break;
-				case PT_POLO:
-					if (!(rand()%40))
-					{
-						if (!(rand()%4))
+					case PT_URAN: case PT_PLUT:
+						if (parts[r>>8].tmp2 >= 10)
 						{
-							parts[i].tmp = 0;
-							parts[r>>8].tmp2 = 0; // clear absorbed PROT?
+							parts[r>>8].tmp = 0;
+							parts[r>>8].tmp2 = 0;
+							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
 						}
-						parts[r>>8].tmp = 0;
-						parts[r>>8].temp *= 0.95;
+						break;
+					case PT_POLO:
+						if (!(rand()%40))
+						{
+							if (!(rand()%4))
+							{
+								parts[i].tmp = 0;
+								parts[r>>8].tmp2 = 0; // clear absorbed PROT?
+							}
+							parts[r>>8].tmp = 0;
+							parts[r>>8].temp *= 0.95;
+						}
+						is_found = true;
+						break;
+					case PT_POLC: // don't interacting itself
+						break;
 					}
-					break;
-				case PT_POLC: // don't interacting itself
-					break;
 				}
-			}
+		if (!is_found)
+			parts[i].ctype += ((rand() % 128) + 128) << 8;
+	}
 	return 0;
 }
 
