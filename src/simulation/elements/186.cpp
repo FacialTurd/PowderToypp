@@ -232,30 +232,19 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		}
 		else
 		{
-			int rx = rand()%3 - 1;
-			int ry = rand()%3 - 1;
-			if (BOUNDS_CHECK && 2 > rand()%5)
+			r = sim->photons[y][x];
+
+			if ((r&0xFF) == PT_PROT)
 			{
-				r = sim->photons[y + ry][x + rx];
-/*
-				s = parts[i].ctype;
-				if ((r&0xFF) == PT_NEUT && (s == PT_PROT || s == PT_GRVT))
+				if (parts[r>>8].tmp > 280)
 				{
-					sim->part_change_type(r>>8, x, y, s);
-					parts[i].ctype = PT_NEUT;
-				}
-*/
-				if ((r&0xFF) == PT_PROT && !pmap[y+ry][x+rx])
-				{
-					if (parts[r>>8].tmp > 250)
+					parts[r>>8].tmp2 |= 2;
+					if (!pmap[y][x] && parts[r>>8].tmp > 2000 && (fabsf(parts[r>>8].vx) + fabsf(parts[r>>8].vy)) > 12)
 					{
-						int element = PT_POLC;
-						if (parts[r>>8].tmp > 1000 && (fabsf(parts[r>>8].vx) + fabsf(parts[r>>8].vy)) > 8)
-							element = PT_BOMB;
-						sim->part_change_type(r>>8, x, y, element);
+						sim->part_change_type(r>>8, x, y, PT_BOMB);
 						parts[r>>8].tmp = 0;
-						return 0;
 					}
+					return 0;
 				}
 			}
 		}
