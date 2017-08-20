@@ -152,17 +152,17 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		int newID, element;
 		if (sim->isFromMyMod && parts[i].tmp > 280)
 		{
-			if ((sim->photons[y][x]&0xFF) == PT_E186)
+			if ((sim->photons[y][x] & 0xFF) == PT_E186)
 			{
 				parts[i].tmp2 |= 2;
 			}
 			if (parts[i].tmp2 & 2)
 			{
-				if (pmap[y][x]) return 0;
 				element = PT_POLC;
+				goto product1;
 			}
 		}
-		else if (parts[i].tmp > 500000)
+		if (parts[i].tmp > 500000)
 			element = PT_SING; //particle accelerators are known to create earth-destroying black holes
 		else if (parts[i].tmp > 700)
 			element = PT_PLUT;
@@ -178,9 +178,12 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			element = PT_CO2;
 		else
 			element = PT_NBLE;
+		product1:
 		newID = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, element);
 		if (newID >= 0)
 			parts[newID].temp = restrict_flt(100.0f*parts[i].tmp, MIN_TEMP, MAX_TEMP);
+		else if (sim->isFromMyMod && (parts[i].tmp2 & 2))
+			return 0;
 		sim->kill_part(i);
 		return 1;
 	}
