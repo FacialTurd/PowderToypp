@@ -223,8 +223,17 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[r>>8].tmp4 = PT_NONE;
 				break;
 			case PT_LAVA:
-				if (parts[r>>8].ctype == PT_POLO && !(rand()&0xFF))
-					parts[r>>8].ctype = PT_POLC;
+				switch (parts[r>>8].ctype)
+				{
+				case PT_POLO:
+					if (!(rand() % 250) && parts[i].ctype != PT_CFLM)
+						parts[r>>8].ctype = PT_POLC;
+					break;
+				case PT_POLC:
+					if (!(rand() % 250) && parts[i].ctype == PT_CFLM)
+						parts[r>>8].ctype = PT_POLO;
+					break;
+				}
 				break;
 			default:
 				break;
