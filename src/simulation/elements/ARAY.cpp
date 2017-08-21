@@ -139,6 +139,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										while ((tmp[0]&0xFF) == PT_SWCH);
 									}
+									else if ((tmp[0]&0xFF) == PT_INWR)
+									{
+										sim->create_part(-1, x+2*nxi+nxx, y+2*nyi+nyy, PT_SPRK);
+									}
 									continue;
 								case 6:
 									if (spc_conduct == 5)
