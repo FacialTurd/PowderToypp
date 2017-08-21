@@ -131,23 +131,36 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 
 				if (t == PT_LAVA)
 				{
-					// LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
-					if (parts[i].ctype == PT_QRTZ && rt == PT_LAVA && parts[r>>8].ctype == PT_CLST)
+					switch (parts[i].ctype)
 					{
-						float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
-						if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
+					case PT_QRTZ: // LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
+						if (rt == PT_LAVA && parts[r>>8].ctype == PT_CLST)
 						{
-							parts[i].ctype = PT_CRMC;
-							parts[r>>8].ctype = PT_CRMC;
+							float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
+							if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
+							{
+								parts[i].ctype = PT_CRMC;
+								parts[r>>8].ctype = PT_CRMC;
+							}
 						}
-					}
-					else if (rt == PT_HEAC && parts[i].ctype == PT_HEAC)
-					{
-						if (parts[r>>8].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+						break;
+					case PT_HEAC:
+						if (rt == PT_HEAC)
 						{
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
-							parts[r>>8].ctype = PT_HEAC;
+							if (parts[r>>8].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+							{
+								sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
+								parts[r>>8].ctype = PT_HEAC;
+							}
 						}
+					case PT_POLO:
+						if (rt == PT_LAVA && parts[r>>8].ctype == PT_POLC)
+							parts[r>>8].temp -= 1.0f;
+						break;
+					case PT_POLC:
+						if (rt == PT_LAVA && parts[r>>8].ctype == PT_POLO)
+							parts[r>>8].temp -= 1.0f;
+						break;
 					}
 				}
 
