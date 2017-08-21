@@ -155,11 +155,10 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 						}
 					case PT_POLO:
 						if (rt == PT_LAVA && parts[r>>8].ctype == PT_POLC)
-							parts[r>>8].temp -= 1.0f;
-						break;
-					case PT_POLC:
-						if (rt == PT_LAVA && parts[r>>8].ctype == PT_POLO)
-							parts[r>>8].temp -= 1.0f;
+						{
+							parts[r>>8].temp -= 0.3f;
+							parts[i].temp -= 0.3f;
+						}
 						break;
 					}
 				}
