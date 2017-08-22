@@ -76,7 +76,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						if (max_turn <= 0)
 							max_turn = 256;
 						modFlag = 0;
-						for (int docontinue = 1, nxx = nxi = rx*-1, nyy = nyi = ry*-1; docontinue; nyy+=nyi, nxx+=nxi)
+						int docontinue, nxx, nxi, nyy, nyi;
+						for (docontinue = 1, nxx = nxi = rx*-1, nyy = nyi = ry*-1; docontinue; nyy+=nyi, nxx+=nxi)
 						{
 							if (!(x+nxx<XRES && y+nyy<YRES && x+nxx >= 0 && y+nyy >= 0))
 							{
