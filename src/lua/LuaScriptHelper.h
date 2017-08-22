@@ -132,5 +132,7 @@ int luatpt_setwindowsize(lua_State* l);
 
 int luatpt_screenshot(lua_State* l);
 
+int luatpt_two_state_update(lua_State* l);
+
 
 #endif /* LUASCRIPTHELPER_H_ */

@@ -208,6 +208,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"element",&luatpt_getelement},
 		{"element_func",&luatpt_element_func},
 		{"graphics_func",&luatpt_graphics_func},
+		{"two_state_update",&luatpt_two_state_update},
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
 		{NULL,NULL}
