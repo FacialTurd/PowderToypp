@@ -1378,6 +1378,18 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								{
 									parts[r>>8].tmp2 = 1; parts[r>>8].tmp = 0;
 								}
+								else 
+								{
+									while (BOUNDS_CHECK && ((rt = r & 0xFF) == PT_PRTI || rt == PT_PRTO))
+									{
+										if (rt == PT_PRTO)
+											rt = PT_PRTI;
+										else
+											rt = PT_PRTO;
+										sim->part_change_type(r>>8, ny, nx, rt);
+										r = pmap[ny += ry][nx += rx];
+									}
+								}
 								break;
 							case PT_WIFI:
 								{ // for 29-bit FILT data

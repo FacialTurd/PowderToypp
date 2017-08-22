@@ -186,6 +186,8 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_FIRE static int updateLegacy(UPDATE_FUNC_ARGS)
 int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt, lpv, t = parts[i].type;
+	if (t == PT_LAVA && parts[i].ctype == PT_PLUT);
+		parts[i].ctype = 0;
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -215,8 +217,8 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 					else
 					{
 						parts[i].life = 0;
-						parts[i].ctype = PT_NONE;//rt;
 						sim->part_change_type(i,x,y,(parts[i].ctype)?parts[i].ctype:PT_STNE);
+						parts[i].ctype = PT_NONE;//rt;
 						return 1;
 					}
 				}
@@ -245,8 +247,8 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 					if (t==PT_LAVA)
 					{
 						parts[i].life = 0;
-						parts[i].ctype = PT_NONE;
 						sim->part_change_type(i,x,y,(parts[i].ctype)?parts[i].ctype:PT_STNE);
+						parts[i].ctype = PT_NONE;
 					}
 				}
 			}
