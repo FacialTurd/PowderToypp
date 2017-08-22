@@ -98,6 +98,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							
 							if (!rt)
 							{
+								tmpz = 0;
 								if (ray_less)
 									continue;
 								int nr = sim->create_part(-1, x+nxx, y+nyy, PT_BRAY);
