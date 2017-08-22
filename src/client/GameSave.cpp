@@ -530,6 +530,7 @@ void GameSave::readOPS(char * data, int dataLength)
 
 	isFromMyMod = false;
 	int modver = 0;
+	Element_PHOT::ignite_flammable = 1;
 
 	while (bson_iterator_next(&iter))
 	{
@@ -545,7 +546,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "legacyEnable", &legacyEnable);
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
-		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &sextraLoopsCA);
+		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &s_extraLoopsCA);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldBool(iter, "is_git123hubs_mod", &isFromMyMod);
@@ -553,6 +554,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
+		CheckBsonFieldInt(iter, "phot_ignite", &Element_PHOT::ignite_flammable);
 		if (!strcmp(bson_iterator_key(&iter), "signs"))
 		{
 			if (bson_iterator_type(&iter)==BSON_ARRAY)
@@ -2447,12 +2449,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
-	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
+	bson_append_bool(&b, "sextraLoopsCA_Enable", s_extraLoopsCA);
 	bson_append_bool(&b, "is_git123hubs_mod", isFromMyMod);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
 	bson_append_int(&b, "edgeMode", edgeMode);
+	bson_append_int(&b, "phot_ignite", Element_PHOT::ignite_flammable);
 	bson_append_int(&b, "sim_max_pressure", * (int*) &sim_max_pressure);
 	
 	//bson_append_int(&b, "leftSelectedElement", sl);

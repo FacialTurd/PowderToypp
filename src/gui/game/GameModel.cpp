@@ -94,6 +94,8 @@ GameModel::GameModel():
 	sim->extraLoopsCA = Client::Ref().GetPrefBool("Simulation.LangtonsLoops", false);
 	sim->extraLoopsType = Client::Ref().GetPrefInteger("Simulation.ExtraLoopsType", 0);
 
+	Element_PHOT::ignite_flammable = Client::Ref().GetPrefInteger("ElementsFlags.PHOTIgnite", 1);
+
 	Favorite::Ref().LoadFavoritesFromPrefs();
 
 	//Load last user
@@ -181,6 +183,8 @@ GameModel::~GameModel()
 	Client::Ref().SetPref("Decoration.Alpha", (int)colour.Alpha);
 
 	Client::Ref().SetPref("Simulation.UndoHistoryLimit", undoHistoryLimit);
+	
+	Client::Ref().SetPref("ElementsFlags.PHOTIgnite", Element_PHOT::ignite_flammable);
 
 	Favorite::Ref().SaveFavoritesToPrefs();
 
