@@ -2043,6 +2043,7 @@ int luatpt_screenshot(lua_State* l)
 int luatpt_two_state_update(lua_State * l)
 {
 	int i = lua_tointeger(l, 1), x = lua_tointeger(l, 2), y = lua_tointeger(l, 3), t = lua_tointeger(l, 4), r, rx, ry;
+	Particle * parts = luacon_sim->parts;
 
 	if (parts[i].life>0 && parts[i].life!=10)
 		parts[i].life--;
@@ -2050,7 +2051,7 @@ int luatpt_two_state_update(lua_State * l)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
-				r = pmap[y+ry][x+rx];
+				r = luacon_sim->pmap[y+ry][x+rx];
 				if (!r)
 					continue;
 				if ((r&0xFF) == t)
