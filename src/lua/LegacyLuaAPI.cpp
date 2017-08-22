@@ -2040,7 +2040,7 @@ int luatpt_screenshot(lua_State* l)
 	return 1;
 }
 
-int LuaScriptInterface::luatpt_two_state_update(lua_State * l)
+int luatpt_two_state_update(lua_State * l)
 {
 	int i = lua_tointeger(l, 1), x = lua_tointeger(l, 2), y = lua_tointeger(l, 3), t = lua_tointeger(l, 4), r, rx, ry;
 
