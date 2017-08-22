@@ -186,7 +186,7 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_FIRE static int updateLegacy(UPDATE_FUNC_ARGS)
 int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt, lpv, t = parts[i].type;
-	if (t == PT_LAVA && parts[i].ctype == PT_PLUT);
+	if (t == PT_LAVA && parts[i].ctype == PT_PLUT)
 		parts[i].ctype = 0;
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
