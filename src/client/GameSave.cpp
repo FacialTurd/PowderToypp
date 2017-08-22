@@ -546,7 +546,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "legacyEnable", &legacyEnable);
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
-		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &s_extraLoopsCA);
+		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &sextraLoopsCA);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldBool(iter, "is_git123hubs_mod", &isFromMyMod);
@@ -2449,7 +2449,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
-	bson_append_bool(&b, "sextraLoopsCA_Enable", s_extraLoopsCA);
+	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
 	bson_append_bool(&b, "is_git123hubs_mod", isFromMyMod);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
