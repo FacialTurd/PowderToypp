@@ -593,36 +593,27 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								rr = pmap[y-ry][x-rx];
 								if ((rr & 0xFF) == ELEM_MULTIPP)
 									sim->kill_part(rr >> 8);
-								else
+								else if (!rr)
 								{
 									ri = sim->create_part(-1,x-rx,y-ry,ELEM_MULTIPP,12);
 									if (ri >= 0)
 										parts[ri].tmp = 3;
 								}
-								break;
-							case 5:
-								if (BOUNDS_CHECK)
+								else if ((rr & 0xFF) == PT_FILT) // might to making FILT oscillator
 								{
-									rrx = pmap[y-ry][x-rx];
-									if ((rrx & 0xFF) != PT_FILT) continue;
-									rry = pmap[y-2*ry][x-2*rx];
-									if ((rry & 0xFF) != PT_FILT) continue;
-
-									ri = (int)((parts[i].temp-273.0f)*0.025f);
-									if (ri < 0) ri = 0; if (ri > 30) ri = 30;
-									rrx >>= 8; rry >>= 8;
-									nx = parts[rrx].ctype;
-									ny = parts[rry].ctype;
-
-									if (parts[r>>8].ctype == PT_PSCN)
+									int * ctype_ptr = &parts[rr>>8].ctype;
+									if (parts[i].temp > 373.0f)
 									{
-										parts[rrx].ctype = (nx << ri | ny >> (30-ri)) & 0x3FFFFFFF;
-										parts[rry].ctype = (ny << ri | nx >> (30-ri)) & 0x3FFFFFFF;
+										if (*ctype_ptr == 1)
+											{ parts[i].temp = 295.15f; continue; }
+										*ctype_ptr >>= 1;
 									}
-									else if (parts[r>>8].ctype == PT_NSCN)
+									else
 									{
-										parts[rrx].ctype = (nx >> ri | ny << (30-ri)) & 0x3FFFFFFF;
-										parts[rry].ctype = (ny >> ri | nx << (30-ri)) & 0x3FFFFFFF;
+										if (*ctype_ptr == 0x20000000)
+											{ parts[i].temp = 395.15f; continue; }
+										*ctype_ptr <<= 1;
+										*ctype_ptr &= 0x3FFFFFFF;
 									}
 								}
 								break;
