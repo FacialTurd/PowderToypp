@@ -41,7 +41,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
 	int rx, ry, rlife = parts[i].life, r, ri, rtmp, rctype;
-	int rr, rndstore, rt, rii, rrx, rry, nx, ny, pavg;
+	int rr, rndstore, rt, rii, rrx, rry, nx, ny, pavg, rrt;
 	// int tmp_r;
 	float rvx, rvy, rdif;
 	int docontinue;
@@ -440,7 +440,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rctype = parts[r>>8].ctype;
 							rr = pmap[y-ry][x-rx];
 							{
-								int rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
+								rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
 								switch (rr & 0xFF)
 								{
 									case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
@@ -571,7 +571,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 		break;
 	case 12: // SPRK reflector
-		if (!(rtmp & 0x4))
+		if ((rtmp & 0x7) != 0x4)
 		{
 			for (rx = -1; rx <= 1; rx++)
 				for (ry = -1; ry <= 1; ry++)
@@ -584,7 +584,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							continue;
 						if (rt == PT_SPRK && ( !(rtmp & 8) == !(sim->elements[parts[r>>8].ctype].Properties & PROP_INSULATED) ) && parts[r>>8].life == 3)
 						{
-							switch (rtmp & 0x3)
+							switch (rtmp & 0x7)
 							{
 							case 0: case 1:
 								parts[i].tmp ^= 1; break;
@@ -599,9 +599,35 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										parts[ri].tmp = 3;
 								}
 								break;
+							case 5:
+								if (BOUNDS_CHECK)
+								{
+									rrx = pmap[y-ry][x-rx];
+									if ((rrx & 0xFF) != PT_FILT) continue;
+									rry = pmap[y-2*ry][x-2*rx];
+									if ((rry & 0xFF) != PT_FILT) continue;
+
+									ri = (int)((parts[i].temp-273.0f)*0.025f);
+									if (ri < 0) ri = 0; if (ri > 30) ri = 30;
+									rrx >>= 8; rry >>= 8;
+									nx = parts[rrx].ctype;
+									ny = parts[rry].ctype;
+
+									if (parts[r>>8].ctype == PT_PSCN)
+									{
+										parts[rrx].ctype = (nx << ri | ny >> (30-ri)) & 0x3FFFFFFF;
+										parts[rry].ctype = (ny << ri | nx >> (30-ri)) & 0x3FFFFFFF;
+									}
+									else if (parts[r>>8].ctype == PT_NSCN)
+									{
+										parts[rrx].ctype = (nx >> ri | ny << (30-ri)) & 0x3FFFFFFF;
+										parts[rry].ctype = (ny >> ri | nx << (30-ri)) & 0x3FFFFFFF;
+									}
+								}
+								break;
 							}
 						}
-						if ((rtmp & 0x1) && (sim->elements[rt].Properties & (PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+						if ((rtmp & 0x5) == 0x1 && (sim->elements[rt].Properties & (PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
 						{
 							conductTo (sim, r, x+rx, y+ry, parts);
 						}
@@ -1927,7 +1953,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								{
 									ny += ry, nx += rx, rr = pmap[ny][nx];
 								}
-								int rrt = rr&0xFF;
+								rrt = rr&0xFF;
 								switch (rrt)
 								{
 								case PT_NONE:

@@ -105,7 +105,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF) == PT_PSTN || ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 12 && (parts[r>>8].tmp & 4)))
+					if ((r&0xFF) == PT_PSTN || ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 12 && (parts[r>>8].tmp & 7) == 4))
 					{
 						bool movedPiston = false;
 						bool foundEnd = false;
