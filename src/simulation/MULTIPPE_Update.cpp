@@ -440,7 +440,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rctype = parts[r>>8].ctype;
 							rr = pmap[y-ry][x-rx];
 							{
-								rrt = parts[rr>>8].ctype & 0xFF, tFlag = 0;
+								rrt = parts[rr>>8].ctype & 0xFF;
+								int tFlag = 0;
 								switch (rr & 0xFF)
 								{
 									case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
