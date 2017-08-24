@@ -592,7 +592,24 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							case 2:
 								rr = pmap[y-ry][x-rx];
 								if ((rr & 0xFF) == ELEM_MULTIPP)
-									sim->kill_part(rr >> 8);
+								{
+									if (parts[rr>>8].life == 12)
+										sim->kill_part(rr >> 8);
+									else if (parts[rr>>8].life == 15)
+									{
+										rrt = parts[rr>>8].tmp;
+										if (rt == PT_NSCN)
+											rrt = 30-rrt;
+										if (rrt <  0) rrt =  0;
+										if (rrt > 30) rrt = 30;
+										rr = pmap[y-2*ry][x-2*rx];
+										if ((rr & 0xFF) == PT_FILT)
+										{
+											rctype = parts[rr>>8].ctype;
+											parts[rr>>8].ctype = (rctype << rrt | rctype >> (30-rrt)) & 0x3FFFFFFF;
+										}
+									}
+								}
 								else if (!rr)
 								{
 									ri = sim->create_part(-1,x-rx,y-ry,ELEM_MULTIPP,12);
@@ -1535,7 +1552,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			
 			break;
 		case 21: // subframe SPRK generator/canceller
-			rrx = (parts[i].temp < 373.0f) ? 4 : 3;
+			rrx = (parts[i].temp < 373.0f) ? 4 : (parts[i].temp < 523.0f) ? 3 : 2;
 			rry = (parts[i].temp < 273.15f);
 			for (rx = -1; rx < 2; rx++)
 				for (ry = -1; ry < 2; ry++)
