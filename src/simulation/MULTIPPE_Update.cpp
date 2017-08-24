@@ -634,6 +634,22 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									}
 								}
 								break;
+							case 5:
+								ri = ((int)parts[i].temp - 258) / 10;
+								if (ri <= 0) ri = 1;
+								nx = x - ri*rx; ny = y - ri*ry;
+								if (sim->InBounds(nx, ny) && ((rr = pmap[ny][nx]) & 0xFF) == PT_FILT)
+								{
+									rctype = parts[rr>>8].ctype;
+									while (BOUNDS_CHECK)
+									{
+										rr = pmap[ny -= ry][nx -= rx];
+										if ((rr&0xFF) != PT_FILT)
+											break;
+										parts[rr>>8].ctype = rctype;
+									}
+								}
+								break;
 							}
 						}
 						if ((rtmp & 0x5) == 0x1 && (sim->elements[rt].Properties & (PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
