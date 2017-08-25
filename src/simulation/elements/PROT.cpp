@@ -147,16 +147,19 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 
 	//if this proton has collided with another last frame, change it into a heavier element
 	no_temp_change:
+
+	int ahead = sim->photons[y][x];
+	if ((ahead & 0xFF) == PT_E186 && parts[ahead>>8].ctype < 0x100)
+	{
+		parts[i].tmp2 |= 2;
+	}
+
 	if (parts[i].tmp)
 	{
 		int newID, element;
-		if (sim->isFromMyMod && parts[i].tmp > 280)
+		if (sim->isFromMyMod && parts[i].tmp2 & 2)
 		{
-			if ((sim->photons[y][x] & 0xFF) == PT_E186)
-			{
-				parts[i].tmp2 |= 2;
-			}
-			if (parts[i].tmp2 & 2)
+			if (parts[i].tmp > 280)
 			{
 				element = PT_POLC;
 				goto product1;
@@ -188,7 +191,6 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		return 1;
 	}
 	//collide with other protons to make heavier materials
-	int ahead = sim->photons[y][x];
 	if ((ahead>>8) != i && (ahead&0xFF) == PT_PROT)
 	{
 		float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
@@ -200,6 +202,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		if (difference > 3.12659f && difference < 3.15659f && velocity1 + velocity2 > 10.0f)
 		{
 			parts[ahead>>8].tmp += (int)(velocity1 + velocity2);
+			parts[ahead>>8].tmp2 |= (parts[i].tmp2 & 2);
 			sim->kill_part(i);
 			return 1;
 		}

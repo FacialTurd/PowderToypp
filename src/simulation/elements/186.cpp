@@ -239,22 +239,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				break;
 			}
 		}
-		else
-		{
-			r = sim->photons[y][x];
+		
+		int ahead = sim->photons[y][x];
 
-			if ((r&0xFF) == PT_PROT)
+		if ((ahead & 0xFF) == PT_PROT)
+		{
+			parts[ahead >> 8].tmp2 |= 2;
+			if (!r && parts[ahead>>8].tmp > 2000 && (fabsf(parts[ahead>>8].vx) + fabsf(parts[ahead>>8].vy)) > 12)
 			{
-				if (parts[r>>8].tmp > 280)
-				{
-					parts[r>>8].tmp2 |= 2;
-					if (!pmap[y][x] && parts[r>>8].tmp > 2000 && (fabsf(parts[r>>8].vx) + fabsf(parts[r>>8].vy)) > 12)
-					{
-						sim->part_change_type(r>>8, x, y, PT_BOMB);
-						parts[r>>8].tmp = 0;
-					}
-					return 0;
-				}
+				sim->part_change_type(ahead>>8, x, y, PT_BOMB);
+				parts[r>>8].tmp = 0;
 			}
 		}
 	}
