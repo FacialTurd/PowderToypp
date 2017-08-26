@@ -84,7 +84,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				{
 					rr = under->tmp;
 					rr = (rand() % (2 * rr + 1)) - rr;
-					if (under->tmp2 & 1)
+					if (under->tmp2 > 0)
+						rr *= under->tmp2;
+					if (under->tmp3 & 1)
 						parts[i].y = ny = y + rr, nx = x;
 					else
 						parts[i].x = nx = x + rr, ny = y;
