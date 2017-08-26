@@ -54,8 +54,10 @@ Element_E186::Element_E186()
 //#TPT-Directive ElementHeader Element_E186 static int update(UPDATE_FUNC_ARGS)
 int Element_E186::update(UPDATE_FUNC_ARGS)
 {
-	int r, s, sctype;
+	int r, rr, s, sctype;
+	int nx, ny;
 	float r2, r3;
+	Particle * under;
 	sctype = parts[i].ctype;
 	if (sctype >= 0x100) // don't create SPC_AIR particle
 	{
@@ -68,10 +70,27 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				sim->kill_part(i);
 				return 1;
 			}
-			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 34)
+			else if ((r&0xFF) == ELEM_MULTIPP)
 			{
-				transportPhotons(sim, i, x, y, &parts[i], &parts[r>>8]);
-				return 1;
+				under = &parts[r>>8];
+				if (under->life == 34)
+				{
+					parts[i].ctype = parts[i].tmp2;
+					parts[i].tmp2 = 0;
+					transportPhotons(sim, i, x, y, x+under->tmp, y+under->tmp2, &parts[i]);
+					return 1;
+				}
+				else if (under->life == 16 && under->ctype == 29)
+				{
+					rr = under->tmp;
+					rr = (rand() % (2 * rr + 1)) - rr;
+					if (under->tmp2 & 1)
+						parts[i].y = ny = y + rr, nx = x;
+					else
+						parts[i].x = nx = x + rr, ny = y;
+					transportPhotons(sim, i, x, y, nx, ny, &parts[i]);
+					return 1;
+				}
 			}
 			break;
 		case 1:
@@ -130,9 +149,15 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 10)
 				{
-					sim->part_change_type(i, x, y, PT_PHOT);
 					parts[i].ctype = k1;
 					parts[i].tmp = 0;
+					sim->part_change_type(i, x, y, PT_PHOT);
+					// parts[i].x += parts[i].vx;
+					// parts[i].y += parts[i].vy;
+					// parts[i].type = PT_PHOT;
+					// sim->photons[(int)(parts[i].y+0.5f)][(int)(parts[i].x+0.5f)] = PT_PHOT|(i<<8);
+					// if ((sim->photons[y][x] >> 8) == i)
+					// 	sim->photons[y][x] = 0;
 					return 1;
 				}
 			}
@@ -276,12 +301,11 @@ int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, Particle *phot, Particle *other1)
-void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, Particle *phot, Particle *other1)
+//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, Particle *phot)
+void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, Particle *phot)
 {
 	if ((sim->photons[y][x]>>8) == i)
 		sim->photons[y][x] = 0;
-	int nx = x + other1->tmp, ny = y + other1->tmp2;
 	if (sim->edgeMode == 2)
 	{
 		// maybe sim->remainder_p ?
@@ -298,8 +322,6 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, Partic
 	phot->x = (float)nx;
 	phot->y = (float)ny;
 	phot->type = PT_PHOT;
-	phot->ctype = phot->tmp2;
-	phot->tmp2 = 0;
 	sim->photons[ny][nx] = PT_PHOT|(i<<8);
 	// return;
 }
