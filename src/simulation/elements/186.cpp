@@ -88,6 +88,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 						parts[i].y = ny = y + rr, nx = x;
 					else
 						parts[i].x = nx = x + rr, ny = y;
+					parts[i].ctype = 0x3FFFFFFF;
 					transportPhotons(sim, i, x, y, nx, ny, &parts[i]);
 					return 1;
 				}

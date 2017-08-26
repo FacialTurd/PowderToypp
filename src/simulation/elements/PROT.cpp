@@ -102,10 +102,17 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			parts[i].temp = parts[under>>8].temp;
 			goto no_temp_change;
 		}
-		else if (parts[under>>8].life == 10 && parts[under>>8].temp > 1273.0f)
+		else if (parts[under>>8].life == 10)
 		{
-			sim->kill_part(i);
-			return 1;
+			if (parts[under>>8].temp > 1273.0f)
+			{
+				sim->kill_part(i);
+				return 1;
+			}
+			else if (parts[under>>8].temp < 73.15f)
+			{
+				parts[i].tmp2 &= ~1;
+			}
 		}
 		else if (parts[under>>8].life == 11 && parts[under>>8].tmp2 == 1)
 		{
