@@ -190,6 +190,11 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 								sim->part_change_type(i, x, y, PT_PROT);
 							}
 						}
+						else if (parts[r>>8].tmp & 0x20)
+						{
+							parts[i].vx *= 0.995;
+							parts[i].vy *= 0.995;
+						}
 					}
 					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
 					{
