@@ -1964,7 +1964,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (rctype != PT_LIGH || parts[r>>8].ctype == PT_TESC || !(rand() & 15))
 						{
 							nx = x+rx; ny = y+ry;
-							if (rctype == PT_EMBR) // use by EMBR (explosion spark) emitter
+							if (rctype == PT_EMBR || rctype == PT_ACID) // use by EMBR (explosion spark) emitter
 							{
 								rr = pmap[ny][nx];
 								if ((rr & 0xFF) != PT_GLAS)

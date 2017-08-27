@@ -177,8 +177,20 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
 				case ELEM_MULTIPP:
-					if (parts[r>>8].life == 22 && parts[r>>8].tmp & 8)
-						parts[i].vx = 0, parts[i].vy = 0;
+					if (parts[r>>8].life == 22)
+					{
+						if (parts[r>>8].tmp & 8)
+							parts[i].vx = 0, parts[i].vy = 0;
+						else if (!(rand()%25) && (parts[r>>8].tmp & 0x10))
+						{
+							int rr = sim->create_part(-1, x, y, PT_ELEC);
+							if (rr >= 0)
+							{
+								parts[i].tmp2 = 1;
+								sim->part_change_type(i, x, y, PT_PROT);
+							}
+						}
+					}
 					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
 					{
 						int tmp2 = parts[r>>8].tmp2;
