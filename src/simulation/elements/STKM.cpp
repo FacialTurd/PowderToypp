@@ -429,7 +429,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					{
 						STKM_set_life_1(sim, r>>8, i);
 					}
-					rndstore >>= 2;
+					rndstore >>= 2; randpool--;
 					if (parts[r>>8].life == 27 && !(sim->Extra_FIGH_pause & 32))
 					{
 						ctype = parts[r>>8].ctype;
@@ -684,8 +684,10 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 			STKM_set_life_1(sim, r>>8, i);
 			if (sim->parts[r>>8].life == 23)
 			{
-				playerp->accs[3 + ((playerp->__flags & 1) << 2)] -= 1; // hackish?
-				playerp->__flags ^= 1;
+				sim->parts[i].vy -= 3;
+				playerp->accs[3] -= 3;
+				playerp->accs[7] -= 3;
+				// playerp->__flags ^= 1;
 			}
 		}
 
