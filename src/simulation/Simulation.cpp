@@ -2257,6 +2257,7 @@ void Simulation::init_can_move()
 	// can_move[PT_E186][PT_BRMT] = 3;
 	can_move[PT_E186][PT_VIBR] = 2;
 	can_move[PT_E186][PT_BVBR] = 2;
+	can_move[PT_E186][PT_PRTO] = 2;
 	
 	can_move[PT_PROT][ELEM_MULTIPP] = 3;
 	can_move[PT_GRVT][ELEM_MULTIPP] = 3;
