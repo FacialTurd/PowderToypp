@@ -803,7 +803,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"neighbors", simulation_neighbours},
 		{"framerender", simulation_framerender},
 		{"gspeed", simulation_gspeed},
-    {"takeSnapshot", simulation_takeSnapshot},
+		{"takeSnapshot", simulation_takeSnapshot},
 		{"CAType", simulation_CAType},
 		{"createDebugComponent", simulation_createDebugComponent},
 		{"createDComp", simulation_createDebugComponent},

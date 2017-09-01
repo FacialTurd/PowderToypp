@@ -121,6 +121,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							else if (rt == ELEM_MULTIPP)
 							{
 								r_life = parts[r].life;
+								int front1;
 								switch (r_life)
 								{
 								case 2:
@@ -188,35 +189,33 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
 										break;
 									case 20:
+										nyy += nyi; nxx += nxi;
+										front1 = pmap[y+nyy][x+nxx];
+										while (BOUNDS_CHECK && (front1&0xFF) == PT_FILT)
 										{
+											parts[front1>>8].life = 4;
 											nyy += nyi; nxx += nxi;
-											int front1 = pmap[y+nyy][x+nxx];
-											while (BOUNDS_CHECK && (front1&0xFF) == PT_FILT)
+											front1 = pmap[y+nyy][x+nxx];
+										}
+										tmp[0] = parts[r].tmp2 + (r < i); // delay time
+										if (tmp[0] <= 0)
+											tmp[0] += parts[r].tmp; // add pulse time
+										if ((front1&0xFF) == PT_DLAY)
+										{
+											front1 >>= 8;
+											tmp[1] = parts[front1].life - (front1 > i);
+											if (tmp[1] == 0 && front1 > i)
+												Element_DLAY::update (sim, front1, x+nxx, y+nyy, 0, 0, parts, pmap);
+											if (tmp[1] <= 0)
+												parts[front1].life = tmp[0] + (front1 > i);
+										}
+										else if ((front1&0xFF) == PT_INST)
+										{
+											if (tmp[0] == 1)
 											{
 												parts[front1>>8].life = 4;
-												nyy += nyi; nxx += nxi;
-												front1 = pmap[y+nyy][x+nxx];
-											}
-											tmp[0] = parts[r].tmp2 + (r < i); // delay time
-											if (tmp[0] <= 0)
-												tmp[0] += parts[r].tmp; // add pulse time
-											if ((front1&0xFF) == PT_DLAY)
-											{
-												front1 >>= 8;
-												tmp[1] = parts[front1].life - (front1 > i);
-												if (tmp[1] == 0 && front1 > i)
-													Element_DLAY::update (sim, front1, x+nxx, y+nyy, 0, 0, parts, pmap);
-												if (tmp[1] <= 0)
-													parts[front1].life = tmp[0] + (front1 > i);
-											}
-											else if ((front1&0xFF) == PT_INST)
-											{
-												if (tmp[0] == 1)
-												{
-													parts[front1>>8].life = 4;
-													parts[front1>>8].ctype = PT_INST;
-													sim->part_change_type(front1>>8, x+nxx, y+nyy, PT_SPRK);
-												}
+												parts[front1>>8].ctype = PT_INST;
+												sim->part_change_type(front1>>8, x+nxx, y+nyy, PT_SPRK);
 											}
 										}
 										goto break1a;
@@ -243,7 +242,6 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											int vtmp = parts[r].tmp + 1;
 											int rem1 = parts[r].tmp2;
-											int front1;
 											nyy += vtmp * nyi; nxx += vtmp * nxi;
 											while (sim->InBounds(x+nxx, y+nyy))
 											{
@@ -286,8 +284,18 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									continue;
 								case 23:
 									{
-										int front1 = pmap[y+nyi+nyy][x+nxi+nxx];
+										front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 										int ftype1 = front1 & 0xFF;
+										if (ftype1 == PT_FRAY)
+										{
+											tmp[0] = ((int)parts[r].temp - 223) / 100;
+											if (destroy)
+												tmp[0] = -tmp[0];
+											parts[front1 >> 8].tmp += tmp[0];
+											if (parts[front1 >> 8].tmp < 0)
+												parts[front1 >> 8].tmp = 0;
+											goto break1a;
+										}
 										while (ftype1 == PT_BIZR || ftype1 == PT_BIZRG || ftype1 == PT_BIZRS)
 										{
 											colored = parts[front1 >> 8].ctype;
@@ -350,7 +358,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											int tdiff = (tmp[1] == 8 ? 1 : -1) * parts[r].tmp2;
 											while (nxx += nxi, nyy += nyi, BOUNDS_CHECK)
 											{
-												int front1 = pmap[y+nyy][x+nxx];
+												front1 = pmap[y+nyy][x+nxx];
 												if (!front1) goto break1a;
 												if ((front1 & 0xFF) == PT_FILT)
 													parts[front1>>8].life = 4;
@@ -425,7 +433,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 6:
 										{
 											nxx += nxi; nyy += nyi;
-											int front1 = pmap[y+nyy][x+nxx];
+											front1 = pmap[y+nyy][x+nxx];
 											switch (front1 & 0xFF)
 											{
 											case PT_NONE:
@@ -463,7 +471,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 7: // remove front SPRK
 										{
 											nxx += nxi; nyy += nyi;
-											int front1 = pmap[y+nyy][x+nxx];
+											front1 = pmap[y+nyy][x+nxx];
 											int f_type = front1 & 0xFF;
 											if ((front1 & 0xFF) == PT_SPRK)
 											{
