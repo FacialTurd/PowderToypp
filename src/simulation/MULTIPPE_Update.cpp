@@ -1418,7 +1418,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								break;
 							case PT_FRAY:
 								rrx = r & 0xFF;
-								rii = (parts[i].tmp == PT_PSCN) ? 1 : -1;
+								if ((rtmp & 0xFF) == PT_BRAY)
+								{
+									rii = floor((parts[i].temp - 268.15) / 10);
+									if (rtmp & 0x100)
+										rii = -rii;
+								}
+								else
+									rii = (parts[i].tmp == PT_PSCN) ? 1 : -1;
 								parts[r>>8].tmp += rii;
 								if (parts[r>>8].tmp < 0)
 									parts[r>>8].tmp = 0;

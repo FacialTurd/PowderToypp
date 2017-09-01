@@ -188,6 +188,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
 										break;
+									case 18:
+										parts[r].tmp = PT_BRAY | (destroy << 8);
+										parts[r].tmp2 = 1;
+										break;
 									case 20:
 										nyy += nyi; nxx += nxi;
 										front1 = pmap[y+nyy][x+nxx];
@@ -286,16 +290,6 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									{
 										front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 										int ftype1 = front1 & 0xFF;
-										if (ftype1 == PT_FRAY)
-										{
-											tmp[0] = ((int)parts[r].temp - 223) / 100;
-											if (destroy)
-												tmp[0] = -tmp[0];
-											parts[front1 >> 8].tmp += tmp[0];
-											if (parts[front1 >> 8].tmp < 0)
-												parts[front1 >> 8].tmp = 0;
-											goto break1a;
-										}
 										while (ftype1 == PT_BIZR || ftype1 == PT_BIZRG || ftype1 == PT_BIZRS)
 										{
 											colored = parts[front1 >> 8].ctype;
