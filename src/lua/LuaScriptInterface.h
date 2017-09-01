@@ -113,6 +113,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_neighbours(lua_State * l);
 	static int simulation_framerender(lua_State * l);
 	static int simulation_gspeed(lua_State * l);
+	static int simulation_takeSnapshot(lua_State *l);
 	static int simulation_CAType(lua_State * l);
 	static int simulation_createDebugComponent(lua_State * l);
 	static int simulation_breakable_wall_count(lua_State * l);

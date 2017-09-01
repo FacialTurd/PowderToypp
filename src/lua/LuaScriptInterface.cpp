@@ -803,8 +803,8 @@ void LuaScriptInterface::initSimulationAPI()
 		{"neighbors", simulation_neighbours},
 		{"framerender", simulation_framerender},
 		{"gspeed", simulation_gspeed},
+    {"takeSnapshot", simulation_takeSnapshot},
 		{"CAType", simulation_CAType},
-		// {"CAType", simulation_CAType}, // remove repeated
 		{"createDebugComponent", simulation_createDebugComponent},
 		{"createDComp", simulation_createDebugComponent},
 		{"setCustomGOLRule", simulation_setCustomGOLRule},
@@ -2655,6 +2655,12 @@ int LuaScriptInterface::stickman_lastUnused(lua_State * l)
 	else
 		lua_pushinteger(l, -1);
 	return 1;
+}
+
+int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
+{
+	luacon_controller->HistorySnapshot();
+	return 0;
 }
 
 //// Begin Renderer API
