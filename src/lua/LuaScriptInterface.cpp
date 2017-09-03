@@ -368,6 +368,10 @@ tpt.partsdata = nil");
 
 void LuaScriptInterface::Init()
 {
+#ifndef NO_SCRIPT_MANAGER
+	luacon_loadscriptmanager(luacon_ci->l);
+#endif
+	
 	if(Client::Ref().FileExists("autorun.lua"))
 	{
 		lua_State *l = luacon_ci->l;
