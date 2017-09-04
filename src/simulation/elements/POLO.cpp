@@ -97,7 +97,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 	}
 	else
 	{
-		int rndstore = rand();
+		int rndstore = rand(), rx, ry;
 		ry = rndstore%5-2;
 		rx = (rndstore>>6)%5-2;
 		r = sim->pmap[y+ry][x+rx];

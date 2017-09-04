@@ -125,11 +125,6 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	}
-	if ((rr & 0xFF) == PT_NEUT && !(rand()%10))
-	{
-		s = parts[i].tmp;
-		parts[i].tmp -= s > 0 ? (s >> 3) + 1 : 0;
-	}
 	if (parts[i].ctype & ~0xFF)
 		parts[i].ctype -= 0x100;
 	else
