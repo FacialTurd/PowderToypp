@@ -146,7 +146,9 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 						break;
 					case PT_POLO:
 						if (!b)
-							b = 5, rndstore = rand();
+							b = 4, rndstore = rand();
+						else 
+							b--;
 						parts[i].temp *= 0.98;
 						if (!(rndstore&7))
 						{
