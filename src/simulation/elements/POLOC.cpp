@@ -56,7 +56,7 @@ Element_POLC::Element_POLC()
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
 	int r, s, rx, ry, rr, sctype, stmp, trade;
-	int founds_left = 2, is_warp;
+	int is_warp;
 	const int cooldown = 15;
 	const int limit = 20;
 	float tempTemp, tempPress;
@@ -125,10 +125,9 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	}
-	if (parts[i].ctype & ~0xFF)
-		parts[i].ctype -= 0x100;
-	else
+	if (!(rand() % 10))
 	{
+		int rndstore, b = 0;
 		for (rx=-2; rx<3; rx++)
 			for (ry=-2; ry<3; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -143,26 +142,22 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 							parts[r>>8].tmp = 0;
 							parts[r>>8].tmp2 = 0;
 							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
-							founds_left = 0;
 						}
 						break;
 					case PT_POLO:
-						if (!(rand()%6))
+						if (!b)
+							b = 5, rndstore = rand();
+						parts[i].temp *= 0.98;
+						if (!(rndstore&7))
 						{
-							founds_left--;
-							parts[i].temp *= 0.99;
-							if (!(rand()%6))
-							{
-								parts[r>>8].tmp3 = 20;
-							}
+							parts[r>>8].tmp3 = 20;
 						}
+						rndstore >>= 3;
 						break;
 					case PT_POLC: // don't interacting itself
 						break;
 					}
 				}
-		if (founds_left > 0)
-			parts[i].ctype += ((rand() % 128) + 128) << 8;
 	}
 	return 0;
 }

@@ -94,6 +94,10 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 			parts[i].temp = (parts[i].temp+600.0f)/2.0f;
 			return 1;
 		}
+		if (parts[i].temp < 388.15f)
+		{
+			parts[i].temp += 0.2f;
+		}
 	}
 	else
 	{
@@ -110,10 +114,6 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 	{
 		parts[i].tmp2++;
 		sim->kill_part(r>>8);
-	}
-	if (parts[i].temp < 388.15f)
-	{
-		parts[i].temp += 0.2f;
 	}
 	return 0;
 }
