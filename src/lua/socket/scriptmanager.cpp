@@ -1,6 +1,8 @@
-#if defined(LUACONSOLE) && !defined(NO_SCRIPT_MANAGER)
+#ifdef LUACONSOLE
 // scriptmanager.lua from jacob1's mod
 #include "../LuaCompat.h"
+
+#ifndef NO_SCRIPT_MANAGER
 void luacon_loadscriptmanager(lua_State *l)
 {
 	int scriptmanager_luac_sz = 40914;
@@ -8,4 +10,5 @@ void luacon_loadscriptmanager(lua_State *l)
 	luaL_loadbuffer(l, scriptmanager_luac, scriptmanager_luac_sz, "@scriptmanager.lua");
 	lua_pcall(l, 0, 0, 0);
 }
+#endif
 #endif
