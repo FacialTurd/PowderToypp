@@ -641,7 +641,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											for (int rx1 = 0; rx1 >= -1 && rx1 <= 1; rx1 = -rx1 - rx1 + 1)
 											{
-												int np = sim->create_part(-1, x + nxi + nxx + rx1, y + nyi + nyy + ry1, parts[r].tmp&0xFF);
+												int np = sim->create_part(-1, x + nxx + rx1, y + nyy + ry1, parts[r].tmp&0xFF);
 												if (np != -1)
 												{
 													parts[np].temp = parts[r].temp;
