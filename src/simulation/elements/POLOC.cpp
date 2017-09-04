@@ -142,26 +142,23 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 					if (!r) continue;
 					switch (r & 0xFF)
 					{
-					case PT_URAN: case PT_PLUT:
+					case PT_PLUT:
 						if (parts[r>>8].tmp2 >= 10)
 						{
 							parts[r>>8].tmp = 0;
 							parts[r>>8].tmp2 = 0;
 							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
 						}
+						is_found = true;
 						break;
 					case PT_POLO:
-						if (!(rand()%40))
+						if (3>(rand()%100))
 						{
+							parts[i].temp *= 0.95;
 							if (!(rand()%4))
-							{
-								parts[i].tmp = 0;
-								parts[r>>8].tmp2 = 0; // clear absorbed PROT?
-							}
-							parts[r>>8].tmp = 0;
-							parts[r>>8].temp *= 0.95;
+								parts[r>>8].tmp3 = 20;
+							is_found = true;
 						}
-						is_found = true;
 						break;
 					case PT_POLC: // don't interacting itself
 						break;
