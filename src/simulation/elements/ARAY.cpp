@@ -634,12 +634,13 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								}
 								else if (rt == PT_STOR)
 								{
+									int rx1, ry1;
 									if (parts[r].tmp)
 									{
 										//Cause STOR to release
-										for (int ry1 = 1; ry1 >= -1; ry1--)
+										for (ry1 = 1; ry1 >= -1; ry1--)
 										{
-											for (int rx1 = 0; rx1 >= -1 && rx1 <= 1; rx1 = -rx1 - rx1 + 1)
+											for (rx1 = 0; rx1 >= -1 && rx1 <= 1; rx1 = -rx1 - rx1 + 1)
 											{
 												int np = sim->create_part(-1, x + nxx + rx1, y + nyy + ry1, parts[r].tmp&0xFF);
 												if (np != -1)
@@ -659,7 +660,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													parts[np].dcolour = parts[r].cdcolour;
 													parts[r].tmp = 0;
 													parts[r].life = 10;
-													break;
+													goto break1b;
 												}
 											}
 										}
@@ -680,6 +681,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									else
 										docontinue = 1;
 								}
+							break1b:
 								tmpz = 0;
 							}
 							else if (destroy)
