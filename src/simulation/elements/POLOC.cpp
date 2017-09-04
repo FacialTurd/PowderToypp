@@ -56,7 +56,7 @@ Element_POLC::Element_POLC()
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
 	int r, s, rx, ry, rr, sctype, stmp, trade;
-	int founds = false, is_warp;
+	int founds_left = 2, is_warp;
 	const int cooldown = 15;
 	const int limit = 20;
 	float tempTemp, tempPress;
@@ -143,13 +143,13 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 							parts[r>>8].tmp = 0;
 							parts[r>>8].tmp2 = 0;
 							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
-							is_found = true;
+							founds_left = 0;
 						}
 						break;
 					case PT_POLO:
 						if (!(rand()%6))
 						{
-							is_found = true;
+							founds_left--;
 							parts[i].temp *= 0.99;
 							if (!(rand()%6))
 							{
@@ -161,7 +161,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 						break;
 					}
 				}
-		if (!is_found)
+		if (founds_left > 0)
 			parts[i].ctype += ((rand() % 128) + 128) << 8;
 	}
 	return 0;
