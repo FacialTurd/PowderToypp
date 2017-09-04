@@ -101,12 +101,12 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 	}
 	else
 	{
-		int rndstore = rand(), rx, ry;
+		int rndstore = rand(), rr, rx, ry;
 		ry = rndstore%5-2;
 		rx = (rndstore>>6)%5-2;
-		r = sim->pmap[y+ry][x+rx];
-		if ((r & 0xFF) == PT_POLO || (r & 0xFF) == PT_POLC)
-			parts[r>>8].tmp = 0;
+		rr = sim->pmap[y+ry][x+rx];
+		if ((rr & 0xFF) == PT_POLO || (rr & 0xFF) == PT_POLC)
+			parts[rr>>8].tmp = 0;
 		parts[i].tmp2 = 0;
 		parts[i].tmp3--;
 	}
