@@ -2620,11 +2620,24 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			{
 				if (parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
 					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
-				else if (!parts[r>>8].tmp && parts[r>>8].tmp2 == 18)
+				else if (!parts[r>>8].tmp)
 				{
-					parts[i].ctype = 0x100;
-					parts[i].tmp2 = 0x3FFFFFFF;
-					part_change_type(i, x, y, PT_E186);
+					if (parts[r>>8].tmp2 == 18)
+					{
+						parts[i].ctype = 0x100;
+						parts[i].tmp2 = 0x3FFFFFFF;
+						part_change_type(i, x, y, PT_E186);
+					}
+					else if (parts[r>>8].tmp2 == 25)
+					{
+						int rr = parts[r>>8].ctype;
+						float angle = rand() / (RAND_MAX + 1); // angle = 0 ~ 1 (half-turns)
+						float radius = (float)(rr >> 3) / 32.0f;
+						angle -= (float)(rr & 7) / 4.0f; // clockwise?
+						// x * M_PI means convert half-turns to radians
+						parts[i].vx = cosf(angle * M_PI) * radius;
+						parts[i].vy = sinf(angle * M_PI) * radius;
+					}
 				}
 			}
 			break;
