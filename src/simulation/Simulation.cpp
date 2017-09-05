@@ -2631,9 +2631,9 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					else if (parts[r>>8].tmp2 == 25)
 					{
 						int rr = parts[r>>8].ctype;
-						float angle = rand() / (RAND_MAX + 1); // angle = 0 ~ 1 (half-turns)
+						float angle = rand() / (float)(RAND_MAX + 1); // angle = 0 ~ 1 (half-turns)
 						float radius = (float)(rr >> 3) / 32.0f;
-						angle -= (float)(rr & 7) / 4.0f; // clockwise?
+						angle -= (float)(rr & 7) / 4.0f; // counter clockwise?
 						// x * M_PI means convert half-turns to radians
 						parts[i].vx = cosf(angle * M_PI) * radius;
 						parts[i].vy = sinf(angle * M_PI) * radius;
