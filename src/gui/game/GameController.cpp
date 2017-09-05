@@ -1629,6 +1629,11 @@ std::string GameController::WallName(int type)
 		return "";
 }
 
+int GameController::Record(bool record)
+{
+	return gameView->Record(record);
+}
+
 void GameController::NotifyAuthUserChanged(Client * sender)
 {
 	User newUser = sender->GetAuthUser();

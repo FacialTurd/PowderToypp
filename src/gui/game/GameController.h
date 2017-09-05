@@ -151,6 +151,7 @@ public:
 	float sim_max_pressure_resolve();
 	bool IsValidElement(int type);
 	std::string WallName(int type);
+	int Record(bool record);
 
 	void ResetAir();
 	void ResetSpark();
