@@ -62,11 +62,11 @@ int Element_CAUS::update(UPDATE_FUNC_ARGS)
 						sim->part_change_type(i, x, y, PT_RFRG);
 					}
 				}
-				else if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != PT_RFRG && (r&0xFF) != PT_RFGL)
+				else if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != PT_RFRG && (r&0xFF) != PT_RFGL && (r&0xFF) != ELEM_MULTIPP)
 				{
 					if ((!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
 						((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)) &&
-						sim->elements[r&0xFF].Hardness > (rand()%1000)) && parts[i].life >= 50)
+						sim->elements[r&0xFF].Hardness > (rand() % 1000)) && parts[i].life >= 50)
 					{
 						// GLAS protects stuff from acid
 						if (sim->parts_avg(i, r>>8,PT_GLAS) != PT_GLAS)
