@@ -1314,7 +1314,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												{
 													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
 													parts[r>>8].life = 0;
-													if (rtmp == PT_INST)
+													if (rtmp == PT_INST && parts[r>>8].type == PT_QRTZ)
 														temp_part = &parts[r>>8];
 												}
 												docontinue = 2;
@@ -1330,12 +1330,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											}
 											else if (rtmp == PT_INST && temp_part != NULL)
 											{
-												if (temp_part->type == PT_QRTZ && temp_part->tmp >= 0 && parts[r>>8].tmp >= 0)
+												if (temp_part->tmp >= 0 && parts[r>>8].tmp >= 0)
 												{
 													parts[r>>8].tmp += temp_part->tmp;
 													temp_part->tmp = 0;
+													goto break1d;
 												}
-												goto break1d;
 											}
 											docontinue = 2;
 											break;
@@ -2199,11 +2199,19 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										parts[r>>8].life += 10;
 									}
 									break;
+								case PT_PQRT:
+									rr = pmap[y-ry][x-rx];
+									if ((rr&0xFF) == PT_QRTZ)
+									{
+										parts[rr>>8].tmp += parts[r>>8].tmp;
+										parts[r >>8].tmp  = 0;
+									}
+									break;
 								case ELEM_MULTIPP:
 									if (parts[r>>8].life == 38)
 									{
 										rctype = parts[r>>8].ctype;
-										if (rctype == PT_RFRG || rctype == PT_RFGL) // ACID/CAUS + GAS --> 3 RFRG
+										if (rctype == PT_RFRG || rctype == PT_RFGL) // ACID/CAUS + GAS --> N RFRG
 										{
 											rr = pmap[y-ry][x-rx];
 											if ((rr&0xFF) == PT_CAUS || (rr&0xFF) == PT_ACID)
