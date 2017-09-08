@@ -1261,10 +1261,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										r = pmap[ny][nx];
 										if (!r)
 										{
-											ri = sim->create_part(-1, nx, ny, PT_INWR);
-											if (ri >= 0)
-												parts[ri].dcolour = rry;
-											docontinue = !rrx;
+											if (docontinue == 1)
+											{
+												ri = sim->create_part(-1, nx, ny, PT_INWR);
+												if (ri >= 0)
+													parts[ri].dcolour = rry;
+												docontinue = !rrx;
+											}
+											else
+												docontinue = 0;
 											continue;
 										}
 										switch (r&0xFF)
@@ -1296,15 +1301,19 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												}
 											}
 											else if (parts[r>>8].life == 39 && rtmp == PT_NSCN)
-												sim->part_change_type(i, x, y, parts[r>>8].ctype & 0xFF);
+											{
+												sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
 												parts[r>>8].life = 0;
+												docontinue = 2;
+											}
 											goto break1d;
 										case PT_QRTZ:
 											if (rtmp == PT_PSCN)
 											{
-												sim->part_change_type(i, x, y, ELEM_MULTIPP);
+												sim->part_change_type(r>>8, nx, ny, ELEM_MULTIPP);
 												parts[r>>8].life = 39;
 												parts[r>>8].ctype = PT_QRTZ | (rrt<<8);
+												docontinue = 2;
 											}
 											break;
 										default:

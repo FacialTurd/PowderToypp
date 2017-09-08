@@ -2470,7 +2470,7 @@ void GameView::OnDraw()
 					{
 						ctype &= 0x1FF;
 					}
-					else if (partlife == 38)
+					else if (partlife == 38 || partlife == 39)
 					{
 						ctype &= 0xFF;
 					}
@@ -2549,7 +2549,7 @@ void GameView::OnDraw()
 					if (partint)
 						sampleInfo << " (" << ctype << ")";
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
-					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35 || partlife == 39))
+					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
 						if ((ctype&0xFF) == ELEM_MULTIPP && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
