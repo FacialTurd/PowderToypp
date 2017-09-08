@@ -46,6 +46,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	float rvx, rvy, rdif;
 	int docontinue;
 	rtmp = parts[i].tmp;
+
+	static Particle * temp_part;
 	
 	switch (rlife)
 	{
@@ -1247,6 +1249,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									rry = 0;
 									rrt = ((int)parts[r>>8].temp - 268) / 10;
 									if (rrt < 0) rrt = 0;
+									temp_part = NULL;
 									if (parts[r>>8].dcolour == 0xFF000000) // if black deco is on
 										rry = 0xFF000000; // set deco colour to black
 									while (docontinue)
@@ -1307,20 +1310,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											}
 											else if (parts[r>>8].life == 39)
 											{
-												if (rtmp != PT_PSCN)
+												if (rtmp != PT_PSCN && temp_part == NULL)
 												{
 													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
 													parts[r>>8].life = 0;
-													rr = pmap[ny+ry][nx+rx];
-													if (rtmp == PT_INST &&
-														parts[r>>8].type == PT_QRTZ && (rr&0xFF) == ELEM_MULTIPP &&
-														parts[rr>>8].life == 39 && (parts[rr>>8].ctype&0xFF) == PT_QRTZ &&
-														parts[r>>8].tmp > 0 && parts[rr>>8].tmp > 0
-													)
-													{
-														parts[rr>>8].tmp += parts[r>>8].tmp;
-														parts[r >>8].tmp = 0;
-													}
+													if (rtmp == PT_INST)
+														temp_part = &parts[r>>8];
 												}
 												docontinue = 2;
 												continue;
@@ -1332,6 +1327,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												sim->part_change_type(r>>8, nx, ny, ELEM_MULTIPP);
 												parts[r>>8].life = 39;
 												parts[r>>8].ctype = PT_QRTZ | (rrt<<8);
+											}
+											else if (rtmp == PT_INST && temp_part != NULL)
+											{
+												if (temp_part->type == PT_QRTZ && temp_part->tmp >= 0 && parts[r>>8].tmp >= 0)
+												{
+													parts[r>>8].tmp += temp_part->tmp;
+													temp_part->tmp = 0;
+												}
+												goto break1d;
 											}
 											docontinue = 2;
 											break;
@@ -1486,7 +1490,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											rt = PT_PRTI;
 										else
 											rt = PT_PRTO;
-										sim->part_change_type(r>>8, ny, nx, rt);
+										sim->part_change_type(r>>8, nx, ny, rt);
 										r = pmap[ny += ry][nx += rx];
 									}
 								}
