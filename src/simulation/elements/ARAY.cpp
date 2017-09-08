@@ -145,28 +145,29 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 									else
 									{
-										if ((tmp[0]&0xFF) == PT_INWR)
+										tmp[2] = tmp[0]&0xFF;
+										if (tmp[2] == PT_INWR || tmp[2] == PT_QRTZ)
 										{
 											do
 											{
-												sim->create_part(-1, x+nxx, y+nyy, PT_SPRK);
+												if (tmp[2] == PT_INWR)
+													sim->create_part(-1, x+nxx, y+nyy, PT_SPRK);
+												else if (parts[tmp[0]>>8].tmp < 0)
+													parts[tmp[0]>>8].tmp = 0;
 												nyy += nyi; nxx += nxi;
 												if (!BOUNDS_CHECK)
 													goto break1a;
 												tmp[0] = pmap[y+nyy][x+nxx];
 											}
-											while ((tmp[0]&0xFF) == PT_INWR);
-										}
-										else if ((tmp[0]&0xFF) == PT_QRTZ && parts[tmp[0]>>8].tmp < 0)
-										{
-											parts[tmp[0]>>8].tmp = 0;
+											while ((tmp[0]&0xFF) == tmp[2]);
+											goto continue1a;
 										}
 										else if ((tmp[0]&0xFF) == PT_LAVA && (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE))
 										{
 											parts[tmp[0]>>8].ctype = PT_BRCK;
 											parts[tmp[0]>>8].tmp = 0;
 										}
-										goto continue1a;
+										else goto continue1a;
 									}
 									continue;
 								case 6:

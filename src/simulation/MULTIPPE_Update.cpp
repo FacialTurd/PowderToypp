@@ -1171,8 +1171,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							r = pmap[ny][nx];
 							if (!r)
 								continue;
-							if ((r & 0xFF) == PT_FILT)
+							switch (r & 0xFF)
 							{
+							case PT_FILT:
 								rrx = parts[r>>8].ctype;
 								rry = parts[i].tmp;
 								switch (rry) // rry = sender type
@@ -1235,73 +1236,84 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									parts[r>>8].ctype = rrx;
 									r = pmap[ny += ry][nx += rx];
 								}
-								continue;
-							}
-							else if ((r & 0xFF) == PT_CRAY)
-							{
-								int ncount = 0;
-								docontinue = 1;
-								rrx = (rtmp == PT_PSCN) ? 1 : 0;
-								if (rtmp != PT_NSCN && !rrx)
-									continue;
-								rry = 0;
-								if (parts[r>>8].dcolour == 0xFF000000) // if black deco is on
-									rry = 0xFF000000; // set deco colour to black
-								while (docontinue)
+								break;
+							case PT_CRAY:
 								{
-									nx += rx; ny += ry;
-									if (!sim->InBounds(nx, ny))
-									{
-									break1d:
-										break;
-									}
-									ncount++;
-									r = pmap[ny][nx];
-									if (!r)
-									{
-										ri = sim->create_part(-1, nx, ny, PT_INWR);
-										if (ri >= 0)
-											parts[ri].dcolour = rry;
-										docontinue = !rrx;
+									int ncount = 0;
+									docontinue = 1;
+									rrx = (rtmp == PT_PSCN) ? 1 : 0;
+									if (rtmp != PT_NSCN && !rrx)
 										continue;
-									}
-									switch (r&0xFF)
+									rry = 0;
+									rrt = ((int)parts[r>>8].temp - 268) / 10;
+									if (rrt < 0) rrt = 0;
+									if (parts[r>>8].dcolour == 0xFF000000) // if black deco is on
+										rry = 0xFF000000; // set deco colour to black
+									while (docontinue)
 									{
-									case PT_INWR:
-										sim->kill_part(r>>8);
-										docontinue = rrx;
-										continue;
-									case PT_FILT:
-										if (parts[r>>8].tmp == 0) // if mode is "set colour"
-											rry = parts[r>>8].dcolour;
-										break;
-									case PT_BRCK:
-										docontinue = parts[r>>8].tmp;
-										parts[r>>8].tmp = 1;
-										continue;
-									case ELEM_MULTIPP:
-										if (parts[r>>8].life == 3)
+										nx += rx; ny += ry;
+										if (!sim->InBounds(nx, ny))
 										{
-											r = pmap[ny+ry][nx+rx];
-											if ((r&0xFF) == PT_METL || (r&0xFF) == PT_INDC)
-												conductTo (sim, r, nx+rx, ny+ry, parts);
-											while (--ncount)
-											{
-												nx -= rx; ny -= ry;
-												rr = pmap[ny][nx];
-												if ((rr & 0xFF) == PT_BRCK)
-													parts[rr>>8].tmp = 0;
-											}
+										break1d:
+											break;
 										}
-										goto break1d;
-									default:
-										docontinue = 0;
+										ncount++;
+										r = pmap[ny][nx];
+										if (!r)
+										{
+											ri = sim->create_part(-1, nx, ny, PT_INWR);
+											if (ri >= 0)
+												parts[ri].dcolour = rry;
+											docontinue = !rrx;
+											continue;
+										}
+										switch (r&0xFF)
+										{
+										case PT_INWR:
+											sim->kill_part(r>>8);
+											docontinue = rrx;
+											continue;
+										case PT_FILT:
+											if (parts[r>>8].tmp == 0) // if mode is "set colour"
+												rry = parts[r>>8].dcolour;
+											break;
+										case PT_BRCK:
+											docontinue = parts[r>>8].tmp;
+											parts[r>>8].tmp = 1;
+											continue;
+										case ELEM_MULTIPP:
+											if (parts[r>>8].life == 3)
+											{
+												r = pmap[ny+ry][nx+rx];
+												if ((r&0xFF) == PT_METL || (r&0xFF) == PT_INDC)
+													conductTo (sim, r, nx+rx, ny+ry, parts);
+												while (--ncount)
+												{
+													nx -= rx; ny -= ry;
+													rr = pmap[ny][nx];
+													if ((rr & 0xFF) == PT_BRCK)
+														parts[rr>>8].tmp = 0;
+												}
+											}
+											else if (parts[r>>8].life == 39 && rtmp == PT_NSCN)
+												sim->part_change_type(i, x, y, parts[r>>8].ctype & 0xFF);
+												parts[r>>8].life = 0;
+											goto break1d;
+										case PT_QRTZ:
+											if (rtmp == PT_PSCN)
+											{
+												sim->part_change_type(i, x, y, ELEM_MULTIPP);
+												parts[r>>8].life = 39;
+												parts[r>>8].ctype = PT_QRTZ | (rrt<<8);
+											}
+											break;
+										default:
+											docontinue = 0;
+										}
 									}
 								}
-								continue;
-							}
-							else if ((r & 0xFF) == ELEM_MULTIPP)
-							{
+								break;
+							case ELEM_MULTIPP:
 								if (parts[r>>8].life == 28 && (parts[r>>8].tmp & 0xC) == 0x4 && !(rx && ry))
 								{
 									int dir = parts[r>>8].tmp;
@@ -1346,6 +1358,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										break;
 									}
 								}
+								break;
 							}
 						}
 				parts[i].tmp2 = 0;
@@ -1372,6 +1385,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								// rrx = wavelengths
 								case PT_PSCN:
 									rrx &= ~0x1;
+									// no break
 								case PT_NSCN:
 									rrx |= 0x1;
 									break;
@@ -2670,6 +2684,18 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			parts[i].tmp = rtmp;
+		}
+		break;
+	case 39:
+		if (parts[i].ctype & ~0xFF)
+		{
+			parts[i].ctype -= 0x100;
+			if (!(parts[i].ctype & ~0xFF))
+			{
+				sim->part_change_type(i, x, y, parts[i].ctype);
+				parts[i].life = 0;
+				return return_value;
+			}
 		}
 		break;
 #if !defined(RENDERER) && defined(LUACONSOLE)
