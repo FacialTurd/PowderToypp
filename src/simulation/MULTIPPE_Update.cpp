@@ -1240,9 +1240,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							case PT_CRAY:
 								{
 									int ncount = 0;
-									docontinue = 1;
+									docontinue = (rtmp == PT_INST) ? 2 : 1;
 									rrx = (rtmp == PT_PSCN) ? 1 : 0;
-									if (rtmp != PT_NSCN && !rrx)
+									if (rtmp != PT_NSCN && rtmp != PT_INST && !rrx)
 										continue;
 									rry = 0;
 									rrt = ((int)parts[r>>8].temp - 268) / 10;
@@ -1275,8 +1275,13 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										switch (r&0xFF)
 										{
 										case PT_INWR:
-											sim->kill_part(r>>8);
-											docontinue = rrx;
+											if (docontinue == 1)
+											{
+												sim->kill_part(r>>8);
+												docontinue = rrx;
+											}
+											else
+												docontinue = 0;
 											continue;
 										case PT_FILT:
 											if (parts[r>>8].tmp == 0) // if mode is "set colour"
@@ -1300,11 +1305,25 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 														parts[rr>>8].tmp = 0;
 												}
 											}
-											else if (parts[r>>8].life == 39 && rtmp == PT_NSCN)
+											else if (parts[r>>8].life == 39)
 											{
-												sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
-												parts[r>>8].life = 0;
+												if (rtmp != PT_PSCN)
+												{
+													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
+													parts[r>>8].life = 0;
+													rr = pmap[ny+ry][nx+rx];
+													if (rtmp == PT_INST &&
+														parts[r>>8].type == PT_QRTZ && (rr&0xFF) == ELEM_MULTIPP &&
+														parts[rr>>8].life == 39 && (parts[rr>>8].ctype&0xFF) == PT_QRTZ &&
+														parts[r>>8].tmp > 0 && parts[rr>>8].tmp > 0
+													)
+													{
+														parts[rr>>8].tmp += parts[r>>8].tmp;
+														parts[r >>8].tmp = 0;
+													}
+												}
 												docontinue = 2;
+												continue;
 											}
 											goto break1d;
 										case PT_QRTZ:
@@ -1313,8 +1332,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												sim->part_change_type(r>>8, nx, ny, ELEM_MULTIPP);
 												parts[r>>8].life = 39;
 												parts[r>>8].ctype = PT_QRTZ | (rrt<<8);
-												docontinue = 2;
 											}
+											docontinue = 2;
 											break;
 										default:
 											docontinue = 0;
