@@ -53,7 +53,7 @@ Element_POLC::Element_POLC()
 		Element_POLC_Init = true;
 
 		for(int i = 0; i < 20; i++)
-			Element_POLC::strengthlist[i] = (RAND_MAX + 1) / (i * 5 + 40);
+			Element_POLC::strengthlist[i] = (int)((RAND_MAX + 1) * 3.2e-5 * (400 - i * i));
 	}
 }
 
@@ -65,23 +65,28 @@ int Element_POLC::strengthlist[20];
 //#TPT-Directive ElementHeader Element_POLC static int update(UPDATE_FUNC_ARGS)
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
-	int r, s, rx, ry, rr, sctype, actype, stmp, trade;
+	int r, s, rx, ry, rr, sctype, actype, stmp;
 	const int cooldown = 15;
 	float tempTemp, tempPress;
 	rr = sim->photons[y][x];
 	stmp = parts[i].tmp;
 	
 	int tobranch = !(rand() % 10), rndstore;
+	bool b1;
 
 	if (stmp < LIMIT && !parts[i].life)
 	{
 		sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
-		if (rr ? (rand() < strengthlist[std::max(stmp, 0)]) : (!stmp && !(rand() % 8192)))
+		b1 = rr && (
+			(rr & 0xFF) == PT_ELEC || (rr & 0xFF) == PT_E186
+		);
+		
+		if (b1 ? (rand() < strengthlist[std::max(stmp, 0)]) : (!stmp && !(rand() % 8192)))
 		{
 			if (!sctype || sim->elements[sctype].Properties & TYPE_ENERGY)
 			{
 				actype = sctype ? sctype : PT_ELEC;
-				(rr && tobranch) && (actype = PT_E186);
+				(b1 && tobranch) && (actype = PT_E186);
 				s = sim->create_part(-3, x, y, actype);
 			}
 			else
@@ -103,7 +108,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 					parts[s].ctype = sctype;
 				else if (actype == PT_GRVT)
 					parts[s].tmp = 0;
-				if (rr) // scatter process?
+				if (b1) // scatter process?
 				{
 					rndstore = rand();
 					parts[s].vx = parts[rr>>8].vx + ((rndstore & 0x7F) - 0x3F) * 0.0005f;

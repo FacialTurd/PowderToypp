@@ -124,6 +124,14 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			parts[i].ctype = 0x3FFFFFFF;
 			return 1;
 		}
+		else if (parts[under>>8].life == 16 && parts[under>>8].ctype == 5)
+		{
+			if (parts[under>>8].tmp >= 0x40)
+			{
+				parts[i].tmp2 &= ~2;
+				((parts[under>>8].tmp & 0x40) && (parts[i].tmp2 |= 2));
+			}
+		}
 		break;
 	case PT_NONE:
 		//slowly kill if it's not inside an element
