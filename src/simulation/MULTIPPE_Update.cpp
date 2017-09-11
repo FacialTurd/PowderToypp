@@ -244,7 +244,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		r = sim->photons[y][x];
 		rndstore = rand();
-		if (r && (r&0xFF) != PT_GRVT && (r&0xFF) != PT_E186)
+		if ((r&0xFF) == PT_PHOT || (r&0xFF) == PT_PROT || (r&0xFF) == PT_NEUT)
 		{
 			parts[i].tmp += 2;
 			if (parts[r>>8].temp > 370.0f)
