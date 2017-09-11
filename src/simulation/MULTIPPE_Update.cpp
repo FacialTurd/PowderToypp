@@ -244,7 +244,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		r = sim->photons[y][x];
 		rndstore = rand();
-		if (r && (r&0xFF) != PT_GRVT)
+		if (r && (r&0xFF) != PT_GRVT && (r&0xFF) != PT_E186)
 		{
 			parts[i].tmp += 2;
 			if (parts[r>>8].temp > 370.0f)
@@ -1389,6 +1389,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										}
 										break;
 									}
+								}
+								else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 5 && parts[r>>8].tmp >= 0x40)
+								{
+									rrt = parts[r>>8].tmp;
+									parts[r>>8].tmp = ((rrt - 0x40) ^ 0x40) + 0x40;
 								}
 								break;
 							}

@@ -2381,7 +2381,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				switch (pt)
 				{
 				case PT_E186:
-					if (rlife == 5 || rlife == 10 || rlife == 16 || rlife == 22 || rlife == 28 || rlife == 32 || rlife >= 40)
+					if (rlife == 5 || rlife == 8 || rlife == 10 || rlife == 16 || rlife == 22 || rlife == 28 || rlife == 32 || rlife >= 40)
 						return 2; // corrected code?
 					if (rlife == 17 || rlife == 34)
 						return 1;
@@ -2743,9 +2743,22 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		else if (parts[r>>8].life == 8)
 		{
-			parts[r>>8].tmp += (int)(parts[i].temp + 0.5f) << 2;
-			kill_part(i);
-			return 0;
+			int elec_temp = (int)(parts[i].temp + 0.5f);
+			int *vibr_tmp = & parts[r>>8].tmp;
+			if (elec_temp * 4 + *vibr_tmp <= 20000)
+			{
+				*vibr_tmp += elec_temp * 4;
+				kill_part(i);
+				return 0;
+			}
+			else
+			{
+				elec_temp = (20000 - vibr_tmp) / 4;
+				if (elec_temp <= 0) elec_temp = 1;
+				parts[i].temp -= elec_temp;
+				*vibr_tmp += elec_temp * 4;
+				return 1;
+			}
 		}
 		break;
 	}
