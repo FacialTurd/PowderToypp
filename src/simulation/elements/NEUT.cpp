@@ -210,7 +210,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							iX = rand() % (ISTP * 2 + 1) - ISTP;
 							iY = rand() % (ISTP * 2 + 1) - ISTP;
 							rr = pmap[y+iY][x+iX];
-							if ((rr&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 8)
+							if ((rr&0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 8)
 								break;
 						}
 						if (j == 5)
