@@ -2391,7 +2391,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 						return 0;
 					return 2; // corrected code
 				case PT_NEUT:
-					if (rlife == 5 || rlife == 22 && (tmp_flag & 1))
+					if (rlife == 5 || rlife == 8 || rlife == 22 && (tmp_flag & 1))
 						return 2;
 					return 0;
 				case PT_ELEC:

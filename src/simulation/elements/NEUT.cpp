@@ -181,13 +181,15 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						parts[r>>8].tmp--;
 					break;
 				case ELEM_MULTIPP:
+					{
+					int rr, j;
 					if (parts[r>>8].life == 22)
 					{
 						if (parts[r>>8].tmp & 8)
 							parts[i].vx = 0, parts[i].vy = 0;
 						else if (!(rand()%25) && (parts[r>>8].tmp & 0x10))
 						{
-							int rr = sim->create_part(-1, x, y, PT_ELEC);
+							rr = sim->create_part(-1, x, y, PT_ELEC);
 							if (rr >= 0)
 							{
 								parts[i].tmp2 = 1;
@@ -200,6 +202,20 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							parts[i].vy *= 0.995;
 						}
 					}
+					else if (parts[r>>8].life == 8 && !(rx || ry))
+					{
+						parts[i].vx = 0, parts[i].vy = 0;
+						for (j = 0; j < 5; j++)
+						{
+							iX = rand() % (ISTP * 2 + 1) - ISTP;
+							iY = rand() % (ISTP * 2 + 1) - ISTP;
+							rr = pmap[y+iY][x+iX];
+							if ((rr&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 8)
+								break;
+						}
+						if (j == 5)
+							iY = 0, iX = 0;
+					}
 					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
 					{
 						int tmp2 = parts[r>>8].tmp2;
@@ -210,6 +226,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							iX += multipler*sim->portal_rx[tmp2-1];
 							iY += multipler*sim->portal_ry[tmp2-1];
 						}
+					}
 					}
 					break;
 				default:
