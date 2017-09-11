@@ -2753,7 +2753,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			}
 			else
 			{
-				elec_temp = (20000 - vibr_tmp) / 4;
+				elec_temp = (20000 - *vibr_tmp) / 4;
 				if (elec_temp <= 0) elec_temp = 1;
 				parts[i].temp -= elec_temp;
 				*vibr_tmp += elec_temp * 4;
