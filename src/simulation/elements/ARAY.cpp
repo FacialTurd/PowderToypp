@@ -143,6 +143,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										while ((tmp[0]&0xFF) == PT_SWCH);
 									}
+									else if ((tmp[0]&0xFF) == PT_LAVA && (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE))
+									{
+										parts[tmp[0]>>8].ctype = PT_BRCK;
+										parts[tmp[0]>>8].tmp = 0;
+									}
 									else
 									{
 										tmp[2] = tmp[0]&0xFF;
@@ -160,14 +165,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												tmp[0] = pmap[y+nyy][x+nxx];
 											}
 											while ((tmp[0]&0xFF) == tmp[2]);
-											goto continue1a;
 										}
-										else if ((tmp[0]&0xFF) == PT_LAVA && (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE))
-										{
-											parts[tmp[0]>>8].ctype = PT_BRCK;
-											parts[tmp[0]>>8].tmp = 0;
-										}
-										else goto continue1a;
+										goto continue1a;
 									}
 									continue;
 								case 6:
@@ -202,6 +201,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 12: // random generator
 										docontinue = rand() & 1;
 										continue;
+									case 17:
 									case 18:
 										parts[r].tmp = PT_BRAY | (destroy << 8);
 										parts[r].tmp2 = 1;

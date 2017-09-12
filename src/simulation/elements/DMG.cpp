@@ -55,9 +55,9 @@ Element_DMG::Element_DMG()
 		{
 			DMGBreaksInto[i] = -1;
 		}
-		// "pairs" is pointer, or array?
+		// "pairs" is pointer, or array? but using unsigned char
 		// "*pairs" is binary array
-		char pairs[][2] = {
+		unsigned char pairs[][2] = {
 			{PT_BMTL, PT_BRMT}, {PT_GLAS, PT_BGLA}, {PT_COAL, PT_BCOL}, {PT_QRTZ, PT_PQRT}, {PT_TUNG, PT_BRMT}, {PT_WOOD, PT_SAWD}
 		};
 		for (i = 0; i < 6; i++)
