@@ -199,6 +199,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
 										break;
+									case 12: // random generator
+										docontinue = rand() & 1;
+										continue;
 									case 18:
 										parts[r].tmp = PT_BRAY | (destroy << 8);
 										parts[r].tmp2 = 1;
