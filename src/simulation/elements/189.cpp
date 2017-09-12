@@ -440,11 +440,10 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				part_phot->temp = part_other->temp;
 				break;
 			case 25:
-				rvx = (part_other->ctype - 273.15f) / 100.0f;
-				if (rvx < 0.0f) rvx = 0.0f;
+				rvx = part_other->ctype / 256.0f;
 				rvy = rand() * 6.283185307f / (RAND_MAX + 1.0f);
-				parts[i].vx = rvx*cosf(rvy);
-				parts[i].vy = rvx*sinf(rvy);
+				part_phot->vx = rvx*cosf(rvy);
+				part_phot->vy = rvx*sinf(rvy);
 		}
 	}
 }
