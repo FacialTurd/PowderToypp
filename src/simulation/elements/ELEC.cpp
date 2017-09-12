@@ -117,9 +117,15 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_NONE: //seems to speed up ELEC even if it isn't used
+				case PT_ELEC:
+				case PT_POLC:
+				case ELEM_MULTIPP:
 					break;
+				case PT_NBLE:
+					if (parts[i].temp >= 2273.15)
+						break;
 				default:
-					if ((sim->elements[rt].Properties & PROP_CONDUCTS) && (rt!=PT_NBLE||parts[i].temp<2273.15))
+					if (sim->elements[rt].Properties & PROP_CONDUCTS)
 					{
 						sim->create_part(-1, x+rx, y+ry, PT_SPRK);
 						sim->kill_part(i);

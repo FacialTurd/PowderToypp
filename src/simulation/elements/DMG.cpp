@@ -1,4 +1,7 @@
 #include "simulation/Elements.h"
+int DMGBreaksInto[256];
+bool DMGBreaksInit = false;
+
 //#TPT-Directive ElementClass Element_DMG PT_DMG 163
 Element_DMG::Element_DMG()
 {
@@ -43,6 +46,23 @@ Element_DMG::Element_DMG()
 
 	Update = &Element_DMG::update;
 	Graphics = &Element_DMG::graphics;
+	
+	if (!DMGBreaksInit)
+	{
+		DMGBreaksInit = true;
+		int i;
+		for (i = 0; i < 256; i++)
+		{
+			DMGBreaksInto[i] = -1;
+		}
+		// "pairs" is pointer, or array?
+		// "*pairs" is binary array
+		char pairs[][2] = {
+			{PT_BMTL, PT_BRMT}, {PT_GLAS, PT_BGLA}, {PT_COAL, PT_BCOL}, {PT_QRTZ, PT_PQRT}, {PT_TUNG, PT_BRMT}, {PT_WOOD, PT_SAWD}
+		};
+		for (i = 0; i < 6; i++)
+			DMGBreaksInto[pairs[i][0]] = pairs[i][1];
+	}
 }
 
 //#TPT-Directive ElementHeader Element_DMG static int update(UPDATE_FUNC_ARGS)
@@ -81,23 +101,17 @@ int Element_DMG::update(UPDATE_FUNC_ARGS)
 										sim->vy[(y+nxj)/CELL][(x+nxi)/CELL] += fy;
 										sim->pv[(y+nxj)/CELL][(x+nxi)/CELL] += 1.0f;
 										t = rr&0xFF;
-										if (t && sim->elements[t].HighPressureTransition>-1 && sim->elements[t].HighPressureTransition<PT_NUM)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, sim->elements[t].HighPressureTransition);
-										else if (t == PT_BMTL)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_BRMT);
-										else if (t == PT_GLAS)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_BGLA);
-										else if (t == PT_COAL)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_BCOL);
-										else if (t == PT_QRTZ)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_PQRT);
-										else if (t == PT_TUNG)
+										if (t)
 										{
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_BRMT);
-											parts[rr>>8].ctype = PT_TUNG;
+											if (sim->elements[t].HighPressureTransition>-1 && sim->elements[t].HighPressureTransition<PT_NUM)
+												sim->part_change_type(rr>>8, x+nxi, y+nxj, sim->elements[t].HighPressureTransition);
+											else if (DMGBreaksInto[t] > -1)
+											{
+												sim->part_change_type(rr>>8, x+nxi, y+nxj, DMGBreaksInto[t]);
+												if (t == PT_TUNG)
+													parts[rr>>8].ctype = PT_TUNG;
+											}
 										}
-										else if (t == PT_WOOD)
-											sim->part_change_type(rr>>8, x+nxi, y+nxj, PT_SAWD);
 									}
 								}
 							}
