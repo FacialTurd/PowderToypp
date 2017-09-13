@@ -122,7 +122,7 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 				case ELEM_MULTIPP:
 					break;
 				case PT_NBLE:
-					if (parts[i].temp < 2273.15)
+					if (parts[i].temp >= 2273.15)
 						break;
 				default:
 					if (sim->elements[rt].Properties & PROP_CONDUCTS)
