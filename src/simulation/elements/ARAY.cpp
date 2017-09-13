@@ -570,6 +570,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													}
 												}
 											}
+											else if (rt == PT_QRTZ)
+											{
+												sim->part_change_type(r, x+nxx, y+nyy, PT_PQRT);
+												parts[r].life = 5;
+											}
 											continue;
 										case 6: // melting HEAC
 											if (rt == PT_HEAC && parts[r].temp > sim->elements[PT_HEAC].HighTemperature)

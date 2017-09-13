@@ -2205,15 +2205,23 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									}
 									break;
 								case PT_PQRT:
-									rr = pmap[y-ry][x-rx];
-									if ((rr&0xFF) == PT_QRTZ && parts[r>>8].tmp >= 0 && parts[rr>>8].tmp >= 0)
+									if (parts[r>>8].tmp >= 0)
 									{
-										if (rtmp >= 0)
-											rrt = parts[r>>8].tmp;
-										else
-											rrt = -parts[rr>>8].tmp;
-										parts[rr>>8].tmp += rrt;
-										parts[r >>8].tmp -= rrt;
+										rr = pmap[y-ry][x-rx];
+										if ((rr&0xFF) == PT_QRTZ && parts[rr>>8].tmp >= 0)
+										{
+											if (rtmp >= 0)
+												rrt = parts[r>>8].tmp;
+											else
+												rrt = -parts[rr>>8].tmp;
+											parts[rr>>8].tmp += rrt;
+											parts[r >>8].tmp -= rrt;
+										}
+										else if ((rr&0xFF) == PT_SLTW)
+										{
+											parts[r>>8].tmp++;
+											sim->kill_part(rr>>8);
+										}
 									}
 									break;
 								case ELEM_MULTIPP:
