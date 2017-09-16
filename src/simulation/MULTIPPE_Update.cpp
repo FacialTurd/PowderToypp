@@ -1295,8 +1295,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											parts[r>>8].tmp = 1;
 											continue;
 										case ELEM_MULTIPP:
-											if (parts[r>>8].life == 3)
+											switch (parts[r>>8].life)
 											{
+											case 3:
 												r = pmap[ny+ry][nx+rx];
 												if ((r&0xFF) == PT_METL || (r&0xFF) == PT_INDC)
 													conductTo (sim, r, nx+rx, ny+ry, parts);
@@ -1307,9 +1308,21 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 													if ((rr & 0xFF) == PT_BRCK)
 														parts[rr>>8].tmp = 0;
 												}
-											}
-											else if (parts[r>>8].life == 39)
-											{
+												break;
+											case 35:
+												temp_part = &parts[r>>8];
+												ny += ry * rrt;
+												nx += rx * rrt;
+												rii = temp_part->tmp;
+												if (rii < 1) rii = 1;
+												while (rii-- && sim->InBounds(ny, nx))
+												{
+													r = pmap[ny+=ry][nx+=rx];
+													if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 35)
+														parts[r>>8].ctype = temp_part->ctype;
+												}
+												break;
+											case 39:
 												if (rtmp != PT_PSCN && temp_part == NULL)
 												{
 													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);

@@ -201,6 +201,12 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 12: // random generator
 										docontinue = rand() & 1;
 										continue;
+									case 13:
+										if (max_turn-- <= 0) goto break1a;
+										tmp[0] = parts[r].tmp;
+										nyy += tmp[0] * nxi; nxx -= tmp[0] * nyi;
+										nxi = -nxi; nyi = -nyi;
+										continue;
 									case 17:
 									case 18:
 										parts[r].tmp = PT_BRAY | (destroy << 8);

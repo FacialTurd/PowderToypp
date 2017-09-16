@@ -31,7 +31,7 @@ Element_DTEC::Element_DTEC()
 	Description = "Detector, creates a spark when something with its ctype is nearby.";
 
 	Properties = TYPE_SOLID;
-	Properties2 = PROP_DEBUG_USE_TMP2;
+	Properties2 = PROP_DRAWONCTYPE | PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
