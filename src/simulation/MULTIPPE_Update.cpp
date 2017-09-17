@@ -47,7 +47,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	int docontinue;
 	rtmp = parts[i].tmp;
 
-	static Particle * temp_part;
+	static Particle * temp_part, prev_temp_part;
 	
 	switch (rlife)
 	{
@@ -1247,7 +1247,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									if (rtmp != PT_NSCN && rtmp != PT_INST && !rrx)
 										continue;
 									rry = 0;
-									rrt = ((int)parts[r>>8].temp - 268) / 10;
+									prev_temp_part = &parts[r>>8];
+									rrt = ((int)prev_temp_part->temp - 268) / 10;
 									if (rrt < 0) rrt = 0;
 									temp_part = NULL;
 									if (parts[r>>8].dcolour == 0xFF000000) // if black deco is on
@@ -1313,9 +1314,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												temp_part = &parts[r>>8];
 												ny += ry * rrt;
 												nx += rx * rrt;
-												rii = temp_part->tmp;
+												rii = prev_temp_part->tmp;
 												if (rii < 1) rii = 1;
-												while (rii-- && sim->InBounds(ny, nx))
+												while (rii-- && sim->InBounds(nx, ny))
 												{
 													r = pmap[ny+=ry][nx+=rx];
 													if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 35)
@@ -1325,8 +1326,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											case 39:
 												if (rtmp != PT_PSCN && temp_part == NULL)
 												{
-													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
 													parts[r>>8].life = 0;
+													sim->part_change_type(r>>8, nx, ny, parts[r>>8].ctype & 0xFF);
 													if (rtmp == PT_INST && parts[r>>8].type == PT_QRTZ)
 														temp_part = &parts[r>>8];
 												}
@@ -2762,8 +2763,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].ctype -= 0x100;
 			if (!(parts[i].ctype & ~0xFF))
 			{
-				sim->part_change_type(i, x, y, parts[i].ctype);
 				parts[i].life = 0;
+				sim->part_change_type(i, x, y, parts[i].ctype);
 				return return_value;
 			}
 		}

@@ -148,6 +148,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										parts[tmp[0]>>8].ctype = PT_BRCK;
 										parts[tmp[0]>>8].tmp = 0;
 									}
+									else if ((tmp[0]&0xFF) == ELEM_MULTIPP)
+									{
+										if (parts[tmp[0]>>8].life == 35)
+										{
+											parts[tmp[0]>>8].ctype &= 0xFF;
+											parts[tmp[0]>>8].ctype |= (colored << 8);
+										}
+									}
 									else
 									{
 										tmp[2] = tmp[0]&0xFF;
@@ -559,7 +567,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										case 5:
 											if (rt == PT_WOOD)
 												sim->part_change_type(r, x+nxx, y+nyy, PT_SAWD);
-											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_HEAC)
+											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_CRAY // why no DRAY?
+											      || rt == PT_HEAC)
 											{
 												parts[r].temp = parts[i].temp;
 												if (rt == PT_BRAY)
