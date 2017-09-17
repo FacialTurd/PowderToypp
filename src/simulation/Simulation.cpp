@@ -3257,28 +3257,31 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			parts[index].ctype = PT_DUST;
 			return index;
 		}
-		if (p == -2 && type == ELEM_MULTIPP)
+		if (p == -2)
 		{
-			if (parts[index].life == 10)
+			if (type == ELEM_MULTIPP)
 			{
-				SimExtraFunc &= ~2;
+				if (parts[index].life == 10)
+				{
+					SimExtraFunc &= ~2;
+					return index;
+				}
+				else if (parts[index].life == 26 && !parts[index].tmp)
+				{
+					Element_MULTIPP::FloodButton(this, index, x, y);
+					return index;
+				}
+				else if (parts[index].life == 35)
+				{
+					E189ID = retcode = index;
+					goto drawOnE189Ctype;
+				}
+			}
+			else if ((elements[type].Properties & PROP_DRAWONCTYPE) || type == PT_CRAY)
+			{
+				parts[index].ctype = PT_SPRK;
 				return index;
 			}
-			else if (parts[index].life == 26 && !parts[index].tmp)
-			{
-				Element_MULTIPP::FloodButton(this, index, x, y);
-				return index;
-			}
-			else if (parts[index].life == 35)
-			{
-				E189ID = retcode = index;
-				goto drawOnE189Ctype;
-			}
-		}
-		if (p==-2 && ((elements[type].Properties & PROP_DRAWONCTYPE) || type==PT_CRAY))
-		{
-			parts[index].ctype = PT_SPRK;
-			return index;
 		}
 		if (!(type == PT_INST || (elements[type].Properties&PROP_CONDUCTS)) || parts[index].life!=0)
 			return -1;
@@ -4896,7 +4899,7 @@ killed:
 					}
 					else
 					{
-						if (t!=PT_NEUT /* && t!=PT_E186 */)
+						if (!(elements[t].Properties2 & PROP_NEUTRONS_LIKE)) /* t!=PT_NEUT && t!=PT_E186 */
 							kill_part(i); // only NEUT???
 						continue;
 					}

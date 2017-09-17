@@ -48,6 +48,7 @@
 #define PROP_CTYPE_SPEC			0x00000020	//  32 Special case for .ctype
 #define PROP_ENERGY_PART		0x00000040	//  64 VIBR absorb-able particle
 #define PROP_DEBUG_HIDE_TMP		0x00000080	// 128 .tmp is hidden from the debug HUD
+#define PROP_NEUTRONS_LIKE		0x00000100	// 256 neutrons-like element
 #define PROP_UNBREAKABLECLONE	0x00004000  // 2^14
 #define PROP_NODESTRUCT			0x00008000  // 2^15 Indestructible property
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it
