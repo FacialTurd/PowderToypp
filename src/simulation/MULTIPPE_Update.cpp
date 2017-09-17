@@ -47,7 +47,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	int docontinue;
 	rtmp = parts[i].tmp;
 
-	static Particle * temp_part, prev_temp_part;
+	static Particle * temp_part, * prev_temp_part;
 	
 	switch (rlife)
 	{
