@@ -44,8 +44,8 @@ Element_ARAY::Element_ARAY()
 	Update = &Element_ARAY::update;
 }
 
-// #TPT-Directive ElementHeader Element_ARAY static int temp_z1[5];
-// int Element_ARAY::temp_z1[5];
+//#TPT-Directive ElementHeader Element_ARAY static const unsigned char to_angle[9];
+const unsigned char Element_ARAY::to_angle[9] = {0,1,2,7,0,3,6,5,4};
 
 //#TPT-Directive ElementHeader Element_ARAY static int update(UPDATE_FUNC_ARGS)
 int Element_ARAY::update(UPDATE_FUNC_ARGS)
@@ -154,6 +154,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											parts[tmp[0]>>8].ctype &= 0xFF;
 											parts[tmp[0]>>8].ctype |= (colored << 8);
+											docontinue = nostop;
 										}
 									}
 									else
@@ -333,7 +334,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									if (!max_turn)
 										goto break1a;
 									// nxx += nxi; nyy += nyi;
-									tmp[1] = parts[r].tmp & 0xF;
+									tmp[1] = parts[r].tmp & 0x1F;
 									switch (tmp[1])
 									{
 									case 0: // turn right
@@ -382,20 +383,22 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											{
 												front1 = pmap[y+nyy][x+nxx];
 												if (!front1) goto break1a;
-												if ((front1 & 0xFF) == PT_FILT)
-													parts[front1>>8].life = 4;
-												else if ((front1 & 0xFF) == PT_ARAY)
+												switch (front1 & 0xFF)
 												{
+												case PT_FILT:
+													parts[front1>>8].life = 4; break;
+												case PT_ARAY: case PT_CRAY:
+													{
 													float ftemp = parts[front1>>8].temp + tdiff;
 													parts[front1>>8].temp = restrict_flt(ftemp, MIN_TEMP, MAX_TEMP);
+													}
 													goto break1a;
-												}
-												else if ((front1 & 0xFF) == ELEM_MULTIPP)
-												{
+												case ELEM_MULTIPP:
 													if (parts[front1>>8].life == 28)
 														parts[front1>>8].tmp2 += tdiff;
+													break;
+												default: goto break1a;
 												}
-												else goto break1a;
 											}
 										}
 										goto break1a;
@@ -414,6 +417,15 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											nxx = tmp[2] - nxi; nyy = tmp[3] - nyi;
 										}
 										continue;
+									case 14:
+									case 15:
+										tmp[0] = to_angle[nxi + 3 * nyi + 4];
+										tmp[1] = tmp[1] * 6 + 5;
+										tmp[0] += tmp[1] * parts[r].tmp2;
+										tmp[0] &= 7;
+										// see PRTI.cpp
+										nxi = sim->portal_rx[tmp[0]];
+										nyi = sim->portal_ry[tmp[0]];
 									}
 									// nxx -= nxi; nyy -= nyi;
 									max_turn--;
@@ -567,9 +579,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										case 5:
 											if (rt == PT_WOOD)
 												sim->part_change_type(r, x+nxx, y+nyy, PT_SAWD);
-											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_CRAY // why no DRAY?
-											      || rt == PT_HEAC)
+											else if (rt == PT_ARAY || rt == PT_BRAY || rt == PT_CRAY || rt == PT_HEAC)
 											{
+												// ARAY, BRAY, CRAY, DRAY, FRAY
 												parts[r].temp = parts[i].temp;
 												if (rt == PT_BRAY)
 												{
@@ -584,6 +596,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 														parts[r].life = 1;
 													}
 												}
+												else if (inputType == PT_BMTL)
+													goto break1a;
 											}
 											else if (rt == PT_QRTZ)
 											{

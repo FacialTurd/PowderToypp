@@ -57,7 +57,7 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)!=PT_ACID && (r&0xFF)!=PT_CAUS)
+				if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != ELEM_MULTIPP)
 				{
 					if ((r&0xFF)==PT_PLEX || (r&0xFF)==PT_NITR || (r&0xFF)==PT_GUNP || (r&0xFF)==PT_RBDM || (r&0xFF)==PT_LRBD)
 					{
