@@ -53,6 +53,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 	int r_life, swap;
 	int modProp;
 	int modFlag;
+	static float flt1;
 	if (!parts[i].life)
 	{
 		for (int rx = -1; rx <= 1; rx++)
@@ -233,17 +234,17 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										tmp[0] = parts[r].tmp2 + (r < i); // delay time
 										if (tmp[0] <= 0)
 											tmp[0] += parts[r].tmp; // add pulse time
-										if ((front1&0xFF) == PT_DLAY)
+										switch (front1&0xFF)
 										{
+										case PT_DLAY:
 											front1 >>= 8;
 											tmp[1] = parts[front1].life - (front1 > i);
 											if (tmp[1] == 0 && front1 > i)
 												Element_DLAY::update (sim, front1, x+nxx, y+nyy, 0, 0, parts, pmap);
 											if (tmp[1] <= 0)
 												parts[front1].life = tmp[0] + (front1 > i);
-										}
-										else if ((front1&0xFF) == PT_INST)
-										{
+											break;
+										case PT_INST:
 											if (tmp[0] == 1)
 											{
 												parts[front1>>8].life = 4;
@@ -472,6 +473,17 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											{
 											case PT_NONE:
 												sim->create_part(-1, x+nxx, y+nyy, PT_BRAY);
+												break;
+											case PT_CRAY:
+												if (modFlag & 2)
+												{
+													parts[front1 >> 8].temp = flt1;
+													goto break1a;
+												}
+												break;
+											case PT_STOR:
+												modFlag |= 2;
+												flt1  = parts[front1 >> 8].temp;
 												break;
 											case PT_FRAY:
 												tmpz2 += parts[front1 >> 8].tmp;
