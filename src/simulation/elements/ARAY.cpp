@@ -474,6 +474,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											case PT_NONE:
 												sim->create_part(-1, x+nxx, y+nyy, PT_BRAY);
 												break;
+											case PT_ARAY:
 											case PT_CRAY:
 												if (modFlag & 2)
 												{
