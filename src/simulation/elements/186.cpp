@@ -168,6 +168,13 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		case 4:
 			parts[i].temp = * (float*) &parts[i].tmp;
 			break;
+		case 5:
+			if (parts[i].flags & FLAG_SKIPMOVE)
+			{
+				parts[i].flags &= ~FLAG_SKIPMOVE;
+				return 1;
+			}
+			break;
 		}
 		return 0;
 	}

@@ -180,13 +180,13 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		parts[ri].vx = rvx * rdif / 16.0f;
 		parts[ri].vy = rvy * rdif / 16.0f;
 		rctype = parts[i].ctype;
-		rtmp = rctype & 0x3FFFFFFF;
-		rctype >>= 30;
+		rtmp = rctype >> 30;
+		rctype &= 0x3FFFFFFF;
 		if (rtmp)
-			parts[ri].ctype = rtmp;
+			parts[ri].ctype = rctype;
 		parts[ri].temp = parts[i].temp;
 		parts[ri].life = parts[i].tmp2;
-		parts[ri].tmp = rctype & 3;
+		parts[ri].tmp = rtmp & 3;
 		
 		break;
 	case 5: // reserved for Simulation.cpp
@@ -593,8 +593,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								parts[i].tmp ^= 1; break;
 							case 2:
 								rr = pmap[y-ry][x-rx];
-								if ((rr & 0xFF) == ELEM_MULTIPP)
+								switch (rr & 0xFF)
 								{
+								case ELEM_MULTIPP:
 									if (parts[rr>>8].life == 12)
 										sim->kill_part(rr >> 8);
 									else if (parts[rr>>8].life == 15)
@@ -611,29 +612,30 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											parts[rr>>8].ctype = (rctype << rrt | rctype >> (30-rrt)) & 0x3FFFFFFF;
 										}
 									}
-								}
-								else if (!rr)
-								{
+									break;
+								case PT_NONE:
 									ri = sim->create_part(-1,x-rx,y-ry,ELEM_MULTIPP,12);
 									if (ri >= 0)
 										parts[ri].tmp = 3;
-								}
-								else if ((rr & 0xFF) == PT_FILT) // might to making FILT oscillator
-								{
-									int * ctype_ptr = &parts[rr>>8].ctype;
-									if (parts[i].temp > 373.0f)
+									break;
+								case PT_FILT: // might to making FILT oscillator
 									{
-										if (*ctype_ptr == 1)
-											{ parts[i].temp = 295.15f; continue; }
-										*ctype_ptr >>= 1;
+										int * ctype_ptr = &parts[rr>>8].ctype;
+										if (parts[i].temp > 373.0f)
+										{
+											if (*ctype_ptr == 1)
+												{ parts[i].temp = 295.15f; continue; }
+											*ctype_ptr >>= 1;
+										}
+										else
+										{
+											if (*ctype_ptr == 0x20000000)
+												{ parts[i].temp = 395.15f; continue; }
+											*ctype_ptr <<= 1;
+											*ctype_ptr &= 0x3FFFFFFF;
+										}
 									}
-									else
-									{
-										if (*ctype_ptr == 0x20000000)
-											{ parts[i].temp = 395.15f; continue; }
-										*ctype_ptr <<= 1;
-										*ctype_ptr &= 0x3FFFFFFF;
-									}
+									break;
 								}
 								break;
 							case 5:
@@ -1309,6 +1311,13 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 													if ((rr & 0xFF) == PT_BRCK)
 														parts[rr>>8].tmp = 0;
 												}
+												break;
+											case 4:
+												parts[r>>8].tmp = (rx & 15) | ((ry & 15) << 4) | 0x3000;
+												break;
+											case 12:
+												if (rrx && !(parts[r>>8].tmp & 6))
+													parts[r>>8].tmp |= 2;
 												break;
 											case 35:
 												temp_part = &parts[r>>8];
@@ -1993,6 +2002,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
+			break;
+		case 31: // fast laser?
+			rx = tron_rx[rtmp & 3];
+			ry = tron_ry[rtmp & 3];
+			ri = sim->create_part(-1, x + rx, y + ry, PT_E186);
+			parts[ri].ctype = 0x105;
+			rtmp >>= 2;
+			parts[ri].vx = rx * rtmp;
+			parts[ri].vy = ry * rtmp;
+			if (ri > i)
+				parts[ri].flags |= FLAG_SKIPMOVE;
 			break;
 		}
 		break;
