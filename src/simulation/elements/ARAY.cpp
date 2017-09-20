@@ -54,6 +54,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 	int modProp;
 	int modFlag;
 	static float flt1;
+	static Particle *partt;
 	if (!parts[i].life)
 	{
 		for (int rx = -1; rx <= 1; rx++)
@@ -77,7 +78,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						if (max_turn <= 0)
 							max_turn = 256;
 						modFlag = 0;
-						int docontinue, nxx, nxi, nyy, nyi;
+						int docontinue, nxx, nxi, nx2, nyy, nyi, ny2;
 						for (docontinue = 1, nxx = nxi = rx*-1, nyy = nyi = ry*-1; docontinue; nyy+=nyi, nxx+=nxi)
 						{
 							if (!(x+nxx<XRES && y+nyy<YRES && x+nxx >= 0 && y+nyy >= 0))
@@ -128,8 +129,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 2:
 									nyy += nyi; nxx += nxi;
 									tmp[0] = pmap[y+nyy][x+nxx];
-									if ((tmp[0]&0xFF) == PT_SWCH)
+									switch (tmp[0]&0xFF)
 									{
+									case PT_SWCH:
 										if (inputType == PT_INWR)
 											destroy = parts[tmp[0]>>8].life >= 10;
 										tmp[1] = destroy ? 9 : 10;
@@ -143,23 +145,45 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											tmp[0] = pmap[y+nyy][x+nxx];
 										}
 										while ((tmp[0]&0xFF) == PT_SWCH);
-									}
-									else if ((tmp[0]&0xFF) == PT_LAVA && (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE))
-									{
-										parts[tmp[0]>>8].ctype = PT_BRCK;
-										parts[tmp[0]>>8].tmp = 0;
-									}
-									else if ((tmp[0]&0xFF) == ELEM_MULTIPP)
-									{
-										if (parts[tmp[0]>>8].life == 35)
+										break;
+									case PT_LAVA: 
+										if (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE)
+										{
+											parts[tmp[0]>>8].ctype = PT_BRCK;
+											parts[tmp[0]>>8].tmp = 0;
+										}
+										break;
+									case PT_CRAY:
+										partt = &parts[tmp[0]>>8];
+										ny2 = y + nyy + nyi * partt->tmp2;
+										nx2 = x + nxx + nxi * partt->tmp2;
+										{
+											int remainp = partt->tmp;
+											if (remainp < 1) remainp = 1;
+											while (remainp--)
+											{
+												nx2 += nxi; ny2 += nyi;
+												if (!sim->InBounds(nx2, ny2)) break;
+												r = pmap[ny2][nx2];
+												if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 35)
+													parts[r>>8].ctype = partt->ctype;
+											}
+										}
+										goto break1a;
+									case ELEM_MULTIPP:
+										if (parts[tmp[0]>>8].life == 4)
+										{
+											parts[tmp[0]>>8].ctype = colored;
+											docontinue = nostop;
+										}
+										else if (parts[tmp[0]>>8].life == 35)
 										{
 											parts[tmp[0]>>8].ctype &= 0xFF;
 											parts[tmp[0]>>8].ctype |= (colored << 8);
 											docontinue = nostop;
 										}
-									}
-									else
-									{
+										break;
+									default:
 										tmp[2] = tmp[0]&0xFF;
 										if (tmp[2] == PT_INWR || tmp[2] == PT_QRTZ)
 										{
@@ -451,8 +475,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										destroy  = (tmp[0] >> (destroy  ? 3 : 2)) & 0x1;
 										ray_less = (tmp[0] >> (ray_less ? 5 : 4)) & 0x1;
 										break;
+									case 9:
+										noturn = 2; // no break
 									case 2:
-										// temp_z1[8] = spc_conduct;
 										spc_conduct = tmp[0];
 										break;
 									case 3:

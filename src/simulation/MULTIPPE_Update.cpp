@@ -1319,19 +1319,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												if (rrx && !(parts[r>>8].tmp & 6))
 													parts[r>>8].tmp |= 2;
 												break;
-											case 35:
-												temp_part = &parts[r>>8];
-												ny += ry * rrt;
-												nx += rx * rrt;
-												rii = prev_temp_part->tmp;
-												if (rii < 1) rii = 1;
-												while (rii-- && sim->InBounds(nx, ny))
-												{
-													r = pmap[ny+=ry][nx+=rx];
-													if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 35)
-														parts[r>>8].ctype = temp_part->ctype;
-												}
-												break;
 											case 39:
 												if (rtmp != PT_PSCN && temp_part == NULL)
 												{
