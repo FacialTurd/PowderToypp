@@ -44,7 +44,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	int rr, rndstore, rt, rii, rrx, rry, nx, ny, pavg, rrt;
 	// int tmp_r;
 	float rvx, rvy, rdif;
-	int docontinue;
+	int docontinue, rtmp2;
 	rtmp = parts[i].tmp;
 
 	static Particle * temp_part, * prev_temp_part;
@@ -1349,6 +1349,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											}
 											docontinue = 2;
 											break;
+										case PT_FRAY:
+											rii = parts[r>>8].tmp;
+											rrt++;
+											rr = pmap[ny+ry*rrt][nx+rx*rrt];
+											if ((rr & 0xFF) == PT_CRAY || (rr & 0xFF) == PT_DRAY || (rr & 0xFF) == PT_PSTN)
+											{
+												if (prev_temp_part->ctype == PT_ACEL)
+													parts[rr>>8].tmp = rii;
+												else if (prev_temp_part->ctype == PT_DCEL)
+													parts[rr>>8].tmp2 = rii;
+											}
 										default:
 											docontinue = 0;
 										}

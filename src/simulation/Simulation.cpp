@@ -2360,6 +2360,11 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 		case ELEM_MULTIPP:
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
+				static int E186_ilist = {
+					136448000,	// {  ;  5,  8, 10, 13}
+					33562630,	// {17; 16, 22, 28}
+					18,			// {34; 32}
+				}
 				switch (rlife)
 				{
 				case 16:
@@ -2381,11 +2386,10 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				switch (pt)
 				{
 				case PT_E186:
-					if (rlife == 5 || rlife == 8 || rlife == 10 || rlife == 16 || rlife == 22 || rlife == 28 || rlife == 32 || rlife >= 40)
-						return 2; // corrected code?
-					if (rlife == 17 || rlife == 34)
-						return 1;
-					return 0;
+					if (rlife < 0 || rlife >= 40)
+						return 2;
+					// 17, 34; 5, 8, 10, 13, 16, 22, 28, 32
+					return (E186_ilist[rlife>>4] >> ((rlife << 1) & 0x1F)) & 3;
 				case PT_PROT:
 					if (rlife == 15)
 						return 0;
@@ -2407,17 +2411,6 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				}
 			}
 			return 0; // otherwise. Note using "return", no "break".
-		/*
-		case PT_BRMT:
-			if (pt == PT_E186)
-			{
-				if (parts[r>>8].ctype == PT_TUNG)
-					result = 2;
-				else
-					result = 0;
-			}
-			break;
-		*/
 		case PT_SPRK:
 			if (pt == PT_DEST)
 			{
