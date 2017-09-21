@@ -2360,11 +2360,11 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 		case ELEM_MULTIPP:
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
-				static int E186_ilist = {
+				static int E186_ilist[] = {
 					136448000,	// {  ;  5,  8, 10, 13}
 					33562630,	// {17; 16, 22, 28}
 					18,			// {34; 32}
-				}
+				};
 				switch (rlife)
 				{
 				case 16:
