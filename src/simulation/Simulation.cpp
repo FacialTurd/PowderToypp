@@ -2253,8 +2253,8 @@ void Simulation::init_can_move()
 	
 	can_move[PT_ELEC][PT_POLC] = 2;
 	can_move[PT_GLOW][PT_E187] = 0;
+	can_move[PT_E186][PT_E187] = 0;
 	
-	// can_move[PT_E186][PT_BRMT] = 3;
 	can_move[PT_E186][PT_VIBR] = 2;
 	can_move[PT_E186][PT_BVBR] = 2;
 	can_move[PT_E186][PT_PRTO] = 2;
@@ -2361,7 +2361,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
 				static int E186_ilist[] = {
-					136448000,	// {  ;  5,  8, 10, 13}
+					0x88220800,	// {  ;  5,  8, 10, 13, 15}
 					33562630,	// {17; 16, 22, 28}
 					18,			// {34; 32}
 				};
