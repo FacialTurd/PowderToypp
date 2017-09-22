@@ -1349,6 +1349,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											}
 											docontinue = 2;
 											break;
+										case PT_VIBR:
+										case PT_BVBR:
+											rr = pmap[ny+ry][nx+rx];
+											if ((rr & 0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 12 && parts[rr>>8].tmp == 2)
+											{
+												parts[rr>>8].tmp2 += (10 + parts[r>>8].tmp) * 2;
+												parts[r>>8].tmp = 0;
+											}
+											goto break1d;
 										case PT_FRAY:
 											rii = parts[r>>8].tmp;
 											rrt++;
