@@ -186,7 +186,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			int rt = pmap[y][x] & 0xFF;
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
-			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT))
+			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT))
 				s = sim->create_part(-1, x, y, sctype);
 			else
 				s = -1, u2pu = true;

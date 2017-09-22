@@ -192,22 +192,19 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	{
 		int newID, element;
 		bool myCollision = sim->isFromMyMod && (parts[i].tmp2 & 2);
-		if (myCollision)
+		if (parts[i].tmp > 310)
 		{
-			if (parts[i].tmp > 280)
-			{
+			if (parts[i].tmp > 500000)
+				element = PT_SING; //particle accelerators are known to create earth-destroying black holes
+			else if (myCollision)
 				element = PT_POLC;
-				goto product1;
-			}
+			else if (parts[i].tmp > 700)
+				element = PT_PLUT;
+			else if (parts[i].tmp > 420)
+				element = PT_URAN;
+			else // 310
+				element = PT_POLO;
 		}
-		if (parts[i].tmp > 500000)
-			element = PT_SING; //particle accelerators are known to create earth-destroying black holes
-		else if (parts[i].tmp > 700)
-			element = PT_PLUT;
-		else if (parts[i].tmp > 420)
-			element = PT_URAN;
-		else if (parts[i].tmp > 310)
-			element = PT_POLO;
 		else if (parts[i].tmp > 250)
 			element = PT_PLSM;
 		else if (parts[i].tmp > 100)
@@ -222,10 +219,10 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			parts[newID].temp = restrict_flt(100.0f*parts[i].tmp, MIN_TEMP, MAX_TEMP);
 		else if (myCollision)
 		{
-			if ((ahead&0xFF) != PT_PROT || (ahead>>8) == i)
+			// if ((ahead&0xFF) != PT_PROT || (ahead>>8) == i)
 				return 0;
-			parts[ahead>>8].tmp += parts[i].tmp;
-			parts[ahead>>8].tmp2 |= 2;
+			// parts[ahead>>8].tmp += parts[i].tmp;
+			// parts[ahead>>8].tmp2 |= 2;
 		}
 		sim->kill_part(i);
 		return 1;
