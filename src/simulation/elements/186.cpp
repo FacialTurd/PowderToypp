@@ -182,13 +182,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	{
 		if (!(rand()%60))
 		{
+			int rt = pmap[y][x] & 0xFF;
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
-			else if (sctype != PT_PROT || (pmap[y][x]&0xFF) != PT_URAN)
+			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT))
 				s = sim->create_part(-1, x, y, sctype);
-			else
-				sim->part_change_type(pmap[y][x]>>8, x, y, PT_PLUT);
-				return 0;
 			if(s >= 0)
 			{
 				parts[i].temp += 400.0f;
@@ -259,6 +257,21 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_VRSS:
 			case PT_VRSG:
 				parts[r>>8].tmp4 = PT_NONE;
+				break;
+			case PT_URAN:
+				if (parts[i].ctype == PT_PROT)
+				{
+					sim->part_change_type(r>>8, x, y, PT_PLUT);
+					goto plut1;
+				}
+				break;
+			case PT_PLUT:
+				if (parts[i].ctype == PT_PROT)
+				{
+				plut1:
+					parts[r>>8].vx += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
+					parts[r>>8].vy += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
+				}
 				break;
 /*
 			case PT_STOR:
