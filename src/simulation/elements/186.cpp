@@ -184,7 +184,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		{
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
-			else if (stype != PT_PROT || (pmap[y][x]&0xFF) != PT_URAN)
+			else if (sctype != PT_PROT || (pmap[y][x]&0xFF) != PT_URAN)
 				s = sim->create_part(-1, x, y, sctype);
 			else
 				sim->part_change_type(pmap[y][x]>>8, x, y, PT_PLUT);
