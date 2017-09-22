@@ -180,6 +180,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	}
 	if (sim->elements[PT_POLC].Enabled)
 	{
+		bool u2pu = false;
 		if (!(rand()%60))
 		{
 			int rt = pmap[y][x] & 0xFF;
@@ -187,6 +188,8 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				s = sim->create_part(-3, x, y, PT_ELEC);
 			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT))
 				s = sim->create_part(-1, x, y, sctype);
+			else
+				s = -1, u2pu = true;
 			if(s >= 0)
 			{
 				parts[i].temp += 400.0f;
@@ -259,7 +262,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[r>>8].tmp4 = PT_NONE;
 				break;
 			case PT_URAN:
-				if (parts[i].ctype == PT_PROT)
+				if (u2pu)
 				{
 					sim->part_change_type(r>>8, x, y, PT_PLUT);
 				}
