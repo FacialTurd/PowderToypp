@@ -182,7 +182,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		rctype = parts[i].ctype;
 		rtmp = rctype >> 30;
 		rctype &= 0x3FFFFFFF;
-		if (rtmp)
+		if (rctype)
 			parts[ri].ctype = rctype;
 		parts[ri].temp = parts[i].temp;
 		parts[ri].life = parts[i].tmp2;
