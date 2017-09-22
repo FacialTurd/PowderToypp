@@ -191,7 +191,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp)
 	{
 		int newID, element;
-		bool myCollision = sim->isFromMyMod && (parts[i].tmp2 & 2)
+		bool myCollision = sim->isFromMyMod && (parts[i].tmp2 & 2);
 		if (myCollision)
 		{
 			if (parts[i].tmp > 280)
