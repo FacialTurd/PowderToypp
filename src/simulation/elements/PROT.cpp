@@ -97,13 +97,12 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		parts[under>>8].temp = restrict_flt(parts[under>>8].temp + change, MIN_TEMP, MAX_TEMP);
 		break;
 	case ELEM_MULTIPP:
-		if (parts[under>>8].life == 6)
+		switch (parts[under>>8].life)
 		{
+		case 6:
 			parts[i].temp = parts[under>>8].temp;
 			goto no_temp_change;
-		}
-		else if (parts[under>>8].life == 10)
-		{
+		case 10:
 			if (parts[under>>8].temp > 1273.0f)
 			{
 				sim->kill_part(i);
@@ -114,23 +113,42 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 				parts[i].tmp2 &= ~1;
 				goto no_temp_change;
 			}
-		}
-		else if (parts[under>>8].life == 11 && parts[under>>8].tmp2 == 1)
-		{
-			sim->part_change_type(i, x, y, PT_PHOT);
-			parts[i].x = x;
-			parts[i].y = y;
-			parts[i].life *= 2;
-			parts[i].ctype = 0x3FFFFFFF;
-			return 1;
-		}
-		else if (parts[under>>8].life == 16 && parts[under>>8].ctype == 5)
-		{
-			if (parts[under>>8].tmp >= 0x40)
+			break;
+		case 11:
+			if (parts[under>>8].tmp2 == 1)
 			{
-				parts[i].tmp2 &= ~2;
-				((parts[under>>8].tmp & 0x40) && (parts[i].tmp2 |= 2));
+				sim->part_change_type(i, x, y, PT_PHOT);
+				parts[i].x = x;
+				parts[i].y = y;
+				parts[i].life *= 2;
+				parts[i].ctype = 0x3FFFFFFF;
+				return 1;
 			}
+			break;
+		case 12:
+			if (parts[under>>8].tmp == 2)
+			{
+				if (parts[under>>8].tmp2 < (int)(parts[under>>8].temp - (273.15f - 0.5f)))
+				{
+					parts[under>>8].tmp2 += (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
+					sim->kill_part(i);
+					return 1;
+				}
+				parts[i].tmp += parts[under>>8].tmp2;
+				parts[under>>8].tmp2 = 0;
+				return 0;
+			}
+			break;
+		case 16:
+			if (parts[under>>8].ctype == 5)
+			{
+				if (parts[under>>8].tmp >= 0x40)
+				{
+					parts[i].tmp2 &= ~2;
+					((parts[under>>8].tmp & 0x40) && (parts[i].tmp2 |= 2));
+				}
+			}
+			break;
 		}
 		break;
 	case PT_NONE:
@@ -173,7 +191,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp)
 	{
 		int newID, element;
-		if (sim->isFromMyMod && parts[i].tmp2 & 2)
+		bool myCollision = sim->isFromMyMod && (parts[i].tmp2 & 2)
+		if (myCollision)
 		{
 			if (parts[i].tmp > 280)
 			{
@@ -201,8 +220,13 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		newID = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, element);
 		if (newID >= 0)
 			parts[newID].temp = restrict_flt(100.0f*parts[i].tmp, MIN_TEMP, MAX_TEMP);
-		else if (sim->isFromMyMod && (parts[i].tmp2 & 2))
-			return 0;
+		else if (myCollision)
+		{
+			if ((ahead&0xFF) != PT_PROT || (ahead>>8) == i)
+				return 0;
+			parts[ahead>>8].tmp += parts[i].tmp;
+			parts[ahead>>8].tmp2 |= 2;
+		}
 		sim->kill_part(i);
 		return 1;
 	}
