@@ -130,7 +130,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			{
 				if (parts[under>>8].tmp2 < (int)(parts[under>>8].temp - (273.15f - 0.5f)))
 				{
-					parts[under>>8].tmp2 += (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
+					parts[under>>8].tmp2 += parts[i].tmp + (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
 					sim->kill_part(i);
 					return 1;
 				}
