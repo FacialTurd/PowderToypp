@@ -1354,8 +1354,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											rr = pmap[ny+ry][nx+rx];
 											if ((rr & 0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 12 && parts[rr>>8].tmp == 2)
 											{
-												parts[rr>>8].tmp2 += (10 + parts[r>>8].tmp) * 2;
+												parts[rr>>8].tmp2 += (parts[r>>8].tmp + (int)parts[r>>8].temp / 3 - 81) * 2;
 												parts[r>>8].tmp = 0;
+												parts[r>>8].temp = 273.15f;
 											}
 											goto break1d;
 										case PT_FRAY:

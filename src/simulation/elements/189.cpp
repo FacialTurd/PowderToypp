@@ -224,6 +224,9 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				sim->parts[r1>>8].ctype = part_phot->ctype;
 			}
 			break;
+		case 6:
+			part_phot->ctype = (rtmp2 & 0xFF);
+			sim->part_change_type(i, x, y, PT_E186);
 		}
 	}
 	else
@@ -439,7 +442,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			case 24: // set PHOT's temp
 				part_phot->temp = part_other->temp;
 				break;
-			case 25:
+			case 26:
 				rvx = part_other->ctype / 256.0f;
 				rvy = rand() * 6.283185307f / (RAND_MAX + 1.0f);
 				part_phot->vx = rvx*cosf(rvy);

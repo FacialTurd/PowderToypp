@@ -184,8 +184,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		{
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
-			else
+			else if (stype != PT_PROT || (pmap[y][x]&0xFF) != PT_URAN)
 				s = sim->create_part(-1, x, y, sctype);
+			else
+				sim->part_change_type(pmap[y][x]>>8, x, y, PT_PLUT);
+				return 0;
 			if(s >= 0)
 			{
 				parts[i].temp += 400.0f;
@@ -257,11 +260,17 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_VRSG:
 				parts[r>>8].tmp4 = PT_NONE;
 				break;
+/*
+			case PT_STOR:
+				if (parts[r>>8].ctype > 0 && parts[r>>8].ctype < PT_NUM)
+					parts[i].ctype = parts[r>>8].ctype;
+				break;
 			case PT_LAVA:
 				switch (parts[r>>8].ctype)
 				{
 				}
 				break;
+*/
 			default:
 				break;
 			}
