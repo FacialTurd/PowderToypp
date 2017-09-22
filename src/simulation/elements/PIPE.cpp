@@ -202,7 +202,9 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 						}
 					}
 					//try eating particle at entrance
-					else if ((parts[i].tmp&0xFF) == 0 && (sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
+					else if ((parts[i].tmp&0xFF) == 0 && (
+						(sim->elements[r&0xFF].Properties  & (TYPE_PART | TYPE_LIQUID | TYPE_GAS)) ||
+						(sim->elements[r&0xFF].Properties2 & (PROP_ENERGY_PART))))
 					{
 						if ((r&0xFF)==PT_SOAP)
 							Element_SOAP::detach(sim, r>>8);
@@ -246,7 +248,13 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 				for (ry=-1; ry<2; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
-						if (!pmap[y+ry][x+rx] && sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_ALLOWAIR && sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_WALL && sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_WALLELEC && (sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_EWALL || sim->emap[(y+ry)/CELL][(x+rx)/CELL]))
+						if (!pmap[y+ry][x+rx] &&
+							sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_ALLOWAIR &&
+							sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_WALL &&
+							sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_WALLELEC &&
+							sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_BREAKABLE_WALL &&
+							sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_BREAKABLE_WALLELEC &&
+							(sim->bmap[(y+ry)/CELL][(x+rx)/CELL]!=WL_EWALL || sim->emap[(y+ry)/CELL][(x+rx)/CELL]))
 							parts[i].life=50;
 					}
 		}
