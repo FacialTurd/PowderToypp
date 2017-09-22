@@ -2253,7 +2253,7 @@ void Simulation::init_can_move()
 	
 	can_move[PT_ELEC][PT_POLC] = 2;
 	can_move[PT_GLOW][PT_E187] = 0;
-	can_move[PT_E186][PT_E187] = 0;
+	can_move[PT_E186][PT_E187] = 2; // "E186" pass through "E187"
 	
 	can_move[PT_E186][PT_VIBR] = 2;
 	can_move[PT_E186][PT_BVBR] = 2;
@@ -2341,12 +2341,16 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					result = 0;
 			}
 			else result = 0;
+			//	if (result == 0 && (r & 0xFF) == PT_E186)
+			//		result = 2
 			break;
 		case PT_VOID:
 			if (!parts[r>>8].ctype || (parts[r>>8].ctype==pt)!=(parts[r>>8].tmp&1))
 				result = 1;
 			else
 				result = 0;
+			//	if (result == 0 && (r & 0xFF) == PT_E186)
+			//		result = 2
 			break;
 		case PT_SWCH:
 			if (pt == PT_TRON)
