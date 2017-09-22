@@ -262,15 +262,12 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				if (parts[i].ctype == PT_PROT)
 				{
 					sim->part_change_type(r>>8, x, y, PT_PLUT);
-					goto plut1;
 				}
-				break;
 			case PT_PLUT:
 				if (parts[i].ctype == PT_PROT)
 				{
-				plut1:
-					parts[r>>8].vx += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
-					parts[r>>8].vy += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
+					parts[i].vx += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
+					parts[i].vy += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
 				}
 				break;
 /*
