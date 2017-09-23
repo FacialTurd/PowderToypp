@@ -1351,10 +1351,21 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											break;
 										case PT_VIBR:
 										case PT_BVBR:
-											rr = pmap[ny+ry][nx+rx];
+											rii = 0, rr = r;
+										continue1d:
+											// do {
+											rii += (parts[rr>>8].tmp + (int)parts[rr>>8].temp / 3 - 81) * 2;
+											ny += ry; nx += rx;
+											// if (!BOUNDS_CHECK) goto break1d;
+											rr = pmap[ny][nx];
+											// } while ...
+											if ((rr & 0xFF) == PT_VIBR || (rr & 0xFF) == PT_BVBR)
+												goto continue1d;
+											else if ((rr & 0xFF) == PT_PSTN && parts[rr>>8].life)
+												rr = pmap[ny += ry][nx += rx];
 											if ((rr & 0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 12 && parts[rr>>8].tmp == 2)
 											{
-												parts[rr>>8].tmp2 += (parts[r>>8].tmp + (int)parts[r>>8].temp / 3 - 81) * 2;
+												parts[rr>>8].tmp2 += rii;
 												parts[r>>8].tmp = 0;
 												parts[r>>8].temp = 273.15f;
 											}
