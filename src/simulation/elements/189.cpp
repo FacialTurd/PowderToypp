@@ -226,6 +226,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			break;
 		case 6:
 			part_phot->ctype = (rtmp2 & 0xFF);
+			if (part_phot->ctype == PT_PROT)
+				part_phot->flags |= FLAG_SKIPCREATE;
 			sim->part_change_type(i, x, y, PT_E186);
 		}
 	}

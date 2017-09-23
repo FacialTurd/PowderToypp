@@ -181,6 +181,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	if (sim->elements[PT_POLC].Enabled)
 	{
 		bool u2pu = false;
+		if (parts[i].flags & FLAG_SKIPCREATE)
+		{
+			parts[i].flags &= ~FLAG_SKIPCREATE;
+			goto skip1a;
+		}
 		if (!(rand()%60))
 		{
 			int rt = pmap[y][x] & 0xFF;
@@ -201,6 +206,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[s].tmp2 = 3000 + rand() % 10000;
 			}
 		}
+	skip1a:
 		r = pmap[y][x];
 		if (r)
 		{
