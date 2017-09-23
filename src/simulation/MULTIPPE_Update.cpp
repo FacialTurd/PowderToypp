@@ -1355,6 +1355,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										continue1d:
 											// do {
 											rii += (parts[rr>>8].tmp + (int)parts[rr>>8].temp / 3 - 81) * 2;
+											parts[rr>>8].temp = 273.15f;
+											parts[rr>>8].tmp = 0;
 											ny += ry; nx += rx;
 											// if (!BOUNDS_CHECK) goto break1d;
 											rr = pmap[ny][nx];
@@ -1364,11 +1366,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											else if ((rr & 0xFF) == PT_PSTN && parts[rr>>8].life)
 												rr = pmap[ny += ry][nx += rx];
 											if ((rr & 0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 12 && parts[rr>>8].tmp == 2)
-											{
 												parts[rr>>8].tmp2 += rii;
-												parts[r>>8].tmp = 0;
-												parts[r>>8].temp = 273.15f;
-											}
 											goto break1d;
 										case PT_FRAY:
 											rii = parts[r>>8].tmp;
