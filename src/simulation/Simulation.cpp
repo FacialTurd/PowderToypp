@@ -2364,10 +2364,11 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 		case ELEM_MULTIPP:
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
+				// 16 values per dword
 				static int E186_ilist[] = {
-					0x88220800,	// {  ;  5,  8, 10, 13, 15}
-					33562630,	// {17; 16, 22, 28}
-					18,			// {34; 32}
+					0x88222800,	//  0 - 15
+					0x02002006,	// 16 - 31
+					0xAAAA0012,	// 32 - 47
 				};
 				switch (rlife)
 				{
@@ -2390,9 +2391,8 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				switch (pt)
 				{
 				case PT_E186:
-					if (rlife < 0 || rlife >= 40)
+					if (rlife < 0 || rlife >= 48)
 						return 2;
-					// 17, 34; 5, 8, 10, 13, 16, 22, 28, 32
 					return (E186_ilist[rlife>>4] >> ((rlife << 1) & 0x1F)) & 3;
 				case PT_PROT:
 					if (rlife == 15)
@@ -5665,7 +5665,6 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 					// automatically decrease life
 					// if (parts[i].life!=10 || !(elem_properties&PROP_POWERED))
 					// {
-						// kill on change to no life
 						parts[i].life--;
 					// }
 					if (parts[i].life<=0 && (elem_properties&(PROP_LIFE_KILL_DEC|PROP_LIFE_KILL)))
@@ -5810,6 +5809,8 @@ void Simulation::BeforeSim()
 		elementRecount |= !(currentTick%180);
 		if (elementRecount)
 			std::fill(elementCount, elementCount+PT_NUM, 0);
+		// E189's .life value isn't lifetime, just is secondary type.
+		elements[ELEM_MULTIPP].Properties &= ~(PROP_CONDUCTS | PROP_LIFE_DEC | PROP_LIFE_KILL);
 	}
 	sandcolour = (int)(20.0f*sin((float)sandcolour_frame*(M_PI/180.0f)));
 	sandcolour_frame = (sandcolour_frame+1)%360;

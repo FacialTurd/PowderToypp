@@ -185,21 +185,33 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					int rr, j;
 					if (parts[r>>8].life == 22)
 					{
-						if (parts[r>>8].tmp & 8)
+						switch (parts[r>>8].tmp >> 3)
+						{
+						case 1:
 							parts[i].vx = 0, parts[i].vy = 0;
-						else if (!(rand()%25) && (parts[r>>8].tmp & 0x10))
-						{
-							rr = sim->create_part(-1, x, y, PT_ELEC);
-							if (rr >= 0)
+							break;
+						case 2:
+							if (!(rand()%25))
 							{
-								parts[i].tmp2 = 1;
-								sim->part_change_type(i, x, y, PT_PROT);
+								rr = sim->create_part(-1, x, y, PT_ELEC);
+								if (rr >= 0)
+								{
+									parts[i].tmp2 = 1;
+									sim->part_change_type(i, x, y, PT_PROT);
+								}
 							}
-						}
-						else if (parts[r>>8].tmp & 0x20)
-						{
+							break;
+						case 3:
+							if (!((rand()%400) || parts[r>>8].tmp2))
+							{
+								sim->create_part(-1, x, y, PT_NEUT);
+								parts[r>>8].tmp2 = 50;
+							}
+							break;
+						case 4:
 							parts[i].vx *= 0.995;
 							parts[i].vy *= 0.995;
+							break;
 						}
 					}
 					else if (parts[r>>8].life == 8 && !(rx || ry))

@@ -77,7 +77,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				{
 					parts[i].ctype = parts[i].tmp2;
 					parts[i].tmp2 = 0;
-					transportPhotons(sim, i, x, y, x+under->tmp, y+under->tmp2, &parts[i]);
+					transportPhotons(sim, i, x, y, x+under->tmp, y+under->tmp2, PT_PHOT, &parts[i]);
 					return 1;
 				}
 				else if (under->life == 16 && under->ctype == 29)
@@ -91,7 +91,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					else
 						parts[i].x = nx = x + rr, ny = y;
 					parts[i].ctype = 0x3FFFFFFF;
-					transportPhotons(sim, i, x, y, nx, ny, &parts[i]);
+					transportPhotons(sim, i, x, y, nx, ny, PT_PHOT, &parts[i]);
 					return 1;
 				}
 			}
@@ -331,8 +331,8 @@ int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, Particle *phot)
-void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, Particle *phot)
+//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
+void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
 {
 	if ((sim->photons[y][x]>>8) == i)
 		sim->photons[y][x] = 0;
@@ -351,8 +351,8 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx
 	}
 	phot->x = (float)nx;
 	phot->y = (float)ny;
-	phot->type = PT_PHOT;
-	sim->photons[ny][nx] = PT_PHOT|(i<<8);
+	phot->type = t;
+	sim->photons[ny][nx] = t|(i<<8);
 	// return;
 }
 

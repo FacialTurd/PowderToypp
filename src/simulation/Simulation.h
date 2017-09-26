@@ -118,6 +118,7 @@ public:
 	float sim_max_pressure;
 	//Particles
 	Particle parts[NPART];
+	// int part_references [NPART];
 	int pmap[YRES][XRES];
 	int photons[YRES][XRES];
 	int pmap_count[YRES][XRES];

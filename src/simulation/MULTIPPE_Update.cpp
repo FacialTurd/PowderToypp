@@ -199,7 +199,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	case 15: // reserved for Simulation.cpp
 	case 17: // reserved for 186.cpp and Simulation.cpp
 	case 18: // decoration only, no update function
-	case 22: // reserved for Simulation.cpp
 	case 23: // reserved for stickmen
 	case 25: // reserved for E189's life = 16, ctype = 10.
 	case 27: // reserved for stickmen
@@ -1351,22 +1350,22 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											break;
 										case PT_VIBR:
 										case PT_BVBR:
-											rii = 0, rr = r;
+											rii = 0;
 										continue1d:
 											// do {
-											rii += (parts[rr>>8].tmp + (int)parts[rr>>8].temp / 3 - 81) * 2;
-											parts[rr>>8].temp = 273.15f;
-											parts[rr>>8].tmp = 0;
+											rii += (parts[r>>8].tmp + (int)parts[r>>8].temp / 3 - 81) * 2;
+											parts[r>>8].temp = 273.15f;
+											parts[r>>8].tmp = 0;
 											ny += ry; nx += rx;
 											// if (!BOUNDS_CHECK) goto break1d;
-											rr = pmap[ny][nx];
+											r = pmap[ny][nx];
 											// } while ...
-											if ((rr & 0xFF) == PT_VIBR || (rr & 0xFF) == PT_BVBR)
+											if ((r & 0xFF) == PT_VIBR || (r & 0xFF) == PT_BVBR)
 												goto continue1d;
-											else if ((rr & 0xFF) == PT_PSTN && parts[rr>>8].life)
-												rr = pmap[ny += ry][nx += rx];
-											if ((rr & 0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 12 && parts[rr>>8].tmp == 2)
-												parts[rr>>8].tmp2 += rii;
+											else if ((r & 0xFF) == PT_PSTN && parts[r>>8].life)
+												r = pmap[ny += ry][nx += rx];
+											if ((r & 0xFF) == ELEM_MULTIPP && parts[r>>8].life == 12 && parts[r>>8].tmp == 2)
+												parts[r>>8].tmp2 += rii;
 											goto break1d;
 										case PT_FRAY:
 											rii = parts[r>>8].tmp;
@@ -2311,6 +2310,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 		}
 		break;
+	case 22:
+		if (parts[i].tmp2) parts[i].tmp2 --; break;
 	case 24: // moving duplicator particle
 		if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
 			parts[i].flags &= ~FLAG_SKIPMOVE; // clear wait flag
