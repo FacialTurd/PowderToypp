@@ -66,6 +66,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						continue;
 					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
+						// EmitRay (i, r, x, y, rx, ry, sim, parts);
 						bool isBlackDeco = false;
 						int inputType = parts[r>>8].ctype;
 						int destroy = (inputType == PT_PSCN) ? 1 : 0;
@@ -123,7 +124,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							else if (rt == ELEM_MULTIPP)
 							{
 								r_life = parts[r].life;
-								int front1;
+								int front1, front2;
 								switch (r_life)
 								{
 								case 2:
@@ -351,6 +352,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											front1 = pmap[y+nyi+nyy][x+nxi+nxx];
 											ftype1 = front1 & 0xFF;
 										}
+										if (ftype1 == PT_SWCH && (parts[r].tmp > 0))
+										{
+											parts[front1 >> 8].life = 9 + (parts[r].tmp & 1);
+											docontinue = nostop;
+										}
 									}
 									continue;
 								case 28:
@@ -537,6 +543,15 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												if (!nostop) goto break1a;
 												nxx -= nxi; nyy -= nyi;
 												break;
+											case PT_SWCH:
+												if (tmp[0])
+												{
+													front2 = pmap[y+nyy+tmp[0]*nxi][x+nxx-tmp[0]*nyi];
+													if ((front2 & 0xFF) == PT_SWCH && (destroy != (parts[front2 >> 8].life >= 10)))
+														parts[front1 >> 8].life = ((parts[front1 >> 8].life >= 10) ? 9 : 10);
+													docontinue = nostop;
+												}
+												continue;
 											}
 										}
 										break;
