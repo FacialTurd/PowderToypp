@@ -183,6 +183,12 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		bool u2pu = false;
 		if (parts[i].flags & FLAG_SKIPCREATE)
 		{
+/*
+			int nx, ny;
+			nx = (parts[i].x + parts[i].vx) + .5f;
+			ny = (parts[i].y + parts[i].vy) + .5f;
+			if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES || (pmap[ny][nx]&0xFF != ELEM_MULTIPP) || parts[pmap[ny][nx]>>8].life != 5)
+*/
 			parts[i].flags &= ~FLAG_SKIPCREATE;
 			goto skip1a;
 		}
@@ -214,8 +220,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			switch (r&0xFF)
 			{
 			case PT_CAUS:
-				sim->part_change_type(r>>8, x, y, PT_RFRG); // probably inverse for NEUT???
-				parts[r>>8].tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
+				if (sctype != PT_CAUS && sctype != PT_NEUT)
+				{
+					sim->part_change_type(r>>8, x, y, PT_RFRG); // probably inverse for NEUT???
+					parts[r>>8].tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
+				}
 				break;
 			case PT_FILT:
 				sim->part_change_type(i, x, y, PT_PHOT);

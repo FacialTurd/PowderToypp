@@ -72,7 +72,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int destroy = (inputType == PT_PSCN) ? 1 : 0;
 						int nostop = (inputType == PT_INST) ? 1 : 0;
 						int spc_conduct = 0, ray_less = 0;
-						int colored = 0, noturn = 0, rt;
+						int colored = 0, noturn = 0, rt, b;
 						static int tmp[4];
 						int max_turn = parts[i].tmp, tmpz = 1, tmpz2 = 0;
 						int r_incr = 1, pass_wall = 1;
@@ -133,6 +133,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									switch (tmp[0]&0xFF)
 									{
 									case PT_SWCH:
+									case PT_HSWC:
+										tmp[2] = tmp[0] & 0xFF;
 										if (inputType == PT_INWR)
 											destroy = parts[tmp[0]>>8].life >= 10;
 										tmp[1] = destroy ? 9 : 10;
@@ -145,7 +147,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												goto break1a;
 											tmp[0] = pmap[y+nyy][x+nxx];
 										}
-										while ((tmp[0]&0xFF) == PT_SWCH);
+										while ((tmp[0]&0xFF) == tmp[2]);
 										break;
 									case PT_LAVA: 
 										if (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE)
@@ -546,9 +548,14 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											case PT_SWCH:
 												if (tmp[0])
 												{
-													front2 = pmap[y+nyy+tmp[0]*nxi][x+nxx-tmp[0]*nyi];
-													if ((front2 & 0xFF) == PT_SWCH && (destroy != (parts[front2 >> 8].life >= 10)))
-														parts[front1 >> 8].life = ((parts[front1 >> 8].life >= 10) ? 9 : 10);
+													nx2 = x+nxx-tmp[0]*nyi;
+													ny2 = y+nyy+tmp[0]*nxi;
+													if (sim->InBounds(nx2, ny2))
+													{
+														front2 = pmap[ny2][nx2];
+														if ((front2 & 0xFF) == PT_SWCH)
+															parts[front1 >> 8].life = ((parts[front1 >> 8].life >= 10) ? 9 : 10);
+													}
 													docontinue = nostop;
 												}
 												continue;
@@ -570,9 +577,32 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												if (f_type == PT_SWCH)
 													parts[front1>>8].life = 19; // keep SWCH on
 											}
-											else if (f_type == PT_SWCH && parts[front1>>8].life >= 10)
+											else if (f_type == PT_SWCH)
 											{
-												parts[front1>>8].life = 19; // keep SWCH on
+												tmp[2] = tmp[0] & 0xFF;
+												tmp[0] >>= 8;
+												if (tmp[0])
+												{
+													nx2 = x+nxx-tmp[0]*nyi;
+													ny2 = y+nyy+tmp[0]*nxi;
+													if (!sim->InBounds(nx2, ny2))
+														goto continue1b;
+													front2 = pmap[y+nyy+tmp[0]*nxi][x+nxx-tmp[0]*nyi];
+													if ((front2 & 0xFF) == PT_SWCH)
+													{
+														b = ((parts[front2>>8].life >= 10) ? 4 : 0) | ((parts[front1>>8].life >= 10) ? 2 : 0);
+														b = (tmp[2] >> b);
+														parts[front1>>8].life = ((b & 1) ? 10 : 9);
+														parts[front2>>8].life = ((b & 2) ? 10 : 9);
+													}
+												continue1b:
+													docontinue = nostop;
+													continue;
+												}
+												else if (parts[front1>>8].life >= 10)
+												{
+													parts[front1>>8].life = 19; // keep SWCH on
+												}
 											}
 											if (sim->elements[f_type].Properties & (PROP_CONDUCTS|PROP_CONDUCTS_SPEC))
 												parts[front1>>8].life = 8;
