@@ -187,7 +187,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	}
 	if (sim->elements[PT_POLC].Enabled)
 	{
-		if (bmap[y/CELL][x/CELL] == WL_DESTROYALL)
+		if (sim->bmap[y/CELL][x/CELL] == WL_DESTROYALL)
 		{
 			sim->kill_part(i);
 			return 1;
