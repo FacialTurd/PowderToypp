@@ -3920,6 +3920,28 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 	unsigned int tempFlag0;
+	static int bltable[][2] = { // blocked, allowcondition
+		{0, 0},
+		{1, 0}, // conductive wall
+		{0, 0}, // E-wall
+		{0, 0}, // detector
+		{0, 0}, // stream line
+		{0, 0}, // fan
+		{1, TYPE_LIQUID},
+		{1, 0}, // absorb all
+		{1, 0}, // wall
+		{1, 0}, // air-only wall
+		{1, TYPE_PART},
+		{0, 0}, // conductor
+		{0, 0}, // E-hole
+		{1, TYPE_GAS},
+		{0, 0}, // gravity wall
+		{1, TYPE_ENERGY},
+		{0, 0}, // air-block wall
+		{0, 0},
+		{1, 0},
+		{1, 0},
+	};
 
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
@@ -3932,19 +3954,11 @@ void Simulation::UpdateParticles(int start, int end)
 
 			//this kills any particle out of the screen, or in a wall where it isn't supposed to go
 			if (x<CELL || y<CELL || x>=XRES-CELL || y>=YRES-CELL ||
-			        (bmap[y/CELL][x/CELL] &&
-			         (bmap[y/CELL][x/CELL]==WL_WALL ||
-					  bmap[y/CELL][x/CELL]==WL_BREAKABLE_WALL ||
-			          bmap[y/CELL][x/CELL]==WL_WALLELEC ||
-					  bmap[y/CELL][x/CELL]==WL_BREAKABLE_WALLELEC ||
-			          bmap[y/CELL][x/CELL]==WL_ALLOWAIR ||
-			          (bmap[y/CELL][x/CELL]==WL_DESTROYALL) ||
-			          (bmap[y/CELL][x/CELL]==WL_ALLOWLIQUID && !(elements[t].Properties&TYPE_LIQUID)) ||
-			          (bmap[y/CELL][x/CELL]==WL_ALLOWPOWDER && !(elements[t].Properties&TYPE_PART)) ||
-			          (bmap[y/CELL][x/CELL]==WL_ALLOWGAS && !(elements[t].Properties&TYPE_GAS)) || //&& elements[t].Falldown!=0 && parts[i].type!=PT_FIRE && parts[i].type!=PT_SMKE && parts[i].type!=PT_CFLM) ||
-			          (bmap[y/CELL][x/CELL]==WL_ALLOWENERGY && !(elements[t].Properties&TYPE_ENERGY)) ||
+			        (bmap[y/CELL][x/CELL] && (
+			          (bltable[bmap[y/CELL][x/CELL]][0] && !(elements[t].Properties & bltable[bmap[y/CELL][x/CELL]][1])) ||
 					  (bmap[y/CELL][x/CELL]==WL_DETECT && (t==PT_METL || t==PT_SPRK || t==PT_INDC)) || // can't detecting INDC
-			          (bmap[y/CELL][x/CELL]==WL_EWALL && !emap[y/CELL][x/CELL])) && (t!=PT_STKM) && (t!=PT_STKM2) && (t!=PT_FIGH)))
+			          (bmap[y/CELL][x/CELL]==WL_EWALL && !emap[y/CELL][x/CELL])) &&
+					  !(elements[t].Properties2 & PROP_ALLOWS_WALL)))
 			{
 				kill_part(i);
 				continue;
@@ -4606,7 +4620,7 @@ killed:
 				continue;
 
 			mv = fmaxf(fabsf(parts[i].vx), fabsf(parts[i].vy));
-			if (mv < ISTP)
+			if (mv <= ISTP)
 			{
 				clear_x = x;
 				clear_y = y;

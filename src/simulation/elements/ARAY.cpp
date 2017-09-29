@@ -47,6 +47,9 @@ Element_ARAY::Element_ARAY()
 //#TPT-Directive ElementHeader Element_ARAY static const unsigned char to_angle[9];
 const unsigned char Element_ARAY::to_angle[9] = {0,1,2,7,0,3,6,5,4};
 
+//#TPT-Directive ElementHeader Element_ARAY static const unsigned char param1[4][2];
+const unsigned char Element_ARAY::param1[4][2] = {{-1, 1}, {1, -1}, {1, 1}, {-1, -1}};
+
 //#TPT-Directive ElementHeader Element_ARAY static int update(UPDATE_FUNC_ARGS)
 int Element_ARAY::update(UPDATE_FUNC_ARGS)
 {
@@ -174,12 +177,13 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										goto break1a;
 									case ELEM_MULTIPP:
-										if (parts[tmp[0]>>8].life == 4)
+										b = parts[tmp[0]>>8].life;
+										if (b == 4)
 										{
 											parts[tmp[0]>>8].ctype = colored;
 											docontinue = nostop;
 										}
-										else if (parts[tmp[0]>>8].life == 35)
+										else if (b == 35)
 										{
 											parts[tmp[0]>>8].ctype &= 0xFF;
 											parts[tmp[0]>>8].ctype |= (colored << 8);
@@ -370,25 +374,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									tmp[1] = parts[r].tmp & 0x1F;
 									switch (tmp[1])
 									{
-									case 0: // turn right
+									case 0: case 1: case 2: case 3: // turn right, turn left, "\" and "/" reflect
 										tmp[0] = nxi;
-										nxi = -nyi;
-										nyi = tmp[0];
-										break;
-									case 1: // turn left
-										tmp[0] = nxi;
-										nxi = nyi;
-										nyi = -tmp[0];
-										break;
-									case 2: // "\" reflect
-										tmp[0] = nxi;
-										nxi = nyi;
-										nyi = tmp[0];
-										break;
-									case 3: // "/" reflect
-										tmp[0] = nxi;
-										nxi = -nyi;
-										nyi = -tmp[0];
+										nxi = param1[tmp[1]][0] * nyi;
+										nyi = param1[tmp[1]][1] * tmp[0];
 										break;
 									case 4: // go "/\"
 										nxi = 0; nyi = -1;
@@ -478,7 +467,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										break;
 									case 1:
 										// temp_z1[8] = tmp2 = nostop | (destroy << 1);
-										tmp[0]  ^= 0xAAAAAAAA;
+										tmp[0]  ^= 0x2A;
 										nostop   = (tmp[0] >> (nostop   ? 1 : 0)) & 0x1;
 										destroy  = (tmp[0] >> (destroy  ? 3 : 2)) & 0x1;
 										ray_less = (tmp[0] >> (ray_less ? 5 : 4)) & 0x1;
@@ -559,6 +548,12 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													docontinue = nostop;
 												}
 												continue;
+											case PT_FILT: continue1c:
+												parts[front1>>8].ctype = colored;
+												nxx += nxi; nyy += nyi;
+												if (BOUNDS_CHECK && ((front1 = pmap[y+nyy][x+nxx])&0xFF) == PT_FILT)
+													goto continue1c;
+												goto break1a;
 											}
 										}
 										break;
@@ -587,7 +582,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													ny2 = y+nyy+tmp[0]*nxi;
 													if (!sim->InBounds(nx2, ny2))
 														goto continue1b;
-													front2 = pmap[y+nyy+tmp[0]*nxi][x+nxx-tmp[0]*nyi];
+													front2 = pmap[ny2][nx2];
 													if ((front2 & 0xFF) == PT_SWCH)
 													{
 														b = ((parts[front2>>8].life >= 10) ? 4 : 0) | ((parts[front1>>8].life >= 10) ? 2 : 0);
@@ -613,6 +608,20 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										if (max_turn-- <= 0)
 											goto break1a;
 										nxx += tmp[0]*nxi, nyy += tmp[0]*nyi;
+										break;
+									case 10:
+										nx2 = x+nxx-tmp[0]*nyi;
+										ny2 = y+nyy+tmp[0]*nxi;
+										if (sim->InBounds(nx2, ny2))
+										{
+											int rr = pmap[ny2][nx2];
+											if ((rr&0xFF) == PT_FILT)
+											{
+												colored = Element_FILT::interactWavelengths(&parts[pmap[ny2][nx2]>>8], colored);
+											}
+											else if ((rr&0xFF) == PT_VOID || (rr&0xFF) == PT_PVOD && parts[rr>>8].life >= 10)
+												goto break1a;
+										}
 										break;
 									}
 									tmpz = 1;

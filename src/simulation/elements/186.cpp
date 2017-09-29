@@ -1,3 +1,4 @@
+// #include <stdint.h>
 #include "simulation/Elements.h"
 //Temp particle used for graphics
 Particle tpart_phot;
@@ -34,7 +35,7 @@ Element_E186::Element_E186()
 	Description = "Experimental element.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_RADIOACTIVE|PROP_LIFE_KILL_DEC;
-	Properties2 |= PROP_NOWAVELENGTHS | PROP_CTYPE_SPEC | PROP_NEUTRONS_LIKE;
+	Properties2 |= PROP_NOWAVELENGTHS | PROP_CTYPE_SPEC | PROP_NEUTRONS_LIKE | PROP_ALLOWS_WALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -174,12 +175,23 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[i].flags &= ~FLAG_SKIPMOVE;
 				return 1;
 			}
-			break;
+			{
+				int incx, incy;
+				incx = floor(parts[i].vx + .5f);
+				incy = floor(parts[i].vy + .5f);
+				transportPhotons(sim, i, x, y, x + incx, y + incy, parts[i].type, &parts[i]);
+			}
+			return 1;
 		}
 		return 0;
 	}
 	if (sim->elements[PT_POLC].Enabled)
 	{
+		if (bmap[y/CELL][x/CELL] == WL_DESTROYALL)
+		{
+			sim->kill_part(i);
+			return 1;
+		}
 		bool u2pu = false;
 		if (parts[i].flags & FLAG_SKIPCREATE)
 		{

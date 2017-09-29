@@ -31,6 +31,7 @@ Element_STKM::Element_STKM()
 	Description = "Stickman. Don't kill him! Control with the arrow keys.";
 
 	Properties = PROP_NOCTYPEDRAW;
+	Properties2 |= PROP_ALLOWS_WALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
