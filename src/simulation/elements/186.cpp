@@ -175,12 +175,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[i].flags &= ~FLAG_SKIPMOVE;
 				return 1;
 			}
-			{
-				int incx, incy;
-				incx = floor(parts[i].vx + .5f);
-				incy = floor(parts[i].vy + .5f);
-				transportPhotons(sim, i, x, y, x + incx, y + incy, parts[i].type, &parts[i]);
-			}
+			transportPhotons(sim, i, x, y, parts[i].x + parts[i].vx, parts[i].y + parts[i].vy, parts[i].type, &parts[i]);
 			return 1;
 		}
 		return 0;
@@ -372,6 +367,33 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx
 	}
 	phot->x = (float)nx;
 	phot->y = (float)ny;
+	phot->type = t;
+	sim->photons[ny][nx] = t|(i<<8);
+	// return;
+}
+
+//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
+void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
+{
+	int nx, ny;
+	if ((sim->photons[y][x]>>8) == i)
+		sim->photons[y][x] = 0;
+	if (sim->edgeMode == 2)
+	{
+		nxf = sim->remainder_p(nxf-CELL+.5f, XRES-CELL*2.0f)+CELL-.5f;
+		nyf = sim->remainder_p(nyf-CELL+.5f, YRES-CELL*2.0f)+CELL-.5f;
+	}
+	else
+	{
+		nx = (int)(nxf + 0.5f), ny = (int)(nyf + 0.5f);
+		if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
+		{
+			sim->kill_part(i);
+			return;
+		}
+	}
+	phot->x = nxf;
+	phot->y = nyf;
 	phot->type = t;
 	sim->photons[ny][nx] = t|(i<<8);
 	// return;
