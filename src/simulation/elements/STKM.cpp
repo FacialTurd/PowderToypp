@@ -399,7 +399,11 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					continue;
 				
 				if (!(sim->Extra_FIGH_pause & 32))
+				{
 					STKM_set_element(sim, playerp, r&0xFF);
+					if ((r&0xFF) == PT_E186)
+						playerp->pelem = parts[r>>8].ctype;
+				}
 				if (!(sim->Extra_FIGH_pause & 16))
 				{
 					if ((r&0xFF) == PT_PLNT && parts[i].life<100) //Plant gives him 5 HP
@@ -508,6 +512,18 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 						else
 							parts[np].vx = random;
 					}
+				}
+				else if (playerp->elem == PT_E186)
+				{
+					int rndstore = rand();
+					float rad = 2.0f;
+					float angle = (rndstore % 101 - 50) * 0.002f;
+					int comm = (int)playerp->pcomm;
+					if ((comm & 3) == 1 || (comm & 3) != 2 && (rndstore % 2))
+						rad = -rad;
+					parts[np].vx = rad*cosf(angle);
+					parts[np].vy = rad*sinf(angle);
+					parts[np].ctype = playerp->pelem;
 				}
 				else if (playerp->elem == PT_LIGH)
 				{

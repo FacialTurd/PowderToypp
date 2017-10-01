@@ -56,8 +56,8 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 		int rx = (rnd % 7) - 3;
 		rnd >>= 3;
 		int ry = (rnd % 7) - 3;
-		if (!(rx || ry))
-			return 0;
+		// if (!(rx || ry))
+		//	return 0;
 		int r = sim->create_part(-1, x + rx, y + ry, PT_REPP);
 		if (r >= 0)
 		{
