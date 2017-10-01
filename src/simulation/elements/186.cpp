@@ -213,10 +213,18 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[i].temp += 400.0f;
 				parts[s].temp = parts[i].temp;
 				sim->pv[y/CELL][x/CELL] += 1.5f;
-				if (sctype == PT_GRVT)
+				switch (sctype)
+				{
+				case PT_GRVT:
 					parts[s].tmp = 0;
-				else if (sctype == PT_WARP)
+					break;
+				case PT_WARP:
 					parts[s].tmp2 = 3000 + rand() % 10000;
+					break;
+				case PT_LIGH:
+					parts[s].tmp = rand()%360;
+					break;
+				}
 			}
 		}
 	skip1a:
