@@ -6035,6 +6035,8 @@ void Simulation::BeforeSim()
 			}
 			ISWIRE2--;
 		}
+		
+		Element_ARAY::tmpdir[1] = 0;
 
 		// spawn STKM and STK2
 		if (!player.spwn && player.spawnID >= 0)

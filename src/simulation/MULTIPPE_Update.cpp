@@ -1172,6 +1172,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						{
 							nx = x + rx; ny = y + ry;
 							r = pmap[ny][nx];
+							int nrx, nry, brx, bry;
 							if (!r)
 								continue;
 							switch (r & 0xFF)
@@ -1385,7 +1386,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								}
 								break;
 							case ELEM_MULTIPP:
-								if (parts[r>>8].life == 28 && (parts[r>>8].tmp & 0xC) == 0x4 && !(rx && ry))
+								if (parts[r>>8].life == 28 && (parts[r>>8].tmp & 0x1C) == 0x4 && !(rx && ry))
 								{
 									int dir = parts[r>>8].tmp;
 									int rxi = 0, ryi = 0;
@@ -1394,6 +1395,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									else
 										ryi = (dir == 4 ? -1 : 1);
 									rrx = nx + rxi, rry = ny + ryi;
+									temp_part = NULL;
 									while (sim->InBounds(rrx, rry))
 									{
 										rii = pmap[rry][rrx];
@@ -1401,31 +1403,38 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											sim->kill_part(rii>>8), rii = 0;
 										if (!rii)
 										{
+										continue2a:
 											rrx += rxi, rry += ryi;
 											continue;
 										}
-										if ((rii&0xFF) == ELEM_MULTIPP && parts[rii>>8].life == 28)
+										if (temp_part)
+										{
+											nrx = rrx - rxi;
+											nry = rry - ryi;
+										}
+										else if ((rii&0xFF) == ELEM_MULTIPP && ((pavg = parts[rii>>8].life) == 28 || pavg == 32))
 										{
 											// use "rtmp"
-											int nrx = rrx, nry = rry;
-											if (rtmp == PT_PSCN)
-												nrx += rxi, nry += ryi;
-											else if (rtmp == PT_NSCN)
-												nrx -= rxi, nry -= ryi;
-											else
-												break;
-											if (pmap[nry][nrx])
+											temp_part = &parts[rii>>8];
+											nrx = brx = rrx;
+											nry = bry = rry;
+											if (rtmp == PT_PSCN) nrx += rxi, nry += ryi;
+											else if (rtmp == PT_NSCN) nrx -= rxi, nry -= ryi;
+											else break;
+											rr = pmap[nry][nrx];
+											if ((rr&0xFF) == PT_BRAY)
+												sim->kill_part(rr>>8);
+											else if (rr)
 											{
-												if (rtmp == PT_PSCN)
-													nrx = nx + rxi, nry = ny + ryi;
-												else
-													sim->kill_part(rii>>8);
+												if (rtmp == PT_PSCN) nrx = nx + rxi, nry = ny + ryi;
+												else goto continue2a;
 											}
-											parts[rii>>8].x = (float)nrx;
-											parts[rii>>8].y = (float)nry;
-											pmap[nry][nrx] = rii;
-											pmap[rry][rrx] = 0;
 										}
+										else break;
+										temp_part->x = (float)nrx;
+										temp_part->y = (float)nry;
+										pmap[bry][brx] = 0;
+										pmap[nry][nrx] = rii;
 										break;
 									}
 								}

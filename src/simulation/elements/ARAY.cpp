@@ -47,8 +47,11 @@ Element_ARAY::Element_ARAY()
 //#TPT-Directive ElementHeader Element_ARAY static const unsigned char to_angle[9];
 const unsigned char Element_ARAY::to_angle[9] = {0,1,2,7,0,3,6,5,4};
 
-//#TPT-Directive ElementHeader Element_ARAY static const unsigned char param1[4][2];
-const unsigned char Element_ARAY::param1[4][2] = {{-1, 1}, {1, -1}, {1, 1}, {-1, -1}};
+//#TPT-Directive ElementHeader Element_ARAY static const signed char param1[4][2];
+const signed char Element_ARAY::param1[4][2] = {{-1, 1}, {1, -1}, {1, 1}, {-1, -1}};
+
+//#TPT-Directive ElementHeader Element_ARAY static char tmpdir[2];
+char Element_ARAY::tmpdir[2];
 
 //#TPT-Directive ElementHeader Element_ARAY static int update(UPDATE_FUNC_ARGS)
 int Element_ARAY::update(UPDATE_FUNC_ARGS)
@@ -239,6 +242,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											parts[r].flags |= FLAG_SKIPMOVE;
 										parts[r].tmp += (r_incr > 1) ? r_incr : 1;
 										break;
+									case 8:
+										tmpdir[1] = parts[r].tmp;
+										continue;
 									case 12: // random generator
 										docontinue = rand() & 1;
 										continue;
@@ -448,6 +454,25 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										// see PRTI.cpp
 										nxi = sim->portal_rx[tmp[0]];
 										nyi = sim->portal_ry[tmp[0]];
+										break;
+									case 16:
+									case 17:
+										modFlag ^= 4;
+										tmp[2] = to_angle[nxi + 3 * nyi + 4];
+										if (modFlag & 4)
+										{
+											tmp[3] = parts[r].tmp2;
+											tmpdir[0] = tmp[2];
+										}
+										else
+										{
+											tmp[3] = (tmpdir[0] + tmp[1] * 4) & 7;
+											if ((tmp[3] ^ tmp[2]) == 4)
+												tmp[3] ^= 4;
+										}
+										nxi = sim->portal_rx[tmp[3]];
+										nyi = sim->portal_ry[tmp[3]];
+										break;
 									}
 									// nxx -= nxi; nyy -= nyi;
 									max_turn--;
@@ -607,7 +632,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									case 8:
 										if (max_turn-- <= 0)
 											goto break1a;
-										nxx += tmp[0]*nxi, nyy += tmp[0]*nyi;
+										if (!((parts[r].ctype >> (tmpdir[1] & 0x1F)) & 1))
+											nxx += tmp[0]*nxi, nyy += tmp[0]*nyi;
 										break;
 									case 10:
 										nx2 = x+nxx-tmp[0]*nyi;
@@ -617,6 +643,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											int rr = pmap[ny2][nx2];
 											if ((rr&0xFF) == PT_FILT)
 											{
+												if (inputType == PT_NSCN)
+												{
+													parts[pmap[ny2][nx2]>>8].ctype = colored;
+													goto break1a;
+												}
 												colored = Element_FILT::interactWavelengths(&parts[pmap[ny2][nx2]>>8], colored);
 											}
 											else if ((rr&0xFF) == PT_VOID || (rr&0xFF) == PT_PVOD && parts[rr>>8].life >= 10)
@@ -624,7 +655,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										}
 										break;
 									}
-									tmpz = 1;
+									tmpz = (tmp[1] != 8) ? 1 : 0;
 									continue;
 								case 35:
 									if (!(modFlag & 1))
