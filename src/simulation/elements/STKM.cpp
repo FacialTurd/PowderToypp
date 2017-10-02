@@ -79,6 +79,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	float rocketBootsFeetEffect = 0.15f;
 	float rocketBootsHeadEffectV = 0.3f;// stronger acceleration vertically, to counteract gravity
 	float rocketBootsFeetEffectV = 0.45f;
+	Particle *newpart = NULL;
 
 	if (playerp->__flags & 2)
 		playerp->__flags &= ~2;
@@ -521,17 +522,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				}
 				else if (nelem == PT_E186)
 				{
-					int rndstore = rand();
-					float rad = 2.0f;
-					float angle = (rndstore % 101 - 50) * 0.002f;
-					int comm = (int)playerp->pcomm;
-					if ((comm & 3) == 1 || (comm & 3) != 2 && (rndstore % 2))
-						rad = -rad;
-					parts[np].vx = rad*cosf(angle) + parts[i].vx;
-					parts[np].vy = rad*sinf(angle) + parts[i].vy;
-					parts[np].ctype = playerp->elem;
-					if (parts[np].ctype >= 0x100)
-						parts[np].ctype = 0;
+					newpart = &parts[np];
 				}
 				else if (nelem == PT_LIGH)
 				{
@@ -662,6 +653,29 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	if (playerp->elem == PT_FIGH && !(sim->Extra_FIGH_pause & 8))
 		playerp->elem = playerp->pelem;
 	parts[i].ctype = playerp->elem;
+	
+	if (newpart)
+	{
+		int rndstore = rand();
+		if (!rbLowGrav)
+		{
+			float rad = 3.0f;
+			float angle = (rndstore % 101 - 50) * 0.002f + atan2f(-gvx, gvy);
+			int comm = (int)playerp->pcomm;
+			if ((comm & 3) == 1 || (comm & 3) != 2 && (rndstore % 2))
+				rad = -rad;
+			newpart->vx = rad*cosf(angle);
+			newpart->vy = rad*sinf(angle);
+		}
+		else
+		{
+			newpart->vx *= 1.5f;
+			newpart->vy *= 1.5f;
+		}
+		newpart->ctype = playerp->elem;
+		if (newpart->ctype >= 0x100)
+			newpart->ctype = 0;
+	}
 	return 0;
 }
 
