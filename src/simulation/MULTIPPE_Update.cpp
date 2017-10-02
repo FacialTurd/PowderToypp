@@ -47,7 +47,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	int docontinue, rtmp2;
 	rtmp = parts[i].tmp;
 
-	static Particle * temp_part, * prev_temp_part;
+	static Particle * temp_part, * temp_part_2, * prev_temp_part;
 	
 	switch (rlife)
 	{
@@ -403,22 +403,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						case 7:
-							if (parts[i].temp < 273.15f)
-								parts[i].temp = 273.15f;
-							rdif = (int)(parts[i].temp - 272.65f);
-							if (parts[r>>8].ctype != PT_INST)
-								rdif /= 100.0f;
-							sim->sim_max_pressure += rdif;
-							if (sim->sim_max_pressure > 256.0f)
-								sim->sim_max_pressure = 256.0f;
-							break;
 						case 8:
 							if (parts[i].temp < 273.15f)
 								parts[i].temp = 273.15f;
 							rdif = (int)(parts[i].temp - 272.65f);
 							if (parts[r>>8].ctype != PT_INST)
 								rdif /= 100.0f;
-							sim->sim_max_pressure -= rdif;
+							sim->sim_max_pressure += (rtmp & 1) ? rdif : -rdif;
+							if (sim->sim_max_pressure > 256.0f)
+								sim->sim_max_pressure = 256.0f;
 							if (sim->sim_max_pressure < 0.0f)
 								sim->sim_max_pressure = 0.0f;
 							break;
@@ -469,17 +462,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							{
 								int lifeincx = parts[i].ctype;
 								rctype = parts[r>>8].ctype;
-								if (rctype == PT_INST)
-								{
-									parts[sim->player.self_ID].life = 0;
-									parts[sim->player2.self_ID].life = 0;
-								}
-								else if (rctype == PT_NSCN)
-									lifeincx = -lifeincx;
-								if (parts[sim->player.self_ID].type == PT_STKM)
-									parts[sim->player.self_ID].life += lifeincx;
-								if (parts[sim->player2.self_ID].type == PT_STKM2)
-									parts[sim->player2.self_ID].life += lifeincx;
+								(rctype == PT_NSCN) && (lifeincx = -lifeincx);
+								sim->SimExtraFunc |= 0x1000;
+								pavg = (Element_STKM::phase + 2) % 4;
+								Element_STKM::lifeinc[pavg] |= 2 | (rctype == PT_INST);
+								Element_STKM::lifeinc[pavg + 1] += lifeincx;
 							}
 							break;
 						case 14: // set stickman's element power
@@ -509,8 +496,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								{
 									rrx = pmap[y-ry][x-rx];
 									if ((rrx&0xFF) == PT_CRAY)
-										rii = parts[rrx>>8].ctype;
+									{
+										rii = parts[rrx>>8].ctype & 0xFF;
+										if (rii == PT_LIFE)
+											rii = 0x100 | (parts[rrx>>8].ctype >> 8);
+									}
 								}
+								if (!sim->IsValidElement(rii) && (rii >= 0x100 || rii <= 0x103))
+									break;
 								if (rctype == PT_PSCN || rctype == PT_INST)
 									Element_STKM::STKM_set_element(sim, &sim->player, rii),
 									sim->player.__flags |= 2;

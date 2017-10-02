@@ -46,6 +46,12 @@ Element_STKM::Element_STKM()
 	Graphics = &Element_STKM::graphics;
 }
 
+//#TPT-Directive ElementHeader Element_STKM static int lifeinc[4]
+int Element_STKM::lifeinc[4] = {0,0,0,0};
+
+//#TPT-Directive ElementHeader Element_STKM static char phase
+char Element_STKM::phase = 0;
+
 //#TPT-Directive ElementHeader Element_STKM static int update(UPDATE_FUNC_ARGS)
 int Element_STKM::update(UPDATE_FUNC_ARGS)
 
@@ -86,7 +92,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	else if (parts[i].ctype && (sim->IsValidElement(parts[i].ctype) || parts[i].ctype == SPC_AIR || parts[i].ctype == SPC_VACUUM))
 		STKM_set_element(sim, playerp, parts[i].ctype);
 	playerp->frames++;
-
+		
 	//Temperature handling
 	if (parts[i].temp<243 && !(sim->Extra_FIGH_pause & 16))
 		parts[i].life -= 1;
@@ -115,6 +121,15 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			sim->create_part(-1, x, y, playerp->elem);
 		sim->kill_part(i);  //Kill him
 		return 1;
+	}
+
+	if (lifeinc[phase])
+	{
+		(lifeinc[phase] == 3) && (parts[i].life = 0);
+		r = lifeinc[phase + 1];
+		parts[i].life += r;
+		(parts[i].life < 1) && (parts[i].life = (r > 0 ? INT_MAX : 0));
+		sim->SimExtraFunc |= 0x1000;
 	}
 
 	//Follow gravity
@@ -439,14 +454,9 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 						ctype = parts[r>>8].ctype;
 						int xctype = ctype >> 9;
 						ctype &= 0x1FF;
-						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM))
+						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM || ctype == 0x102 || ctype == 0x103))
 						{
 							STKM_set_element(sim, playerp, ctype);
-						}
-						else if (ctype == 0x102 || ctype == 0x103)
-						{
-							playerp->__flags &= ~0x1;
-							playerp->__flags |= (ctype == 0x102) ? 1 : 0;
 						}
 						if (xctype == 1 || xctype == 2)
 						{
@@ -824,6 +834,11 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 		playerp->pelem = playerp->elem;
 		playerp->elem = PT_FIGH;
 	}
+	else if (element == 0x102 || element == 0x103)
+	{
+		playerp->__flags &= ~0x1;
+		playerp->__flags |= (element == 0x102) ? 1 : 0;
+	}
 }
 
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_life_1(Simulation *sim, int s, int i)
@@ -866,7 +881,6 @@ void Element_STKM::STKM_set_life_1(Simulation *sim, int s, int i)
 		}
 	}
 }
-
 
 //#TPT-Directive ElementHeader Element_STKM static void removeSTKMChilds(Simulation *sim, playerst* playerp)
 void Element_STKM::removeSTKMChilds(Simulation *sim, playerst* playerp)

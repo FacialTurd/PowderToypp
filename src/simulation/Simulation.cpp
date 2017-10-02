@@ -6093,7 +6093,13 @@ void Simulation::AfterSim()
 		{
 			DelayOperation1(this, extraDelay);
 		}
-		SimExtraFunc &= ~0x00000BF5;
+		if (SimExtraFunc & 0x1000)
+		{
+			Element_STKM::lifeinc [Element_STKM::phase] = 0;
+			Element_STKM::lifeinc [Element_STKM::phase+1] = 0;
+			Element_STKM::phase = (Element_STKM::phase+2) % 4;
+		}
+		SimExtraFunc &= ~0x00001BF5;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)
