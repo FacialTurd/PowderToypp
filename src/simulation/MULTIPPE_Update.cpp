@@ -502,7 +502,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											rii = 0x100 | (parts[rrx>>8].ctype >> 8);
 									}
 								}
-								if (!sim->IsValidElement(rii) && (rii >= 0x100 || rii <= 0x103))
+								if (!sim->IsValidElement(rii) && (rii > 0x100 || rii < 0x103))
 									break;
 								if (rctype == PT_PSCN || rctype == PT_INST)
 									Element_STKM::STKM_set_element(sim, &sim->player, rii),
