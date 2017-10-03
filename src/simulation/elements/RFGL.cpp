@@ -31,6 +31,7 @@ Element_RFGL::Element_RFGL()
 	Description = "Liquid refrigerant.";
 
 	Properties = TYPE_LIQUID|PROP_DEADLY;
+	Properties2 |= PROP_DEBUG_HIDE_TMP;
 
 	LowPressure = 2;
 	LowPressureTransition = PT_RFRG;

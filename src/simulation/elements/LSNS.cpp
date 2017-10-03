@@ -31,6 +31,7 @@ Element_LSNS::Element_LSNS()
  	Description = "Life sensor, creates a spark when there's a nearby particle with a life higher than its temperature.";
 
  	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
  	LowPressure = IPL;
  	LowPressureTransition = NT;
@@ -48,6 +49,7 @@ Element_LSNS::Element_LSNS()
 int Element_LSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt, rd = parts[i].tmp2;
+	int pavg, rcmp = (parts[i].tmp3 & 1);
 	if (rd > 25) parts[i].tmp2 = rd = 25;
 	if (parts[i].life)
 	{
@@ -60,9 +62,10 @@ int Element_LSNS::update(UPDATE_FUNC_ARGS)
 					if (!r)
 						continue;
 					rt = r&0xFF;
-					if (sim->parts_avg(i,r>>8,PT_INSL) != PT_INSL)
+					pavg = sim->parts_avg(i,r>>8,PT_INSL);
+					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
-						if ((sim->elements[rt].Properties&PROP_CONDUCTS) && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) && parts[r>>8].life==0)
+						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */ && parts[r>>8].life==0)
 						{
 							parts[r>>8].life = 4;
 							parts[r>>8].ctype = rt;
@@ -80,7 +83,7 @@ int Element_LSNS::update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 				if(!r)
 					continue;
-				if (parts[r>>8].life > parts[i].temp-273.15)
+				if ((parts[r>>8].life > parts[i].temp-273.15) == rcmp && (!rcmp || ((r&0xFF) != PT_LSNS && (r&0xFF) != PT_METL)))
 					parts[i].life = 1;
 			}
 	return 0;

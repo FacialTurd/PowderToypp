@@ -31,6 +31,7 @@ Element_WARP::Element_WARP()
 	Description = "Displaces other elements.";
 
 	Properties = TYPE_GAS|PROP_LIFE_DEC|PROP_LIFE_KILL;
+	Properties2 |= PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -51,7 +52,7 @@ int Element_WARP::update(UPDATE_FUNC_ARGS)
 	int trade, r, rx, ry;
 	if (parts[i].tmp2>2000)
 	{
-		parts[i].temp = 10000;
+		parts[i].temp = (MAX_TEMP + 1); // 10000;
 		sim->pv[y/CELL][x/CELL] += (parts[i].tmp2/5000) * CFDS;
 		if (!(rand()%50))
 			sim->create_part(-3, x, y, PT_ELEC);
@@ -65,7 +66,8 @@ int Element_WARP::update(UPDATE_FUNC_ARGS)
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
-			if ((r&0xFF)!=PT_WARP&&(r&0xFF)!=PT_STKM&&(r&0xFF)!=PT_STKM2&&(r&0xFF)!=PT_DMND&&(r&0xFF)!=PT_CLNE&&(r&0xFF)!=PT_BCLN&&(r&0xFF)!=PT_PCLN)
+			if ((r&0xFF)!=PT_WARP&&(r&0xFF)!=PT_STKM&&(r&0xFF)!=PT_STKM2&&!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
+				&& ((r&0xFF)!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
 			{
 				parts[i].x = parts[r>>8].x;
 				parts[i].y = parts[r>>8].y;

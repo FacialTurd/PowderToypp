@@ -30,7 +30,8 @@ Element_BCLN::Element_BCLN()
 	HeatConduct = 251;
 	Description = "Breakable Clone.";
 
-	Properties = TYPE_SOLID|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC|PROP_DRAWONCTYPE|PROP_NOCTYPEDRAW;
+	Properties = TYPE_SOLID|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC|PROP_DRAWONCTYPE|PROP_NOCTYPEDRAW | PROP_TRANSPARENT;
+	Properties2 = PROP_CLONE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -49,7 +50,7 @@ Element_BCLN::Element_BCLN()
 //#TPT-Directive ElementHeader Element_BCLN static int update(UPDATE_FUNC_ARGS)
 int Element_BCLN::update(UPDATE_FUNC_ARGS)
 {
-	if (!parts[i].life && sim->pv[y/CELL][x/CELL]>4.0f)
+	if (!parts[i].life && sim->pv[y/CELL][x/CELL]> sim->sim_max_pressure)
 		parts[i].life = rand()%40+80;
 	if (parts[i].life)
 	{
@@ -69,10 +70,8 @@ int Element_BCLN::update(UPDATE_FUNC_ARGS)
 					if (!r)
 						continue;
 					rt = r&0xFF;
-					if (rt!=PT_CLNE && rt!=PT_PCLN &&
-						rt!=PT_BCLN && rt!=PT_STKM &&
-						rt!=PT_PBCN && rt!=PT_STKM2 &&
-						rt<PT_NUM)
+					if (!(sim->elements[rt].Properties2 & PROP_CLONE)
+						&& rt!=PT_STKM && rt!=PT_STKM2 && rt!=PT_E186 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
 						if (rt==PT_LIFE || rt==PT_LAVA)
@@ -89,6 +88,8 @@ int Element_BCLN::update(UPDATE_FUNC_ARGS)
 			{
 				if (parts[i].ctype==PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
 					parts[np].ctype = parts[i].tmp;
+				// else if (parts[i].ctype==ELEM_MULTIPP) // failed
+				//	parts[np].life = parts[i].tmp;
 			}
 		}
 	}

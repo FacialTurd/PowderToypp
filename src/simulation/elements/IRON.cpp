@@ -31,6 +31,7 @@ Element_IRON::Element_IRON()
 	Description = "Rusts with salt, can be used for electrolysis of WATR.";
 
 	Properties = TYPE_SOLID|PROP_CONDUCTS|PROP_LIFE_DEC|PROP_HOT_GLOW;
+	Properties2 |= PROP_ELEC_HEATING;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -75,6 +76,10 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 					break;
 				case PT_LO2:
 					goto succ;
+#if 0
+				case PT_CHRM: // iron + chromium = stainless steel
+					return 0;
+#endif
 				default:
 					break;
 				}

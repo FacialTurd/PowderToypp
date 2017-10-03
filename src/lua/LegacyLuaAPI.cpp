@@ -1196,6 +1196,10 @@ int luatpt_set_wallmap(lua_State* l)
 		for (nx = x1; nx<x1+width; nx++)
 			for (ny = y1; ny<y1+height; ny++)
 			{
+				if (luacon_sim->wtypes[ luacon_sim->bmap[ny][nx] ].PressureTransition >= 0)
+					luacon_sim->breakable_wall_count--;
+				if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+					luacon_sim->breakable_wall_count++;
 				luacon_sim->bmap[ny][nx] = wallType;
 			}
 	}
@@ -1205,6 +1209,10 @@ int luatpt_set_wallmap(lua_State* l)
 			x1 = (XRES/CELL);
 		if(y1 > (YRES/CELL))
 			y1 = (YRES/CELL);
+		if (luacon_sim->wtypes[ luacon_sim->bmap[y1][x1] ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count--;
+		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count++;
 		luacon_sim->bmap[y1][x1] = wallType;
 	}
 	return 0;
@@ -2040,6 +2048,42 @@ int luatpt_record(lua_State* l)
 	int recordingFolder = luacon_controller->Record(record);
 	lua_pushinteger(l, recordingFolder);
 	return 1;
+}
+
+int luatpt_two_state_update(lua_State * l)
+{
+	int i = lua_tointeger(l, 1), x = lua_tointeger(l, 2), y = lua_tointeger(l, 3), t = lua_tointeger(l, 4), r, rx, ry;
+	Particle * parts = luacon_sim->parts;
+
+	if (parts[i].life>0 && parts[i].life!=10)
+		parts[i].life--;
+	for (rx=-2; rx<3; rx++)
+		for (ry=-2; ry<3; ry++)
+			if (BOUNDS_CHECK && (rx || ry))
+			{
+				r = luacon_sim->pmap[y+ry][x+rx];
+				if (!r)
+					continue;
+				if ((r&0xFF) == t)
+				{
+					if (parts[i].life==10&&parts[r>>8].life<10&&parts[r>>8].life>0)
+						parts[i].life = 9;
+					else if (parts[i].life==0&&parts[r>>8].life==10)
+						parts[i].life = 10;
+				}
+				else if ((r&0xFF)==PT_SPRK)
+				{
+					if (parts[r>>8].life>0 && parts[r>>8].life<4)
+					{
+						if (parts[r>>8].ctype==PT_PSCN)
+							parts[i].life = 10;
+						else if (parts[r>>8].ctype==PT_NSCN)
+							parts[i].life = 9;
+					}
+				}
+			}
+
+	return 0;
 }
 
 #endif

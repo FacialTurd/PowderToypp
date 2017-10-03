@@ -36,9 +36,9 @@ Element_DEUT::Element_DEUT()
 	LowPressureTransition = NT;
 	HighPressure = IPH;
 	HighPressureTransition = NT;
-	LowTemperature = ITL;
-	LowTemperatureTransition = NT;
-	HighTemperature = ITH;
+	LowTemperature = ITL; // maybe 276.97 ?
+	LowTemperatureTransition = NT; // PT_ICE?
+	HighTemperature = ITH; // maybe 374.55 ?
 	HighTemperatureTransition = NT;
 
 	Update = &Element_DEUT::update;

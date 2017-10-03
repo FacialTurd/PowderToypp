@@ -54,12 +54,41 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 				for(std::vector<Tool*>::iterator iter = elementTools.begin(), end = elementTools.end(); iter != end; ++iter)
 				{
 					Tool * elementTool = *iter;
-					if(elementTool && elementTool->GetToolID()/256 == particleCtype)
-						gameModel->SetActiveTool(0, elementTool);
+					if(elementTool)
+					{
+						int ToolID1 = elementTool->GetToolID();
+						if (ToolID1 / 256 == particleCtype && ToolID1 % 256 == PT_LIFE)
+							gameModel->SetActiveTool(0, elementTool);
+					}
 				}
 			}
 			else
 			{
+				if (particleType == ELEM_MULTIPP)
+				{
+					int particleLife = sim->parts[sim->pmap[position.Y][position.X]>>8].life;
+					int menu_section_1 = SC_SPECIAL;
+					if (particleLife == 33 || particleLife == 37)
+					{
+						particleType |= particleLife<<8;
+						menu_section_1 = (particleLife == 37 ? SC_LIFE : SC_ELEC);
+					}
+
+					Menu * elemMenu = gameModel->GetMenuList()[menu_section_1];
+					std::vector<Tool*> elementTools = elemMenu->GetToolList();
+
+					for(std::vector<Tool*>::iterator iter = elementTools.begin(), end = elementTools.end(); iter != end; ++iter)
+					{
+						Tool * elementTool = *iter;
+						if(elementTool)
+						{
+							int ToolID1 = elementTool->GetToolID();
+							if (ToolID1 == particleType)
+								gameModel->SetActiveTool(0, elementTool);
+						}
+					}
+					return;
+				}
 				Tool * elementTool = gameModel->GetElementTool(particleType);
 				if(elementTool)
 					gameModel->SetActiveTool(0, elementTool);

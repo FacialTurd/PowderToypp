@@ -1,0 +1,1 @@
+void DelayOperation1(Simulation * sim, int ms);

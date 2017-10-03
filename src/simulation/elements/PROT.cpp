@@ -31,6 +31,7 @@ Element_PROT::Element_PROT()
 	Description = "Protons. Transfer heat to materials, and removes sparks.";
 
 	Properties = TYPE_ENERGY;
+	Properties2 |= PROP_ENERGY_PART;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -50,6 +51,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 {
 	sim->pv[y/CELL][x/CELL] -= .003f;
 	int under = pmap[y][x];
+	if ((under & 0xFF) == PT_PINVIS)
+		under = parts[under>>8].tmp4;
 	int utype = under & 0xFF;
 	switch (utype)
 	{
@@ -93,6 +96,61 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		else change = 0.0f;
 		parts[under>>8].temp = restrict_flt(parts[under>>8].temp + change, MIN_TEMP, MAX_TEMP);
 		break;
+	case ELEM_MULTIPP:
+		switch (parts[under>>8].life)
+		{
+		case 6:
+			parts[i].temp = parts[under>>8].temp;
+			goto no_temp_change;
+		case 10:
+			if (parts[under>>8].temp > 1273.0f)
+			{
+				sim->kill_part(i);
+				return 1;
+			}
+			else if (parts[under>>8].temp < 73.15f)
+			{
+				parts[i].tmp2 &= ~1;
+				goto no_temp_change;
+			}
+			break;
+		case 11:
+			if (parts[under>>8].tmp2 == 1)
+			{
+				sim->part_change_type(i, x, y, PT_PHOT);
+				parts[i].x = x;
+				parts[i].y = y;
+				parts[i].life *= 2;
+				parts[i].ctype = 0x3FFFFFFF;
+				return 1;
+			}
+			break;
+		case 12:
+			if (parts[under>>8].tmp == 2)
+			{
+				if (parts[under>>8].tmp2 < (int)(parts[under>>8].temp - (273.15f - 0.5f)))
+				{
+					parts[under>>8].tmp2 += parts[i].tmp + (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
+					sim->kill_part(i);
+					return 1;
+				}
+				parts[i].tmp += parts[under>>8].tmp2;
+				parts[under>>8].tmp2 = 0;
+				return 0;
+			}
+			break;
+		case 16:
+			if (parts[under>>8].ctype == 5)
+			{
+				if (parts[under>>8].tmp >= 0x40)
+				{
+					parts[i].tmp2 &= ~2;
+					((parts[under>>8].tmp & 0x40) && (parts[i].tmp2 |= 2));
+				}
+			}
+			break;
+		}
+		break;
 	case PT_NONE:
 		//slowly kill if it's not inside an element
 		if (parts[i].life)
@@ -122,17 +180,31 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
  
 
 	//if this proton has collided with another last frame, change it into a heavier element
+	no_temp_change:
+
+	int ahead = sim->photons[y][x];
+	if ((ahead & 0xFF) == PT_E186 && parts[ahead>>8].ctype < 0x100)
+	{
+		parts[i].tmp2 |= 2;
+	}
+
 	if (parts[i].tmp)
 	{
 		int newID, element;
-		if (parts[i].tmp > 500000)
-			element = PT_SING; //particle accelerators are known to create earth-destroying black holes
-		else if (parts[i].tmp > 700)
-			element = PT_PLUT;
-		else if (parts[i].tmp > 420)
-			element = PT_URAN;
-		else if (parts[i].tmp > 310)
-			element = PT_POLO;
+		bool myCollision = sim->isFromMyMod && (parts[i].tmp2 & 2);
+		if (parts[i].tmp > 310)
+		{
+			if (parts[i].tmp > 500000)
+				element = PT_SING; //particle accelerators are known to create earth-destroying black holes
+			else if (myCollision)
+				element = PT_POLC;
+			else if (parts[i].tmp > 700)
+				element = PT_PLUT;
+			else if (parts[i].tmp > 420)
+				element = PT_URAN;
+			else // 310
+				element = PT_POLO;
+		}
 		else if (parts[i].tmp > 250)
 			element = PT_PLSM;
 		else if (parts[i].tmp > 100)
@@ -141,14 +213,21 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			element = PT_CO2;
 		else
 			element = PT_NBLE;
+		product1:
 		newID = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, element);
 		if (newID >= 0)
 			parts[newID].temp = restrict_flt(100.0f*parts[i].tmp, MIN_TEMP, MAX_TEMP);
+		else if (myCollision)
+		{
+			// if ((ahead&0xFF) != PT_PROT || (ahead>>8) == i)
+				return 0;
+			// parts[ahead>>8].tmp += parts[i].tmp;
+			// parts[ahead>>8].tmp2 |= 2;
+		}
 		sim->kill_part(i);
 		return 1;
 	}
 	//collide with other protons to make heavier materials
-	int ahead = sim->photons[y][x];
 	if ((ahead>>8) != i && (ahead&0xFF) == PT_PROT)
 	{
 		float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
@@ -160,6 +239,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		if (difference > 3.12659f && difference < 3.15659f && velocity1 + velocity2 > 10.0f)
 		{
 			parts[ahead>>8].tmp += (int)(velocity1 + velocity2);
+			parts[ahead>>8].tmp2 |= (parts[i].tmp2 & 2);
 			sim->kill_part(i);
 			return 1;
 		}

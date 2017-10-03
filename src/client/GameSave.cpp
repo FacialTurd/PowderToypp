@@ -7,6 +7,7 @@
 #include <bzlib.h>
 #include "Config.h"
 #include "Format.h"
+// #include "bson/BSON.h"
 #include "GameSave.h"
 #include "simulation/SimulationData.h"
 #include "ElementClasses.h"
@@ -20,6 +21,7 @@ waterEEnabled(save.waterEEnabled),
 legacyEnable(save.legacyEnable),
 gravityEnable(save.gravityEnable),
 aheatEnable(save.aheatEnable),
+sextraLoopsCA(save.sextraLoopsCA),
 paused(save.paused),
 gravityMode(save.gravityMode),
 airMode(save.airMode),
@@ -27,8 +29,10 @@ edgeMode(save.edgeMode),
 signs(save.signs),
 palette(save.palette),
 expanded(save.expanded),
+sim_max_pressure(save.sim_max_pressure),
 hasOriginalData(save.hasOriginalData),
-originalData(save.originalData)
+originalData(save.originalData),
+isFromMyMod(save.isFromMyMod)
 {
 	InitData();
 	if (save.expanded)
@@ -159,9 +163,12 @@ void GameSave::InitVars()
 	gravityEnable = false;
 	aheatEnable = false;
 	paused = false;
+	sextraLoopsCA = false;
+	isFromMyMod = false;
 	gravityMode = 0;
 	airMode = 0;
 	edgeMode = 0;
+	sim_max_pressure = 4.0f;
 }
 
 bool GameSave::Collapsed()
@@ -175,6 +182,13 @@ void GameSave::Expand()
 	{
 		InitVars();
 		expanded = true;
+/*
+		for (int i = 0; i < 128; i++)
+		{
+			PINV_wireless[i][0] = 0;
+			PINV_wireless[i][1] = 0;
+		}
+*/
 		read(&originalData[0], originalData.size());
 	}
 }
@@ -397,7 +411,7 @@ void bson_error_handler(const char *err)
 {
 	throw ParseException(ParseException::Corrupt, "BSON error when parsing save");
 }
-
+ 
 void GameSave::CheckBsonFieldUser(bson_iterator iter, const char *field, unsigned char **data, unsigned int *fieldLen)
 {
 	if (!strcmp(bson_iterator_key(&iter), field))
@@ -449,6 +463,8 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL, *ambientData = NULL;
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen, ambientDataLen;
+	int my_mod_id_2 = 0;
+
 	unsigned partsCount = 0, *partsSimIndex = NULL;
 	int *freeIndices = NULL;
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
@@ -512,6 +528,10 @@ void GameSave::readOPS(char * data, int dataLength)
 
 	std::vector<sign> tempSigns;
 
+	isFromMyMod = false;
+	int modver = 0;
+	Element_PHOT::ignite_flammable = 1;
+
 	while (bson_iterator_next(&iter))
 	{
 		CheckBsonFieldUser(iter, "parts", &partsData, &partsDataLen);
@@ -526,11 +546,15 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldBool(iter, "legacyEnable", &legacyEnable);
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
+		CheckBsonFieldBool(iter, "sextraLoopsCA_Enable", &sextraLoopsCA);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
+		CheckBsonFieldBool(iter, "is_git123hubs_mod", &isFromMyMod);
+		CheckBsonFieldInt(iter, "modver", &modver); // reserved by next mod version
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
+		CheckBsonFieldInt(iter, "phot_ignite", &Element_PHOT::ignite_flammable);
 		if (!strcmp(bson_iterator_key(&iter), "signs"))
 		{
 			if (bson_iterator_type(&iter)==BSON_ARRAY)
@@ -578,6 +602,32 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 					}
 				}
+			}
+			else
+			{
+				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
+			}
+		}
+		// /*
+		else if (!strcmp(bson_iterator_key(&iter), "origin"))
+		{
+			if (bson_iterator_type(&iter)==BSON_OBJECT)
+			{
+				bson_iterator subiter;
+				bson_iterator_subiterator(&iter, &subiter);
+				while (bson_iterator_next(&subiter))
+				{
+					CheckBsonFieldInt(subiter, "modId2", &my_mod_id_2);
+				}
+			}
+		}
+		// */
+		else if (!strcmp(bson_iterator_key(&iter), "sim_max_pressure"))
+		{
+			if (bson_iterator_type(&iter) == BSON_INT)
+			{
+				int temporary1 = bson_iterator_int(&iter);
+				sim_max_pressure = * (float*) &temporary1; // floating point hacking
 			}
 			else
 			{
@@ -655,6 +705,10 @@ void GameSave::readOPS(char * data, int dataLength)
 #endif
 	}
 
+	isFromMyMod |= (my_mod_id_2 == MOD_ID_2 || my_mod_id_2 == PARENT_MOD_ID_2);
+	if (!modver && isFromMyMod)
+		modver = 1;
+	
 	//Read wall and fan data
 	if(wallData)
 	{
@@ -671,38 +725,41 @@ void GameSave::readOPS(char * data, int dataLength)
 				if (wallData[y*blockW+x])
 					blockMap[blockY+y][blockX+x] = wallData[y*blockW+x];
 
-				if (blockMap[y][x]==O_WL_WALLELEC)
-					blockMap[y][x]=WL_WALLELEC;
-				if (blockMap[y][x]==O_WL_EWALL)
-					blockMap[y][x]=WL_EWALL;
-				if (blockMap[y][x]==O_WL_DETECT)
-					blockMap[y][x]=WL_DETECT;
-				if (blockMap[y][x]==O_WL_STREAM)
-					blockMap[y][x]=WL_STREAM;
-				if (blockMap[y][x]==O_WL_FAN||blockMap[y][x]==O_WL_FANHELPER)
-					blockMap[y][x]=WL_FAN;
-				if (blockMap[y][x]==O_WL_ALLOWLIQUID)
-					blockMap[y][x]=WL_ALLOWLIQUID;
-				if (blockMap[y][x]==O_WL_DESTROYALL)
-					blockMap[y][x]=WL_DESTROYALL;
-				if (blockMap[y][x]==O_WL_ERASE)
-					blockMap[y][x]=WL_ERASE;
-				if (blockMap[y][x]==O_WL_WALL)
-					blockMap[y][x]=WL_WALL;
-				if (blockMap[y][x]==O_WL_ALLOWAIR)
-					blockMap[y][x]=WL_ALLOWAIR;
-				if (blockMap[y][x]==O_WL_ALLOWSOLID)
-					blockMap[y][x]=WL_ALLOWPOWDER;
-				if (blockMap[y][x]==O_WL_ALLOWALLELEC)
-					blockMap[y][x]=WL_ALLOWALLELEC;
-				if (blockMap[y][x]==O_WL_EHOLE)
-					blockMap[y][x]=WL_EHOLE;
-				if (blockMap[y][x]==O_WL_ALLOWGAS)
-					blockMap[y][x]=WL_ALLOWGAS;
-				if (blockMap[y][x]==O_WL_GRAV)
-					blockMap[y][x]=WL_GRAV;
-				if (blockMap[y][x]==O_WL_ALLOWENERGY)
-					blockMap[y][x]=WL_ALLOWENERGY;
+				if (!my_mod_id_2)
+				{
+					if (blockMap[y][x]==O_WL_WALLELEC)
+						blockMap[y][x]=WL_WALLELEC;
+					if (blockMap[y][x]==O_WL_EWALL)
+						blockMap[y][x]=WL_EWALL;
+					if (blockMap[y][x]==O_WL_DETECT)
+						blockMap[y][x]=WL_DETECT;
+					if (blockMap[y][x]==O_WL_STREAM)
+						blockMap[y][x]=WL_STREAM;
+					if (blockMap[y][x]==O_WL_FAN||blockMap[y][x]==O_WL_FANHELPER)
+						blockMap[y][x]=WL_FAN;
+					if (blockMap[y][x]==O_WL_ALLOWLIQUID)
+						blockMap[y][x]=WL_ALLOWLIQUID;
+					if (blockMap[y][x]==O_WL_DESTROYALL)
+						blockMap[y][x]=WL_DESTROYALL;
+					if (blockMap[y][x]==O_WL_ERASE)
+						blockMap[y][x]=WL_ERASE;
+					if (blockMap[y][x]==O_WL_WALL)
+						blockMap[y][x]=WL_WALL;
+					if (blockMap[y][x]==O_WL_ALLOWAIR)
+						blockMap[y][x]=WL_ALLOWAIR;
+					if (blockMap[y][x]==O_WL_ALLOWSOLID)
+						blockMap[y][x]=WL_ALLOWPOWDER;
+					if (blockMap[y][x]==O_WL_ALLOWALLELEC)
+						blockMap[y][x]=WL_ALLOWALLELEC;
+					if (blockMap[y][x]==O_WL_EHOLE)
+						blockMap[y][x]=WL_EHOLE;
+					if (blockMap[y][x]==O_WL_ALLOWGAS)
+						blockMap[y][x]=WL_ALLOWGAS;
+					if (blockMap[y][x]==O_WL_GRAV)
+						blockMap[y][x]=WL_GRAV;
+					if (blockMap[y][x]==O_WL_ALLOWENERGY)
+						blockMap[y][x]=WL_ALLOWENERGY;
+				}
 
 				if (blockMap[y][x] == WL_FAN && fanData)
 				{
@@ -978,6 +1035,63 @@ void GameSave::readOPS(char * data, int dataLength)
 						pavg |= (((unsigned)partsData[i++]) << 8);
 						particles[newIndex].pavg[1] = (float)pavg;
 					}
+					
+					//Read tmp3 and extra data
+					if(fieldDescriptor & 0x4000)
+					{
+						if (i >= partsDataLen) goto fail;
+						int tempDesc = partsData[i++], tempData;
+						switch (tempDesc & 0x3)
+						{
+							case 0: break;
+							case 1:
+								if (i >= partsDataLen) goto fail;
+								particles[newIndex].tmp3 = ((unsigned)partsData[i++]);
+								break;
+							case 2:
+								if (i+1 >= partsDataLen) goto fail;
+								tempData = ((unsigned)partsData[i++]);
+								tempData |= (((unsigned)partsData[i++]) << 8);
+								particles[newIndex].tmp3 = tempData;
+								break;
+							case 3:
+								if (i+3 >= partsDataLen) goto fail;
+								tempData = ((unsigned)partsData[i++]);
+								tempData |= (((unsigned)partsData[i++]) << 8);
+								tempData |= (((unsigned)partsData[i++]) << 24);
+								tempData |= (((unsigned)partsData[i++]) << 16);
+								particles[newIndex].tmp3 = tempData;
+								break;
+						}
+						if (tempDesc & 0x4)
+						{
+							if (i+1 >= partsDataLen) goto fail;
+							tempData = (((unsigned)partsData[i++]) << 24);
+							tempData |= (((unsigned)partsData[i++]) << 16);
+							particles[newIndex].tmp2 |= tempData;
+						}
+						if (tempDesc & 0x8)
+						{
+							if (i+1 >= partsDataLen) goto fail;
+							tempData = ((unsigned)partsData[i++]) << 8;
+							tempData |= (unsigned)partsData[i++];
+							particles[newIndex].tmp4 |= tempData;
+							if (tempDesc & 0x10)
+							{
+								if (i+1 >= partsDataLen) goto fail;
+								tempData = ((unsigned)partsData[i++]) << 24;
+								tempData |= ((unsigned)partsData[i++]) << 16;
+								particles[newIndex].tmp4 |= tempData;
+							}
+						}
+						if (tempDesc & 0x20)
+						{
+							if (i+1 >= partsDataLen) goto fail;
+							tempData = ((unsigned)partsData[i++]) << 24;
+							tempData |= ((unsigned)partsData[i++]) << 16;
+							particles[newIndex].life |= tempData;
+						}
+					}
 
 					//Particle specific parsing:
 					switch(particles[newIndex].type)
@@ -1063,12 +1177,19 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 						break;
 					case PT_CRAY:
-						if (savedVersion < 91)
+						if (!modver)
 						{
-							if (particles[newIndex].tmp2)
+							if (savedVersion < 91)
 							{
-								particles[newIndex].ctype |= particles[newIndex].tmp2<<8;
-								particles[newIndex].tmp2 = 0;
+								if (particles[newIndex].tmp2)
+								{
+									particles[newIndex].ctype |= particles[newIndex].tmp2<<8;
+									particles[newIndex].tmp2 = 0;
+								}
+							}
+							if (!particles[newIndex].life)
+							{
+								particles[newIndex].life = -1;
 							}
 						}
 						break;
@@ -1082,6 +1203,31 @@ void GameSave::readOPS(char * data, int dataLength)
 							}
 						}
 						break;
+					case PT_PIPE:
+					case PT_PPIP:
+					case PT_STOR:
+						if (!isFromMyMod)
+						{
+							particles[newIndex].tmp3 = particles[newIndex].pavg[0];
+							particles[newIndex].tmp4 = particles[newIndex].pavg[1];
+							particles[newIndex].pavg[0] = particles[newIndex].pavg[1] = 0;
+						}
+						break;
+					case PT_VIRS:
+					case PT_VRSS:
+					case PT_VRSG:
+						if (!isFromMyMod)
+						{
+							particles[newIndex].tmp4 = particles[newIndex].tmp2;
+							particles[newIndex].tmp2 = 0;
+						}
+						break;
+/*
+					case 189: // reserved by next mod version
+						if (modver == 1)
+							particles[newIndex].type = ELEM_MULTIPP;
+						break;
+*/
 					}
 					//note: PSv was used in version 77.0 and every version before, add something in PSv too if the element is that old
 					newIndex++;
@@ -1654,13 +1800,17 @@ void GameSave::readPSv(char * data, int dataLength)
 			}
 			if(ver<52 && (ty==PT_CLNE || ty==PT_PCLN || ty==PT_BCLN)){
 				//Replace old GOL ctypes in clone
+				int tty = particles[i-1].ctype;
+				if (tty < 78)
+					goto ignoreOldGOLCheck;
 				for (gnum = 0; gnum<NGOL; gnum++){
-					if (particles[i-1].ctype==goltype[gnum])
+					if (tty == goltype[gnum])
 					{
-						particles[i-1].ctype = PT_LIFE;
+						tty = PT_LIFE;
 						particles[i-1].tmp = gnum;
 					}
 				}
+			ignoreOldGOLCheck:;
 			}
 			if(ty==PT_LCRY){
 				if(ver<67)
@@ -1898,6 +2048,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 			ambientData[ambientDataLen++] = tempTemp;
 			ambientData[ambientDataLen++] = tempTemp >> 8;
 
+
 			if(blockMap[y][x] && !wallDataFound)
 				wallDataFound = 1;
 			if(blockMap[y][x]==WL_FAN)
@@ -1982,6 +2133,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	partsDataLen = 0;
 	partsSaveIndex = (unsigned int *)calloc(NPART, sizeof(unsigned));
 	partsCount = 0;
+	unsigned int ExtraData;
 	for (y=0;y<fullH;y++)
 	{
 		for (x=0;x<fullW;x++)
@@ -1994,9 +2146,12 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 			{
 				unsigned short fieldDesc = 0;
 				int fieldDescLoc = 0, tempTemp, vTemp;
+				int desc2Pos = 0, desc2Data = 0;
 
 				//Turn pmap entry into a particles index
 				i = i>>8;
+				
+				bool tempB = (particles[i].type == PT_CRAY || particles[i].type == ELEM_MULTIPP);
 
 				//Store saved particle index+1 for this partsptr index (0 means not saved)
 				partsSaveIndex[i] = (partsCount++) + 1;
@@ -2028,10 +2183,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				if(particles[i].life)
 				{
 					int life = particles[i].life;
-					if (life > 0xFFFF)
-						life = 0xFFFF;
-					else if (life < 0)
-						life = 0;
+					if (!tempB)
+					{
+						if (life > 0xFFFF)
+							life = 0xFFFF;
+						else if (life < 0)
+							life = 0;
+					}
 					fieldDesc |= 1 << 1;
 					partsData[partsDataLen++] = life;
 					if (life & 0xFF00)
@@ -2104,7 +2262,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				}
 
 				//Tmp2 (optional), 1 or 2 bytes
-				if(particles[i].tmp2)
+				if(particles[i].tmp2 & 0x0000FFFF)
 				{
 					fieldDesc |= 1 << 10;
 					partsData[partsDataLen++] = particles[i].tmp2;
@@ -2125,7 +2283,69 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					partsData[partsDataLen++] = (int)particles[i].pavg[1];
 					partsData[partsDataLen++] = ((int)particles[i].pavg[1])>>8;
 				}
-
+				
+				// Tmp3 and extra data (optional), varies
+				{
+					int partsDataOffset = partsDataLen;
+					desc2Pos = partsDataOffset++;
+					if (particles[i].tmp3)
+					{
+						ExtraData = (unsigned)particles[i].tmp3;
+						partsData[partsDataOffset++] = ExtraData & 0x00FF;
+						if (ExtraData & 0xFFFFFF00)
+						{
+							partsData[partsDataOffset++] = (ExtraData >> 8) & 0x00FF;
+							desc2Data |= 2;
+							if (ExtraData & 0xFFFF0000)
+							{
+								partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+								partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
+								desc2Data |= 1; // desc2Data |= 3;
+							}
+						}
+						else
+							desc2Data |= 1;
+					}
+					
+					if (particles[i].tmp2 & 0xFFFF0000) // if tmp2 >= 2 ** 16
+					{
+						ExtraData = (unsigned)particles[i].tmp2;
+						partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+						partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
+						desc2Data |= 4;
+					}
+					
+					//Don't save tmp4 for PINV (because automatically calculate second pmap?)
+					if (particles[i].tmp4 && particles[i].type != PT_PINVIS)
+					{
+						ExtraData = (unsigned)particles[i].tmp4;
+						partsData[partsDataOffset++] = (ExtraData >> 8) & 0x00FF;
+						partsData[partsDataOffset++] = ExtraData & 0x00FF;
+						desc2Data |= 8;
+						if (ExtraData & 0xFFFF0000)
+						{
+							partsData[partsDataOffset++] = (ExtraData >> 24) & 0x00FF;
+							partsData[partsDataOffset++] = (ExtraData >> 16) & 0x00FF;
+							desc2Data |= 16;
+						}
+					}
+					
+					if (tempB && (particles[i].life & 0xFFFF0000))
+					{
+						partsData[partsDataOffset++] = (particles[i].life >> 24) & 0xFF;
+						partsData[partsDataOffset++] = (particles[i].life >> 16) & 0xFF;
+						desc2Data |= (1 << 5);
+					}
+					
+					//Write the extra field descriptor
+					if (desc2Data)
+					{
+						fieldDesc |= 1 << 14;
+						partsData[desc2Pos] = desc2Data;
+						partsDataLen = partsDataOffset;
+					}
+				}
+				
 				//Write the field descriptor
 				partsData[fieldDescLoc] = fieldDesc;
 				partsData[fieldDescLoc+1] = fieldDesc>>8;
@@ -2139,7 +2359,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					RESTRICTVERSION(91, 5);
 				}
 				if (particles[i].type == PT_HEAC || particles[i].type == PT_SAWD || particles[i].type == PT_POLO
-						|| particles[i].type == PT_RFRG || particles[i].type == PT_RFGL || particles[i].type == PT_LSNS)
+					|| particles[i].type == PT_RFRG || particles[i].type == PT_RFGL || particles[i].type == PT_LSNS
+#ifdef MOD_ID_2
+					|| particles[i].type == PT_POLC || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == ELEM_MULTIPP
+#endif
+				)
 				{
 					RESTRICTVERSION(92, 0);
 					fromNewerVersion = true;
@@ -2210,6 +2434,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_int(&b, "buildNum", BUILD_NUM);
 	bson_append_int(&b, "snapshotId", SNAPSHOT_ID);
 	bson_append_int(&b, "modId", MOD_ID);
+	bson_append_int(&b, "modId2", MOD_ID_2);
 	bson_append_string(&b, "releaseType", IDENT_RELTYPE);
 	bson_append_string(&b, "platform", IDENT_PLATFORM);
 	bson_append_string(&b, "builtType", IDENT_BUILD);
@@ -2224,11 +2449,15 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
+	bson_append_bool(&b, "sextraLoopsCA_Enable", sextraLoopsCA);
+	bson_append_bool(&b, "is_git123hubs_mod", isFromMyMod);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
 	bson_append_int(&b, "edgeMode", edgeMode);
-
+	bson_append_int(&b, "phot_ignite", Element_PHOT::ignite_flammable);
+	bson_append_int(&b, "sim_max_pressure", * (int*) &sim_max_pressure);
+	
 	//bson_append_int(&b, "leftSelectedElement", sl);
 	//bson_append_int(&b, "rightSelectedElement", sr);
 	//bson_append_int(&b, "activeMenu", active_menu);

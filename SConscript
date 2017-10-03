@@ -50,6 +50,7 @@ AddSconsOption('minor-version', False, True, "Minor version.")
 AddSconsOption('build-number', False, True, "Build number.")
 AddSconsOption('snapshot', False, False, "Snapshot build.")
 AddSconsOption('snapshot-id', False, True, "Snapshot build ID.")
+AddSconsOption('no-script-manager', False, False, "Disable built-in Script Manager")
 
 AddSconsOption('64bit', False, False, "Compile a 64 bit binary.")
 AddSconsOption('32bit', False, False, "Compile a 32 bit binary.")
@@ -524,6 +525,9 @@ elif GetOption('snapshot'):
 
 if GetOption('beta'):
 	env.Append(CPPDEFINES=['BETA'])
+	
+if GetOption('no-script-manager'):
+	env.Append(CPPDEFINES=['NO_SCRIPT_MANAGER'])
 
 
 #Generate list of sources to compile

@@ -31,6 +31,7 @@ Element_NEUT::Element_NEUT()
 	Description = "Neutrons. Interact with matter in odd ways.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
+	Properties2 |= PROP_ENERGY_PART | PROP_NEUTRONS_LIKE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -49,6 +50,7 @@ Element_NEUT::Element_NEUT()
 int Element_NEUT::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry;
+	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
@@ -174,10 +176,77 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
+				case PT_POLC:
+					if (parts[r>>8].tmp && !(rand()%80))
+						parts[r>>8].tmp--;
+					break;
+				case ELEM_MULTIPP:
+					{
+					int rr, j;
+					if (parts[r>>8].life == 22)
+					{
+						switch (parts[r>>8].tmp >> 3)
+						{
+						case 1:
+							parts[i].vx = 0, parts[i].vy = 0;
+							break;
+						case 2:
+							if (!(rand()%25))
+							{
+								rr = sim->create_part(-1, x, y, PT_ELEC);
+								if (rr >= 0)
+								{
+									parts[i].tmp2 = 1;
+									sim->part_change_type(i, x, y, PT_PROT);
+								}
+							}
+							break;
+						case 3:
+							if (!((rand()%400) || parts[r>>8].tmp2))
+							{
+								sim->create_part(-1, x, y, PT_NEUT);
+								parts[r>>8].tmp2 = 50;
+							}
+							break;
+						case 4:
+							parts[i].vx *= 0.995;
+							parts[i].vy *= 0.995;
+							break;
+						}
+					}
+					else if (parts[r>>8].life == 8 && !(rx || ry))
+					{
+						parts[i].vx = 0, parts[i].vy = 0;
+						for (j = 0; j < 5; j++)
+						{
+							iX = rand() % (ISTP * 2 + 1) - ISTP;
+							iY = rand() % (ISTP * 2 + 1) - ISTP;
+							rr = pmap[y+iY][x+iX];
+							if ((rr&0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 8)
+								break;
+						}
+						if (j == 5)
+							iY = 0, iX = 0;
+					}
+					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
+					{
+						int tmp2 = parts[r>>8].tmp2;
+						int multipler = (tmp2 >> 4) + 1;
+						tmp2 &= 0x0F;
+						if (Element_MULTIPP::Arrow_keys & 0x10 && tmp2 >= 1 && tmp2 <= 8)
+						{
+							iX += multipler*sim->portal_rx[tmp2-1];
+							iY += multipler*sim->portal_ry[tmp2-1];
+						}
+					}
+					}
+					break;
 				default:
 					break;
 				}
 			}
+	parts[i].vx += (float)iX;
+	parts[i].vy += (float)iY;
 	return 0;
 }
 

@@ -56,6 +56,8 @@ extern "C" {
 
 #include "client/HTTP.h"
 
+#include "simulation/simplugin.h"
+
 using namespace std;
 
 #define INCLUDE_SYSWM
@@ -764,10 +766,15 @@ void DoubleScreenDialog()
 void EngineProcess()
 {
 	double frameTimeAvg = 0.0f, correctedFrameTimeAvg = 0.0f;
+	int frameStart;
+	Element_MULTIPP::EngineFrameStart = &frameStart;
 	SDL_Event event;
 	while(engine->Running())
 	{
+	/* I might contact GitHub Support (allows account). please visit https://github.com/contact
 		int frameStart = SDL_GetTicks();
+	*/
+		frameStart = SDL_GetTicks();
 		if(engine->Broken()) { engine->UnBreak(); break; }
 		event.type = 0;
 		while (SDL_PollEvent(&event))
@@ -968,6 +975,11 @@ void SigHandler(int signal)
 		BlueScreen("Unexpected program abort");
 		break;
 	}
+}
+
+void DelayOperation1(Simulation * sim, int ms){
+	sim->delayEnd = SDL_GetTicks() + ms;
+	sim->SimExtraFunc |= 2;
 }
 
 int main(int argc, char * argv[])

@@ -31,6 +31,7 @@ Element_STKM2::Element_STKM2()
 	Description = "Second stickman. Don't kill him! Control with wasd.";
 
 	Properties = PROP_NOCTYPEDRAW;
+	Properties2 |= PROP_ALLOWS_WALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

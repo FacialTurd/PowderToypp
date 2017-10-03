@@ -31,6 +31,7 @@ Element_TSNS::Element_TSNS()
 	Description = "Temperature sensor, creates a spark when there's a nearby particle with a greater temperature.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -60,9 +61,10 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 					if (!r)
 						continue;
 					rt = r&0xFF;
-					if (sim->parts_avg(i,r>>8,PT_INSL) != PT_INSL)
+					int pavg = sim->parts_avg(i,r>>8,PT_INSL);
+					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
-						if ((sim->elements[rt].Properties&PROP_CONDUCTS) && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) && parts[r>>8].life==0)
+						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */ && parts[r>>8].life==0)
 						{
 							parts[r>>8].life = 4;
 							parts[r>>8].ctype = rt;
@@ -80,7 +82,7 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 				if(!r)
 					continue;
-				if ((r&0xFF)!=PT_TSNS && (r&0xFF)!=PT_METL && parts[r>>8].temp > parts[i].temp)
+				if ((r&0xFF)!=PT_TSNS && (r&0xFF)!=PT_METL && !(parts[i].tmp3 & 1) == (parts[r>>8].temp > parts[i].temp))
 					parts[i].life = 1;
 			}
 	return 0;

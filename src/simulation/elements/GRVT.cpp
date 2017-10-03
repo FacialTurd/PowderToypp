@@ -22,7 +22,7 @@ Element_GRVT::Element_GRVT()
 	Flammable = 0;
 	Explosive = 0;
 	Meltable = 0;
-	Hardness = 1;
+	Hardness = 0; // 1;
 
 	Weight = -1;
 
@@ -31,6 +31,7 @@ Element_GRVT::Element_GRVT()
 	Description = "Gravitons. Create Newtonian Gravity.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
+	Properties2 |= PROP_ENERGY_PART;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

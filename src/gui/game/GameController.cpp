@@ -38,6 +38,10 @@
 #include "lua/TPTScriptInterface.h"
 #endif
 
+#ifdef USE_SDL
+#include "SDLCompat.h"
+#endif
+
 using namespace std;
 
 class GameController::SearchCallback: public ControllerCallback
@@ -142,6 +146,7 @@ GameController::GameController():
 {
 	gameView = new GameView();
 	gameModel = new GameModel();
+
 	gameModel->BuildQuickOptionMenu(this);
 
 	gameView->AttachController(this);
@@ -710,67 +715,95 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 	if (ret)
 	{
 		Simulation * sim = gameModel->GetSimulation();
-		if (!gameView->GetPlacingSave())
+		if (!gameView->alternateState)
 		{
-			// Go right command
-			if (key == SDLK_RIGHT)
+			if (!gameView->GetPlacingSave())
 			{
-				sim->player.comm = (int)(sim->player.comm)|0x02;
+				// Go right command
+				if (key == SDLK_RIGHT)
+				{
+					sim->player.comm = (int)(sim->player.comm)|0x02;
+				}
+				// Go left command
+				if (key == SDLK_LEFT)
+				{
+					sim->player.comm = (int)(sim->player.comm)|0x01;
+				}
+				// Use element command
+				if (key == SDLK_DOWN && ((int)(sim->player.comm)&0x08)!=0x08)
+				{
+					sim->player.comm = (int)(sim->player.comm)|0x08;
+				}
+				// Jump command
+				if (key == SDLK_UP && ((int)(sim->player.comm)&0x04)!=0x04)
+				{
+					sim->player.comm = (int)(sim->player.comm)|0x04;
+				}
+			}
+
+			// Go right command
+			if (key == SDLK_d)
+			{
+				sim->player2.comm = (int)(sim->player2.comm)|0x02;
 			}
 			// Go left command
-			if (key == SDLK_LEFT)
+			if (key == SDLK_a)
 			{
-				sim->player.comm = (int)(sim->player.comm)|0x01;
+				sim->player2.comm = (int)(sim->player2.comm)|0x01;
 			}
 			// Use element command
-			if (key == SDLK_DOWN && ((int)(sim->player.comm)&0x08)!=0x08)
+			if (key == SDLK_s && ((int)(sim->player2.comm)&0x08)!=0x08)
 			{
-				sim->player.comm = (int)(sim->player.comm)|0x08;
+				sim->player2.comm = (int)(sim->player2.comm)|0x08;
 			}
 			// Jump command
-			if (key == SDLK_UP && ((int)(sim->player.comm)&0x04)!=0x04)
+			if (key == SDLK_w && ((int)(sim->player2.comm)&0x04)!=0x04)
 			{
-				sim->player.comm = (int)(sim->player.comm)|0x04;
+				sim->player2.comm = (int)(sim->player2.comm)|0x04;
+			}
+
+			if (!sim->elementCount[PT_STKM2] || ctrl)
+			{
+				switch(key)
+				{
+				case 'w':
+					SwitchGravity();
+					break;
+				case 'd':
+					gameView->SetDebugHUD(!gameView->GetDebugHUD());
+					break;
+				case 's':
+					gameView->BeginStampSelection();
+					break;
+				}
 			}
 		}
-
-		// Go right command
-		if (key == SDLK_d)
-		{
-			sim->player2.comm = (int)(sim->player2.comm)|0x02;
-		}
-		// Go left command
-		if (key == SDLK_a)
-		{
-			sim->player2.comm = (int)(sim->player2.comm)|0x01;
-		}
-		// Use element command
-		if (key == SDLK_s && ((int)(sim->player2.comm)&0x08)!=0x08)
-		{
-			sim->player2.comm = (int)(sim->player2.comm)|0x08;
-		}
-		// Jump command
-		if (key == SDLK_w && ((int)(sim->player2.comm)&0x04)!=0x04)
-		{
-			sim->player2.comm = (int)(sim->player2.comm)|0x04;
-		}
-
-		if (!sim->elementCount[PT_STKM2] || ctrl)
+		if (!gameView->GetPlacingSave())
 		{
 			switch(key)
 			{
-			case 'w':
-				SwitchGravity();
+			case SDLK_UP:
+				Element_MULTIPP::Arrow_keys |= 0x1;
 				break;
-			case 'd':
-				gameView->SetDebugHUD(!gameView->GetDebugHUD());
+			case SDLK_LEFT:
+				Element_MULTIPP::Arrow_keys |= 0x2;
 				break;
-			case 's':
-				gameView->BeginStampSelection();
+			case SDLK_DOWN:
+				Element_MULTIPP::Arrow_keys |= 0x4;
+				break;
+			case SDLK_RIGHT:
+				Element_MULTIPP::Arrow_keys |= 0x8;
+				break;
+			case SDLK_KP_ENTER:
+			case SDLK_RETURN:
+				Element_MULTIPP::Arrow_keys |= 0x10;
 				break;
 			}
 		}
-
+	}
+		
+	if (!gameView->alternateState)
+	{
 		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
 			if ((*iter)->ID & debugFlags)
@@ -791,14 +824,21 @@ bool GameController::KeyRelease(int key, Uint16 character, bool shift, bool ctrl
 		{
 			sim->player.pcomm = sim->player.comm;  //Saving last movement
 			sim->player.comm = (int)(sim->player.comm)&12;  //Stop command
+			Element_MULTIPP::Arrow_keys &= (key == SDLK_LEFT ? ~0x2 : ~0x8);
 		}
 		if (key == SDLK_UP)
 		{
 			sim->player.comm = (int)(sim->player.comm)&11;
+			Element_MULTIPP::Arrow_keys &= ~0x1;
 		}
 		if (key == SDLK_DOWN)
 		{
 			sim->player.comm = (int)(sim->player.comm)&7;
+			Element_MULTIPP::Arrow_keys &= ~0x4;
+		}
+		if (key == SDLK_KP_ENTER || key == SDLK_RETURN)
+		{
+			Element_MULTIPP::Arrow_keys &= ~0x10;
 		}
 
 		if (key == SDLK_d || key == SDLK_a)
@@ -880,6 +920,7 @@ void GameController::ResetSpark()
 				sim->kill_part(i);
 		}
 	memset(sim->wireless, 0, sizeof(sim->wireless));
+	memset(sim->wireless2, 0, sizeof(sim->wireless2));
 }
 
 void GameController::SwitchGravity()
@@ -965,7 +1006,7 @@ void GameController::Update()
 
 	Simulation * sim = gameModel->GetSimulation();
 	sim->BeforeSim();
-	if (!sim->sys_pause || sim->framerender)
+	if (!sim->sys_pause && !(sim->SimExtraFunc & 2) || sim->framerender)
 	{
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
@@ -1018,6 +1059,14 @@ void GameController::Update()
 		delete localBrowser;
 		localBrowser = NULL;
 	}
+
+#ifdef USE_SDL
+	if (sim->extraDelay && (sim->extraDelay = sim->delayEnd - SDL_GetTicks()) <= 0)
+	{
+		sim->SimExtraFunc &= ~2;
+		sim->extraDelay = 0;
+	}
+#endif
 }
 
 void GameController::SetZoomEnabled(bool zoomEnabled)
@@ -1551,6 +1600,15 @@ std::string GameController::ElementResolve(int type, int ctype)
 			return std::string(gameModel->GetSimulation()->elements[type].Name);
 	}
 	return "";
+}
+
+float GameController::sim_max_pressure_resolve()
+{
+	if(gameModel && gameModel->GetSimulation())
+	{
+		return gameModel->GetSimulation()->sim_max_pressure;
+	}
+	return 0;
 }
 
 bool GameController::IsValidElement(int type)

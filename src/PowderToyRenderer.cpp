@@ -16,6 +16,8 @@
 #include "client/GameSave.h"
 #include "simulation/Simulation.h"
 
+#include "simulation/MULTIPPE_Update.h"
+
 
 void EngineProcess() {}
 void ClipboardPush(std::string) {}
@@ -94,6 +96,7 @@ int main(int argc, char *argv[])
 
 	Simulation * sim = new Simulation();
 	Renderer * ren = new Renderer(ui::Engine::Ref().g, sim);
+	MULTIPPE_Update::ren_ = ren;
 
 	if (gameSave)
 	{

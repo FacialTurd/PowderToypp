@@ -23,6 +23,8 @@
 #include "gui/interface/Engine.h"
 #include "gui/interface/Point.h"
 
+#include "simulation/MULTIPPE_Update.h"
+
 
 GameModel::GameModel():
 	clipboard(NULL),
@@ -42,6 +44,7 @@ GameModel::GameModel():
 {
 	sim = new Simulation();
 	ren = new Renderer(ui::Engine::Ref().g, sim);
+	MULTIPPE_Update::ren_ = ren;
 
 	activeTools = regularToolset;
 
@@ -88,6 +91,10 @@ GameModel::GameModel():
 		sim->grav->start_grav_async();
 	sim->aheat_enable =  Client::Ref().GetPrefInteger("Simulation.AmbientHeat", 0);
 	sim->pretty_powder =  Client::Ref().GetPrefInteger("Simulation.PrettyPowder", 0);
+	sim->extraLoopsCA = Client::Ref().GetPrefBool("Simulation.LangtonsLoops", false);
+	sim->extraLoopsType = Client::Ref().GetPrefInteger("Simulation.ExtraLoopsType", 0);
+
+	Element_PHOT::ignite_flammable = Client::Ref().GetPrefInteger("ElementsFlags.PHOTIgnite", 1);
 
 	Favorite::Ref().LoadFavoritesFromPrefs();
 
@@ -144,6 +151,8 @@ GameModel::GameModel():
 	// cap due to memory usage (this is about 3.4GB of RAM)
 	if (undoHistoryLimit > 200)
 		undoHistoryLimit = 200;
+	
+	// sim->renderer_decorations = &(ren->decorations_enable);
 }
 
 GameModel::~GameModel()
@@ -165,6 +174,8 @@ GameModel::~GameModel()
 	Client::Ref().SetPref("Simulation.NewtonianGravity", sim->grav->ngrav_enable);
 	Client::Ref().SetPref("Simulation.AmbientHeat", sim->aheat_enable);
 	Client::Ref().SetPref("Simulation.PrettyPowder", sim->pretty_powder);
+	Client::Ref().SetPref("Simulation.LangtonsLoops", (bool)sim->extraLoopsCA);
+	Client::Ref().SetPref("Simulation.ExtraLoopsType", (int)sim->extraLoopsType);
 
 	Client::Ref().SetPref("Decoration.Red", (int)colour.Red);
 	Client::Ref().SetPref("Decoration.Green", (int)colour.Green);
@@ -172,6 +183,8 @@ GameModel::~GameModel()
 	Client::Ref().SetPref("Decoration.Alpha", (int)colour.Alpha);
 
 	Client::Ref().SetPref("Simulation.UndoHistoryLimit", undoHistoryLimit);
+	
+	Client::Ref().SetPref("ElementsFlags.PHOTIgnite", Element_PHOT::ignite_flammable);
 
 	Favorite::Ref().SaveFavoritesToPrefs();
 
@@ -223,6 +236,7 @@ void GameModel::BuildQuickOptionMenu(GameController * controller)
 	quickOptions.push_back(new NGravityOption(this));
 	quickOptions.push_back(new AHeatOption(this));
 	quickOptions.push_back(new ConsoleShowOption(this, controller));
+	// quickOptions.push_back(new LangtonsLoopsOption(this));
 
 	notifyQuickOptionsChanged();
 	UpdateQuickOptions();
@@ -306,6 +320,13 @@ void GameModel::BuildMenus()
 	for(int i = 0; i < NGOL; i++)
 	{
 		Tool * tempTool = new ElementTool(PT_LIFE|(i<<8), sim->gmenu[i].name, std::string(sim->gmenu[i].description), PIXR(sim->gmenu[i].colour), PIXG(sim->gmenu[i].colour), PIXB(sim->gmenu[i].colour), "DEFAULT_PT_LIFE_"+std::string(sim->gmenu[i].name));
+		menuList[SC_LIFE]->AddTool(tempTool);
+	}
+	
+	{
+		Tool * tempTool = new ElementTool(ELEM_MULTIPP|(33<<8), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
+		menuList[SC_ELEC]->AddTool(tempTool);
+		tempTool = new ElementTool(ELEM_MULTIPP|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 
@@ -642,6 +663,14 @@ void GameModel::SetSave(SaveInfo * newSave)
 		sim->legacy_enable = saveData->legacyEnable;
 		sim->water_equal_test = saveData->waterEEnabled;
 		sim->aheat_enable = saveData->aheatEnable;
+		sim->extraLoopsCA = saveData->sextraLoopsCA;
+		sim->sim_max_pressure = saveData->sim_max_pressure;
+		if (sim->isFromMyMod != saveData->isFromMyMod)
+		{
+			sim->isFromMyMod = saveData->isFromMyMod;
+			sim->restrict_can_move();
+		}
+		// sim->wireless2 = saveData->PINV_wireless;
 		if(saveData->gravityEnable)
 			sim->grav->start_grav_async();
 		else
@@ -703,6 +732,14 @@ void GameModel::SetSaveFile(SaveFile * newSave)
 		sim->legacy_enable = saveData->legacyEnable;
 		sim->water_equal_test = saveData->waterEEnabled;
 		sim->aheat_enable = saveData->aheatEnable;
+		sim->extraLoopsCA = saveData->sextraLoopsCA;
+		sim->sim_max_pressure = saveData->sim_max_pressure;
+		if (sim->isFromMyMod != saveData->isFromMyMod)
+		{
+			sim->isFromMyMod = saveData->isFromMyMod;
+			sim->restrict_can_move();
+		}
+		// sim->wireless2 = saveData->PINV_wireless;
 		if(saveData->gravityEnable && !sim->grav->ngrav_enable)
 		{
 			sim->grav->start_grav_async();
@@ -929,23 +966,54 @@ bool GameModel::GetPaused()
 	return sim->sys_pause?true:false;
 }
 
-void GameModel::SetDecoration(bool decorationState)
+void GameModel::SetDecoration(bool decorationState /*, bool no_tip */ )
 {
 	if (ren->decorations_enable != (decorationState?1:0))
 	{
 		ren->decorations_enable = decorationState?1:0;
 		notifyDecorationChanged();
 		UpdateQuickOptions();
-		if (decorationState)
-			SetInfoTip("Decorations Layer: On");
-		else
-			SetInfoTip("Decorations Layer: Off");
+		// if (!no_tip)
+		// {
+			if (decorationState)
+				SetInfoTip("Decorations Layer: On");
+			else
+				SetInfoTip("Decorations Layer: Off");
+		// }
 	}
 }
+
+#if 0
+void MULTIPPE_Update::SetDecoration(bool decorationState)
+{
+	GameModel::SetDecoration(bool decorationState, true);
+}
+#endif
 
 bool GameModel::GetDecoration()
 {
 	return ren->decorations_enable?true:false;
+}
+
+#if 0
+bool MULTIPPE_Update::GetDecoration()
+{
+	return GameModel::GetDecoration();
+}
+#endif
+
+void GameModel::SetLLCA(bool m)
+{
+	sim->extraLoopsCA = (m?1:0);
+	if (m)
+		SetInfoTip("Extra Cellular automaton mode: On");
+	else
+		SetInfoTip("Extra Cellular automaton mode: Off");
+}
+
+bool GameModel::GetLLCA()
+{
+	return sim->extraLoopsCA?true:false;
 }
 
 void GameModel::SetAHeatEnable(bool aHeat)
@@ -990,6 +1058,11 @@ void GameModel::ClearSimulation()
 	sim->legacy_enable = false;
 	sim->water_equal_test = false;
 	sim->SetEdgeMode(edgeMode);
+	if (!sim->isFromMyMod)
+	{
+		sim->isFromMyMod = true;
+		sim->restrict_can_move();
+	}
 
 	sim->clear_sim();
 	ren->ClearAccumulation();

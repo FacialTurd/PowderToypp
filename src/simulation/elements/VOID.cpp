@@ -31,6 +31,7 @@ Element_VOID::Element_VOID()
 	Description = "Hole, will drain away any particles.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DRAWONCTYPE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

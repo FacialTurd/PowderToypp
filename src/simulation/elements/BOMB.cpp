@@ -58,7 +58,8 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = r&0xFF;
-				if (rt!=PT_BOMB && rt!=PT_EMBR && rt!=PT_DMND && rt!=PT_CLNE && rt!=PT_PCLN && rt!=PT_BCLN && rt!=PT_VIBR)
+				if (rt!=PT_BOMB && rt!=PT_EMBR && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && rt!=PT_VIBR
+					&& (rt!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
 				{
 					int rad = 8, nt;
 					int nxi, nxj;
@@ -72,11 +73,13 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 								if ((ynxj < 0) || (ynxj >= YRES) || (xnxi <= 0) || (xnxi >= XRES))
 									continue;
 								
-								nt = pmap[ynxj][xnxi]&0xFF;
-								if (nt!=PT_DMND && nt!=PT_CLNE && nt!=PT_PCLN && nt!=PT_BCLN && nt!=PT_VIBR)
+								int rr = pmap[ynxj][xnxi];
+								nt = rr & 0xFF;
+								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && (nt!=ELEM_MULTIPP || (parts[rr >> 8].life&~0x1)!=8)
+									&& (nt!=PT_SPRK || !(sim->elements[parts[rr>>8].ctype].Properties2 & PROP_NODESTRUCT)))
 								{
 									if (nt)
-										sim->kill_part(pmap[ynxj][xnxi]>>8);
+										sim->kill_part(rr >> 8);
 									sim->pv[(ynxj)/CELL][(xnxi)/CELL] += 0.1f;
 									nb = sim->create_part(-3, xnxi, ynxj, PT_EMBR);
 									if (nb!=-1)

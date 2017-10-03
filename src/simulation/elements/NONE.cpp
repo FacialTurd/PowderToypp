@@ -23,6 +23,7 @@ Element_NONE::Element_NONE()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 1;
+	PhotonReflectWavelengths = ~0;
 
 	Weight = 100;
 
@@ -30,7 +31,7 @@ Element_NONE::Element_NONE()
 	HeatConduct = 0;
 	Description = "Erases particles.";
 
-	Properties = 0;
+	Properties = PROP_NOSLOWDOWN;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

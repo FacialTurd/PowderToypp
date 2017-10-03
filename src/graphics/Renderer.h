@@ -60,6 +60,7 @@ public:
 	bool gravityZonesEnabled;
 	bool gravityFieldEnabled;
 	int decorations_enable;
+	// int extraLoopsCA;
 	bool blackDecorations;
 	bool debugLines;
 	pixel sampleColor;
