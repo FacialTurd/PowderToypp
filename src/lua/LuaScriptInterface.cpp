@@ -2518,6 +2518,8 @@ void LuaScriptInterface::initStickmanAPI()
 	lua_setfield(l, -2, "ANTI_GRAV");
 	lua_pushinteger(l, 0x00000400);
 	lua_setfield(l, -2, "NO_EMIT_PLASMA");
+	lua_pushinteger(l, 0x00000800);
+	lua_setfield(l, -2, "ENABLE_VAC_WALL");
 }
 
 playerst* LuaScriptInterface::get_stickman_ptr (int stickmanID)
@@ -2728,6 +2730,7 @@ void LuaScriptInterface::initRendererAPI()
 	SETCONST(l, COLOUR_LIFE);
 	SETCONST(l, COLOUR_GRAD);
 	SETCONST(l, COLOUR_BASC);
+	SETCONST(l, COLOUR_TMP);
 	SETCONST(l, COLOUR_DEFAULT);
 	SETCONST(l, DISPLAY_AIRC);
 	SETCONST(l, DISPLAY_AIRP);

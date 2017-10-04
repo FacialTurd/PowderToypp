@@ -748,8 +748,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 				if (parts[i].tmp2)
 				{
-					for (rx = -2; rx <= 2; rx++)
-						for (ry = -2; ry <= 2; ry++)
+					for (rx=-2; rx<3; rx++)
+						for (ry=-2; ry<3; ry++)
 							if (BOUNDS_CHECK && (rx || ry))
 							{
 								r = pmap[y+ry][x+rx];
@@ -759,8 +759,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					parts[i].tmp--;
 					parts[i].tmp2 = 0;
 				}
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
+				for (rx=-2; rx<3; rx++)
+					for (ry=-2; ry<3; ry++)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
@@ -2032,6 +2032,22 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			if (ri > i)
 				parts[ri].flags |= FLAG_SKIPMOVE;
 			break;
+		case 32: // capacitor
+			rii = parts[i].tmp2;
+			rii && (parts[i].tmp2--);
+			for (rx=-2; rx<3; rx++)
+				for (ry=-2; ry<3; ry++)
+					if (BOUNDS_CHECK && (rx || ry))
+					{
+						r = pmap[y+ry][x+rx];
+						if ((r&0xFF) == PT_SPRK && parts[r>>8].ctype == PT_PSCN && parts[r>>8].life == 3)
+						{
+							parts[i].tmp2 = parts[i].tmp;
+						}
+						else if (rii && ((r&0xFF) == PT_NSCN))
+							conductTo (sim, r, x+rx, y+ry, parts);
+					}
+				break;
 		}
 		break;
 			
@@ -2039,8 +2055,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		parts[i].tmp2 = parts[i].tmp;
 		if (parts[i].tmp)
 			--parts[i].tmp;
-		for (rx = -2; rx <= 2; rx++)
-			for (ry = -2; ry <= 2; ry++)
+		for (rx=-2; rx<3; rx++)
+			for (ry=-2; ry<3; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];

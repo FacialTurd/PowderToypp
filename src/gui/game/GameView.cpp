@@ -1682,8 +1682,8 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 		}
 
-		if (shift && showDebug && key == '1')
-			c->LoadRenderPreset(10);
+		if (shift && showDebug && (key == '1' || key == '2'))
+			c->LoadRenderPreset(10+(key-'1'));
 		else if(key >= '0' && key <= '9')
 		{
 			c->LoadRenderPreset(key-'0');

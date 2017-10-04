@@ -469,7 +469,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				switch (under_wall)
 				{
 				case WL_FAN:
-					playerp->elem = SPC_AIR;
+					playerp->elem = (sim->Extra_FIGH_pause & 0x800) ? SPC_VACUUM : SPC_AIR;
 					break;
 				case WL_EHOLE:
 					playerp->rocketBoots = false;
@@ -818,7 +818,12 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_element(Simulation *sim, playerst *playerp, int element)
 void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int element)
 {
-	if (sim->elements[element].Falldown != 0
+	if (element == 0x102 || element == 0x103)
+	{
+		playerp->__flags &= ~0x1;
+		playerp->__flags |= (element == 0x102) ? 1 : 0;
+	}
+	else if (sim->elements[element].Falldown != 0
 	    || sim->elements[element].Properties&TYPE_GAS
 	    || sim->elements[element].Properties&TYPE_LIQUID
 	    || sim->elements[element].Properties&TYPE_ENERGY
@@ -833,11 +838,6 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 	{
 		playerp->pelem = playerp->elem;
 		playerp->elem = PT_FIGH;
-	}
-	else if (element == 0x102 || element == 0x103)
-	{
-		playerp->__flags &= ~0x1;
-		playerp->__flags |= (element == 0x102) ? 1 : 0;
 	}
 }
 

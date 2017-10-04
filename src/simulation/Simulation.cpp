@@ -2027,6 +2027,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 
 void Simulation::clear_sim(void)
 {
+	int i;
 	debug_currentParticle = 0;
 	emp_decor = 0;
 	emp_trigger_count = 0;
@@ -2039,7 +2040,7 @@ void Simulation::clear_sim(void)
 	memset(bmap, 0, sizeof(bmap));
 	memset(emap, 0, sizeof(emap));
 	memset(parts, 0, sizeof(Particle)*NPART);
-	for (int i = 0; i < NPART-1; i++)
+	for (i = 0; i < NPART-1; i++)
 		parts[i].life = i+1;
 	parts[NPART-1].life = -1;
 	pfree = 0;
@@ -2062,6 +2063,8 @@ void Simulation::clear_sim(void)
 	player2.spwn = 0;
 	player2.spawnID = -1;
 	player2.rocketBoots = false;
+	for (int i = 0; i < 4; i++)
+		Element_STKM::lifeinc [i] = 0;
 
 	//memset(pers_bg, 0, WINDOWW*YRES*PIXELSIZE);
 	//memset(fire_r, 0, sizeof(fire_r));

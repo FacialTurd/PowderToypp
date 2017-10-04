@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //Temp particle used for graphics
+//Don't conflict with 186.cpp "tpart_phot"
 Particle tpart;
 
 //#TPT-Directive ElementClass Element_PIPE PT_PIPE 99

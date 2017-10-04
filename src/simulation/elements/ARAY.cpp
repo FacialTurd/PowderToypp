@@ -215,7 +215,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									continue;
 								case 6:
 									if (spc_conduct == 5)
-										parts[r].temp = parts[i].temp;
+										parts[r].temp = (modFlag & 2) ? flt1 : parts[i].temp;
 									continue;
 								case 13:
 									if (parts[r].tmp2 == 3)
