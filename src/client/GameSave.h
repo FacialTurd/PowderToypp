@@ -80,7 +80,9 @@ public:
 	void setSize(int width, int height);
 	char * Serialise(unsigned int & dataSize);
 	std::vector<char> Serialise();
+	vector2d Translate(vector2d translate);
 	void Transform(matrix2d transform, vector2d translate);
+	void Transform(matrix2d transform, vector2d translate, vector2d translateReal, int newWidth, int newHeight);
 
 	void Expand();
 	void Collapse();
@@ -105,6 +107,8 @@ public:
 private:
 	bool expanded;
 	bool hasOriginalData;
+	// number of pixels translated. When translating CELL pixels, shift all CELL grids
+	vector2d translated;
 
 	std::vector<char> originalData;
 
