@@ -656,6 +656,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										break;
 									}
 									tmpz = (tmp[1] != 8) ? 1 : 0;
+								case 33:
 									continue;
 								case 35:
 									if (!(modFlag & 1))

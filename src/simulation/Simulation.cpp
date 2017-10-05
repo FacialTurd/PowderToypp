@@ -2371,7 +2371,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				static int E186_ilist[] = {
 					0x88222800,	//  0 - 15
 					0x02002006,	// 16 - 31
-					0xAAAA0012,	// 32 - 47
+					0xAAAA001A,	// 32 - 47
 				};
 				switch (rlife)
 				{

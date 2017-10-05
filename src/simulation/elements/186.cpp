@@ -55,7 +55,7 @@ Element_E186::Element_E186()
 //#TPT-Directive ElementHeader Element_E186 static int update(UPDATE_FUNC_ARGS)
 int Element_E186::update(UPDATE_FUNC_ARGS)
 {
-	int r, rr, s, sctype;
+	int r, rr, s, sctype, rf;
 	int nx, ny;
 	float r2, r3;
 	Particle * under;
@@ -87,11 +87,12 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					rr = (rand() % (2 * rr + 1)) - rr;
 					if (under->tmp2 > 0)
 						rr *= under->tmp2;
-					if (under->tmp3 & 1)
+					rf = under->tmp3;
+					if (rf & 1)
 						parts[i].y = ny = y + rr, nx = x;
 					else
 						parts[i].x = nx = x + rr, ny = y;
-					parts[i].ctype = 0x3FFFFFFF;
+					parts[i].ctype = (rf & 2) ? parts[i].tmp2 : 0x3FFFFFFF;
 					transportPhotons(sim, i, x, y, nx, ny, PT_PHOT, &parts[i]);
 					return 1;
 				}
@@ -137,13 +138,13 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				int k3, k4;
 				while (k2)
 				{
-					k4 = k2 & -k2, k2 &= ~k4;
-					k3 = (k4 == 1 ? 1 : -1);
+					k3 = k2 & -k2, k2 &= ~k3;
+					k4 = (k3 == 1 ? 1 : -1);
 					s = sim->create_part(-1, x, y, PT_PHOT);
 					if (s >= 0)
 					{
-						parts[s].vx =  k3*parts[i].vy;
-						parts[s].vy = -k3*parts[i].vx;
+						parts[s].vx =  k4*parts[i].vy;
+						parts[s].vy = -k4*parts[i].vx;
 						parts[s].temp = parts[i].temp;
 						parts[s].life = parts[i].life;
 						parts[s].ctype = k1;
