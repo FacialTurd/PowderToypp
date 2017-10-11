@@ -77,6 +77,7 @@ public:
 	int lightningRecreate;
 	int extraDelay;
 	int delayEnd;
+	int ineutcount;
 	//Stickman
 	playerst player;
 	playerst player2;
@@ -137,6 +138,8 @@ public:
 	int sandcolour;
 	int sandcolour_frame;
 	bool no_generating_BHOL;
+	//Cooldowns
+	static int check_neut_cooldown;
 
 	int Load(GameSave * save, bool includePressure = true);
 	int Load(int x, int y, GameSave * save, bool includePressure = true);
@@ -253,6 +256,7 @@ public:
 	int get_normal(int pt, int x, int y, float dx, float dy, float *nx, float *ny);
 	int get_normal_interp(int pt, float x0, float y0, float dx, float dy, float *nx, float *ny);
 	void clear_sim();
+	void check_neut();
 	Simulation();
 	~Simulation();
 
@@ -271,5 +275,10 @@ public:
 		return std::fmod(x, y) + (x>=0 ? 0 : y);
 	}
 };
+
+#ifdef _MSC_VER
+unsigned msvc_ctz(unsigned a);
+unsigned msvc_clz(unsigned a);
+#endif
 
 #endif /* SIMULATION_H */

@@ -3352,6 +3352,10 @@ int LuaScriptInterface::elements_property(lua_State * l)
 			}
 			luacon_ren->graphicscache[id].isready = 0;
 		}
+		else if(id == PT_PHOT && propertyName == "CanIgnite" && lua_type(l, 3) == LUA_TBOOLEAN)
+		{
+			Element_PHOT::ignite_flammable = lua_toboolean(l, 3);
+		}
 		else
 			return luaL_error(l, "Invalid element property");
 		return 0;

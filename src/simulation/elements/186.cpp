@@ -189,20 +189,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			return 1;
 		}
 		bool u2pu = false;
+		r = pmap[y][x];
 		if (parts[i].flags & FLAG_SKIPCREATE)
 		{
-/*
-			int nx, ny;
-			nx = (parts[i].x + parts[i].vx) + .5f;
-			ny = (parts[i].y + parts[i].vy) + .5f;
-			if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES || (pmap[ny][nx]&0xFF != ELEM_MULTIPP) || parts[pmap[ny][nx]>>8].life != 5)
-*/
-			parts[i].flags &= ~FLAG_SKIPCREATE;
+			if (r&0xFF != ELEM_MULTIPP)
+				parts[i].flags &= ~FLAG_SKIPCREATE;
 			goto skip1a;
 		}
-		if (!(rand()%60))
+		else if (!(rand()%60))
 		{
-			int rt = pmap[y][x] & 0xFF;
+			int rt = r & 0xFF;
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
 			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT))
@@ -229,7 +225,6 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	skip1a:
-		r = pmap[y][x];
 		if (r)
 		{
 			int slife;

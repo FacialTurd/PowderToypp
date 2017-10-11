@@ -182,7 +182,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					break;
 				case ELEM_MULTIPP:
 					{
-					int rr, j;
+					int rr, j, nr;
 					if (parts[r>>8].life == 22)
 					{
 						switch (parts[r>>8].tmp >> 3)
@@ -191,7 +191,16 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							parts[i].vx = 0, parts[i].vy = 0;
 							break;
 						case 2:
-							if (!(rand()%25))
+							if (parts[r>>8].temp > 8000)
+							{
+								int temp = (int)(parts[r>>8].temp - 8272.65f);
+								if (!(rx || ry) && temp > (int)(rand() * 1000.0f / (RAND_MAX+1.0f)))
+								{
+									sim->kill_part(i);
+									return 1;
+								}
+							}
+							else if (!(rand()%25))
 							{
 								rr = sim->create_part(-1, x, y, PT_ELEC);
 								if (rr >= 0)
@@ -202,10 +211,15 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						case 3:
-							if (!((rand()%400) || parts[r>>8].tmp2))
+							if (!(parts[r>>8].tmp2 || rand()%500))
 							{
-								sim->create_part(-1, x, y, PT_NEUT);
-								parts[r>>8].tmp2 = 50;
+								int np = sim->create_part(-1, x, y, PT_NEUT);
+								if (np < 0) parts[np].temp = parts[i].temp;
+								parts[r>>8].tmp2 = 500;
+							}
+							if (!(rx || ry))
+							{
+								sim->ineutcount++;
 							}
 							break;
 						case 4:

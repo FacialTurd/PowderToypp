@@ -149,6 +149,10 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 				}
 			}
 			break;
+		case 22:
+			if (parts[under>>8].tmp>>3 == 2)
+				goto no_temp_change;
+			break;
 		}
 		break;
 	case PT_NONE:

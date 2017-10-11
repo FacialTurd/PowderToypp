@@ -2402,7 +2402,17 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 						return 0;
 					return 2; // corrected code
 				case PT_NEUT:
-					if (rlife == 5 || rlife == 8 || rlife == 22 && (tmp_flag & 1))
+					if (rlife == 22)
+					{
+						if (tmp_flag & 1)
+							result = 2;
+						switch (tmp_flag >> 3)
+						{
+							case 2: if (parts[r>>8].temp >= 9273) return 1;
+						}
+						return result;
+					}
+					if (rlife == 5 || rlife == 8)
 						return 2;
 					return 0;
 				case PT_ELEC:
@@ -2759,6 +2769,11 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				*vibr_tmp += elec_temp * 4;
 				return 1;
 			}
+		}
+		else if (parts[r>>8].life == 22 && parts[i].type == PT_NEUT)
+		{
+			kill_part(i);
+			return 0;
 		}
 		break;
 	}
@@ -5838,6 +5853,7 @@ void Simulation::BeforeSim()
 			std::fill(elementCount, elementCount+PT_NUM, 0);
 		// E189's .life value isn't lifetime, just is secondary type.
 		elements[ELEM_MULTIPP].Properties &= ~(PROP_CONDUCTS | PROP_LIFE_DEC | PROP_LIFE_KILL);
+		ineutcount = 0;
 	}
 	sandcolour = (int)(20.0f*sin((float)sandcolour_frame*(M_PI/180.0f)));
 	sandcolour_frame = (sandcolour_frame+1)%360;
@@ -6110,7 +6126,83 @@ void Simulation::AfterSim()
 		Extra_FIGH_pause ^= Extra_FIGH_pause_check;
 		Extra_FIGH_pause_check = 0;
 	}
+	if (ineutcount >= 10)
+	{
+		if (!check_neut_cooldown)
+			check_neut();
+		else
+			check_neut_cooldown--;
+	}
 }
+
+void Simulation::check_neut()
+{
+	struct blockd1 {int pid; short flags;};
+	
+	blockd1 * neut_map = (blockd1*)malloc((XRES/CELL)*(YRES/CELL)*sizeof(blockd1));
+	int tmp = -1, tmp2, wdata, nextp, n;
+	// int nextp2;
+	if (neut_map)
+	{
+		check_neut_cooldown = rand()&0x1F;
+		static const blockd1 d = {-1, 0};
+		std::fill(neut_map, neut_map+(XRES/CELL)*(YRES/CELL), d);
+		int i = parts_lastActiveIndex + 1;
+		while (i--)
+		{
+			if (parts[i].type)
+			{
+				int x = (int)(parts[i].x+.5f);
+				int y = (int)(parts[i].y+.5f);
+				blockd1 &blockdata = neut_map[(y/CELL)*(XRES/CELL)+(x/CELL)];
+				if (parts[i].type == PT_NEUT)
+				{
+					int u = pmap[y][x];
+					if (!(blockdata.flags & 0x80))
+						blockdata.flags ++;
+					if ((u&0xFF) == ELEM_MULTIPP && parts[u>>8].life == 22 && (parts[u>>8].tmp >> 3) == 3)
+						neut_map[k+1] |= 0x100;
+					*(int*)(&parts[i].pavg[0]) = tmp;
+					*(int*)(&parts[i].pavg[1]) = ((y/CELL) << 16) | (x/CELL);
+					tmp = i;
+				}
+				else if (parts[i].type == PT_E186 && parts[i].ctype == PT_NEUT)
+				{
+					blockdata.pid = i;
+				}
+			}
+		}
+		while (tmp >= 0)
+		{
+			nextp = *(int*)(&parts[tmp].pavg[0]);
+			wdata = *(int*)(&parts[tmp].pavg[1]);
+			blockd1 &blockdata = [(wdata>>16)*(XRES/CELL)+(wdata&0xFFFF)];
+			tmp2 = blockdata.flags;
+			n = tmp2 & 0xFF;
+			if ((tmp2 & 0x100) && n >= 5)
+			{
+				partid = blockdata.pid;
+				if (n == 0xFF || partid >= 0)
+				{
+					kill_part(tmp);
+					if (partid >= 0 && parts[partid].life)
+						parts[partid].life += 50;
+				}
+				else
+				{
+					blockdata.flags |= 0xFF;
+					create_part(tmp, (int)(parts[tmp].x+0.5f), (int)(parts[tmp].y+0.5f), PT_E186);
+					parts[tmp].life = (n & 0x7F) * 50;
+					parts[tmp].ctype = PT_NEUT;
+				}
+			}
+			tmp = nextp;
+		}
+	}
+	free(neut_map);
+}
+
+int Simulation::check_neut_cooldown = 0;
 
 Simulation::~Simulation()
 {

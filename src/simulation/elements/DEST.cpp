@@ -75,6 +75,14 @@ int Element_DEST::update(UPDATE_FUNC_ARGS)
 	{
 		sim->create_part(r>>8, x+rx, y+ry, PT_PLSM);
 	}
+#ifndef NO_SPC_ELEM_EXPLODE
+	else if ((r&0xFF)==ELEM_MULTIPP && (parts[r>>8].life&~1) == 8)
+	{
+		parts[r>>8].tmp = 21000;
+		sim->kill_part(i);
+		return 1;
+	}
+#endif
 	else if (!(rand()%3))
 	{
 		sim->kill_part(r>>8);

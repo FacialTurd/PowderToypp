@@ -10,20 +10,6 @@
 #endif
 
 #ifdef _MSC_VER
-unsigned msvc_ctz(unsigned a)
-{
-	unsigned long i;
-	_BitScanForward(&i, a);
-	return i;
-}
-
-unsigned msvc_clz(unsigned a)
-{
-	unsigned long i;
-	_BitScanReverse(&i, a);
-	return 31 - i;
-}
-
 #define __builtin_ctz msvc_ctz
 #define __builtin_clz msvc_clz
 #endif
@@ -1372,6 +1358,22 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												else if (prev_temp_part->ctype == PT_DCEL)
 													parts[rr>>8].tmp2 = rii;
 											}
+											goto break1d;
+										case PT_RPEL:
+											for (pavg = 1; pavg >= -2; pavg -= 2)
+											{
+												static int * r1, * r2;
+												r1 = &pmap[ny+rx*pavg][nx-ry*pavg];
+												r2 = &pmap[ny+rx*pavg*2][nx-ry*pavg*2];
+												if ((*r1 & 0xFF) == PT_BTRY && !(*r2))
+												{
+													parts[(*r1)>>8].x -= ry*pavg;
+													parts[(*r1)>>8].y += rx*pavg;
+													*r2 = *r1;
+													*r1 = 0;
+												}
+											}
+											goto break1d;
 										default:
 											docontinue = 0;
 										}
