@@ -42,6 +42,7 @@
 #include <unistd.h>
 #endif
 
+
 extern "C"
 {
 #ifdef WIN
@@ -66,13 +67,17 @@ bool *luacon_currentCommand;
 std::string *luacon_lastError;
 std::string lastCode;
 
-int *lua_el_func, *lua_el_mode, *lua_gr_func;
+int *lua_el_func, *lua_el_mode, *lua_gr_func, *lua_trigger_func;
 
 int getPartIndex_curIdx;
 int tptProperties; //Table for some TPT properties
 int tptPropertiesVersion;
 int tptElements; //Table for TPT element names
 int tptParts, tptPartsMeta, tptElementTransitions, tptPartsCData, tptPartMeta, tptPart, cIndex;
+
+#ifdef TPT_NEED_DLL_PLUGIN
+bool DLLLoaded = false;
+#endif
 
 int atPanic(lua_State *l)
 {
@@ -91,6 +96,10 @@ int TptNewindexClosure(lua_State *l)
 	return lsi->tpt_newIndex(l);
 }
 
+#ifdef TPT_NEED_DLL_PLUGIN
+int (*(LuaScriptInterface::dll_trigger_func[256]))(Simulation*, int, int, int, void*);
+#endif
+	
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	CommandInterface(c, m),
 	luacon_mousex(0),
@@ -212,6 +221,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"two_state_update",&luatpt_two_state_update},
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
+		{"add_dbg_trigger", &luacon_debug_trigger_add},
 		{NULL,NULL}
 	};
 
@@ -355,6 +365,10 @@ tpt.partsdata = nil");
 		lua_gr_func[i] = 0;
 	}
 
+	lua_trigger_func = (int*)calloc(256, sizeof(int));
+	for (int i = 0; i < 256; i++)
+		lua_trigger_func[i] = 0;
+
 	//make tpt.* a metatable
 	lua_newtable(l);
 	lua_pushlightuserdata(l, this);
@@ -365,6 +379,27 @@ tpt.partsdata = nil");
 	lua_setfield(l, -2, "__newindex");
 	lua_setmetatable(l, -2);
 
+#ifdef TPT_NEED_DLL_PLUGIN
+	if (!DLLLoaded)
+	{
+		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
+		if (DLLFuncPack)
+		{
+			char dllstr[5] = {'f','n',0,0,0};
+			const char hexdigits[] = "0123456789abcdef";
+			for (int i = 0; i < 256; i++)
+			{
+				dllstr[2] = hexdigits[i>>4];
+				dllstr[3] = hexdigits[i&15];
+				int (*dllfn)(Simulation*, int, int, int, void*) = (int (*)(Simulation*, int, int, int, void*))GetProcAddress(DLLFuncPack, dllstr);
+				dll_trigger_func[i] = dllfn;
+			}
+		}
+		else
+			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+256, (int (*)(Simulation*, int, int, int, void*))NULL);
+		DLLLoaded = true;
+	}
+#endif
 }
 
 void LuaScriptInterface::Init()
@@ -2462,7 +2497,7 @@ int LuaScriptInterface::simulation_createDebugComponent (lua_State * l)
 		i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);
 		if (i >= 0)
 			luacon_sim->parts[i].ctype = (__dx & 0xFFFF) | (__dy << 16);
-			luacon_sim->parts[i].tmp = 0x0100;
+			luacon_sim->parts[i].tmp = 0x0200;
 		while (*__str)
 		{
 			i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);

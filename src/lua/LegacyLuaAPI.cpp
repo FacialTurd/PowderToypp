@@ -744,6 +744,53 @@ int luatpt_element_func(lua_State *l)
 	return 0;
 }
 
+void luacon_debug_trigger(int tid, int pid, int x, int y)
+{
+	int fnid = lua_trigger_func[tid];
+	if (fnid)
+	{
+		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
+		lua_pushinteger(luacon_ci->l, pid);
+		lua_pushinteger(luacon_ci->l, x);
+		lua_pushinteger(luacon_ci->l, y);
+		int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
+		if (callret)
+		{
+			luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
+			lua_pop(luacon_ci->l, 1);
+		}
+	}
+#ifdef TPT_NEED_DLL_PLUGIN
+	else if (LuaScriptInterface::dll_trigger_func[tid])
+	{
+		const static void *(simdata[4]) = {
+			luacon_sim->parts,
+			luacon_sim->pmap,
+			luacon_sim->photons,
+			luacon_sim->bmap,
+		};
+		(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
+	}
+#endif
+	return;
+}
+
+int luacon_debug_trigger_add(lua_State* l)
+{
+	int tid = luaL_checkinteger(l, 1);
+	if (lua_trigger_func[tid])
+		luaL_unref(l, LUA_REGISTRYINDEX, lua_trigger_func[tid]);
+	if (lua_type(l, 2) == LUA_TFUNCTION)
+	{
+		lua_pushvalue(l, 2);
+		int fn = luaL_ref(l, LUA_REGISTRYINDEX);
+		lua_trigger_func[tid] = fn;
+	}
+	else
+		lua_trigger_func[tid] = 0;
+	return 0;
+}
+
 int luacon_graphicsReplacement(GRAPHICS_FUNC_ARGS, int i)
 {
 	int cache = 0, callret;

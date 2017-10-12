@@ -353,9 +353,15 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		break;
 #endif /* NO_SPC_ELEM_EXPLODE */
 	case 10: // electronics debugger input [电子产品调试]
-		if ((rtmp & 0xFF) >= 0x7C)
-			rtmp -= 0x6C;
-		else if ((rtmp & 0xFF) >= 0x10)
+		{
+		int funcid = rtmp & 0xFF, fcall = -1;
+		if (rtmp & 0x100)
+		{
+			fcall = funcid;
+		}
+		else if (funcid >= 0x7C)
+			funcid -= 0x6C;
+		else if (funcid >= 0x10)
 			return return_value;
 		for (rx = -1; rx <= 1; rx++)
 			for (ry = -1; ry <= 1; ry++)
@@ -366,7 +372,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						continue;
 					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
 					{
-						switch (rtmp & 0xFF)
+						if (fcall >= 0)
+						{
+#if !defined(RENDERER) && defined(LUACONSOLE)
+							luacon_debug_trigger(fcall, i, x, y);
+#endif
+							continue;
+						}
+						switch (funcid & 0xFF)
 						{
 						case 0:
 							if (Element_MULTIPP::maxPrior <= parts[i].ctype)
@@ -395,7 +408,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rdif = (int)(parts[i].temp - 272.65f);
 							if (parts[r>>8].ctype != PT_INST)
 								rdif /= 100.0f;
-							sim->sim_max_pressure += (rtmp & 1) ? rdif : -rdif;
+							sim->sim_max_pressure += (funcid & 1) ? rdif : -rdif;
 							if (sim->sim_max_pressure > 256.0f)
 								sim->sim_max_pressure = 256.0f;
 							if (sim->sim_max_pressure < 0.0f)
@@ -521,10 +534,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							return return_value;
 						}
-						if ((rtmp & 0x1FE) == 0x100 && (rx != ry))
+						if ((rtmp & 0x3FE) == 0x200 && (rx != ry))
 							MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
 					}
 				}
+		}
 		break;
 	case 11: // photons emitter
 		for (rx = -1; rx <= 1; rx++)

@@ -33,6 +33,14 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
+#if defined(WIN) && defined(__GNUC__)
+// #define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
+#endif
+
+#ifdef TPT_NEED_DLL_PLUGIN
+#include <windows.h>
+#endif
+
 class TPTScriptInterface;
 class LuaScriptInterface: public CommandInterface
 {
@@ -215,6 +223,9 @@ public:
 	virtual int Command(std::string command);
 	virtual std::string FormatCommand(std::string command);
 	virtual ~LuaScriptInterface();
+#ifdef TPT_NEED_DLL_PLUGIN
+	static int (*(dll_trigger_func[256]))(Simulation*, int, int, int, void*);
+#endif
 };
 
 

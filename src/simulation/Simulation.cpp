@@ -6135,10 +6135,10 @@ void Simulation::AfterSim()
 	}
 }
 
+struct blockd1 {int pid; short flags;};
+
 void Simulation::check_neut()
 {
-	struct blockd1 {int pid; short flags;};
-	
 	blockd1 * neut_map = (blockd1*)malloc((XRES/CELL)*(YRES/CELL)*sizeof(blockd1));
 	int tmp = -1, tmp2, wdata, nextp, n;
 	// int nextp2;
@@ -6146,7 +6146,7 @@ void Simulation::check_neut()
 	{
 		check_neut_cooldown = rand()&0x1F;
 		static const blockd1 d = {-1, 0};
-		std::fill(neut_map, neut_map+(XRES/CELL)*(YRES/CELL), d);
+		std::fill(neut_map, neut_map+((XRES/CELL)*(YRES/CELL)), d);
 		int i = parts_lastActiveIndex + 1;
 		while (i--)
 		{
@@ -6161,7 +6161,7 @@ void Simulation::check_neut()
 					if (!(blockdata.flags & 0x80))
 						blockdata.flags ++;
 					if ((u&0xFF) == ELEM_MULTIPP && parts[u>>8].life == 22 && (parts[u>>8].tmp >> 3) == 3)
-						neut_map[k+1] |= 0x100;
+						blockdata.flags |= 0x100;
 					*(int*)(&parts[i].pavg[0]) = tmp;
 					*(int*)(&parts[i].pavg[1]) = ((y/CELL) << 16) | (x/CELL);
 					tmp = i;
@@ -6176,12 +6176,12 @@ void Simulation::check_neut()
 		{
 			nextp = *(int*)(&parts[tmp].pavg[0]);
 			wdata = *(int*)(&parts[tmp].pavg[1]);
-			blockd1 &blockdata = [(wdata>>16)*(XRES/CELL)+(wdata&0xFFFF)];
+			blockd1 &blockdata = neut_map[(wdata>>16)*(XRES/CELL)+(wdata&0xFFFF)];
 			tmp2 = blockdata.flags;
 			n = tmp2 & 0xFF;
 			if ((tmp2 & 0x100) && n >= 5)
 			{
-				partid = blockdata.pid;
+				int partid = blockdata.pid;
 				if (n == 0xFF || partid >= 0)
 				{
 					kill_part(tmp);
