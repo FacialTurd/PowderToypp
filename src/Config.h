@@ -5,6 +5,9 @@
 #ifdef WIN
 #define PATH_SEP "\\"
 #define PATH_SEP_CHAR '\\'
+#ifdef __GNUC__
+// #define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
+#endif
 #else
 #define PATH_SEP "/"
 #define PATH_SEP_CHAR '/'

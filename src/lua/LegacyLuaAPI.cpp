@@ -763,17 +763,45 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 #ifdef TPT_NEED_DLL_PLUGIN
 	else if (LuaScriptInterface::dll_trigger_func[tid])
 	{
-		const static void *(simdata[4]) = {
-			luacon_sim->parts,
-			luacon_sim->pmap,
-			luacon_sim->photons,
-			luacon_sim->bmap,
+		const static void *(simdata[6]) = {
+			luacon_sim->parts,		// particle data
+			luacon_sim->pmap,		// particle map
+			luacon_sim->photons,	// photons map
+			luacon_sim->bmap,		// block (wall) map
+			luacon_sim->pv,			// pressure map
+			&luacon_sim->pfree,		// last freed particle
 		};
 		(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
 	}
 #endif
 	return;
 }
+
+#ifdef TPT_NEED_DLL_PLUGIN
+__declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int t, int v) // TPT common functions call
+{
+	static int ft;
+	__asm__ __volatile ("":"=a"(ft):);
+	switch (ft)
+	{
+		case 1: return luacon_sim->create_part(i, x, y, t, v);
+		case 2: luacon_sim->part_change_type(i, x, y, t); break;
+		case 3: luacon_sim->kill_part(i); break;
+		case 4: return luacon_sim->elements[i].Properties;
+		case 5: return luacon_sim->elements[i].Properties2;
+		case 6: {
+			int xx = (int)luacon_sim->parts[i].x+0.5f;
+			int yy = (int)luacon_sim->parts[i].y+0.5f;
+			luacon_sim->parts[i].x = (float)x;
+			luacon_sim->parts[i].y = (float)y;
+			luacon_sim->pmap[yy][xx] = 0;
+			luacon_sim->pmap[y][x] = luacon_sim->parts[i].type | (i << 8);
+			break;
+		}
+	}
+	return 0;
+}
+#endif
 
 int luacon_debug_trigger_add(lua_State* l)
 {

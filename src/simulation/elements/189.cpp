@@ -2,6 +2,11 @@
 #include "simulation/MULTIPPE_Update.h"
 #include "Probability.h"
 
+#ifdef _MSC_VER
+#define __builtin_ctz msvc_ctz
+#define __builtin_clz msvc_clz
+#endif
+
 //#TPT-Directive ElementClass Element_MULTIPP PT_E189 189
 Element_MULTIPP::Element_MULTIPP()
 {
@@ -71,8 +76,8 @@ int * Element_MULTIPP::EngineFrameStart = NULL;
 // #TPT-Directive ElementHeader Element_MULTIPP static int q1
 // int Element_MULTIPP::q1 = -1; // removed
 
-// #TPT-Directive ElementHeader Element_MULTIPP static float StrengthMultipler
-// float Element_MULTIPP::StrengthMultipler = 1.0f;
+// #TPT-Directive ElementHeader Element_MULTIPP static float StrengthMultiplier
+// float Element_MULTIPP::StrengthMultiplier = 1.0f;
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void HSV2RGB(int ctype, int *r, int *g, int *b)
 void Element_MULTIPP::HSV2RGB (int ctype, int *r, int *g, int *b)
@@ -162,7 +167,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 {
 	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype;
 	int ctype, r1, r2, r3, temp;
-	float rvx, rvy, rvx2, rvy2, rdif, multipler = 1.0f;
+	float rvx, rvy, rvx2, rvy2, rdif, multiplier = 1.0f;
 	long long int lsb;
 	signed char arr1[4] = {1,0,-1,0};
 	signed char arr2[4] = {0,1,0,-1};
@@ -324,52 +329,26 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 				rvy = part_phot->vy;
 				rdif = rvx * rvx + rvy * rvy;
 				ctype = part_phot->ctype;
-				// int's length is 32-bit
-				// float's length is 32-bit
-				r1 = * (int*) &rdif; // r1 = "bit level hack"
-				r2 = ((r1 - 0x40cba592) >> 23); // 0x40cba592: for (9 / sqrt(2))
-				if (r2 > 0)
-				{
-					// blue shift and decelerate
-#ifdef __GNUC__
-					r1 = (31 - __builtin_clz (ctype)) / 3;
-					r3 = (r1 < r2 ? r1 : r2);
-					ctype >>= 3 * r3;
+#if defined(__GNUC__) || defined(_MSVC_VER)
+				r1 = __builtin_ctz(ctype | ~mask);
+				r2 = 31 - __builtin_clz(ctype & mask);
 #else
-					r3 = 0;
-					while (r2 && (ctype & 0xFFFFFFF8))
-					{
-						ctype >>= 3;
-						r2--; r3++;
-					}
+				r1 = 30; r2 = 0;
+				for (i = 0; i < 30; i++)
+					if (ctype & (1<<i))
+						(i < r1) && (r1 = i), (i > r2) && (r2 = i);
 #endif
-					multipler = powf(0.5f, r3 * 0.5f);
-					part_phot->vx = rvx * multipler;
-					part_phot->vy = rvy * multipler;
-				}
-				else if (r2 < 0)
-				{
-					// red shift and accelerate
-#ifdef __GNUC__
-					r1 = (29 - __builtin_ctz (ctype)) / 3;
-					r3 = (r1 < -r2 ? r1 : -r2);
-					ctype <<= 3 * r3;
-#else
-					r3 = 0;
-					while (r2 && (ctype & 0x07FFFFFF))
-					{
-						ctype <<= 3;
-						r2++; r3++;
-					}
-#endif
-					multipler = powf(2.0f, r3 * 0.5f);
-					ctype &= mask;
-					part_phot->vx = rvx * multipler;
-					part_phot->vy = rvy * multipler;
-				}
-				part_phot->ctype = ctype;
+				r3 = floor(10.009775f-4.32808512f*logf(rdif));
+				if (r3 > 0)
+					(r3 + r1 >= 30) && (r3 = 29 - r1), ctype <<= r3;
+				else
+					(r3 + r2 < 0) && (r3 = - r2), ctype >>= -r3;
+				multiplier = expf((float)r3*0.11552453f);
+				part_phot->vx = rvx * multiplier;
+				part_phot->vy = rvy * multiplier;
+				part_phot->ctype = ctype & mask;
 				break;
-			case 17: // PHOT life multipler
+			case 17: // PHOT life multiplier
 				if (part_phot->life > 0)
 				{
 					part_phot->life *= rct;

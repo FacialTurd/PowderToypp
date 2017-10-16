@@ -181,7 +181,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	case 8:
 	case 9:
 #endif
-	case 13: // decoration only, no update function
+	case 13: // decoration only, no update function [静态装饰元素]
 	case 15: // reserved for Simulation.cpp
 	case 17: // reserved for 186.cpp and Simulation.cpp
 	case 18: // decoration only, no update function
@@ -540,7 +540,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 		}
 		break;
-	case 11: // photons emitter
+	case 11: // photons emitter [单光子发射器]
 		for (rx = -1; rx <= 1; rx++)
 			for (ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -565,7 +565,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					}
 				}
 		break;
-	case 12: // SPRK reflector
+	case 12: // SPRK reflector [电脉冲反射器]
 		if ((rtmp & 0x7) != 0x4)
 		{
 			for (rx = -1; rx <= 1; rx++)
@@ -655,7 +655,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					}
 		}
 		break;
-	case 14: // dynamic decoration (DECO2)
+	case 14: // dynamic decoration (DECO2) [动态装饰元素]
 		switch (parts[i].tmp2 >> 24)
 		{
 		case 0:
@@ -683,7 +683,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			break;
 		}
 		break;
-	case 16:
+	case 16: // [电子产品大集合]
 		switch (rctype = parts[i].ctype)
 		{
 		case 0: // logic gate

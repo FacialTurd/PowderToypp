@@ -2630,25 +2630,6 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			{
 				if (parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
 					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
-				else if (!parts[r>>8].tmp)
-				{
-					if (parts[r>>8].tmp2 == 18)
-					{
-						parts[i].ctype = 0x100;
-						parts[i].tmp2 = 0x3FFFFFFF;
-						part_change_type(i, x, y, PT_E186);
-					}
-					else if (parts[r>>8].tmp2 == 25)
-					{
-						int rr = parts[r>>8].ctype;
-						float angle = rand() / (float)(RAND_MAX + 1); // angle = 0 ~ 1 (half-turns)
-						float radius = (float)(rr >> 3) / 32.0f;
-						angle -= (float)(rr & 7) / 4.0f; // counter clockwise?
-						// x * M_PI means convert half-turns to radians
-						parts[i].vx = cosf(angle * M_PI) * radius;
-						parts[i].vy = sinf(angle * M_PI) * radius;
-					}
-				}
 			}
 			break;
 		case PT_ELEC:  // type = 136
@@ -3177,56 +3158,67 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 		return;
 	}
 
-	if (parts[i].type == PT_STKM)
+	switch (parts[i].type)
 	{
+	case PT_STKM:
 		player.spwn = 0;
 		Element_STKM::removeSTKMChilds(this, &player);
-	}
-	else if (parts[i].type == PT_STKM2)
-	{
+		break;
+	case PT_STKM2:
 		player2.spwn = 0;
 		Element_STKM::removeSTKMChilds(this, &player2);
-	}
-	else if (parts[i].type == PT_SPAWN)
-	{
+		break;
+	case PT_SPAWN:
 		if (player.spawnID == i)
 			player.spawnID = -1;
-	}
-	else if (parts[i].type == PT_SPAWN2)
-	{
+		break;
+	case PT_SPAWN2:
 		if (player2.spawnID == i)
 			player2.spawnID = -1;
-	}
-	else if (parts[i].type == PT_FIGH)
-	{
+		break;
+	case PT_FIGH:
 		fighters[(unsigned char)parts[i].tmp].spwn = 0;
 		fighcount--;
 		Element_FIGH::removeFIGHNode(this, i);
-	}
-	else if (parts[i].type == PT_SOAP)
+		break;
+	case PT_SOAP:
 		Element_SOAP::detach(this, i);
-	else if (parts[i].type == PT_ETRD && parts[i].life == 0)
-		etrd_life0_count--;
+		break;
+	case PT_ETRD:
+		if (parts[i].life == 0)
+			etrd_life0_count--;
+		break;
+	}
 
 	if (parts[i].type > 0 && parts[i].type < PT_NUM && elementCount[parts[i].type])
 		elementCount[parts[i].type]--;
 	elementCount[t]++;
 
-	if (t == PT_SPAWN && player.spawnID < 0)
-		player.spawnID = i;
-	else if (t == PT_SPAWN2 && player2.spawnID < 0)
-		player2.spawnID = i;
-	else if (t == PT_STKM)
-		Element_STKM::STKM_init_legs(this, &player, i);
-	else if (t == PT_STKM2)
-		Element_STKM::STKM_init_legs(this, &player2, i);
-	else if (t == PT_FIGH)
+	switch (t)
 	{
+	case PT_SPAWN:
+		if (player.spawnID < 0)
+			player.spawnID = i;
+		break;
+	case PT_SPAWN2:
+		if (player2.spawnID < 0)
+			player2.spawnID = i;
+		break;
+	case PT_STKM:
+		Element_STKM::STKM_init_legs(this, &player, i);
+		break;
+	case PT_STKM2:
+		Element_STKM::STKM_init_legs(this, &player2, i);
+		break;
+	case PT_FIGH:
 		if (parts[i].tmp >= 0 && parts[i].tmp < MAX_FIGHTERS)
 			Element_STKM::STKM_init_legs(this, &fighters[parts[i].tmp], i);
+		break;
+	case PT_ETRD:
+		if (parts[i].life == 0)
+			etrd_life0_count++;
+		break;
 	}
-	else if (t == PT_ETRD && parts[i].life == 0)
-		etrd_life0_count++;
 
 	parts[i].type = t;
 	pmap_remove(i, x, y);
@@ -3429,28 +3421,29 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		int oldY = (int)(parts[p].y+0.5f);
 		pmap_remove(p, oldX, oldY);
 		
-		if (parts[p].type == PT_STKM)
+		switch (parts[p].type)
 		{
+		case PT_STKM:
 			player.spwn = 0;
 			Element_STKM::removeSTKMChilds(this, &player);
-		}
-		else if (parts[p].type == PT_STKM2)
-		{
+			break;
+		case PT_STKM2:
 			player2.spwn = 0;
 			Element_STKM::removeSTKMChilds(this, &player2);
-		}
-		else if (parts[p].type == PT_FIGH)
-		{
+			break;
+		case PT_FIGH:
 			fighters[(unsigned char)parts[p].tmp].spwn = 0;
 			fighcount--;
 			Element_FIGH::removeFIGHNode(this, p);
-		}
-		else if (parts[p].type == PT_SOAP)
-		{
+			break;
+		case PT_SOAP:
 			Element_SOAP::detach(this, p);
+			break;
+		case PT_ETRD:
+			if (parts[p].life == 0)
+				etrd_life0_count--;
+			break;
 		}
-		else if (parts[p].type == PT_ETRD && parts[p].life == 0)
-			etrd_life0_count--;
 		i = p;
 	}
 

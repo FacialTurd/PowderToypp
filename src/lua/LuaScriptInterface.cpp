@@ -222,6 +222,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
 		{"add_dbg_trigger", &luacon_debug_trigger_add},
+		{"get_pfree", &simulation_get_pfree},
 		{NULL,NULL}
 	};
 
@@ -421,6 +422,21 @@ void LuaScriptInterface::Init()
 void LuaScriptInterface::SetWindow(ui::Window * window)
 {
 	Window = window;
+}
+
+int LuaScriptInterface::simulation_get_pfree (lua_State *l)
+{
+	int pfree = luacon_sim->pfree;
+	int i = luaL_optint(l, 1, 0);
+	lua_pushinteger(l, pfree);
+	int args = 1;
+	while (i-- && (pfree >= 0))
+	{
+		pfree = luacon_sim->parts[pfree].life;
+		args++;
+		lua_pushinteger(l, pfree);
+	}
+	return args;
 }
 
 int LuaScriptInterface::tpt_index(lua_State *l)
@@ -1029,29 +1045,24 @@ int LuaScriptInterface::simulation_partCreate2(lua_State * l)
 	int newID = lua_tointeger(l, 1);
 	int part_type = lua_tointeger(l, 4);
 	int part_value = lua_tointeger(l, 5);
-	int newID2;
+	int newID2, multiplier;
 	if(newID >= NPART || newID < -3 || part_type < 0 || part_type > 0xFF) // exclude SPC_AIR
 	{
 		lua_pushinteger(l, -1);
 		return 1;
 	}
-	newID2 = luacon_sim->create_part(newID, lua_tointeger(l, 2), lua_tointeger(l, 3), part_type, part_value);
-	if (argCount > 5 && newID2 >= 0)
+	int x = lua_tointeger(l, 2);
+	int y = lua_tointeger(l, 3);
+	if (argCount > 5)
 	{
-		int part_value2 = lua_tointeger(l, 6);
-		if (part_type == PT_LIFE || part_type == PT_FILT)
-			luacon_sim->parts[newID2].tmp = part_value2;
-		else if (part_type == PT_WIFI || part_type == PT_PRTI || part_type == PT_PRTO || part_type == ELEM_MULTIPP && part_value == 33)
-			luacon_sim->parts[newID2].temp = part_value2 * 100.0f;
-		else if (part_type == PT_PUMP || part_type == PT_GPMP || part_type == PT_PSNS || part_type == PT_TSNS || part_type == PT_DLAY || part_type == PT_FRAY || part_type == PT_RPEL)
-		{
-			luacon_sim->parts[newID2].temp = part_value2 + 273.15f;
-		}
-		else if (part_type == PT_ACEL || part_type == PT_DCEL)
-			luacon_sim->parts[newID2].life = part_value2;
-		else
-			luacon_sim->parts[newID2].ctype = part_value2;
+		multiplier = lua_tointeger(l, 6);
 	}
+	do
+	{
+		newID2 = luacon_sim->create_part(newID, x, y, part_type, part_value);
+		multiplier--;
+	}
+	while (multiplier && (newID2 >= 0));
 	lua_pushinteger(l, newID2);
 	return 1;
 }
@@ -3450,6 +3461,16 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		else if(propertyName == "Identifier")
 		{
 			lua_pushstring(l, luacon_sim->elements[id].Identifier);
+			return 1;
+		}
+		else if(id == PT_PHOT && propertyName == "CanIgnite")
+		{
+			lua_pushboolean(l, Element_PHOT::ignite_flammable);
+			return 1;
+		}
+		else if(id == PT_NEUT && propertyName == "RemainingCoolDown")
+		{
+			lua_pushnumber(l, luacon_sim->check_neut_cooldown);
 			return 1;
 		}
 		else

@@ -156,7 +156,10 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	gvx += sim->gravx[((int)parts[i].y/CELL)*(XRES/CELL)+((int)parts[i].x/CELL)];
 	gvy += sim->gravy[((int)parts[i].y/CELL)*(XRES/CELL)+((int)parts[i].x/CELL)];
 	
-	if (sim->Extra_FIGH_pause & 0x200) // anti-gravity ?
+	bool antigrav = sim->Extra_FIGH_pause & 0x200;
+	int grav_multiplier = antigrav ? -1 : 1;
+
+	if (antigrav) // anti-gravity ?
 	{
 		gvx = -gvx;
 		gvy = -gvy;
@@ -485,13 +488,13 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			}
 
 	//Head position
-	rx = x + 3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01);
-	ry = y - 3*(playerp->pcomm == 0);
+	rx = x + grav_multiplier * (3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01));
+	ry = y - grav_multiplier * (3*(playerp->pcomm == 0));
 
 	//Spawn
 	if (((int)(playerp->comm)&0x08) == 0x08)
 	{
-		ry -= 2*(rand()%2)+1;
+		ry -= grav_multiplier * (2*(rand()%2)+1);
 		r = pmap[ry][rx];
 		if ((sim->elements[r&0xFF].Properties&TYPE_SOLID) && (r&0xFF) != ELEM_MULTIPP)
 		{

@@ -33,10 +33,6 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
-#if defined(WIN) && defined(__GNUC__)
-// #define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
-#endif
-
 #ifdef TPT_NEED_DLL_PLUGIN
 #include <windows.h>
 #endif
@@ -128,6 +124,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_setCustomGOLRule(lua_State * l);
 	static int simulation_getGOLRule(lua_State * l);
 	static int simulation_setCustomGOLGrad(lua_State * l);
+	static int simulation_get_pfree(lua_State * l);
 
 	//Stickman attributes
 	void initStickmanAPI();

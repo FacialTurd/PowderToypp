@@ -49,7 +49,7 @@ Element_NEUT::Element_NEUT()
 //#TPT-Directive ElementHeader Element_NEUT static int update(UPDATE_FUNC_ARGS)
 int Element_NEUT::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, target_r = -1;
 	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	for (rx=-1; rx<2; rx++)
@@ -228,8 +228,12 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							break;
 						}
 					}
-					else if (parts[r>>8].life == 8 && !(rx || ry))
+					else if (parts[r>>8].life <= 8 && !(rx || ry))
 					{
+						if (parts[r>>8].life == 5 && !parts[r>>8].tmp)
+							target_r = r>>8;
+						if (parts[r>>8].life != 8)
+							continue;
 						parts[i].vx = 0, parts[i].vy = 0;
 						for (j = 0; j < 5; j++)
 						{
@@ -245,12 +249,12 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
 					{
 						int tmp2 = parts[r>>8].tmp2;
-						int multipler = (tmp2 >> 4) + 1;
+						int multiplier = (tmp2 >> 4) + 1;
 						tmp2 &= 0x0F;
 						if (Element_MULTIPP::Arrow_keys & 0x10 && tmp2 >= 1 && tmp2 <= 8)
 						{
-							iX += multipler*sim->portal_rx[tmp2-1];
-							iY += multipler*sim->portal_ry[tmp2-1];
+							iX += multiplier*sim->portal_rx[tmp2-1];
+							iY += multiplier*sim->portal_ry[tmp2-1];
 						}
 					}
 					}
@@ -259,12 +263,39 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					break;
 				}
 			}
-	parts[i].vx += (float)iX;
-	parts[i].vy += (float)iY;
+	if (target_r >= 0)
+	{
+		ChangeDirection(sim, i, x, y, &parts[i], &parts[target_r]);
+	}
+	else
+	{
+		parts[i].vx += (float)iX;
+		parts[i].vy += (float)iY;
+	}
 	return 0;
 }
 
 
+//#TPT-Directive ElementHeader Element_NEUT static void ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
+void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
+{
+	if (under->tmp2 == 18)
+	{
+		neut->ctype = 0x100;
+		neut->tmp2 = 0x3FFFFFFF;
+		sim->part_change_type(i, x, y, PT_E186);
+	}
+	else if (under->tmp2 == 25)
+	{
+		int rr = under->ctype;
+		float angle = rand() / (float)(RAND_MAX) - 0.5f;
+		float radius = (float)(rr >> 4) / 16.0f;
+		if (rr & 8) angle *= 0.5f;
+		angle += (float)(rr & 7) / 4.0f;
+		neut->vx = sinf(angle * M_PI) * radius;
+		neut->vy = cosf(angle * M_PI) * radius;
+	}
+}
 
 //#TPT-Directive ElementHeader Element_NEUT static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_NEUT::graphics(GRAPHICS_FUNC_ARGS)

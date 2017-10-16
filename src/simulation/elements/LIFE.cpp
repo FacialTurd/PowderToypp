@@ -129,11 +129,11 @@ int Element_LIFE::graphics(GRAPHICS_FUNC_ARGS)
 		*colr = PIXR(pc); *colg = PIXG(pc); *colb = PIXB(pc);
 		if (golstates > 3)
 		{
-			float multipler = (float)(golstates - 2 - currstate) / (float)(golstates - 3);
+			float multiplier = (float)(golstates - 2 - currstate) / (float)(golstates - 3);
 			pc = customColorGradT;
-			*colr -= (int)(*colr - PIXR(pc)) * multipler;
-			*colg -= (int)(*colg - PIXG(pc)) * multipler;
-			*colb -= (int)(*colb - PIXB(pc)) * multipler;
+			*colr -= (int)(*colr - PIXR(pc)) * multiplier;
+			*colg -= (int)(*colg - PIXG(pc)) * multiplier;
+			*colb -= (int)(*colb - PIXB(pc)) * multiplier;
 		}
 		return 0;
 	}

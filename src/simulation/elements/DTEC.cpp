@@ -98,6 +98,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 	parts[i].life ^= tmp;
 	if (setFilt)
 	{
+/*
 		int tempPhotWl;
 #ifdef __GNUC__
 		tempPhotWl = __builtin_ctz(photonWl) & 0x1F;
@@ -107,6 +108,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 		tempPhotWl = (photonWl & -photonWl)*0x04D7651F;
 		tempPhotWl = DTEC_ntztable[(tempPhotWl >> 27) & 31];
 #endif
+*/
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
