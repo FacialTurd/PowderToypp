@@ -746,32 +746,56 @@ int luatpt_element_func(lua_State *l)
 
 void luacon_debug_trigger(int tid, int pid, int x, int y)
 {
-	int fnid = lua_trigger_func[tid];
-	if (fnid)
-	{
-		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
-		lua_pushinteger(luacon_ci->l, pid);
-		lua_pushinteger(luacon_ci->l, x);
-		lua_pushinteger(luacon_ci->l, y);
-		int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
-		if (callret)
-		{
-			luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
-			lua_pop(luacon_ci->l, 1);
-		}
-	}
+	unsigned char fnmode = lua_trigger_fmode[tid];
+	/* fnmode:
+		0: no function / only DLL
+		1: replace
+		2: update after
+		3: update before
+	*/
 #ifdef TPT_NEED_DLL_PLUGIN
-	else if (LuaScriptInterface::dll_trigger_func[tid])
+	const static void *(simdata[6]) = {
+		luacon_sim->parts,		// particle data
+		luacon_sim->pmap,		// particle map
+		luacon_sim->photons,	// photons map
+		luacon_sim->bmap,		// block (wall) map
+		luacon_sim->pv,			// pressure map
+		&luacon_sim->pfree,		// last freed particle
+	};
+	const static short loadorder[4] = {
+		// 0x00FF: function process ID
+		// 0x0100: halt after process
+		// 0x0200: flag for using Lua
+		0x0100,0x0300,0x0001,0x0200
+	};
+	int currload = loadorder[fnmode];
+	for (;;)
 	{
-		const static void *(simdata[6]) = {
-			luacon_sim->parts,		// particle data
-			luacon_sim->pmap,		// particle map
-			luacon_sim->photons,	// photons map
-			luacon_sim->bmap,		// block (wall) map
-			luacon_sim->pv,			// pressure map
-			&luacon_sim->pfree,		// last freed particle
-		};
-		(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
+		if (currload & 0x200)
+#else
+		if (fnmode)
+#endif
+		{
+			int fnid = lua_trigger_func[tid];
+			lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
+			lua_pushinteger(luacon_ci->l, pid);
+			lua_pushinteger(luacon_ci->l, x);
+			lua_pushinteger(luacon_ci->l, y);
+			int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
+			if (callret)
+			{
+				luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
+				lua_pop(luacon_ci->l, 1);
+			}
+		}
+#ifdef TPT_NEED_DLL_PLUGIN
+		else if (LuaScriptInterface::dll_trigger_func[tid])
+		{
+			(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
+		}
+		if (currload & 0x100)
+			break;
+		currload = loadorder[currload & 0xFF];
 	}
 #endif
 	return;
@@ -805,17 +829,26 @@ __declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int 
 
 int luacon_debug_trigger_add(lua_State* l)
 {
-	int tid = luaL_checkinteger(l, 1);
-	if (lua_trigger_func[tid])
+	int tid = luaL_checkinteger(l, 1) & 0xFF; // fix overflow bug
+	if (lua_trigger_fmode[tid])
 		luaL_unref(l, LUA_REGISTRYINDEX, lua_trigger_func[tid]);
 	if (lua_type(l, 2) == LUA_TFUNCTION)
 	{
 		lua_pushvalue(l, 2);
 		int fn = luaL_ref(l, LUA_REGISTRYINDEX);
+		int n = 1;
 		lua_trigger_func[tid] = fn;
+#ifdef TPT_NEED_DLL_PLUGIN
+		if (lua_gettop(l) >= 3)
+		{
+			int m = lua_tointeger(l, 3);
+			(m >= 1) && (m <= 3) && (n = m);
+		}
+#endif
+		lua_trigger_fmode[tid] = n;
 	}
 	else
-		lua_trigger_func[tid] = 0;
+		lua_trigger_fmode[tid] = 0;
 	return 0;
 }
 

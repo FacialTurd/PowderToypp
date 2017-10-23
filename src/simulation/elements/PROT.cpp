@@ -111,6 +111,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			else if (parts[under>>8].temp < 73.15f)
 			{
 				parts[i].tmp2 &= ~1;
+				parts[i].tmp2 |= (parts[under>>8].tmp >> 9) & 1;
 				goto no_temp_change;
 			}
 			break;

@@ -68,6 +68,7 @@ std::string *luacon_lastError;
 std::string lastCode;
 
 int *lua_el_func, *lua_el_mode, *lua_gr_func, *lua_trigger_func;
+unsigned char *lua_trigger_fmode;
 
 int getPartIndex_curIdx;
 int tptProperties; //Table for some TPT properties
@@ -366,9 +367,10 @@ tpt.partsdata = nil");
 		lua_gr_func[i] = 0;
 	}
 
-	lua_trigger_func = (int*)calloc(256, sizeof(int));
+	lua_trigger_func = (int*)malloc(256*(sizeof(int)+sizeof(char))); // sizeof(int)+sizeof(char) = 5 in some operating system
+	lua_trigger_fmode = (unsigned char*)(lua_trigger_func+256);
 	for (int i = 0; i < 256; i++)
-		lua_trigger_func[i] = 0;
+		lua_trigger_fmode[i] = 0;
 
 	//make tpt.* a metatable
 	lua_newtable(l);
@@ -3410,6 +3412,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 	{
 		StructProperty property;
 		bool propertyFound = false;
+		int prop_out;
 		std::vector<StructProperty> properties = Element::GetProperties();
 
 		for(std::vector<StructProperty>::iterator iter = properties.begin(), end = properties.end(); iter != end; ++iter)
@@ -3468,13 +3471,21 @@ int LuaScriptInterface::elements_property(lua_State * l)
 			lua_pushboolean(l, Element_PHOT::ignite_flammable);
 			return 1;
 		}
-		else if(id == PT_NEUT && propertyName == "RemainingCoolDown")
+		else if(id == PT_NEUT)
 		{
-			lua_pushnumber(l, luacon_sim->check_neut_cooldown);
+			if (propertyName == "RemainingCoolDown")
+				prop_out = luacon_sim->check_neut_cooldown;
+			else if (propertyName == "TotalDensityChecks0")
+				prop_out = luacon_sim->check_neut_counter;
+			else
+				goto luaproperr;
+			lua_pushnumber(l, prop_out);
 			return 1;
 		}
 		else
-			return luaL_error(l, "Invalid element property");
+		{
+			luaproperr: return luaL_error(l, "Invalid element property");
+		}
 	}
 }
 

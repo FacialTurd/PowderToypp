@@ -380,6 +380,7 @@ Snapshot * Simulation::CreateSnapshot()
 	snap->stickmen.push_back(player);
 	snap->stickmen.insert(snap->stickmen.begin(), &fighters[0], &fighters[MAX_FIGHTERS]);
 	snap->signs = signs;
+	snap->breakable_wall_count = breakable_wall_count;
 	return snap;
 }
 
@@ -416,6 +417,7 @@ void Simulation::Restore(const Snapshot & snap)
 	player = snap.stickmen[snap.stickmen.size()-1];
 	player2 = snap.stickmen[snap.stickmen.size()-2];
 	signs = snap.signs;
+	breakable_wall_count = snap.breakable_wall_count;
 }
 
 void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
@@ -2082,21 +2084,42 @@ void Simulation::clear_sim(void)
 	SetEdgeMode(edgeMode);
 }
 
+static int bltable[][2] = { // blocked, allowcondition
+// blocked = 0: pass through
+// blocked = 1: blocking all
+// blocked = 2: absorbs all
+// blocked = 3: special case
+	{0, 0},
+	{1, 0}, // conductive wall
+	{0, 0}, // E-wall
+	{0, 0}, // detector
+	{0, 0}, // stream line
+	{0, 0}, // fan
+	{1, TYPE_LIQUID},
+	{2, 0}, // absorb all
+	{1, 0}, // wall
+	{1, 0}, // air-only wall
+	{1, TYPE_PART},
+	{0, 0}, // conductor
+	{0, 0}, // E-hole
+	{1, TYPE_GAS},
+	{0, 0}, // gravity wall
+	{1, TYPE_ENERGY},
+	{0, 0}, // air-block wall
+	{0, 0},
+	{3, 0},
+	{3, 0},
+};
+
 bool Simulation::IsWallBlocking(int x, int y, int type)
 {
 	if (bmap[y/CELL][x/CELL])
 	{
 		int wall = bmap[y/CELL][x/CELL];
-		if (wall == WL_ALLOWGAS && !(elements[type].Properties&TYPE_GAS))
-			return true;
-		else if (wall == WL_ALLOWENERGY && !(elements[type].Properties&TYPE_ENERGY))
-			return true;
-		else if (wall == WL_ALLOWLIQUID && !(elements[type].Properties&TYPE_LIQUID))
-			return true;
-		else if (wall == WL_ALLOWPOWDER && !(elements[type].Properties&TYPE_PART))
-			return true;
-		else if (wall == WL_ALLOWAIR || wall == WL_WALL || wall == WL_WALLELEC || wall == WL_BREAKABLE_WALL || wall == WL_BREAKABLE_WALLELEC)
-			return true;
+		int elemprop = elements[type].Properties;
+		int blocked_state = bltable[wall][0];
+		if ((blocked_state & 1) && !(elemprop & bltable[wall][1]))
+			return !(blocked_state == 3 && (elemprop & TYPE_ENERGY) && (elements[type].Properties2 & PROP_ALLOWS_WALL));
 		else if (wall == WL_EWALL && !emap[y/CELL][x/CELL])
 			return true;
 	}
@@ -2654,12 +2677,12 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			*/
 			}
 			break;
-		case PT_E186:
+		case PT_E186: // TODO: move into another element
 			if (parts[i].ctype == 0x100 && (r&0xFF) != ELEM_MULTIPP) // exit from E189 area
 			{
 				parts[i].ctype = parts[i].tmp2;
 				parts[i].tmp2 = 0;
-				/* sim-> */ part_change_type(i, x, y, PT_PHOT);
+				part_change_type(i, x, y, PT_PHOT);
 			}
 			break;
 		}
@@ -3931,28 +3954,6 @@ void Simulation::UpdateParticles(int start, int end)
 	float pGravX, pGravY, pGravD;
 	bool transitionOccurred;
 	unsigned int tempFlag0;
-	static int bltable[][2] = { // blocked, allowcondition
-		{0, 0},
-		{1, 0}, // conductive wall
-		{0, 0}, // E-wall
-		{0, 0}, // detector
-		{0, 0}, // stream line
-		{0, 0}, // fan
-		{1, TYPE_LIQUID},
-		{1, 0}, // absorb all
-		{1, 0}, // wall
-		{1, 0}, // air-only wall
-		{1, TYPE_PART},
-		{0, 0}, // conductor
-		{0, 0}, // E-hole
-		{1, TYPE_GAS},
-		{0, 0}, // gravity wall
-		{1, TYPE_ENERGY},
-		{0, 0}, // air-block wall
-		{0, 0},
-		{1, 0},
-		{1, 0},
-	};
 
 	//the main particle loop function, goes over all particles.
 	for (i = start; i <= end && i <= parts_lastActiveIndex; i++)
@@ -6060,6 +6061,8 @@ void Simulation::BeforeSim()
 	}
 }
 
+bool rnd_init = false;
+
 void Simulation::AfterSim()
 {
 	if (emp_trigger_count)
@@ -6121,6 +6124,11 @@ void Simulation::AfterSim()
 	}
 	if (ineutcount >= 10)
 	{
+		if (!rnd_init)
+		{
+			rnd_init = true;
+			rndseed = rand();
+		}
 		if (!check_neut_cooldown)
 			check_neut();
 		else
@@ -6134,10 +6142,19 @@ void Simulation::check_neut()
 {
 	blockd1 * neut_map = (blockd1*)malloc((XRES/CELL)*(YRES/CELL)*sizeof(blockd1));
 	int tmp = -1, tmp2, wdata, nextp, n;
+	static unsigned int rndstore;
 	// int nextp2;
 	if (neut_map)
 	{
-		check_neut_cooldown = rand()&0x1F;
+		if (check_neut_counter & 3)
+			rndstore >>= 5;
+		else
+		{
+			rndseed = (rndseed * 1103515245) + 12345;
+			rndstore ^= rndseed;
+		}
+		check_neut_counter++;
+		check_neut_cooldown = rndstore & 0x1F;
 		static const blockd1 d = {-1, 0};
 		std::fill(neut_map, neut_map+((XRES/CELL)*(YRES/CELL)), d);
 		int i = parts_lastActiveIndex + 1;
@@ -6196,6 +6213,7 @@ void Simulation::check_neut()
 }
 
 int Simulation::check_neut_cooldown = 0;
+int Simulation::rndseed = 0;
 
 Simulation::~Simulation()
 {
@@ -6234,7 +6252,8 @@ Simulation::Simulation():
 	Extra_FIGH_pause(0),
 	framerender(0),
 	pretty_powder(0),
-	sandcolour_frame(0)
+	sandcolour_frame(0),
+	check_neut_counter(0)
 {
     int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};
     int tportal_ry[] = {-1,-1,-1, 0, 1, 1, 1, 0};

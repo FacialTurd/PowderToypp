@@ -33,6 +33,8 @@ public:
 	std::vector<playerst> stickmen;
 	std::vector<sign> signs;
 	
+	int breakable_wall_count;
+	
 	Json::Value Authors;
 
 	Snapshot() :
@@ -53,7 +55,8 @@ public:
 		WirelessData(),
 		Wireless2Data(),
 		stickmen(),
-		signs()
+		signs(),
+		breakable_wall_count()
 	{
 
 	}

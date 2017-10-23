@@ -2019,6 +2019,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 30: // get TPT options
+			{
+			bool inverted = rtmp & 0x80;
+			rtmp &= 0x7F;
 			switch (rtmp)
 			{
 				case  0: rr = sim->pretty_powder; break;		// get "P" option state
@@ -2034,8 +2037,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case 10: rr = !sim->gravityMode; break;			// check "Vertical gravity mode"
 				case 11: rr = sim->gravityMode == 2; break;		// check "Radial gravity mode"
 			}
+			inverted && (rr = !rr);
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
+			}
 			break;
 		case 31: // fast laser?
 			rx = tron_rx[rtmp & 3];

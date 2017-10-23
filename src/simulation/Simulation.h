@@ -58,6 +58,7 @@ public:
 	int replaceModeFlags;
 	bool isFromMyMod;
 	bool isPrevFromMyMod;
+	int check_neut_counter;
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
@@ -138,8 +139,10 @@ public:
 	int sandcolour;
 	int sandcolour_frame;
 	bool no_generating_BHOL;
-	//Cooldowns
+
+	//Cooldowns and random seeds
 	static int check_neut_cooldown;
+	static int rndseed;
 
 	int Load(GameSave * save, bool includePressure = true);
 	int Load(int x, int y, GameSave * save, bool includePressure = true);

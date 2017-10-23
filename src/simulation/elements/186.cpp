@@ -65,7 +65,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		r = pmap[y][x];
 		switch (sctype - 0x100)
 		{
-		case 0:
+		case 0: // TODO: move into another element
 			if (!(parts[i].tmp2&0x3FFFFFFF))
 			{
 				sim->kill_part(i);
