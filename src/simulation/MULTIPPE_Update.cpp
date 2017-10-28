@@ -2,7 +2,7 @@
 #include "simulation/Air.h"
 //#include "simulation/Gravity.h"
 #include "simulation/MULTIPPE_Update.h" // link to Renderer
-// #include "SDLCompat.h" // SDL_Delay in SDL.h? 
+#include "simplugin.h"
 
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
@@ -19,7 +19,7 @@ Renderer * MULTIPPE_Update::ren_;
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 // FLAG_SKIPMOVE: not only implemented for PHOT
-
+	
 int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
@@ -359,9 +359,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		{
 			fcall = funcid;
 		}
-		else if (funcid >= 0x7C)
-			funcid -= 0x6C;
-		else if (funcid >= 0x10)
+		else if (funcid >= 0x78)
+			funcid -= 0x66;
+		else if (funcid >= 0x12)
 			return return_value;
 		for (rx = -1; rx <= 1; rx++)
 			for (ry = -1; ry <= 1; ry++)
@@ -379,6 +379,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 #endif
 							continue;
 						}
+						static char shift1[7] = {8,9,1,3,11,4,5}; // 23,24,1,2,15,4,5
 						switch (funcid & 0xFF)
 						{
 						case 0:
@@ -388,11 +389,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								Element_MULTIPP::maxPrior = parts[i].ctype;
 							}
 							break;
-						case 1: sim->SimExtraFunc |=  0x02; break;
-						case 2: sim->SimExtraFunc |=  0x08; break;
 						case 3: sim->SimExtraFunc &= ~0x08; break;
-						case 4: sim->SimExtraFunc |=  0x10; break;
-						case 5: sim->SimExtraFunc |=  0x20; break;
 						case 6:
 							switch (parts[r>>8].ctype)
 							{
@@ -512,14 +509,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						case 15:
-							// SDL_Delay(parts[i].ctype);
-							// *(Element_MULTIPP::EngineFrameStart) += parts[i].ctype;
-							sim->SimExtraFunc |= 0x800;
 							sim->extraDelay += parts[i].ctype;
-							break;
-						case 17: sim->SimExtraFunc |= 0x200; break;
-						case 18: sim->SimExtraFunc |= 0x100; break;
-						case 19:
+						case 1: case 2: case 4: case 5: case 23: case 24:
+							sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
+						case 25:
 							{
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
@@ -529,7 +522,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									popfd
 								}
 #else
-								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");
+								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");	
 #endif
 							}
 							return return_value;
@@ -2036,6 +2029,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case  9: rr = !(sim->air->airMode & 1); break;	// check "Air pressure"
 				case 10: rr = !sim->gravityMode; break;			// check "Vertical gravity mode"
 				case 11: rr = sim->gravityMode == 2; break;		// check "Radial gravity mode"
+				case 12: rr = (sim->dllexpectionflag & 2); break;	// is DLL call error trigged?
 			}
 			inverted && (rr = !rr);
 			if (rr)
@@ -2068,10 +2062,17 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						else if (rii && ((r&0xFF) == PT_NSCN))
 							conductTo (sim, r, x+rx, y+ry, parts);
 					}
-				break;
+			break;
+		case 33: // some Lua function call
+#if !defined(RENDERER) && defined(LUACONSOLE)
+			{
+				int funcid = parts[i].tmp & 0xF | 0x100;
+				if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
+			}
+#endif
+			break;
 		}
 		break;
-			
 	case 19:
 		parts[i].tmp2 = parts[i].tmp;
 		if (parts[i].tmp)

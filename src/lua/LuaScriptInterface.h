@@ -33,8 +33,12 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
+#define MAX_LUA_DEBUG_FUNCTIONS 288
+
 #ifdef TPT_NEED_DLL_PLUGIN
 #include <windows.h>
+#define MAX_DLL_FUNCTIONS 256
+#define DLL_FUNCTIONS_ARGS Simulation*, int, int, int, void*
 #endif
 
 class TPTScriptInterface;
@@ -221,7 +225,7 @@ public:
 	virtual std::string FormatCommand(std::string command);
 	virtual ~LuaScriptInterface();
 #ifdef TPT_NEED_DLL_PLUGIN
-	static int (*(dll_trigger_func[256]))(Simulation*, int, int, int, void*);
+	static int (*(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
 };
 

@@ -73,12 +73,6 @@ int Element_MULTIPP::maxPrior = 0;
 //#TPT-Directive ElementHeader Element_MULTIPP static int * EngineFrameStart
 int * Element_MULTIPP::EngineFrameStart = NULL;
 
-// #TPT-Directive ElementHeader Element_MULTIPP static int q1
-// int Element_MULTIPP::q1 = -1; // removed
-
-// #TPT-Directive ElementHeader Element_MULTIPP static float StrengthMultiplier
-// float Element_MULTIPP::StrengthMultiplier = 1.0f;
-
 //#TPT-Directive ElementHeader Element_MULTIPP static void HSV2RGB(int ctype, int *r, int *g, int *b)
 void Element_MULTIPP::HSV2RGB (int ctype, int *r, int *g, int *b)
 {

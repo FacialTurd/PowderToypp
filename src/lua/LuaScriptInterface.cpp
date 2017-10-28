@@ -98,7 +98,7 @@ int TptNewindexClosure(lua_State *l)
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-int (*(LuaScriptInterface::dll_trigger_func[256]))(Simulation*, int, int, int, void*);
+int (*(LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
 	
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
@@ -222,7 +222,8 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"two_state_update",&luatpt_two_state_update},
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
-		{"add_dbg_trigger", &luacon_debug_trigger_add},
+		{"add_dbg_trigger", &luatpt_debug_trigger_add},
+		{"call_dbg_trigger", &luatpt_call_debug_trigger},
 		{"get_pfree", &simulation_get_pfree},
 		{NULL,NULL}
 	};
@@ -367,9 +368,9 @@ tpt.partsdata = nil");
 		lua_gr_func[i] = 0;
 	}
 
-	lua_trigger_func = (int*)malloc(256*(sizeof(int)+sizeof(char))); // sizeof(int)+sizeof(char) = 5 in some operating system
-	lua_trigger_fmode = (unsigned char*)(lua_trigger_func+256);
-	for (int i = 0; i < 256; i++)
+	lua_trigger_func = (int*)malloc(MAX_LUA_DEBUG_FUNCTIONS*(sizeof(int)+sizeof(char))); // sizeof(int)+sizeof(char) = 5 in some operating system
+	lua_trigger_fmode = (unsigned char*)(lua_trigger_func+MAX_LUA_DEBUG_FUNCTIONS);
+	for (int i = 0; i < MAX_LUA_DEBUG_FUNCTIONS; i++)
 		lua_trigger_fmode[i] = 0;
 
 	//make tpt.* a metatable
@@ -388,18 +389,19 @@ tpt.partsdata = nil");
 		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
 		if (DLLFuncPack)
 		{
-			char dllstr[5] = {'f','n',0,0,0};
+			char dllstr[11] = "dllcall_";
 			const char hexdigits[] = "0123456789abcdef";
-			for (int i = 0; i < 256; i++)
+			dllstr[10] = 0;
+			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
 			{
-				dllstr[2] = hexdigits[i>>4];
-				dllstr[3] = hexdigits[i&15];
-				int (*dllfn)(Simulation*, int, int, int, void*) = (int (*)(Simulation*, int, int, int, void*))GetProcAddress(DLLFuncPack, dllstr);
+				dllstr[8] = hexdigits[i>>4];
+				dllstr[9] = hexdigits[i&15];
+				int (*dllfn)(DLL_FUNCTIONS_ARGS) = (int (*)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
 				dll_trigger_func[i] = dllfn;
 			}
 		}
 		else
-			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+256, (int (*)(Simulation*, int, int, int, void*))NULL);
+			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (*)(DLL_FUNCTIONS_ARGS))NULL);
 		DLLLoaded = true;
 	}
 #endif
@@ -1146,14 +1148,16 @@ int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)
 			lua_pushinteger(l, -2);
 			return 1;
 		}
-		int tt = ((t != PT_SPRK || ni == -2 && luacon_sim->pmap[(int)(yy+0.5f)][(int)(xx+0.5f)]) ? t : PT_METL); // SPRK hack
+		int x_int = (int)(xx+0.5f), y_int = (int)(yy+0.5f);
+		bool spark_draw = (ni == -2 && luacon_sim->pmap[y_int][x_int]);
+		int tt = ((t != PT_SPRK || spark_draw) ? t : PT_METL); // SPRK hack
 		int x = (int)(luacon_sim->parts[i].x + 0.5f); // parent x
 		int y = (int)(luacon_sim->parts[i].y + 0.5f); // parent y
-		int p = luacon_sim->create_part (ni, (int)(xx+0.5f), (int)(yy+0.5f), tt);
-		if (p >= 0)
+		int p = luacon_sim->create_part (ni, x_int, y_int, tt);
+		if (p >= 0 && !spark_draw)
 		{
 			if (t != tt)
-				luacon_sim->part_change_type(p, (int)(xx+0.5f), (int)(yy+0.5f), t); // SPRK hack
+				luacon_sim->part_change_type(p, x_int, y_int, t); // SPRK hack
 			FIGH_tmp = luacon_sim->parts[p].tmp;
 			luacon_sim->parts[p] = luacon_sim->parts[i]; // duplicating particle
 			luacon_sim->parts[p].x = xx; // set .x value

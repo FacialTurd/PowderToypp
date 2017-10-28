@@ -97,7 +97,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					return 1;
 				}
 			}
-			break;
+			return 1;
 		case 1:
 			if ((r&0xFF) != ELEM_MULTIPP)
 			{
@@ -170,7 +170,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		case 4:
 			parts[i].temp = * (float*) &parts[i].tmp;
 			break;
-		case 5:
+		case 5: // pseudo-neutrino movement
 			if (parts[i].flags & FLAG_SKIPMOVE)
 			{
 				parts[i].flags &= ~FLAG_SKIPMOVE;
@@ -323,7 +323,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			if (!r && parts[ahead>>8].tmp > 2000 && (fabsf(parts[ahead>>8].vx) + fabsf(parts[ahead>>8].vy)) > 12)
 			{
 				sim->part_change_type(ahead>>8, x, y, PT_BOMB);
-				parts[r>>8].tmp = 0;
+				parts[ahead>>8].tmp = 0;
 			}
 		}
 	}
@@ -386,6 +386,7 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, float 
 	{
 		nxf = sim->remainder_p(nxf-CELL+.5f, XRES-CELL*2.0f)+CELL-.5f;
 		nyf = sim->remainder_p(nyf-CELL+.5f, YRES-CELL*2.0f)+CELL-.5f;
+		nx = (int)(nxf + 0.5f), ny = (int)(nyf + 0.5f);
 	}
 	else
 	{

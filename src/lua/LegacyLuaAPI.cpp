@@ -12,6 +12,10 @@
 #include "Platform.h"
 #include "PowderToy.h"
 
+#if defined(TPT_NEED_DLL_PLUGIN) && defined(_WIN32) && !defined(_WIN64)
+#include <csetjmp>
+#endif
+
 #include "gui/dialogues/ErrorMessage.h"
 #include "gui/dialogues/InformationMessage.h"
 #include "gui/dialogues/TextPrompt.h"
@@ -19,7 +23,6 @@
 #include "gui/game/GameModel.h"
 #include "gui/interface/Keys.h"
 #include "simulation/Simulation.h"
-
 
 #ifndef FFI
 int luacon_partread(lua_State* l)
@@ -744,6 +747,16 @@ int luatpt_element_func(lua_State *l)
 	return 0;
 }
 
+#if defined(TPT_NEED_DLL_PLUGIN) && defined(_WIN32) && !defined(_WIN64)
+jmp_buf simdll_exception_env;
+
+int return_from_SEH()
+{
+	longjmp(simdll_exception_env, 1);
+	return 0;
+}
+#endif
+
 void luacon_debug_trigger(int tid, int pid, int x, int y)
 {
 	unsigned char fnmode = lua_trigger_fmode[tid];
@@ -775,23 +788,27 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 #else
 		if (fnmode)
 #endif
-		{
-			int fnid = lua_trigger_func[tid];
-			lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
-			lua_pushinteger(luacon_ci->l, pid);
-			lua_pushinteger(luacon_ci->l, x);
-			lua_pushinteger(luacon_ci->l, y);
-			int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
-			if (callret)
-			{
-				luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
-				lua_pop(luacon_ci->l, 1);
-			}
-		}
+			luacall_debug_trigger(tid, pid, x, y);
 #ifdef TPT_NEED_DLL_PLUGIN
 		else if (LuaScriptInterface::dll_trigger_func[tid])
 		{
+#if MAX_DLL_FUNCTIONS < 256
+			if (tid >= MAX_DLL_FUNCTIONS) return;
+#endif
+#if defined(_WIN32) && !defined(_WIN64)
+			volatile static int* SEH_func_ptr;
+			__asm__ ("movl %%fs:(0), %0; add $4, %0":"=r"(SEH_func_ptr));
+			int tempSEHFunc = *SEH_func_ptr;
+			*SEH_func_ptr = (int)return_from_SEH;
+			int jmp_res = setjmp(simdll_exception_env);
+			if (jmp_res)
+				luacon_sim->dllexpectionflag |= 1;
+			else
+#endif
 			(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
+#if defined(_WIN32) && !defined(_WIN64)
+			*SEH_func_ptr = tempSEHFunc;
+#endif
 		}
 		if (currload & 0x100)
 			break;
@@ -799,6 +816,32 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 	}
 #endif
 	return;
+}
+
+void luacall_debug_trigger(int t, int i, int x, int y)
+{
+	int fnid = lua_trigger_func[t];
+	lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
+	lua_pushinteger(luacon_ci->l, i);
+	lua_pushinteger(luacon_ci->l, x);
+	lua_pushinteger(luacon_ci->l, y);
+	int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
+	if (callret)
+	{
+		luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
+		lua_pop(luacon_ci->l, 1);
+	}
+}
+
+int luatpt_call_debug_trigger(lua_State* l)
+{
+	int t = lua_tointeger(l, 1);
+	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && lua_trigger_fmode[t])
+	{
+		int i = lua_tointeger(l, 2), x = lua_tointeger(l, 3), y = lua_tointeger(l, 4);
+		luacall_debug_trigger(t, i, x, y);
+	}
+	return 0;
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
@@ -827,9 +870,11 @@ __declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int 
 }
 #endif
 
-int luacon_debug_trigger_add(lua_State* l)
+int luatpt_debug_trigger_add(lua_State* l)
 {
-	int tid = luaL_checkinteger(l, 1) & 0xFF; // fix overflow bug
+	int tid = luaL_checkinteger(l, 1);
+	if (tid < 0 || tid >= MAX_LUA_DEBUG_FUNCTIONS) // fix overflow bug
+		return 0;
 	if (lua_trigger_fmode[tid])
 		luaL_unref(l, LUA_REGISTRYINDEX, lua_trigger_func[tid]);
 	if (lua_type(l, 2) == LUA_TFUNCTION)

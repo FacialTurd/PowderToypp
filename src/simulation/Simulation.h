@@ -79,6 +79,9 @@ public:
 	int extraDelay;
 	int delayEnd;
 	int ineutcount;
+#ifdef TPT_NEED_DLL_PLUGIN
+	int dllexpectionflag;
+#endif
 	//Stickman
 	playerst player;
 	playerst player2;

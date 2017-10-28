@@ -3358,7 +3358,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		if (pmap[y][x])
 		{
-			//If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
 			/* int */ drawOn = pmap[y][x]&0xFF;
 			if (drawOn == ELEM_MULTIPP)
 			{
@@ -3383,6 +3382,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 					return -1;
 				}
 			}
+			// If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
 			if (drawOn == t)
 				return -1;
 			if (((elements[drawOn].Properties & PROP_DRAWONCTYPE) ||
@@ -5841,7 +5841,9 @@ void Simulation::BeforeSim()
 		etrd_life0_count = 0;
 
 		currentTick++;
-
+#ifdef TPT_NEED_DLL_PLUGIN
+		dllexpectionflag <<= 1;
+#endif
 		elementRecount |= !(currentTick%180);
 		if (elementRecount)
 			std::fill(elementCount, elementCount+PT_NUM, 0);
@@ -6077,43 +6079,56 @@ void Simulation::AfterSim()
 	}
 	if (SimExtraFunc)
 	{
-		if (SimExtraFunc & 0x0001)
+		char temp_flags = SimExtraFunc;
+#if !defined(__GNUC__) && !defined(_MSVC_VER)
+		int shift = 0, mask = 1;
+#endif
+		do
+		{
+#if defined(__GNUC__) || defined(_MSVC_VER)
+		switch (__builtin_ctz(temp_flags))
+#else
+		switch (shift)
+#endif
+		{
+		case 0:
 			sys_pause = true; // set pause state
-		if (SimExtraFunc & 0x0004)
+			break;
+		case 2:
 			no_generating_BHOL = !no_generating_BHOL; // toggle BHOL generation
-		if (SimExtraFunc & 0x0010)
+			break;
+		case 4:
 			elements[PT_PHOT].Properties2 ^= PROP_NOSLOWDOWN; // toggle PHOT's slowed down flag
-		if (SimExtraFunc & 0x0020)
-		{
+			break;
+		case 5:
 			elements[PT_INVIS].Properties2 ^= PROP_NODESTRUCT; // toggle INVS's indestructibility
-			// if (elements[PT_INVIS].Properties2 & PROP_NODESTRUCT)
-			// {
-			// 	INVS_hardness_tmp = elements[PT_INVIS].Hardness;
-			//	elements[PT_INVIS].Hardness = 0;
-			// }
-			// else
-			// {
-			//	elements[PT_INVIS].Hardness = INVS_hardness_tmp;
-			// }
-		}
-		if (SimExtraFunc & 0x0040)
+			break;
+		case 6:
 			Element_PHOT::ignite_flammable = !Element_PHOT::ignite_flammable;
-		if (SimExtraFunc & 0x0100)
-			ui::Engine::Ref().Exit(); // fast exit?
-		if (SimExtraFunc & 0x0200)
-		{
+			break;
+		case 8:
 			clear_sim(); emp_decor = 40;
-		}
-		if (SimExtraFunc & 0x0800)
-		{
+			break;
+		case 9:
+			ui::Engine::Ref().Exit(); // fast exit?
+			break;
+		case 11:
 			DelayOperation1(this, extraDelay);
-		}
-		if (SimExtraFunc & 0x1000)
-		{
+			break;
+		case 12:
 			Element_STKM::lifeinc [Element_STKM::phase] = 0;
 			Element_STKM::lifeinc [Element_STKM::phase+1] = 0;
 			Element_STKM::phase = (Element_STKM::phase+2) % 4;
+			break;
 		}
+#if defined(__GNUC__) || defined(_MSVC_VER)
+		temp_flags &= (temp_flags-1);
+#else
+		temp_flags &= ~mask;
+		shift ++;
+		mask <<= 1;
+#endif
+		} while (temp_flags);
 		SimExtraFunc &= ~0x00001BF5;
 		Element_MULTIPP::maxPrior = 0;
 	}
@@ -6164,7 +6179,18 @@ void Simulation::check_neut()
 			{
 				int x = (int)(parts[i].x+.5f);
 				int y = (int)(parts[i].y+.5f);
-				blockd1 &blockdata = neut_map[(y/CELL)*(XRES/CELL)+(x/CELL)];
+#if CELL == 4
+				int xb = x>>2, yb = y>>2;
+#elif CELL == 8
+				int xb = x>>3, yb = y>>3;
+#elif CELL == 2
+				int xb = x>>1, yb = y>>1;
+#elif CELL == 16
+				int xb = x>>4, yb = y>>4;
+#else
+				int xb = x/CELL, yb = y/CELL;
+#endif
+				blockd1 &blockdata = neut_map[yb*(XRES/CELL)+xb];
 				if (parts[i].type == PT_NEUT)
 				{
 					int u = pmap[y][x];
@@ -6173,7 +6199,7 @@ void Simulation::check_neut()
 					if ((u&0xFF) == ELEM_MULTIPP && parts[u>>8].life == 22 && (parts[u>>8].tmp >> 3) == 3)
 						blockdata.flags |= 0x100;
 					*(int*)(&parts[i].pavg[0]) = tmp;
-					*(int*)(&parts[i].pavg[1]) = ((y/CELL) << 16) | (x/CELL);
+					*(int*)(&parts[i].pavg[1]) = (yb << 16) | xb;
 					tmp = i;
 				}
 				else if (parts[i].type == PT_E186 && parts[i].ctype == PT_NEUT)
@@ -6254,6 +6280,9 @@ Simulation::Simulation():
 	pretty_powder(0),
 	sandcolour_frame(0),
 	check_neut_counter(0)
+#ifdef TPT_NEED_DLL_PLUGIN
+	, dllexpectionflag(0)
+#endif
 {
     int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};
     int tportal_ry[] = {-1,-1,-1, 0, 1, 1, 1, 0};

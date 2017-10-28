@@ -24,6 +24,8 @@
 #include "DecorationTool.h"
 #include "Favorite.h"
 
+// #include "simplugin.h"
+
 
 class SplitButton;
 class SplitButtonAction
@@ -1399,6 +1401,8 @@ void GameView::BeginStampSelection()
 	buttonTipShow = 120;
 }
 
+// char sdl_ignore_quit = 0;
+
 void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool alt)
 {
 	if (introText > 50)
@@ -1574,6 +1578,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 		case SDLK_ESCAPE:
 		case 'q':
+			// if (!(sdl_ignore_quit & 1))
 			ExitPrompt();
 			break;
 		case 'u':
