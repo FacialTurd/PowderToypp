@@ -5842,7 +5842,7 @@ void Simulation::BeforeSim()
 
 		currentTick++;
 #ifdef TPT_NEED_DLL_PLUGIN
-		dllexpectionflag <<= 1;
+		dllexceptionflag <<= 1;
 #endif
 		elementRecount |= !(currentTick%180);
 		if (elementRecount)
@@ -6079,7 +6079,7 @@ void Simulation::AfterSim()
 	}
 	if (SimExtraFunc)
 	{
-		char temp_flags = SimExtraFunc;
+		int temp_flags = SimExtraFunc;
 #if !defined(__GNUC__) && !defined(_MSVC_VER)
 		int shift = 0, mask = 1;
 #endif
@@ -6281,7 +6281,7 @@ Simulation::Simulation():
 	sandcolour_frame(0),
 	check_neut_counter(0)
 #ifdef TPT_NEED_DLL_PLUGIN
-	, dllexpectionflag(0)
+	, dllexceptionflag(0)
 #endif
 {
     int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};

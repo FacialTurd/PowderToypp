@@ -2029,7 +2029,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case  9: rr = !(sim->air->airMode & 1); break;	// check "Air pressure"
 				case 10: rr = !sim->gravityMode; break;			// check "Vertical gravity mode"
 				case 11: rr = sim->gravityMode == 2; break;		// check "Radial gravity mode"
-				case 12: rr = (sim->dllexpectionflag & 2); break;	// is DLL call error trigged?
+				case 12: rr = (sim->dllexceptionflag & 2); break;	// is DLL call error trigged?
 			}
 			inverted && (rr = !rr);
 			if (rr)
@@ -2062,14 +2062,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						else if (rii && ((r&0xFF) == PT_NSCN))
 							conductTo (sim, r, x+rx, y+ry, parts);
 					}
-			break;
-		case 33: // some Lua function call
-#if !defined(RENDERER) && defined(LUACONSOLE)
-			{
-				int funcid = parts[i].tmp & 0xF | 0x100;
-				if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
-			}
-#endif
 			break;
 		}
 		break;
@@ -2848,6 +2840,13 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 #if !defined(RENDERER) && defined(LUACONSOLE)
+	case 40:
+		{
+			int funcid = parts[i].ctype & 0xF | 0x100;
+			if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
+		}
+		break;
+
 	default: // reserved by Lua
 		if (lua_el_mode[parts[i].type] == 1)
 			return_value = 0;

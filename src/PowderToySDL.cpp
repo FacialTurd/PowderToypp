@@ -525,6 +525,8 @@ unsigned int GetTicks()
 	return SDL_GetTicks();
 }
 
+int sdl_my_extra_args[4] = {0, 0, 0, 0};
+
 std::map<std::string, std::string> readArguments(int argc, char * argv[])
 {
 	std::map<std::string, std::string> arguments;
@@ -542,7 +544,20 @@ std::map<std::string, std::string> readArguments(int argc, char * argv[])
 
 	for (int i=1; i<argc; i++)
 	{
-		if (!strncmp(argv[i], "scale:", 6) && argv[i]+6)
+#ifdef TPT_NEED_DLL_PLUGIN
+		if ((*(short*)argv[i]) == '-' * 0x101)
+		{
+			char *remain_part = argv[i]+2;
+			if (!strncmp(remain_part, "no-dll-plugin", 14))
+			{
+				sdl_my_extra_args[0] |= ARG0_NO_DLL_PLUGIN;
+			}
+			break;
+		}
+#else
+		if (false) {}
+#endif
+		else if (!strncmp(argv[i], "scale:", 6) && argv[i]+6)
 		{
 			arguments["scale"] = std::string(argv[i]+6);
 		}

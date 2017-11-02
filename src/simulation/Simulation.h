@@ -80,7 +80,7 @@ public:
 	int delayEnd;
 	int ineutcount;
 #ifdef TPT_NEED_DLL_PLUGIN
-	int dllexpectionflag;
+	int dllexceptionflag;
 #endif
 	//Stickman
 	playerst player;

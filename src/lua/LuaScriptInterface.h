@@ -225,7 +225,7 @@ public:
 	virtual std::string FormatCommand(std::string command);
 	virtual ~LuaScriptInterface();
 #ifdef TPT_NEED_DLL_PLUGIN
-	static int (*(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
+	static int (__stdcall *(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
 };
 

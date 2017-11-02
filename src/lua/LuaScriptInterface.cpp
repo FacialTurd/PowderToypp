@@ -42,6 +42,8 @@
 #include <unistd.h>
 #endif
 
+#include "simulation/simplugin.h"
+
 
 extern "C"
 {
@@ -98,7 +100,7 @@ int TptNewindexClosure(lua_State *l)
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-int (*(LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
+int (__stdcall *(LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
 	
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
@@ -384,7 +386,7 @@ tpt.partsdata = nil");
 	lua_setmetatable(l, -2);
 
 #ifdef TPT_NEED_DLL_PLUGIN
-	if (!DLLLoaded)
+	if (!(DLLLoaded || (sdl_my_extra_args[0] & ARG0_NO_DLL_PLUGIN)))
 	{
 		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
 		if (DLLFuncPack)
@@ -396,12 +398,12 @@ tpt.partsdata = nil");
 			{
 				dllstr[8] = hexdigits[i>>4];
 				dllstr[9] = hexdigits[i&15];
-				int (*dllfn)(DLL_FUNCTIONS_ARGS) = (int (*)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
+				int (__stdcall *dllfn)(DLL_FUNCTIONS_ARGS) = (int (__stdcall *)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
 				dll_trigger_func[i] = dllfn;
 			}
 		}
 		else
-			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (*)(DLL_FUNCTIONS_ARGS))NULL);
+			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (__stdcall *)(DLL_FUNCTIONS_ARGS))NULL);
 		DLLLoaded = true;
 	}
 #endif

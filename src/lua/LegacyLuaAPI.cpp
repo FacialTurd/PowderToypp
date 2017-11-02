@@ -12,8 +12,8 @@
 #include "Platform.h"
 #include "PowderToy.h"
 
-#if defined(TPT_NEED_DLL_PLUGIN) && defined(_WIN32) && !defined(_WIN64)
-#include <csetjmp>
+#if defined(TPT_NEED_DLL_PLUGIN)
+// #include <excpt.h>
 #endif
 
 #include "gui/dialogues/ErrorMessage.h"
@@ -747,14 +747,50 @@ int luatpt_element_func(lua_State *l)
 	return 0;
 }
 
-#if defined(TPT_NEED_DLL_PLUGIN) && defined(_WIN32) && !defined(_WIN64)
-jmp_buf simdll_exception_env;
+#if defined(TPT_NEED_DLL_PLUGIN)
+// TODO: 64-bit
+int temp_SEH_Part_L0;
+char catchedexception;
+__cdecl int DLLAPI1(Simulation*,int,int,int,void*,int,int*,int*);
 
-int return_from_SEH()
-{
-	longjmp(simdll_exception_env, 1);
-	return 0;
-}
+asm (
+	"__Z7DLLAPI1P10SimulationiiiPviPiS2_:"
+	"movl $0, _catchedexception;"
+	"movl %fs:0, %eax;"
+	"popl %ecx;"
+	"movl 24(%esp), %edx;"
+	"movl %eax, (%edx);"
+	"movl $myasm_DLLAPI1_L2, 4(%edx);"
+	"movl %esp, 8(%edx);"
+	"movl %ebx, 12(%edx);"
+	"movl %esi, 16(%edx);"
+	"movl %edi, 20(%edx);"
+	"movl %ebp, 24(%edx);"
+	"movl 20(%esp), %eax;"
+	"movl %ecx, 20(%esp);"
+	"movl %edx, %fs:0\n\t"
+	".p2align 3,,7\n\t"
+	"movl %edx, _temp_SEH_Part_L0;"
+	"call *%eax\n\t"
+	"myasm_DLLAPI1_L1:"
+	"movl _temp_SEH_Part_L0, %eax;"
+	"movl 8(%eax), %esp;"
+	"movl 28(%esp), %edi;"
+	"movl _catchedexception, %esi;"
+	"orl %esi, (%edi);"
+	"movl 12(%eax), %ebx;"
+	"movl 16(%eax), %esi;"
+	"movl 20(%eax), %edi;"
+	"movl 24(%eax), %ebp;"
+	"movl (%eax), %ecx;"
+	"pushl 20(%esp);"
+	"movl %ecx, %fs:0;"
+	"ret\n"
+	"myasm_DLLAPI1_L2:"
+	"orb $1, _catchedexception;"
+	"jmp myasm_DLLAPI1_L1\n\t"
+	".p2align 4,,15\n\t"
+);
 #endif
 
 void luacon_debug_trigger(int tid, int pid, int x, int y)
@@ -782,6 +818,7 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 		0x0100,0x0300,0x0001,0x0200
 	};
 	int currload = loadorder[fnmode];
+	int callfunc;
 	for (;;)
 	{
 		if (currload & 0x200)
@@ -790,25 +827,13 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 #endif
 			luacall_debug_trigger(tid, pid, x, y);
 #ifdef TPT_NEED_DLL_PLUGIN
-		else if (LuaScriptInterface::dll_trigger_func[tid])
+		else if (callfunc = (int)LuaScriptInterface::dll_trigger_func[tid])
 		{
+			int tmp[7];
 #if MAX_DLL_FUNCTIONS < 256
 			if (tid >= MAX_DLL_FUNCTIONS) return;
 #endif
-#if defined(_WIN32) && !defined(_WIN64)
-			volatile static int* SEH_func_ptr;
-			__asm__ ("movl %%fs:(0), %0; add $4, %0":"=r"(SEH_func_ptr));
-			int tempSEHFunc = *SEH_func_ptr;
-			*SEH_func_ptr = (int)return_from_SEH;
-			int jmp_res = setjmp(simdll_exception_env);
-			if (jmp_res)
-				luacon_sim->dllexpectionflag |= 1;
-			else
-#endif
-			(*(LuaScriptInterface::dll_trigger_func[tid]))(luacon_sim, pid, x, y, simdata);
-#if defined(_WIN32) && !defined(_WIN64)
-			*SEH_func_ptr = tempSEHFunc;
-#endif
+			DLLAPI1(luacon_sim, pid, x, y, simdata, callfunc, tmp, &luacon_sim->dllexceptionflag);
 		}
 		if (currload & 0x100)
 			break;
