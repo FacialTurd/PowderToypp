@@ -1,0 +1,92 @@
+import os
+import subprocess
+import sys
+import platform
+import atexit
+import time
+import SCons.Util
+
+#Long command line fix for mingw on windows
+class ourSpawn:
+	def ourspawn(self, sh, escape, cmd, args, env):
+		newargs = ' '.join(args[1:])
+		cmdline = cmd + " " + newargs
+		startupinfo = subprocess.STARTUPINFO()
+		startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+		proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE, startupinfo=startupinfo, shell=False, env=env)
+		data, err = proc.communicate()
+		rv = proc.wait()
+		if rv:
+			print("=====")
+			print(err)
+			print("=====")
+		return rv
+def SetupSpawn(env):
+	buf = ourSpawn()
+	buf.ourenv = env
+	env['SPAWN'] = buf.ourspawn
+
+env = Environment(tools=['mingw'], ENV={'PATH' : os.environ['PATH']})
+conf = Configure(env)
+enable_compile0 = True
+programName = ''
+mysource = ''
+myoption = 0
+
+#wrapper around SCons' AddOption
+def AddSconsOption(name, default, hasArgs, help):
+	AddOption("--{0}".format(name), dest=name, action=("store" if hasArgs else "store_true"), default=default, help=help)
+
+AddSconsOption('font-editor', False, False, "")
+AddSconsOption('packer', False, False, "")
+AddSconsOption('unpacker', False, False, "")
+
+
+if GetOption('font-editor'):
+	programName = 'editor.exe'
+	mysource = 'editor.c'
+	myoption = 1
+elif GetOption('packer'):
+	programName = 'packer.exe'
+	mysource = 'packer.c'
+elif GetOption('unpacker'):
+	programName = 'unpacker.exe'
+	mysource = 'unpacker.c'
+else:
+	enable_compile0 = False
+
+env.Append(CPPDEFINES=["FONTEDITOR"])
+if myoption == 1:
+	env.Append(CPPDEFINES=["SCALE=1"])
+env.Append(CCFLAGS=['-O3', '-ffast-math', '-Wno-unused-result'])
+env.Append(LINKFLAGS=['-march=k8'])
+if myoption == 1:
+	env.Append(LINKFLAGS=['-mwindows'])
+	conf.CheckLib("mingw32")
+conf.CheckLib("m")
+if myoption == 1:
+	conf.CheckLib("SDLMain")
+	conf.CheckLib("SDL")
+
+compilePlatform = platform.system()
+
+#strip binary after compilation
+def strip():
+	global programName
+	global env
+	try:
+		os.system("{0} build/{1}".format(env['STRIP'] if 'STRIP' in env else "strip", programName))
+	except:
+		print("Couldn't strip binary")
+if enable_compile0:	
+	atexit.register(strip)
+
+if compilePlatform == "Windows":
+	SetupSpawn(env)
+
+if enable_compile0:
+	env.Decider('MD5-timestamp')
+	SetOption('implicit_cache', 1)
+	t = env.Program(target=programName, source=[mysource])
+	Default(t)

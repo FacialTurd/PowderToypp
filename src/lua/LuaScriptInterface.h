@@ -33,7 +33,7 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
-#define MAX_LUA_DEBUG_FUNCTIONS 288
+#define MAX_LUA_DEBUG_FUNCTIONS 320
 
 #ifdef TPT_NEED_DLL_PLUGIN
 #include <windows.h>

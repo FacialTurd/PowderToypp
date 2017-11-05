@@ -2842,7 +2842,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 #if !defined(RENDERER) && defined(LUACONSOLE)
 	case 40:
 		{
-			int funcid = parts[i].ctype & 0xF | 0x100;
+			int funcid = (parts[i].ctype & 0x1F) + 0x100;
 			if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
 		}
 		break;
