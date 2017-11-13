@@ -70,7 +70,8 @@ std::string sign::getText(Simulation *sim)
 			char structtype = 0;
 			// structtype = 0: int
 			// structtype = 1: float
-			// structtype = 2: particle type
+			// structtype = 2/3: particle type
+			// structtype = 4/5: hexadecimal
 			char matched1 [256];
 			const char* matched1ptr = matched1;
 			

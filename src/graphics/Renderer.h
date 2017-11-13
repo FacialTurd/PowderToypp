@@ -98,6 +98,10 @@ public:
 	void clearScreen(float alpha);
 	void SetSample(int x, int y);
 
+#ifndef OGLI
+	void decorate_sim();
+#endif
+
 #ifdef OGLR
 	void checkShader(GLuint shader, const char * shname);
 	void checkProgram(GLuint program, const char * progname);

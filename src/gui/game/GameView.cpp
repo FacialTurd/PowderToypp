@@ -26,6 +26,11 @@
 
 // #include "simplugin.h"
 
+#ifdef __GNUC__
+#define prediction_expect(x,y) (__builtin_expect(x,y))
+#else
+#define prediction_expect(x,y) (x)
+#endif
 
 class SplitButton;
 class SplitButtonAction
@@ -2822,49 +2827,42 @@ void GameView::OnDraw()
 			g->fillrect(XRES-20-textWidth, 27, textWidth+8, 14, 0, 0, 0, alpha*0.5f);
 			g->drawtext(XRES-16-textWidth, 30, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
 			
+			char tempDebugState = (char)showDebugStateFlags & 3, temp_shift = 0;
+			if (prediction_expect(tempDebugState, 0))
+			{
+			if (sample.WallType == WL_FAN) tempDebugState |= (tempDebugState << 1) & 0x4;
+			if (!sample.isMouseInSim) tempDebugState &= 0x1;
 			int __currPosY = 41; // 27 + 14
 			int tempValue;
 			
-			if (showDebugStateFlags & 0x00000001)
+			for (; temp_shift < 3; temp_shift++)
 			{
+				if (!(tempDebugState & (1<<temp_shift))) continue;
 				sampleInfo.str(std::string());
-
-				tempValue = ren->sim->breakable_wall_count; // using "Renderer", actually not "Renderer"
-				if (tempValue)
-					sampleInfo << "breakable_wall_count: " << tempValue << ", ";
-				sampleInfo << "sim_max_pressure: " << std::fixed << c->sim_max_pressure_resolve();
-
+				switch (temp_shift)
+				{
+				case 0:
+					tempValue = ren->sim->breakable_wall_count;
+					if (tempValue)
+						sampleInfo << "breakable_wall_count: " << tempValue << ", ";
+					sampleInfo << "sim_max_pressure: " << std::fixed << c->sim_max_pressure_resolve();
+					break;
+				case 1:
+					sampleInfo << "Air velocity X: " << std::fixed << sample.AirVelocityX << ", ";
+					sampleInfo << "velocity Y: " << std::fixed << sample.AirVelocityY;
+					if (sample.AirBlocked)
+						sampleInfo << ", blocking air";
+					break;
+				case 2:
+					sampleInfo << "fvx: " << std::fixed << ren->sim->fvx[sample.PositionY/CELL][sample.PositionX/CELL] << ", ";
+					sampleInfo << "fvy: " << std::fixed << ren->sim->fvy[sample.PositionY/CELL][sample.PositionX/CELL];
+					break;
+				}
 				textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
 				g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
 				g->drawtext(XRES-16-textWidth, __currPosY + 3, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
 				__currPosY += 15;
 			}
-			if ((showDebugStateFlags & 0x00000002) && sample.isMouseInSim)
-			{
-				sampleInfo.str(std::string());
-
-				sampleInfo << "Air velocity X: " << std::fixed << sample.AirVelocityX << ", ";
-				sampleInfo << "velocity Y: " << std::fixed << sample.AirVelocityY;
-				if (sample.AirBlocked)
-					sampleInfo << ", blocking air";
-
-				textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
-				g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
-				g->drawtext(XRES-16-textWidth, __currPosY + 3, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
-				__currPosY += 15;
-
-				if (sample.WallType == WL_FAN)
-				{
-					sampleInfo.str(std::string());
-
-					sampleInfo << "fvx: " << std::fixed << ren->sim->fvx[sample.PositionY/CELL][sample.PositionX/CELL] << ", ";
-					sampleInfo << "fvy: " << std::fixed << ren->sim->fvy[sample.PositionY/CELL][sample.PositionX/CELL];
-					
-					textWidth = Graphics::textwidth((char*)sampleInfo.str().c_str());
-					g->fillrect(XRES-20-textWidth, __currPosY, textWidth+8, 15, 0, 0, 0, alpha*0.5f);
-					g->drawtext(XRES-16-textWidth, __currPosY + 3, (const char*)sampleInfo.str().c_str(), 255, 255, 255, alpha*0.75f);
-					__currPosY += 15;
-				}
 			}
 		}
 	}

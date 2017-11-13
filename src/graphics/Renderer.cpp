@@ -26,6 +26,7 @@ extern "C"
 #ifndef OGLI
 #define VIDXRES WINDOWW
 #define VIDYRES WINDOWH
+#include "Simulation/simplugin.h"
 #else
 #define VIDXRES XRES
 #define VIDYRES YRES
@@ -131,46 +132,52 @@ void Renderer::RenderBegin()
 	draw_grav_zones();
 	DrawSigns();
 	
-	if (sim->SimExtraFunc & 0x400)
+	if (mytxt_buffer1)
 	{
-		pixel p; 
-		int i, nx, ny;
-		sim->SimExtraFunc &= ~0x400;
-		sim->sys_pause = true;
-		sim->emp_decor = 0;
-		ClearAccumulation();
-
-		// clear any particle
-		for (i = 0; i <= sim->parts_lastActiveIndex; i++) {
-			sim->kill_part(i);
-		}
-		// clear any walls
-		sim->breakable_wall_count = 0;
-		for (ny = 0; ny < YRES/CELL; ny++)
+		pixel * oldVid = vid;
+		vid = (pixel *) malloc(VIDXRES*VIDYRES*sizeof(pixel));
+		if (vid != NULL)
 		{
-			for (nx = 0; nx < XRES/CELL; nx++)
+			int boffset = 0;
+			memcpy(vid, oldVid, VIDXRES*YRES*sizeof(pixel));
+			while (boffset < mytxt_buffer1_offset)
 			{
-				sim->bmap[ny][nx] = 0;
+				int16_t * bblock = (int16_t*)&mytxt_buffer1[boffset];
+				drawtext(bblock[1], bblock[2], (char*)&mytxt_buffer1[boffset+6], 255, 255, 255, 255);
+				boffset += *bblock;
 			}
-		}
-		// clear any signs
-		for (int i = sim->signs.size()-1; i >= 0; i--)
-		{
-			sim->signs.erase(sim->signs.begin()+i);
-		}
-
-		for (ny = 0; ny < YRES; ny++)
-		{
-			for (nx = 0; nx < XRES; nx++)
+			for (int y = 0; y < YRES; y++)
 			{
-				i = sim->create_part(-1, nx, ny, PT_DMND);
-				if (i >= 0)
+				for (int x = 0; x < XRES; x++)
 				{
-					p = vid[ny*(VIDXRES)+nx];
-					sim->parts[i].dcolour = 0xFF000000 | (PIXR(p) << 16) | (PIXG(p) << 8) | PIXB(p); // all dcolour stores ARGB!
+					int tmp = y*(VIDXRES)+x;
+					int pixeldata = vid[tmp];
+					if (pixeldata != oldVid[tmp])
+					{
+						int r = sim->pmap[y][x];
+						int deco = 0xFF000000 | (PIXR(pixeldata) << 16) | (PIXG(pixeldata) << 8) | PIXB(pixeldata);
+						if (!r)
+						{
+							int i = sim->create_part(-1, x, y, ELEM_MULTIPP, 13);
+							if (i >= 0) sim->parts[i].ctype = deco;
+						}
+						else if ((r&0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 13)
+							sim->parts[r>>8].ctype = deco;
+						else
+							sim->parts[r>>8].dcolour = deco;
+					}
 				}
 			}
 		}
+		free(vid);
+		vid = oldVid;
+		free(mytxt_buffer1);
+		mytxt_buffer1 = NULL; 
+	}
+	if (sim->SimExtraFunc & 0x400)
+	{
+		sim->SimExtraFunc &= ~0x400;
+		decorate_sim();
 	}
 
 	if(display_mode & DISPLAY_WARP)
@@ -182,6 +189,54 @@ void Renderer::RenderBegin()
 #endif
 }
 
+#ifndef OGLI
+void Renderer::decorate_sim()
+{
+	pixel p; 
+	int i, nx, ny;
+	sim->sys_pause = true;
+	sim->emp_decor = 0;
+	ClearAccumulation();
+
+	// clear any particle
+	for (i = 0; i <= sim->parts_lastActiveIndex; i++)
+		sim->kill_part(i);
+
+	// clear any walls
+	sim->breakable_wall_count = 0;
+	for (ny = 0; ny < YRES/CELL; ny++)
+	{
+		for (nx = 0; nx < XRES/CELL; nx++)
+		{
+			sim->bmap[ny][nx] = 0;
+		}
+	}
+
+	// clear any signs
+	for (int i = sim->signs.size()-1; i >= 0; i--)
+	{
+		sim->signs.erase(sim->signs.begin()+i);
+	}
+
+	for (ny = 0; ny < YRES; ny++)
+	{
+		for (nx = 0; nx < XRES; nx++)
+		{
+			p = vid[ny*(VIDXRES)+nx];
+#ifdef PIX32OGL
+			p &= 0xFFFFFF;
+#endif
+			if (p)
+			{
+				i = sim->create_part(-1, nx, ny, PT_DMND);
+				if (i >= 0)
+					sim->parts[i].dcolour = 0xFF000000 | (PIXR(p) << 16) | (PIXG(p) << 8) | PIXB(p); // all dcolour stores ARGB!
+			}
+		}
+	}
+}
+#endif
+		
 void Renderer::RenderEnd()
 {
 #ifdef OGLI
@@ -1276,7 +1331,6 @@ void Renderer::prepare_alpha(int size, float intensity)
 void Renderer::render_parts()
 {
 	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x, y, caddress;
-	int deca2;
 	int orbd[4] = {0, 0, 0, 0}, orbl[4] = {0, 0, 0, 0};
 	float gradv, flicker, q_float;
 	Particle * parts;

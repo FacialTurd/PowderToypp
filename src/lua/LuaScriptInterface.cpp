@@ -56,6 +56,8 @@ extern "C"
 }
 #include "socket/socket.lua.h"
 
+#define IN_BOUNDS(x, y) ((x)>=0 && (y)>=0 && (x)<XRES && (y)<YRES)
+
 // #include "gui/game/Notification.h" // already in GameModel.h
 
 GameModel * luacon_model;
@@ -873,6 +875,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"getGOLRule", simulation_getGOLRule},
 		{"setCustomGOLGrad", simulation_setCustomGOLGrad},
 		{"partKillDestroyable", simulation_partKillDestroyable},
+		{"pmap_moveTo", simulation_pmap_move_to},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -1122,6 +1125,30 @@ int LuaScriptInterface::simulation_partPosition(lua_State * l)
 		lua_pushnumber(l, luacon_sim->parts[particleID].y);
 		return 2;
 	}
+}
+
+int LuaScriptInterface::simulation_pmap_move_to(lua_State * l)
+{
+	int argCount = lua_gettop(l), particleID = lua_tointeger(l, 1);
+	if (argCount < 3 || particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type) return 0;
+
+	int newX = lua_tointeger(l, 2);
+	int newY = lua_tointeger(l, 3);
+	int oldX = (int)(luacon_sim->parts[particleID].x+0.5f);
+	int oldY = (int)(luacon_sim->parts[particleID].y+0.5f);
+	int type = luacon_sim->parts[particleID].type;
+	
+	if (IN_BOUNDS(newX, newY))
+	{
+		if (IN_BOUNDS(oldX, oldY) && (luacon_sim->pmap[oldY][oldX] >> 8) == particleID)
+			luacon_sim->pmap[oldY][oldX] = 0;
+		luacon_sim->pmap[newY][newX] = type | (particleID << 8);
+		luacon_sim->parts[particleID].x = (float)newX;
+		luacon_sim->parts[particleID].y = (float)newY;
+	}
+	else
+		luacon_sim->kill_part(particleID);
+	return 0;
 }
 
 int LuaScriptInterface::simulation_duplicateParticle (lua_State * l)

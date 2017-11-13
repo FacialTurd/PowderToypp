@@ -116,6 +116,11 @@ BIT_SH(bit_arshift, bsar)
 BIT_SH(bit_rol, brol)
 BIT_SH(bit_ror, bror)
 
+static int bit_bcondi(lua_State *L) {
+	UBits f = barg(L, 3);
+	BRET(f ^ (barg(L, 1) & (barg(L, 2) ^ f)))
+}
+
 static int bit_bswap(lua_State *L)
 {
   UBits b = barg(L, 1);
@@ -150,6 +155,7 @@ static const struct luaL_Reg bit_funcs[] = {
   { "ror",	bit_ror },
   { "bswap",	bit_bswap },
   { "tohex",	bit_tohex },
+  { "bcondi",	bit_bcondi },
   { NULL, NULL }
 };
 

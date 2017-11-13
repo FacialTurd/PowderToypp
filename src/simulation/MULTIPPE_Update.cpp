@@ -514,6 +514,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
 						case 25:
 							{
+#ifdef X86
 #if defined(WIN) && !defined(__GNUC__)
 							// not tested yet
 								__asm {
@@ -523,6 +524,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								}
 #else
 								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");	
+#endif
 #endif
 							}
 							return return_value;

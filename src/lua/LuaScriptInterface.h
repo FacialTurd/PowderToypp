@@ -129,6 +129,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_getGOLRule(lua_State * l);
 	static int simulation_setCustomGOLGrad(lua_State * l);
 	static int simulation_get_pfree(lua_State * l);
+	static int simulation_pmap_move_to(lua_State * l);
 
 	//Stickman attributes
 	void initStickmanAPI();
