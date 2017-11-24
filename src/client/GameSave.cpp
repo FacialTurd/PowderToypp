@@ -18,24 +18,26 @@ extern "C"
 }
 
 GameSave::GameSave(GameSave & save) :
-waterEEnabled(save.waterEEnabled),
-legacyEnable(save.legacyEnable),
-gravityEnable(save.gravityEnable),
-aheatEnable(save.aheatEnable),
-sextraLoopsCA(save.sextraLoopsCA),
-paused(save.paused),
-gravityMode(save.gravityMode),
-airMode(save.airMode),
-edgeMode(save.edgeMode),
-signs(save.signs),
-palette(save.palette),
-expanded(save.expanded),
-sim_max_pressure(save.sim_max_pressure),
-hasOriginalData(save.hasOriginalData),
-originalData(save.originalData),
-isFromMyMod(save.isFromMyMod)
+	waterEEnabled(save.waterEEnabled),
+	legacyEnable(save.legacyEnable),
+	gravityEnable(save.gravityEnable),
+	aheatEnable(save.aheatEnable),
+	sextraLoopsCA(save.sextraLoopsCA),
+	paused(save.paused),
+	gravityMode(save.gravityMode),
+	airMode(save.airMode),
+	edgeMode(save.edgeMode),
+	signs(save.signs),
+	palette(save.palette),
+	expanded(save.expanded),
+	sim_max_pressure(save.sim_max_pressure),
+	hasOriginalData(save.hasOriginalData),
+	originalData(save.originalData),
+	isFromMyMod(save.isFromMyMod)
 {
 	InitData();
+	hasPressure = save.hasPressure;
+	hasAmbientHeat = save.hasAmbientHeat;
 	if (save.expanded)
 	{
 		setSize(save.blockWidth, save.blockHeight);
@@ -153,6 +155,7 @@ void GameSave::InitData()
 	velocityY = NULL;
 	ambientHeat = NULL;
 	fromNewerVersion = false;
+	hasPressure = false;
 	hasAmbientHeat = false;
 	authors.clear();
 }
@@ -900,6 +903,7 @@ void GameSave::readOPS(char * data, int dataLength)
 				pressure[blockY+y][blockX+x] = ((i+(i2<<8))/128.0f)-256;
 			}
 		}
+		hasPressure = true;
 	}
 
 	//Read vx data
