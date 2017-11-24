@@ -31,12 +31,12 @@ public:
 	void SetEdgeMode(int edgeMode);
 	int GetGravityMode();
 	void SetGravityMode(int gravityMode);
+	int GetScale();
+	void SetScale(int scale);
 	bool GetFullscreen();
 	void SetFullscreen(bool fullscreen);
 	bool GetFastQuit();
 	void SetFastQuit(bool fastquit);
-	bool GetScale();
-	void SetScale(bool scale);
 	virtual ~OptionsModel();
 };
 

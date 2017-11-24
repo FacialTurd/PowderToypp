@@ -142,20 +142,35 @@ OptionsView::OptionsView():
 	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
 	AddComponent(tempLabel);
 
-	class ScaleAction: public ui::CheckboxAction
+	class ScaleAction: public ui::DropDownAction
 	{
 		OptionsView * v;
 	public:
-		ScaleAction(OptionsView * v_){	v = v_;	}
-		virtual void ActionCallback(ui::Checkbox * sender){	v->c->SetScale(sender->GetChecked()); }
+		ScaleAction(OptionsView * v): v(v) { }
+		virtual void OptionChanged(ui::DropDown * sender, std::pair<std::string, int> option) { v->c->SetScale(option.second); }
 	};
-
-	scale = new ui::Checkbox(ui::Point(8, 210), ui::Point(Size.X-6, 16), "Large screen", "");
+	scale = new ui::DropDown(ui::Point(8, 210), ui::Point(40, 16));
+	{
+		int current_scale = ui::Engine::Ref().GetScale();
+		int ix_scale = 1;
+		bool current_scale_valid = false;
+		do
+		{
+			if (current_scale == ix_scale)
+				current_scale_valid = true;
+			scale->AddOption(std::pair<std::string, int>(format::NumberToString<int>(ix_scale), ix_scale));
+			ix_scale += 1;
+		}
+		while (ui::Engine::Ref().GetMaxWidth() >= ui::Engine::Ref().GetWidth() * ix_scale && ui::Engine::Ref().GetMaxHeight() >= ui::Engine::Ref().GetHeight() * ix_scale);
+		if (!current_scale_valid)
+			scale->AddOption(std::pair<std::string, int>("current", current_scale));
+	}
 	scale->SetActionCallback(new ScaleAction(this));
-	tempLabel = new ui::Label(ui::Point(scale->Position.X+Graphics::textwidth(scale->GetText().c_str())+20, scale->Position.Y), ui::Point(Size.X-28, 16), "\bg- Double window size for larger screens");
+	AddComponent(scale);
+
+	tempLabel = new ui::Label(ui::Point(scale->Position.X+scale->Size.X+3, scale->Position.Y), ui::Point(Size.X-28, 16), "\bg- Window scale factor for larger screens");
 	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
 	AddComponent(tempLabel);
-	AddComponent(scale);
 
 
 	class FullscreenAction: public ui::CheckboxAction
@@ -285,7 +300,7 @@ void OptionsView::NotifySettingsChanged(OptionsModel * sender)
 	airMode->SetOption(sender->GetAirMode());
 	gravityMode->SetOption(sender->GetGravityMode());
 	edgeMode->SetOption(sender->GetEdgeMode());
-	scale->SetChecked(sender->GetScale());
+	scale->SetOption(sender->GetScale());
 	fullscreen->SetChecked(sender->GetFullscreen());
 	fastquit->SetChecked(sender->GetFastQuit());
 	showAvatars->SetChecked(sender->GetShowAvatars());

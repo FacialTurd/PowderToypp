@@ -26,7 +26,7 @@ public:
 	void SetAirMode(int airMode);
 	void SetEdgeMode(int edgeMode);
 	void SetFullscreen(bool fullscreen);
-	void SetScale(bool scale);
+	void SetScale(int scale);
 	void SetFastQuit(bool fastquit);
 	void SetShowAvatars(bool showAvatars);
 	void Set3dDepth(int depth);

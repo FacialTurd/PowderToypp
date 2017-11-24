@@ -90,17 +90,17 @@ void OptionsModel::SetGravityMode(int gravityMode)
 	notifySettingsChanged();
 }
 
-bool OptionsModel::GetScale()
+int OptionsModel::GetScale()
 {
-	return ui::Engine::Ref().GetScale()==2;
-}
-void OptionsModel::SetScale(bool doubleScale)
-{
-	ui::Engine::Ref().SetScale(doubleScale?2:1);
-	Client::Ref().SetPref("Scale", int(doubleScale?2:1));
-	notifySettingsChanged();
+	return ui::Engine::Ref().GetScale();
 }
 
+void OptionsModel::SetScale(int scale)
+{
+	ui::Engine::Ref().SetScale(scale);
+	Client::Ref().SetPref("Scale", int(scale));
+	notifySettingsChanged();
+}
 
 bool OptionsModel::GetFullscreen()
 {
