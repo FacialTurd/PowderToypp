@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#include <limits.h>
+#include <climits>
 //#TPT-Directive ElementClass Element_STKM PT_STKM 55
 Element_STKM::Element_STKM()
 {
