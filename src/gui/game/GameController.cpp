@@ -1008,6 +1008,11 @@ void GameController::Update()
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
 	}
+	if (sim->SimExtraFunc & 1)
+	{
+		sim->SimExtraFunc &= ~1;
+		gameModel->SetPaused(true);
+	}
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
 	//This won't run if the stickmen dies in a frame, since it respawns instantly

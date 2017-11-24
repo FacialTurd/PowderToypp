@@ -21,7 +21,7 @@
 #include "common/tpt-minmax.h"
 #include "gui/game/Brush.h"
 
-#include "gui/interface/Engine.h"
+//#include "gui/interface/Engine.h"
 
 #include "simplugin.h"
 
@@ -873,48 +873,30 @@ int Simulation::flood_water(int x, int y, int i, int originaly, int check)
 void Simulation::SetEdgeMode(int newEdgeMode)
 {
 	edgeMode = newEdgeMode;
+	int i;
+	char new_wall_type = (edgeMode == 1 ? WL_WALL : 0);
 	switch(edgeMode)
 	{
 	case 0:
-	case 2:
-		for(int i = 0; i<(XRES/CELL); i++)
-		{
-			if (wtypes[ bmap[0][i] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[0][i] = 0;
-			if (wtypes[ bmap[YRES/CELL-1][i] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[YRES/CELL-1][i] = 0;
-		}
-		for(int i = 1; i<((YRES/CELL)-1); i++)
-		{
-			if (wtypes[ bmap[i][0] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[i][0] = 0;
-			if (wtypes[ bmap[i][XRES/CELL-1] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[i][XRES/CELL-1] = 0;
-		}
-		break;
 	case 1:
-		int i;
-		for(i=0; i<(XRES/CELL); i++)
+	case 2:
+		for(i = 0; i<(XRES/CELL); i++)
 		{
 			if (wtypes[ bmap[0][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
-			bmap[0][i] = WL_WALL;
+			bmap[0][i] = new_wall_type;
 			if (wtypes[ bmap[YRES/CELL-1][i] ].PressureTransition >= 0)
 				breakable_wall_count--;
-			bmap[YRES/CELL-1][i] = WL_WALL;
+			bmap[YRES/CELL-1][i] = new_wall_type;
 		}
-		for(i=1; i<((YRES/CELL)-1); i++)
+		for(i = 1; i<((YRES/CELL)-1); i++)
 		{
 			if (wtypes[ bmap[i][0] ].PressureTransition >= 0)
 				breakable_wall_count--;
-			bmap[i][0] = WL_WALL;
+			bmap[i][0] = new_wall_type;
 			if (wtypes[ bmap[i][XRES/CELL-1] ].PressureTransition >= 0)
 				breakable_wall_count--;
-			bmap[i][XRES/CELL-1] = WL_WALL;
+			bmap[i][XRES/CELL-1] = new_wall_type;
 		}
 		break;
 	default:
@@ -2401,7 +2383,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 	if (result == 3)
 	{
 		switch (r&0xFF)
-  		{
+		{
 		case PT_LCRY:
 			if (pt==PT_PHOT)
 				result = (parts[r>>8].life > 5)? 2 : 0;
@@ -2855,7 +2837,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	}
 	
 	switch (parts[i].type)
-  	{
+	{
 	case PT_NEUT:
 		if (elements[r & 0xFF].Properties & PROP_NEUTABSORB)
 		{
@@ -6154,6 +6136,8 @@ void Simulation::AfterSim()
 		int temp_flags = SimExtraFunc;
 #if !defined(__GNUC__) && !defined(_MSVC_VER)
 		int shift = 0, mask = 1;
+#else
+		temp_flags &= 0x1B74;
 #endif
 		do
 		{
@@ -6163,9 +6147,6 @@ void Simulation::AfterSim()
 		switch (shift)
 #endif
 		{
-		case 0:
-			sys_pause = true; // set pause state
-			break;
 		case 2:
 			no_generating_BHOL = !no_generating_BHOL; // toggle BHOL generation
 			break;
@@ -6201,7 +6182,7 @@ void Simulation::AfterSim()
 		mask <<= 1;
 #endif
 		} while (temp_flags);
-		SimExtraFunc &= ~0x00001BF5;
+		SimExtraFunc &= ~0x00001BF4;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)
@@ -6359,7 +6340,7 @@ Simulation::Simulation():
 	int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 	int tportal_ry[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 
-	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));
+	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));   
 	memcpy(portal_ry, tportal_ry, sizeof(tportal_ry));
 
 	currentTick = 0;

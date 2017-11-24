@@ -2031,7 +2031,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				case  9: rr = !(sim->air->airMode & 1); break;	// check "Air pressure"
 				case 10: rr = !sim->gravityMode; break;			// check "Vertical gravity mode"
 				case 11: rr = sim->gravityMode == 2; break;		// check "Radial gravity mode"
+#ifdef TPT_NEED_DLL_PLUGIN
 				case 12: rr = (sim->dllexceptionflag & 2); break;	// is DLL call error trigged?
+#endif
 			}
 			inverted && (rr = !rr);
 			if (rr)

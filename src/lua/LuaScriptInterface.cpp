@@ -56,6 +56,8 @@ extern "C"
 }
 #include "socket/socket.lua.h"
 
+#include <zlib.h>
+
 #define IN_BOUNDS(x, y) ((x)>=0 && (y)>=0 && (x)<XRES && (y)<YRES)
 
 // #include "gui/game/Notification.h" // already in GameModel.h
@@ -876,6 +878,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"setCustomGOLGrad", simulation_setCustomGOLGrad},
 		{"partKillDestroyable", simulation_partKillDestroyable},
 		{"pmap_moveTo", simulation_pmap_move_to},
+		{"isDestructible", &simulation_isDestructible},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -2331,6 +2334,32 @@ int LuaScriptInterface::simulation_pmap(lua_State * l)
 	return 1;
 }
 
+int LuaScriptInterface::simulation_isDestructible(lua_State * l) // input argument: particle ID or position
+{
+	int i, r, t;
+	int args = lua_gettop(l);
+	i = luaL_checkint(l, 1);
+	if (args == 2)
+	{
+		t = luaL_checkint(l, 2);
+		if (IN_BOUNDS(i, t))
+		{
+			r = luacon_sim->pmap[t][i];
+			if (!r) goto ret_true;
+			i = r>>8;
+		}
+		else
+			return luaL_error(l, "coordinates out of range (%d, %d)", i, t);
+	}
+	if (i < 0 || i >= NPART) goto ret_true;
+	t = luacon_sim->parts[i].type & 0xFF;
+	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_NODESTRUCT) == 0);
+	return 1;
+ret_true:
+	lua_pushboolean(l, true);
+	return 1;
+}
+
 int LuaScriptInterface::simulation_photons(lua_State * l)
 {
 	int x = luaL_checkint(l, 1);
@@ -2527,29 +2556,116 @@ int LuaScriptInterface::simulation_setCustomGOLGrad(lua_State * l)
 
 int LuaScriptInterface::simulation_createDebugComponent (lua_State * l)
 {
-	int i;
-	if (lua_gettop(l) < 5)
+	int i, v, args = lua_gettop(l);
+	if (args < 5)
 	{
 		return luaL_error(l, "Invalid argument length");
 	}
 	if (lua_isstring(l, 1))
 	{
-		const char * __str = luaL_checkstring(l, 1);
+		char * __str = (char *)luaL_checkstring(l, 1);
 		int __x = luaL_checkinteger(l, 2);
 		int __y = luaL_checkinteger(l, 3);
 		int __dx = luaL_checkinteger(l, 4);
 		int __dy = luaL_checkinteger(l, 5);
+		int __str_len = lua_objlen(l, 1);
+		int __arg6 = 0;
+		int retn;
+		unsigned char stream_out[XRES*4];
 		luacon_sim->create_part(-1, __x++, __y, PT_METL);
 		i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);
 		if (i >= 0)
 			luacon_sim->parts[i].ctype = (__dx & 0xFFFF) | (__dy << 16);
 			luacon_sim->parts[i].tmp = 0x0200;
-		while (*__str)
+		if (args == 6)
 		{
+			__arg6 = luaL_checkinteger(l, 6);
+			if (__arg6 == 1 || __arg6 == 3)
+			{
+				luacon_sim->parts[i].tmp2 = 1;
+				z_stream zstrm;
+
+				zstrm.zalloc = Z_NULL;
+				zstrm.zfree = Z_NULL;
+				zstrm.opaque = Z_NULL;
+				retn = deflateInit2(&zstrm, 9, Z_DEFLATED, -10, 1, Z_DEFAULT_STRATEGY);
+
+				if (retn != Z_OK) goto zliberr;
+
+				zstrm.next_in = (unsigned char*)__str;
+				zstrm.avail_in = __str_len;
+
+				zstrm.avail_out = XRES;
+				zstrm.next_out = stream_out;
+				__str = (char*)stream_out;
+
+				retn = deflate(&zstrm, Z_FINISH);
+
+				__str_len = zstrm.total_out;
+
+				if (retn != Z_STREAM_END) goto zliberr;
+
+				deflateEnd(&zstrm);
+
+				goto zlibfin;
+
+			zliberr:
+				return luaL_error(l, "zlib error");
+
+			zlibfin: ;
+			}
+		}
+		int stepsize = (__arg6 == 2 || __arg6 == 3) ? 4 : 1;
+		intptr_t __str_end = (intptr_t)__str + __str_len;
+		int rept = 0;
+		char repc, again1 = 0;
+		bool b = (__arg6 == 4), stopc = false;
+		if (stepsize == 4)
+		{
+			i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 16);
+			if (i >= 0) luacon_sim->parts[i].ctype = -1;
+		}
+		while ((intptr_t)__str < (__str_end + (b ? 1 : 0)))
+		{
+			if (__arg6 == 4)
+			{
+				stopc = true;
+				if (rept && ((repc != (int)*__str) || ((intptr_t)__str == __str_end)))
+				{
+					v = repc;
+					if (rept >= 3)
+					{
+						i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 16);
+						if (i < 0) break;
+						luacon_sim->parts[i].ctype = -2;
+						luacon_sim->parts[i].tmp = rept;
+					}
+					else if (rept == 2) again1 = 1;
+					rept = 0; stopc = false;
+				}
+				rept++;
+				repc = (int)*__str;
+			}
+			else if (stepsize == 4)
+				v = *(int*)__str;
+			else
+				v = (int)(*__str & 0xFF);
+			
+			__str += stepsize;
+
+			if (stopc) continue;
+		again1l:
 			i = luacon_sim->create_part(-1, __x++, __y, ELEM_MULTIPP, 10);
 			if (i < 0) break;
-			luacon_sim->parts[i].ctype = (int)(*__str & 0xFF);
-			__str++;
+			luacon_sim->parts[i].ctype = v;
+			if (again1)
+			{
+				again1 = 0; goto again1l;
+			}
+		}
+		if (stepsize == 4 && (intptr_t)__str - __str_end > 0)
+		{
+			luacon_sim->parts[i].ctype &= 0xFFFFFFFFU >> (8 * ((intptr_t)__str - __str_end));
 		}
 	}
 	return 0;
@@ -3003,13 +3119,12 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, PROP_NOAMBHEAT);
 	SETCONST(l, PROP_DRAWONCTYPE);
 	SETCONST(l, PROP_NOCTYPEDRAW);
+
 	SETCONST(l, PROP_NOSLOWDOWN);
 	SETCONST(l, PROP_TRANSPARENT);
-
-	lua_pushinteger(l, PROP_UNLIMSTACKING);
-	lua_setfield(l, -2, "PROP_UNLIMITED_STACKING"); // 2^27
 	SETCONST(l, PROP_INSULATED);
 	SETCONST(l, PROP_CONDUCTS_SPEC);
+	SETCONST(l, PROP_NO_NBHL_GEN);
 	
 	// second property flags
 	SETCONST(l, PROP_DEBUG_USE_TMP2);
@@ -3023,9 +3138,12 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, PROP_NEUTRONS_LIKE);
 	SETCONST(l, PROP_NODESTRUCT);
 	SETCONST(l, PROP_CLONE);
+	SETCONST(l, PROP_ALLOWS_WALL);
 	// SETCONST(l, PROP_DRAWONCTYPE);
 	// SETCONST(l, PROP_NOSLOWDOWN);
 	SETCONST(l, PROP_INVISIBLE);
+	lua_pushinteger(l, PROP_UNLIMSTACKING);
+	lua_setfield(l, -2, "PROP_UNLIMITED_STACKING"); // 2^27
 
 	SETCONST(l, FLAG_STAGNANT);
 	SETCONST(l, FLAG_SKIPMOVE);

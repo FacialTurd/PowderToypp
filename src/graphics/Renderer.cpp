@@ -141,11 +141,11 @@ void Renderer::RenderBegin()
 		{
 			int boffset = 0;
 			memcpy(vid, oldVid, VIDXRES*YRES*sizeof(pixel));
-			while (boffset < mytxt_buffer1_offset)
+			while (mytxt_buffer1_parts--)
 			{
 				int16_t * bblock = (int16_t*)&mytxt_buffer1[boffset];
 				drawtext(bblock[1], bblock[2], (char*)&mytxt_buffer1[boffset+6], 255, 255, 255, 255);
-				boffset += *bblock;
+				boffset += (*bblock & 0xFFFF) << 1;
 			}
 			for (int y = 0; y < YRES; y++)
 			{
