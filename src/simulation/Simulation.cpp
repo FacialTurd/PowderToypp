@@ -127,7 +127,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			elementCount[parts[r>>8].type]--;
 			parts[r>>8] = tempPart;
 			i = r>>8;
-			pmap[y][x] = 0;
 			elementCount[tempPart.type]++;
 		}
 		else if ((r = photons[y][x]))
@@ -135,7 +134,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			elementCount[parts[r>>8].type]--;
 			parts[r>>8] = tempPart;
 			i = r>>8;
-			photons[y][x] = 0;
 			elementCount[tempPart.type]++;
 		}
 		//Allocate new particle
@@ -145,9 +143,9 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 				break;
 			i = pfree;
 			pfree = parts[i].life;
-			if (i>parts_lastActiveIndex) parts_lastActiveIndex = i;
+			if (i > parts_lastActiveIndex)
+				parts_lastActiveIndex = i;
 			parts[i] = tempPart;
-
 			elementCount[tempPart.type]++;
 		}
 
@@ -197,6 +195,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	parts_lastActiveIndex = NPART-1;
 	force_stacking_check = true;
 	Element_PPIP::ppip_changed = 1;
+	RecalcFreeParticles(false);
 
 	// fix SOAP links using soapList, a map of old particle ID -> new particle ID
 	// loop through every old particle (loaded from save), and convert .tmp / .tmp2
@@ -208,22 +207,16 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp);
 			if (n != end)
 				parts[i].tmp = n->second;
-			else
-			{
-				parts[i].tmp = 0;
-				parts[i].ctype ^= 2;
-			}
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
 		}
 		if ((parts[i].ctype & 0x4) == 4)
 		{
 			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp2);
 			if (n != end)
 				parts[i].tmp2 = n->second;
-			else
-			{
-				parts[i].tmp2 = 0;
-				parts[i].ctype ^= 4;
-			}
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
 		}
 	}
 
