@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cmath>
 #include <climits>
+#include <memory>
 #include <vector>
 #include <set>
 #include <bzlib.h>
@@ -276,7 +277,15 @@ std::vector<char> GameSave::Serialise()
 
 char * GameSave::Serialise(unsigned int & dataSize)
 {
-	return serialiseOPS(dataSize);
+	try
+	{
+		return serialiseOPS(dataSize);
+	}
+	catch (BuildException e)
+	{
+		std::cout << e.what() << std::endl;
+		return NULL;
+	}
 }
 
 vector2d GameSave::Translate(vector2d translate)
@@ -514,11 +523,6 @@ void GameSave::Transform(matrix2d transform, vector2d translate, vector2d transl
 	ambientHeat = ambientHeatNew;
 }
 
-void bson_error_handler(const char *err)
-{
-	throw ParseException(ParseException::Corrupt, "BSON error when parsing save");
-}
- 
 void GameSave::CheckBsonFieldUser(bson_iterator iter, const char *field, unsigned char **data, unsigned int *fieldLen)
 {
 	if (!strcmp(bson_iterator_key(&iter), field))
@@ -571,13 +575,16 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned int inputDataLen = dataLength, bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen, ambientDataLen;
 	int my_mod_id_2 = 0;
-
-	unsigned partsCount = 0, *partsSimIndex = NULL;
-	int *freeIndices = NULL;
+	unsigned partsCount = 0;
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int savedVersion = inputData[4];
+
 	bson b;
+	b.data = NULL;
 	bson_iterator iter;
+	auto bson_deleter = [](bson * b) { bson_destroy(b); };
+	// Use unique_ptr with a custom deleter to ensure that bson_destroy is called even when an exception is thrown
+	std::unique_ptr<bson, decltype(bson_deleter)> b_ptr(&b, bson_deleter);
 
 	//Block sizes
 	blockX = 0;
@@ -626,10 +633,13 @@ void GameSave::readOPS(char * data, int dataLength)
 	//(bson_iterator_key returns a pointer into bsonData, which is then used with strcmp)
 	bsonData[bsonDataLen] = 0;
 
-	if (BZ2_bzBuffToBuffDecompress((char*)bsonData, &bsonDataLen, (char*)(inputData+12), inputDataLen-12, 0, 0))
-		throw ParseException(ParseException::Corrupt, "Unable to decompress");
+	int bz2ret;
+	if ((bz2ret = BZ2_bzBuffToBuffDecompress((char*)bsonData, &bsonDataLen, (char*)(inputData+12), inputDataLen-12, 0, 0)) != BZ_OK)
+	{
+		throw ParseException(ParseException::Corrupt, "Unable to decompress (ret " + format::NumberToString<int>(bz2ret) + ")");
+	}
 
-	set_bson_err_handler(bson_error_handler);
+	set_bson_err_handler([](const char* err) { throw ParseException(ParseException::Corrupt, "BSON error when parsing save: " + std::string(err)); });
 	bson_init_data_size(&b, (char*)bsonData, bsonDataLen);
 	bson_iterator_init(&iter, &b);
 
@@ -821,10 +831,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	{
 		unsigned int j = 0;
 		if (blockW * blockH > wallDataLen)
-		{
-			fprintf(stderr, "Not enough wall data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough wall data");
 		for (unsigned int x = 0; x < blockW; x++)
 		{
 			for (unsigned int y = 0; y < blockH; y++)
@@ -890,10 +897,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		unsigned int j = 0;
 		unsigned char i, i2;
 		if (blockW * blockH > pressDataLen)
-		{
-			fprintf(stderr, "Not enough pressure data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough pressure data");
 		for (unsigned int x = 0; x < blockW; x++)
 		{
 			for (unsigned int y = 0; y < blockH; y++)
@@ -912,10 +916,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		unsigned int j = 0;
 		unsigned char i, i2;
 		if (blockW * blockH > vxDataLen)
-		{
-			fprintf(stderr, "Not enough vx data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough vx data");
 		for (unsigned int x = 0; x < blockW; x++)
 		{
 			for (unsigned int y = 0; y < blockH; y++)
@@ -933,10 +934,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		unsigned int j = 0;
 		unsigned char i, i2;
 		if (blockW * blockH > vyDataLen)
-		{
-			fprintf(stderr, "Not enough vy data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough vy data");
 		for (unsigned int x = 0; x < blockW; x++)
 		{
 			for (unsigned int y = 0; y < blockH; y++)
@@ -953,10 +951,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	{
 		unsigned int i = 0, tempTemp;
 		if (blockW * blockH > ambientDataLen)
-		{
-			fprintf(stderr, "Not enough ambient data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough ambient heat data");
 		for (unsigned int x = 0; x < blockW; x++)
 		{
 			for (unsigned int y = 0; y < blockH; y++)
@@ -975,12 +970,8 @@ void GameSave::readOPS(char * data, int dataLength)
 		int newIndex = 0, fieldDescriptor, tempTemp;
 		int posCount, posTotal, partsPosDataIndex = 0;
 		if (fullW * fullH * 3 > partsPosDataLen)
-		{
-			fprintf(stderr, "Not enough particle position data\n");
-			goto fail;
-		}
+			throw ParseException(ParseException::Corrupt, "Not enough particle position data");
 
-		partsSimIndex = (unsigned int*)calloc(NPART, sizeof(unsigned));
 		partsCount = 0;
 
 		unsigned int i = 0;
@@ -999,29 +990,18 @@ void GameSave::readOPS(char * data, int dataLength)
 				for (posCount = 0; posCount < posTotal; posCount++)
 				{
 					particlesCount = newIndex+1;
-					if (newIndex >= NPART)
-					{
-						goto fail;
-					}
-
 					//i+3 because we have 4 bytes of required fields (type (1), descriptor (2), temp (1))
 					if (i+3 >= partsDataLen)
-						goto fail;
+						throw ParseException(ParseException::Corrupt, "Ran past particle data buffer");
 					x = saved_x + fullX;
 					y = saved_y + fullY;
 					fieldDescriptor = partsData[i+1];
 					fieldDescriptor |= partsData[i+2] << 8;
 					if (x >= fullW || y >= fullH)
-					{
-						fprintf(stderr, "Out of range [%d]: %d %d, [%d, %d], [%d, %d]\n", i, x, y, (unsigned)partsData[i+1], (unsigned)partsData[i+2], (unsigned)partsData[i+3], (unsigned)partsData[i+4]);
-						goto fail;
-					}
+						throw ParseException(ParseException::Corrupt, "Particle out of range");
 
 					if (newIndex < 0 || newIndex >= NPART)
-						goto fail;
-
-					//Store partsptr index+1 for this saved particle index (0 means not loaded)
-					partsSimIndex[partsCount++] = newIndex+1;
+						throw ParseException(ParseException::Corrupt, "Too many particles");
 
 					//Clear the particle, ready for our new properties
 					memset(&(particles[newIndex]), 0, sizeof(Particle));
@@ -1050,12 +1030,15 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read life
 					if(fieldDescriptor & 0x02)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading life");
 						particles[newIndex].life = partsData[i++];
+						//i++;
 						//Read 2nd byte
 						if(fieldDescriptor & 0x04)
 						{
-							if(i >= partsDataLen) goto fail;
+							if (i >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading life");
 							particles[newIndex].life |= (((unsigned)partsData[i++]) << 8);
 						}
 					}
@@ -1063,17 +1046,20 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read tmp
 					if(fieldDescriptor & 0x08)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp");
 						particles[newIndex].tmp = partsData[i++];
 						//Read 2nd byte
 						if(fieldDescriptor & 0x10)
 						{
-							if(i >= partsDataLen) goto fail;
+							if (i >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp");
 							particles[newIndex].tmp |= (((unsigned)partsData[i++]) << 8);
 							//Read 3rd and 4th bytes
 							if(fieldDescriptor & 0x1000)
 							{
-								if(i+1 >= partsDataLen) goto fail;
+								if (i+1 >= partsDataLen)
+									throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp");
 								particles[newIndex].tmp |= (((unsigned)partsData[i++]) << 24);
 								particles[newIndex].tmp |= (((unsigned)partsData[i++]) << 16);
 							}
@@ -1083,12 +1069,14 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read ctype
 					if(fieldDescriptor & 0x20)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading ctype");
 						particles[newIndex].ctype = partsData[i++];
 						//Read additional bytes
 						if(fieldDescriptor & 0x200)
 						{
-							if(i+2 >= partsDataLen) goto fail;
+							if (i+2 >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading ctype");
 							particles[newIndex].ctype |= (((unsigned)partsData[i++]) << 24);
 							particles[newIndex].ctype |= (((unsigned)partsData[i++]) << 16);
 							particles[newIndex].ctype |= (((unsigned)partsData[i++]) << 8);
@@ -1098,7 +1086,8 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read dcolour
 					if(fieldDescriptor & 0x40)
 					{
-						if(i+3 >= partsDataLen) goto fail;
+						if (i+3 >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading deco");
 						particles[newIndex].dcolour = (((unsigned)partsData[i++]) << 24);
 						particles[newIndex].dcolour |= (((unsigned)partsData[i++]) << 16);
 						particles[newIndex].dcolour |= (((unsigned)partsData[i++]) << 8);
@@ -1108,25 +1097,29 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read vx
 					if(fieldDescriptor & 0x80)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading vx");
 						particles[newIndex].vx = (partsData[i++]-127.0f)/16.0f;
 					}
 
 					//Read vy
 					if(fieldDescriptor & 0x100)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading vy");
 						particles[newIndex].vy = (partsData[i++]-127.0f)/16.0f;
 					}
 
 					//Read tmp2
 					if(fieldDescriptor & 0x400)
 					{
-						if(i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp2");
 						particles[newIndex].tmp2 = partsData[i++];
 						if(fieldDescriptor & 0x800)
 						{
-							if(i >= partsDataLen) goto fail;
+							if (i >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp2");
 							particles[newIndex].tmp2 |= (((unsigned)partsData[i++]) << 8);
 						}
 					}
@@ -1134,7 +1127,8 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read pavg
 					if(fieldDescriptor & 0x2000)
 					{
-						if(i+3 >= partsDataLen) goto fail;
+						if (i+3 >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading pavg");
 						int pavg;
 						pavg = partsData[i++];
 						pavg |= (((unsigned)partsData[i++]) << 8);
@@ -1339,39 +1333,43 @@ void GameSave::readOPS(char * data, int dataLength)
 					}
 					//note: PSv was used in version 77.0 and every version before, add something in PSv too if the element is that old
 					newIndex++;
+					partsCount++;
 				}
 			}
 		}
-		if (soapLinkData)
-		{
-			unsigned int soapLinkDataPos = 0;
-			for (unsigned int i = 0; i < partsCount; i++)
-			{
-				if (partsSimIndex[i] && particles[partsSimIndex[i]-1].type == PT_SOAP)
-				{
-					// Get the index of the particle forward linked from this one, if present in the save data
-					unsigned int linkedIndex = 0;
-					if (soapLinkDataPos+3 > soapLinkDataLen) break;
-					linkedIndex |= soapLinkData[soapLinkDataPos++]<<16;
-					linkedIndex |= soapLinkData[soapLinkDataPos++]<<8;
-					linkedIndex |= soapLinkData[soapLinkDataPos++];
-					// All indexes in soapLinkData and partsSimIndex have 1 added to them (0 means not saved/loaded)
-					if (!linkedIndex || linkedIndex-1>=partsCount || !partsSimIndex[linkedIndex-1])
-						continue;
-					linkedIndex = partsSimIndex[linkedIndex-1]-1;
-					newIndex = partsSimIndex[i]-1;
 
-					//Attach the two particles
-					particles[newIndex].ctype |= 2;
-					particles[newIndex].tmp = linkedIndex;
-					particles[linkedIndex].ctype |= 4;
-					particles[linkedIndex].tmp2 = newIndex;
-				}
+		if (i != partsDataLen)
+			throw ParseException(ParseException::Corrupt, "Didn't reach end of particle data buffer");
+	}
+
+	if (soapLinkData)
+	{
+		unsigned int soapLinkDataPos = 0;
+		for (unsigned int i = 0; i < partsCount; i++)
+		{
+			if (particles[i].type == PT_SOAP)
+			{
+				// Get the index of the particle forward linked from this one, if present in the save data
+				unsigned int linkedIndex = 0;
+				if (soapLinkDataPos+3 > soapLinkDataLen) break;
+				linkedIndex |= soapLinkData[soapLinkDataPos++]<<16;
+				linkedIndex |= soapLinkData[soapLinkDataPos++]<<8;
+				linkedIndex |= soapLinkData[soapLinkDataPos++];
+				// All indexes in soapLinkData and partsSimIndex have 1 added to them (0 means not saved/loaded)
+				if (!linkedIndex || linkedIndex-1 >= partsCount)
+					continue;
+				linkedIndex = linkedIndex-1;
+
+				//Attach the two particles
+				particles[i].ctype |= 2;
+				particles[i].tmp = linkedIndex;
+				particles[linkedIndex].ctype |= 4;
+				particles[linkedIndex].tmp2 = i;
 			}
 		}
 	}
 
-	if(tempSigns.size())
+	if (tempSigns.size())
 	{
 		for (size_t i = 0; i < tempSigns.size(); i++)
 		{
@@ -1380,26 +1378,14 @@ void GameSave::readOPS(char * data, int dataLength)
 			signs.push_back(tempSigns[i]);
 		}
 	}
-	goto fin;
-fail:
-	//Clean up everything
-	bson_destroy(&b);
-	free(freeIndices);
-	free(partsSimIndex);
-	throw ParseException(ParseException::Corrupt, "Save data corrupt");
-fin:
-	bson_destroy(&b);
-	free(freeIndices);
-	free(partsSimIndex);
 }
 
-void GameSave::readPSv(char * data, int dataLength)
+void GameSave::readPSv(char * saveDataChar, int dataLength)
 {
-	unsigned char * d = NULL, * c = (unsigned char *)data;
-	int q,i,j,k,x,y,p=0,*m=NULL, ver, pty, ty, legacy_beta=0;
+	unsigned char * saveData = (unsigned char *)saveDataChar;
+	int q,j,k,x,y,p=0, ver, pty, ty, legacy_beta=0;
 	int bx0=0, by0=0, bw, bh, w, h, y0 = 0, x0 = 0;
 	int new_format = 0, ttv = 0;
-	int *fp = (int *)malloc(NPART*sizeof(int));
 
 	std::vector<sign> tempSigns;
 	char tempSignText[255];
@@ -1421,22 +1407,19 @@ void GameSave::readPSv(char * data, int dataLength)
 
 	std::vector<Element> elements = GetElements();
 
-	try
-	{
-
 	//New file header uses PSv, replacing fuC. This is to detect if the client uses a new save format for temperatures
 	//This creates a problem for old clients, that display and "corrupt" error instead of a "newer version" error
 
 	if (dataLength<16)
 		throw ParseException(ParseException::Corrupt, "No save data");
-	if (!(c[2]==0x43 && c[1]==0x75 && c[0]==0x66) && !(c[2]==0x76 && c[1]==0x53 && c[0]==0x50))
+	if (!(saveData[2]==0x43 && saveData[1]==0x75 && saveData[0]==0x66) && !(saveData[2]==0x76 && saveData[1]==0x53 && saveData[0]==0x50))
 		throw ParseException(ParseException::Corrupt, "Unknown format");
-	if (c[2]==0x76 && c[1]==0x53 && c[0]==0x50) {
+	if (saveData[2]==0x76 && saveData[1]==0x53 && saveData[0]==0x50) {
 		new_format = 1;
 	}
-	if (c[4]>SAVE_VERSION)
+	if (saveData[4]>SAVE_VERSION)
 		throw ParseException(ParseException::WrongVersion, "Save from newer version");
-	ver = c[4];
+	ver = saveData[4];
 
 	if (ver<34)
 	{
@@ -1445,26 +1428,26 @@ void GameSave::readPSv(char * data, int dataLength)
 	else
 	{
 		if (ver>=44) {
-			legacyEnable = c[3]&0x01;
-			paused = (c[3]>>1)&0x01;
+			legacyEnable = saveData[3]&0x01;
+			paused = (saveData[3]>>1)&0x01;
 			if (ver>=46) {
-				gravityMode = ((c[3]>>2)&0x03);// | ((c[3]>>2)&0x01);
-				airMode = ((c[3]>>4)&0x07);// | ((c[3]>>4)&0x02) | ((c[3]>>4)&0x01);
+				gravityMode = ((saveData[3]>>2)&0x03);// | ((c[3]>>2)&0x01);
+				airMode = ((saveData[3]>>4)&0x07);// | ((c[3]>>4)&0x02) | ((c[3]>>4)&0x01);
 			}
 			if (ver>=49) {
-				gravityEnable = ((c[3]>>7)&0x01);
+				gravityEnable = ((saveData[3]>>7)&0x01);
 			}
 		} else {
-			if (c[3]==1||c[3]==0) {
-				legacyEnable = c[3];
+			if (saveData[3]==1||saveData[3]==0) {
+				legacyEnable = saveData[3];
 			} else {
 				legacy_beta = 1;
 			}
 		}
 	}
 
-	bw = c[6];
-	bh = c[7];
+	bw = saveData[6];
+	bh = saveData[7];
 	if (bx0+bw > XRES/CELL)
 		bx0 = XRES/CELL - bw;
 	if (by0+bh > YRES/CELL)
@@ -1474,30 +1457,31 @@ void GameSave::readPSv(char * data, int dataLength)
 	if (by0 < 0)
 		by0 = 0;
 
-	if (c[5]!=CELL || bx0+bw>XRES/CELL || by0+bh>YRES/CELL)
+	if (saveData[5]!=CELL || bx0+bw>XRES/CELL || by0+bh>YRES/CELL)
 		throw ParseException(ParseException::InvalidDimensions, "Save too large");
-	i = (unsigned)c[8];
-	i |= ((unsigned)c[9])<<8;
-	i |= ((unsigned)c[10])<<16;
-	i |= ((unsigned)c[11])<<24;
+	int size = (unsigned)saveData[8];
+	size |= ((unsigned)saveData[9])<<8;
+	size |= ((unsigned)saveData[10])<<16;
+	size |= ((unsigned)saveData[11])<<24;
 
-	if(i > 209715200 || !i)
+	if (size > 209715200 || !size)
 		throw ParseException(ParseException::InvalidDimensions, "Save data too large");
 
-	d = (unsigned char *)malloc(i);
-	if (!d)
+	auto dataPtr = std::unique_ptr<unsigned char[]>(new unsigned char[size]);
+	unsigned char *data = dataPtr.get();
+	if (!data)
 		throw ParseException(ParseException::Corrupt, "Cannot allocate memory");
 
 	setSize(bw, bh);
 
 	int bzStatus = 0;
-	if ((bzStatus = BZ2_bzBuffToBuffDecompress((char *)d, (unsigned *)&i, (char *)(c+12), dataLength-12, 0, 0)))
+	if ((bzStatus = BZ2_bzBuffToBuffDecompress((char *)data, (unsigned *)&size, (char *)(saveData+12), dataLength-12, 0, 0)))
 	{
 		std::stringstream bzStatusStr;
 		bzStatusStr << bzStatus;
 		throw ParseException(ParseException::Corrupt, "Cannot decompress: " + bzStatusStr.str());
 	}
-	dataLength = i;
+	dataLength = size;
 
 #ifdef DEBUG
 	std::cout << "Parsing " << dataLength << " bytes of data, version " << ver << std::endl;
@@ -1516,22 +1500,27 @@ void GameSave::readPSv(char * data, int dataLength)
 		gravityMode = 0;
 		airMode = 0;
 	}
-	m = (int *)calloc(XRES*YRES, sizeof(int));
+
+	auto particleIDMapPtr = std::unique_ptr<int[]>(new int[XRES*YRES]);
+	int *particleIDMap = particleIDMapPtr.get();
+	std::fill(&particleIDMap[0], &particleIDMap[XRES*YRES], 0);
+	if (!particleIDMap)
+		throw ParseException(ParseException::Corrupt, "Cannot allocate memory");
 
 	// load the required air state
 	for (y=by0; y<by0+bh; y++)
 		for (x=bx0; x<bx0+bw; x++)
 		{
-			if (d[p])
+			if (data[p])
 			{
 				//In old saves, ignore walls created by sign tool bug
 				//Not ignoring other invalid walls or invalid walls in new saves, so that any other bugs causing them are easier to notice, find and fix
-				if (ver>=44 && ver<71 && d[p]==O_WL_SIGN)
+				if (ver>=44 && ver<71 && data[p]==O_WL_SIGN)
 				{
 					p++;
 					continue;
 				}
-				blockMap[y][x] = d[p];
+				blockMap[y][x] = data[p];
 				if (blockMap[y][x]==1)
 					blockMap[y][x]=WL_WALL;
 				else if (blockMap[y][x]==2)
@@ -1606,23 +1595,23 @@ void GameSave::readPSv(char * data, int dataLength)
 		}
 	for (y=by0; y<by0+bh; y++)
 		for (x=bx0; x<bx0+bw; x++)
-			if (d[(y-by0)*bw+(x-bx0)]==4||(ver>=44 && d[(y-by0)*bw+(x-bx0)]==O_WL_FAN))
+			if (data[(y-by0)*bw+(x-bx0)]==4||(ver>=44 && data[(y-by0)*bw+(x-bx0)]==O_WL_FAN))
 			{
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-				fanVelX[y][x] = (d[p++]-127.0f)/64.0f;
+				fanVelX[y][x] = (data[p++]-127.0f)/64.0f;
 			}
 	for (y=by0; y<by0+bh; y++)
 		for (x=bx0; x<bx0+bw; x++)
-			if (d[(y-by0)*bw+(x-bx0)]==4||(ver>=44 && d[(y-by0)*bw+(x-bx0)]==O_WL_FAN))
+			if (data[(y-by0)*bw+(x-bx0)]==4||(ver>=44 && data[(y-by0)*bw+(x-bx0)]==O_WL_FAN))
 			{
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-				fanVelY[y][x] = (d[p++]-127.0f)/64.0f;
+				fanVelY[y][x] = (data[p++]-127.0f)/64.0f;
 			}
 
 	// load the particle map
-	i = 0;
+	int i = 0;
 	k = 0;
 	pty = p;
 	for (y=y0; y<y0+h; y++)
@@ -1630,7 +1619,7 @@ void GameSave::readPSv(char * data, int dataLength)
 		{
 			if (p >= dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-			j=d[p++];
+			j=data[p++];
 			if (j >= PT_NUM) {
 				//TODO: Possibly some server side translation
 				j = PT_DUST;//throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
@@ -1651,7 +1640,7 @@ void GameSave::readPSv(char * data, int dataLength)
 					particles[k].ctype = 0x47FFFF;
 				particles[k].x = (float)x;
 				particles[k].y = (float)y;
-				m[(x-x0)+(y-y0)*w] = k+1;
+				particleIDMap[(x-x0)+(y-y0)*w] = k+1;
 				particlesCount = ++k;
 			}
 		}
@@ -1659,7 +1648,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	// load particle properties
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			i--;
@@ -1667,8 +1656,8 @@ void GameSave::readPSv(char * data, int dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 			if (i < NPART)
 			{
-				particles[i].vx = (d[p++]-127.0f)/16.0f;
-				particles[i].vy = (d[p++]-127.0f)/16.0f;
+				particles[i].vx = (data[p++]-127.0f)/16.0f;
+				particles[i].vy = (data[p++]-127.0f)/16.0f;
 			}
 			else
 				p += 2;
@@ -1676,7 +1665,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	}
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			if (ver>=44) {
@@ -1684,8 +1673,8 @@ void GameSave::readPSv(char * data, int dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					ttv = (d[p++])<<8;
-					ttv |= (d[p++]);
+					ttv = (data[p++])<<8;
+					ttv |= (data[p++]);
 					particles[i-1].life = ttv;
 				} else {
 					p+=2;
@@ -1694,7 +1683,7 @@ void GameSave::readPSv(char * data, int dataLength)
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				if (i <= NPART)
-					particles[i-1].life = d[p++]*4;
+					particles[i-1].life = data[p++]*4;
 				else
 					p++;
 			}
@@ -1703,15 +1692,15 @@ void GameSave::readPSv(char * data, int dataLength)
 	if (ver>=44) {
 		for (j=0; j<w*h; j++)
 		{
-			i = m[j];
+			i = particleIDMap[j];
 			if (i)
 			{
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					ttv = (d[p++])<<8;
-					ttv |= (d[p++]);
+					ttv = (data[p++])<<8;
+					ttv |= (data[p++]);
 					particles[i-1].tmp = ttv;
 					if (ver<53 && !particles[i-1].tmp)
 						for (q = 1; q<=NGOL; q++) {
@@ -1732,14 +1721,14 @@ void GameSave::readPSv(char * data, int dataLength)
 	if (ver>=53) {
 		for (j=0; j<w*h; j++)
 		{
-			i = m[j];
-			ty = d[pty+j];
+			i = particleIDMap[j];
+			ty = data[pty+j];
 			if (i && (ty==PT_PBCN || (ty==PT_TRON && ver>=77)))
 			{
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				if (i <= NPART)
-					particles[i-1].tmp2 = d[p++];
+					particles[i-1].tmp2 = data[p++];
 				else
 					p++;
 			}
@@ -1748,7 +1737,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	//Read ALPHA component
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			if (ver>=49) {
@@ -1756,7 +1745,7 @@ void GameSave::readPSv(char * data, int dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					particles[i-1].dcolour = d[p++]<<24;
+					particles[i-1].dcolour = data[p++]<<24;
 				} else {
 					p++;
 				}
@@ -1766,7 +1755,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	//Read RED component
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			if (ver>=49) {
@@ -1774,7 +1763,7 @@ void GameSave::readPSv(char * data, int dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					particles[i-1].dcolour |= d[p++]<<16;
+					particles[i-1].dcolour |= data[p++]<<16;
 				} else {
 					p++;
 				}
@@ -1784,7 +1773,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	//Read GREEN component
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			if (ver>=49) {
@@ -1792,7 +1781,7 @@ void GameSave::readPSv(char * data, int dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					particles[i-1].dcolour |= d[p++]<<8;
+					particles[i-1].dcolour |= data[p++]<<8;
 				} else {
 					p++;
 				}
@@ -1802,7 +1791,7 @@ void GameSave::readPSv(char * data, int dataLength)
 	//Read BLUE component
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
+		i = particleIDMap[j];
 		if (i)
 		{
 			if (ver>=49) {
@@ -1810,7 +1799,7 @@ void GameSave::readPSv(char * data, int dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
 				if (i <= NPART) {
-					particles[i-1].dcolour |= d[p++];
+					particles[i-1].dcolour |= data[p++];
 				} else {
 					p++;
 				}
@@ -1819,8 +1808,8 @@ void GameSave::readPSv(char * data, int dataLength)
 	}
 	for (j=0; j<w*h; j++)
 	{
-		i = m[j];
-		ty = d[pty+j];
+		i = particleIDMap[j];
+		ty = data[pty+j];
 		if (i)
 		{
 			if (ver>=34&&legacy_beta==0)
@@ -1833,18 +1822,18 @@ void GameSave::readPSv(char * data, int dataLength)
 				{
 					if (ver>=42) {
 						if (new_format) {
-							ttv = (d[p++])<<8;
-							ttv |= (d[p++]);
+							ttv = (data[p++])<<8;
+							ttv |= (data[p++]);
 							if (particles[i-1].type==PT_PUMP) {
 								particles[i-1].temp = ttv + 0.15;//fix PUMP saved at 0, so that it loads at 0.
 							} else {
 								particles[i-1].temp = ttv;
 							}
 						} else {
-							particles[i-1].temp = (d[p++]*((MAX_TEMP+(-MIN_TEMP))/255))+MIN_TEMP;
+							particles[i-1].temp = (data[p++]*((MAX_TEMP+(-MIN_TEMP))/255))+MIN_TEMP;
 						}
 					} else {
-						particles[i-1].temp = ((d[p++]*((O_MAX_TEMP+(-O_MIN_TEMP))/255))+O_MIN_TEMP)+273;
+						particles[i-1].temp = ((data[p++]*((O_MAX_TEMP+(-O_MIN_TEMP))/255))+O_MIN_TEMP)+273;
 					}
 				}
 				else
@@ -1864,14 +1853,14 @@ void GameSave::readPSv(char * data, int dataLength)
 	for (j=0; j<w*h; j++)
 	{
 		int gnum = 0;
-		i = m[j];
-		ty = d[pty+j];
+		i = particleIDMap[j];
+		ty = data[pty+j];
 		if (i && (ty==PT_CLNE || (ty==PT_PCLN && ver>=43) || (ty==PT_BCLN && ver>=44) || (ty==PT_SPRK && ver>=21) || (ty==PT_LAVA && ver>=34) || (ty==PT_PIPE && ver>=43) || (ty==PT_LIFE && ver>=51) || (ty==PT_PBCN && ver>=52) || (ty==PT_WIRE && ver>=55) || (ty==PT_STOR && ver>=59) || (ty==PT_CONV && ver>=60)))
 		{
 			if (p >= dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 			if (i <= NPART)
-				particles[i-1].ctype = d[p++];
+				particles[i-1].ctype = data[p++];
 			else
 				p++;
 		}
@@ -2005,26 +1994,27 @@ void GameSave::readPSv(char * data, int dataLength)
 	}
 
 	if (p >= dataLength)
-		goto version1;
-	j = d[p++];
+		throw ParseException(ParseException::Corrupt, "Ran past data buffer");
+
+	j = data[p++];
 	for (i=0; i<j; i++)
 	{
 		if (p+6 > dataLength)
 			throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-		x = d[p++];
-		x |= ((unsigned)d[p++])<<8;
+		x = data[p++];
+		x |= ((unsigned)data[p++])<<8;
 		tempSign.x = x+x0;
-		x = d[p++];
-		x |= ((unsigned)d[p++])<<8;
+		x = data[p++];
+		x |= ((unsigned)data[p++])<<8;
 		tempSign.y = x+y0;
-		x = d[p++];
+		x = data[p++];
 		tempSign.ju = (sign::Justification)x;
-		x = d[p++];
+		x = data[p++];
 		if (p+x > dataLength)
 			throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 		if(x>254)
 			x = 254;
-		memcpy(tempSignText, d+p, x);
+		memcpy(tempSignText, data+p, x);
 		tempSignText[x] = 0;
 		tempSign.text = format::CleanString(tempSignText, true, true, true).substr(0, 45);
 		tempSigns.push_back(tempSign);
@@ -2037,44 +2027,6 @@ void GameSave::readPSv(char * data, int dataLength)
 			break;
 		signs.push_back(tempSigns[i]);
 	}
-
-	}
-	catch(ParseException & e)
-	{
-		if (m)
-		{
-			free(m);
-			m = 0;
-		}
-		if (d)
-		{
-			free(d);
-			d = 0;
-		}
-		if (fp)
-		{
-			free(fp);
-			fp = 0;
-		}
-		throw;
-	}
-
-	version1:
-	if (m)
-	{
-		free(m);
-		m = 0;
-	}
-	if (d)
-	{
-		free(d);
-		d = 0;
-	}
-	if (fp)
-	{
-		free(fp);
-		fp = 0;
-	}
 }
 
 // restrict the minimum version this save can be opened with
@@ -2085,24 +2037,12 @@ void GameSave::readPSv(char * data, int dataLength)
 
 char * GameSave::serialiseOPS(unsigned int & dataLength)
 {
-	//Particle *particles = sim->parts;
-	unsigned char *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *finalData = NULL, *outputData = NULL, *soapLinkData = NULL;
-	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL, *ambientData = NULL;
-	unsigned *partsPosLink = NULL, *partsPosFirstMap = NULL, *partsPosCount = NULL, *partsPosLastMap = NULL;
-	unsigned partsCount = 0, *partsSaveIndex = NULL;
-	unsigned *elementCount = new unsigned[PT_NUM];
-	unsigned int partsDataLen, partsPosDataLen, fanDataLen, wallDataLen,finalDataLen, outputDataLen, soapLinkDataLen;
-	unsigned int pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
 	int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
-	int x, y, i, wallDataFound = 0;
-	int posCount, signsCount;
+	int x, y, i;
 	// minimum version this save is compatible with
 	// when building, this number may be increased depending on what elements are used
 	// or what properties are detected
 	int minimumMajorVersion = 90, minimumMinorVersion = 2;
-	bson b;
-
-	std::fill(elementCount, elementCount+PT_NUM, 0);
 
 	//Get coords in blocks
 	blockX = 0;//orig_x0/CELL;
@@ -2118,26 +2058,26 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	fullW = blockW*CELL;
 	fullH = blockH*CELL;
 
-	//Copy fan and wall data
-	wallData = (unsigned char*)malloc(blockW*blockH);
-	wallDataLen = blockW*blockH;
-	fanData = (unsigned char*)malloc((blockW*blockH)*2);
-	fanDataLen = 0;
-	pressData = (unsigned char*)malloc((blockW*blockH)*2);
-	vxData = (unsigned char*)malloc((blockW*blockH)*2);
-	vyData = (unsigned char*)malloc((blockW*blockH)*2);
-	ambientData = (unsigned char*)malloc((blockW*blockH)*2);
+	// Copy fan and wall data
+	auto wallData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight]);
+	bool hasWallData = false;
+	auto fanData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight*2]);
+	auto pressData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight*2]);
+	auto vxData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight*2]);
+	auto vyData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight*2]);
+	auto ambientData = std::unique_ptr<unsigned char[]>(new unsigned char[blockWidth*blockHeight*2]);
+	std::fill(&ambientData[0], &ambientData[blockWidth*blockHeight*2], 0);
 	if (!wallData || !fanData || !pressData || !vxData || !vyData || !ambientData)
-	{
-		puts("Save Error, out of memory\n");
-		outputData = NULL;
-		goto fin;
-	}
+		throw BuildException("Save error, out of memory (blockmaps)");
+	unsigned int wallDataLen = blockWidth*blockHeight, fanDataLen = 0, pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
+
 	for(x = blockX; x < blockX+blockW; x++)
 	{
 		for(y = blockY; y < blockY+blockH; y++)
 		{
 			wallData[(y-blockY)*blockW+(x-blockX)] = blockMap[y][x];
+			if (blockMap[y][x])
+				hasWallData = true;
 
 			//save pressure and x/y velocity grids
 			float pres = std::max(-255.0f,std::min(255.0f,pressure[y][x]))+256.0f;
@@ -2156,9 +2096,6 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 			ambientData[ambientDataLen++] = tempTemp;
 			ambientData[ambientDataLen++] = tempTemp >> 8;
 
-
-			if(blockMap[y][x] && !wallDataFound)
-				wallDataFound = 1;
 			if(blockMap[y][x]==WL_FAN)
 			{
 				i = (int)(fanVelX[y][x]*64.0f+127.5f);
@@ -2172,26 +2109,23 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 			}
 		}
 	}
-	if(!fanDataLen)
-	{
-		free(fanData);
-		fanData = NULL;
-	}
-	if(!wallDataFound)
-	{
-		free(wallData);
-		wallData = NULL;
-	}
 
 	//Index positions of all particles, using linked lists
 	//partsPosFirstMap is pmap for the first particle in each position
 	//partsPosLastMap is pmap for the last particle in each position
 	//partsPosCount is the number of particles in each position
 	//partsPosLink contains, for each particle, (i<<8)|1 of the next particle in the same position
-	partsPosFirstMap = (unsigned int *)calloc(fullW*fullH, sizeof(unsigned));
-	partsPosLastMap = (unsigned int *)calloc(fullW*fullH, sizeof(unsigned));
-	partsPosCount = (unsigned int *)calloc(fullW*fullH, sizeof(unsigned));
-	partsPosLink = (unsigned int *)calloc(NPART, sizeof(unsigned));
+	auto partsPosFirstMap = std::unique_ptr<unsigned[]>(new unsigned[fullW*fullH]);
+	auto partsPosLastMap = std::unique_ptr<unsigned[]>(new unsigned[fullW*fullH]);
+	auto partsPosCount = std::unique_ptr<unsigned[]>(new unsigned[fullW*fullH]);
+	auto partsPosLink = std::unique_ptr<unsigned[]>(new unsigned[NPART]);
+	if (!partsPosFirstMap || !partsPosLastMap || !partsPosCount || !partsPosLink)
+		throw BuildException("Save error, out of memory  (partmaps)");
+	std::fill(&partsPosFirstMap[0], &partsPosFirstMap[fullW*fullH], 0);
+	std::fill(&partsPosLastMap[0], &partsPosLastMap[fullW*fullH], 0);
+	std::fill(&partsPosCount[0], &partsPosCount[fullW*fullH], 0);
+	std::fill(&partsPosLink[0], &partsPosLink[NPART], 0);
+	unsigned int soapCount = 0;
 	for(i = 0; i < particlesCount; i++)
 	{
 		if(particles[i].type)
@@ -2218,13 +2152,15 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	}
 
 	//Store number of particles in each position
-	partsPosData = (unsigned char*)malloc(fullW*fullH*3);
-	partsPosDataLen = 0;
+	auto partsPosData = std::unique_ptr<unsigned char[]>(new unsigned char[fullW*fullH*3]);
+	unsigned int partsPosDataLen = 0;
+	if (!partsPosData)
+		throw BuildException("Save error, out of memory (partposdata)");
 	for (y=0;y<fullH;y++)
 	{
 		for (x=0;x<fullW;x++)
 		{
-			posCount = partsPosCount[y*fullW + x];
+			unsigned int posCount = partsPosCount[y*fullW + x];
 			partsPosData[partsPosDataLen++] = (posCount&0x00FF0000)>>16;
 			partsPosData[partsPosDataLen++] = (posCount&0x0000FF00)>>8;
 			partsPosData[partsPosDataLen++] = (posCount&0x000000FF);
@@ -2237,11 +2173,14 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 									|	   pavg		|	 tmp[3+4]	|	tmp2[2]		|		tmp2	|	ctype[2]	|		vy		|		vx		|	dcololour	|	ctype[1]	|		tmp[2]	|		tmp[1]	|		life[2]	|		life[1]	|	temp dbl len|
 	 life[2] means a second byte (for a 16 bit field) if life[1] is present
 	 */
-	partsData = (unsigned char *)malloc(NPART * (sizeof(Particle)+1));
-	partsDataLen = 0;
-	partsSaveIndex = (unsigned int *)calloc(NPART, sizeof(unsigned));
-	partsCount = 0;
-	unsigned int ExtraData;
+	auto partsData = std::unique_ptr<unsigned char[]>(new unsigned char[NPART * (sizeof(Particle)+1)]);
+	unsigned int partsDataLen = 0;
+	auto partsSaveIndex = std::unique_ptr<unsigned[]>(new unsigned[NPART]);
+	unsigned int partsCount = 0;
+  unsigned int ExtraData;
+	if (!partsData || !partsSaveIndex)
+		throw BuildException("Save error, out of memory (partsdata)");
+	std::fill(&partsSaveIndex[0], &partsSaveIndex[NPART], 0);
 	for (y=0;y<fullH;y++)
 	{
 		for (x=0;x<fullW;x++)
@@ -2266,7 +2205,6 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 
 				//Type (required)
 				partsData[partsDataLen++] = particles[i].type;
-				elementCount[particles[i].type]++;
 
 				//Location of the field descriptor
 				fieldDescLoc = partsDataLen++;
@@ -2458,6 +2396,9 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				partsData[fieldDescLoc] = fieldDesc;
 				partsData[fieldDescLoc+1] = fieldDesc>>8;
 
+				if (particles[i].type == PT_SOAP)
+					soapCount++;
+
 				if (particles[i].type == PT_RPEL && particles[i].ctype)
 				{
 					RESTRICTVERSION(91, 4);
@@ -2488,53 +2429,59 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 		}
 	}
 
-	soapLinkData = (unsigned char*)malloc(3*elementCount[PT_SOAP]);
-	soapLinkDataLen = 0;
-	//Iterate through particles in the same order that they were saved
-	for (y=0;y<fullH;y++)
+	unsigned char *soapLinkData = NULL;
+	auto soapLinkDataPtr = std::unique_ptr<unsigned char[]>();
+	unsigned int soapLinkDataLen = 0;
+	if (soapCount)
 	{
-		for (x=0;x<fullW;x++)
+		soapLinkData = new unsigned char[3*soapCount];
+		if (!soapLinkData)
+			throw BuildException("Save error, out of memory (SOAP)");
+		soapLinkDataPtr = std::move(std::unique_ptr<unsigned char[]>(soapLinkData));
+
+		//Iterate through particles in the same order that they were saved
+		for (y=0;y<fullH;y++)
 		{
-			//Find the first particle in this position
-			i = partsPosFirstMap[y*fullW + x];
-
-			//Loop while there is a pmap entry
-			while (i)
+			for (x=0;x<fullW;x++)
 			{
-				//Turn pmap entry into a partsptr index
-				i = i>>8;
-
-				if (particles[i].type==PT_SOAP)
+				//Find the first particle in this position
+				i = partsPosFirstMap[y*fullW + x];
+	
+				//Loop while there is a pmap entry
+				while (i)
 				{
-					//Only save forward link for each particle, back links can be deduced from other forward links
-					//linkedIndex is index within saved particles + 1, 0 means not saved or no link
-
-					unsigned linkedIndex = 0;
-					if ((particles[i].ctype&2) && particles[i].tmp>=0 && particles[i].tmp<NPART)
+					//Turn pmap entry into a partsptr index
+					i = i>>8;
+	
+					if (particles[i].type==PT_SOAP)
 					{
-						linkedIndex = partsSaveIndex[particles[i].tmp];
+						//Only save forward link for each particle, back links can be deduced from other forward links
+						//linkedIndex is index within saved particles + 1, 0 means not saved or no link
+	
+						unsigned linkedIndex = 0;
+						if ((particles[i].ctype&2) && particles[i].tmp>=0 && particles[i].tmp<NPART)
+						{
+							linkedIndex = partsSaveIndex[particles[i].tmp];
+						}
+						soapLinkData[soapLinkDataLen++] = (linkedIndex&0xFF0000)>>16;
+						soapLinkData[soapLinkDataLen++] = (linkedIndex&0x00FF00)>>8;
+						soapLinkData[soapLinkDataLen++] = (linkedIndex&0x0000FF);
 					}
-					soapLinkData[soapLinkDataLen++] = (linkedIndex&0xFF0000)>>16;
-					soapLinkData[soapLinkDataLen++] = (linkedIndex&0x00FF00)>>8;
-					soapLinkData[soapLinkDataLen++] = (linkedIndex&0x0000FF);
+	
+					//Get the pmap entry for the next particle in the same position
+					i = partsPosLink[i];
 				}
-
-				//Get the pmap entry for the next particle in the same position
-				i = partsPosLink[i];
 			}
 		}
 	}
-	if(!soapLinkDataLen)
-	{
-		free(soapLinkData);
-		soapLinkData = NULL;
-	}
-	if(!partsDataLen)
-	{
-		free(partsData);
-		partsData = NULL;
-	}
 
+	bson b;
+	b.data = NULL;
+	auto bson_deleter = [](bson * b) { bson_destroy(b); };
+	// Use unique_ptr with a custom deleter to ensure that bson_destroy is called even when an exception is thrown
+	std::unique_ptr<bson, decltype(bson_deleter)> b_ptr(&b, bson_deleter);
+
+	set_bson_err_handler([](const char* err) { throw BuildException("BSON error when parsing save: " + std::string(err)); });
 	bson_init(&b);
 	bson_append_start_object(&b, "origin");
 	bson_append_int(&b, "majorVersion", SAVE_VERSION);
@@ -2569,34 +2516,38 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	//bson_append_int(&b, "leftSelectedElement", sl);
 	//bson_append_int(&b, "rightSelectedElement", sr);
 	//bson_append_int(&b, "activeMenu", active_menu);
-	if (partsData)
-		bson_append_binary(&b, "parts", BSON_BIN_USER, (const char *)partsData, partsDataLen);
-	if (partsPosData)
-		bson_append_binary(&b, "partsPos", BSON_BIN_USER, (const char *)partsPosData, partsPosDataLen);
-	if (wallData)
-		bson_append_binary(&b, "wallMap", BSON_BIN_USER, (const char *)wallData, wallDataLen);
-	if (fanData)
-		bson_append_binary(&b, "fanMap", BSON_BIN_USER, (const char *)fanData, fanDataLen);
-	if (pressData)
-		bson_append_binary(&b, "pressMap", (char)BSON_BIN_USER, (const char*)pressData, pressDataLen);
-	if (vxData)
-		bson_append_binary(&b, "vxMap", (char)BSON_BIN_USER, (const char*)vxData, vxDataLen);
-	if (vyData)
-		bson_append_binary(&b, "vyMap", (char)BSON_BIN_USER, (const char*)vyData, vyDataLen);
-	if (ambientData && this->aheatEnable)
-		bson_append_binary(&b, "ambientMap", (char)BSON_BIN_USER, (const char*)ambientData, ambientDataLen);
-	if (soapLinkData)
-		bson_append_binary(&b, "soapLinks", BSON_BIN_USER, (const char *)soapLinkData, soapLinkDataLen);
-	if (partsData && palette.size())
+	if (partsData && partsDataLen)
 	{
-		bson_append_start_array(&b, "palette");
-		for(std::vector<PaletteItem>::iterator iter = palette.begin(), end = palette.end(); iter != end; ++iter)
+		bson_append_binary(&b, "parts", BSON_BIN_USER, (const char *)partsData.get(), partsDataLen);
+
+		if (palette.size())
 		{
-			bson_append_int(&b, (*iter).first.c_str(), (*iter).second);
+			bson_append_start_array(&b, "palette");
+			for(std::vector<PaletteItem>::iterator iter = palette.begin(), end = palette.end(); iter != end; ++iter)
+			{
+				bson_append_int(&b, (*iter).first.c_str(), (*iter).second);
+			}
+			bson_append_finish_array(&b);
 		}
-		bson_append_finish_array(&b);
+
+		if (partsPosData && partsPosDataLen)
+			bson_append_binary(&b, "partsPos", BSON_BIN_USER, (const char *)partsPosData.get(), partsPosDataLen);
 	}
-	signsCount = 0;
+	if (wallData && hasWallData)
+		bson_append_binary(&b, "wallMap", BSON_BIN_USER, (const char *)wallData.get(), wallDataLen);
+	if (fanData && fanDataLen)
+		bson_append_binary(&b, "fanMap", BSON_BIN_USER, (const char *)fanData.get(), fanDataLen);
+	if (pressData && pressDataLen)
+		bson_append_binary(&b, "pressMap", (char)BSON_BIN_USER, (const char*)pressData.get(), pressDataLen);
+	if (vxData && vxDataLen)
+		bson_append_binary(&b, "vxMap", (char)BSON_BIN_USER, (const char*)vxData.get(), vxDataLen);
+	if (vyData && vyDataLen)
+		bson_append_binary(&b, "vyMap", (char)BSON_BIN_USER, (const char*)vyData.get(), vyDataLen);
+	if (ambientData && this->aheatEnable && ambientDataLen)
+		bson_append_binary(&b, "ambientMap", (char)BSON_BIN_USER, (const char*)ambientData.get(), ambientDataLen);
+	if (soapLinkData && soapLinkDataLen)
+		bson_append_binary(&b, "soapLinks", BSON_BIN_USER, (const char *)soapLinkData, soapLinkDataLen);
+	unsigned int signsCount = 0;
 	for (size_t i = 0; i < signs.size(); i++)
 	{
 		if(signs[i].text.length() && signs[i].x>=0 && signs[i].x<=fullW && signs[i].y>=0 && signs[i].y<=fullH)
@@ -2628,12 +2579,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 		bson_append_finish_object(&b);
 	}
 	if (bson_finish(&b) == BSON_ERROR)
-		goto fin;
+		throw BuildException("Error building bson data");
 
-	finalData = (unsigned char *)bson_data(&b);
-	finalDataLen = bson_size(&b);
-	outputDataLen = finalDataLen*2+12;
-	outputData = new unsigned char[outputDataLen];
+	unsigned char *finalData = (unsigned char*)bson_data(&b);
+	unsigned int finalDataLen = bson_size(&b);
+	auto outputData = std::unique_ptr<unsigned char[]>(new unsigned char[finalDataLen*2+12]);
+	if (!outputData)
+		throw BuildException("Save error, out of memory (finalData): " + format::NumberToString<unsigned int>(finalDataLen*2+12));
 
 	outputData[0] = 'O';
 	outputData[1] = 'P';
@@ -2648,39 +2600,20 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	outputData[10] = finalDataLen >> 16;
 	outputData[11] = finalDataLen >> 24;
 
-	if (BZ2_bzBuffToBuffCompress((char*)(outputData+12), &outputDataLen, (char*)finalData, bson_size(&b), 9, 0, 0) != BZ_OK)
+	unsigned int compressedSize = finalDataLen*2, bz2ret;
+	if ((bz2ret = BZ2_bzBuffToBuffCompress((char*)(outputData.get()+12), &compressedSize, (char*)finalData, bson_size(&b), 9, 0, 0)) != BZ_OK)
 	{
-		puts("Save Error\n");
-		delete [] outputData;
-		dataLength = 0;
-		outputData = NULL;
-		goto fin;
+		throw BuildException("Save error, could not compress (ret " + format::NumberToString<int>(bz2ret) + ")");
 	}
 
 #ifdef DEBUG
-	printf("compressed data: %d\n", outputDataLen);
+	printf("compressed data: %d\n", compressedSize);
 #endif
-	dataLength = outputDataLen + 12;
+	dataLength = compressedSize + 12;
 
-fin:
-	bson_destroy(&b);
-	free(partsData);
-	free(wallData);
-	free(pressData);
-	free(vxData);
-	free(vyData);
-	free(ambientData);
-	free(fanData);
-	delete[] elementCount;
-	free(partsSaveIndex);
-	free(soapLinkData);
-	free(partsPosData);
-	free(partsPosFirstMap);
-	free(partsPosLastMap);
-	free(partsPosCount);
-	free(partsPosLink);
-
-	return (char*)outputData;
+	char *saveData = new char[dataLength];
+	std::copy(&outputData[0], &outputData[dataLength], &saveData[0]);
+	return saveData;
 }
 
 void GameSave::ConvertBsonToJson(bson_iterator *iter, Json::Value *j, int depth)
