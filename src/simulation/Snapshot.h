@@ -29,8 +29,11 @@ public:
 
 	std::vector<Particle> PortalParticles;
 	std::vector<int> WirelessData;
+	std::vector<int> Wireless2Data;
 	std::vector<playerst> stickmen;
 	std::vector<sign> signs;
+	
+	int breakable_wall_count;
 	
 	Json::Value Authors;
 
@@ -50,8 +53,10 @@ public:
 		FanVelocityY(),
 		PortalParticles(),
 		WirelessData(),
+		Wireless2Data(),
 		stickmen(),
-		signs()
+		signs(),
+		breakable_wall_count()
 	{
 
 	}

@@ -31,6 +31,7 @@ Element_PRTI::Element_PRTI()
 	Description = "Portal IN. Particles go in here. Also has temperature dependent channels. (same as WIFI)";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

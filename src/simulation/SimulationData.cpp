@@ -30,7 +30,8 @@ gol_menu * LoadGOLMenu(int & golMenuCount)
 		{"FRG2",	PIXPACK(0x00FF00), 20, "Like Frogs rule: B3/S124/3"},
 		{"STAR",	PIXPACK(0x0000FF), 21, "Like Star Wars rule: B278/S3456/6"},
 		{"FROG",	PIXPACK(0x00AA00), 22, "Frogs: B34/S12/3"},
-		{"BRAN",	PIXPACK(0xCCCC00), 23, "Brian 6: B246/S6/3"}
+		{"BRAN",	PIXPACK(0xCCCC00), 23, "Brian 6: B246/S6/3"},
+		{"CUST",	PIXPACK(0x0070CF), 24, "Custom GOL rule"},
 	};
 	golMenuCount = NGOL;
 	gol_menu * golMenuT = (gol_menu*)malloc(NGOL*sizeof(gol_menu));
@@ -68,6 +69,7 @@ int * LoadGOLRules(int & golRuleCount)
 		{0,0,2,1,1,1,1,2,2,6},//STAR
 		{0,1,1,2,2,0,0,0,0,3},//FROG
 		{0,0,2,0,2,0,3,0,0,3},//BRAN
+		{0,0,0,0,0,0,0,0,0,2},//custom (using Lua or "E189" element)
 	};
 	golRuleCount = NGOL+1;
 	int * golRulesT = (int*)malloc((golRuleCount*10)*sizeof(int));
@@ -103,6 +105,7 @@ int * LoadGOLTypes(int & golTypeCount)
 		GT_STAR,
 		GT_FROG,
 		GT_BRAN,
+		-1,
 	};
 	golTypeCount = NGOL;
 	int * golTypesT = (int*)malloc((golTypeCount)*sizeof(int));
@@ -112,26 +115,31 @@ int * LoadGOLTypes(int & golTypeCount)
 
 wall_type * LoadWalls(int & wallCount)
 {
+	// PT_NONE (0) means kill walls
+	// NT (-1) means no transition
 	wall_type wtypes[] =
 	{
-		{PIXPACK(0x808080), PIXPACK(0x000000), 0, Renderer::WallIcon, "ERASE",			"DEFAULT_WL_ERASE",	"Erases walls."},
-		{PIXPACK(0xC0C0C0), PIXPACK(0x101010), 0, Renderer::WallIcon, "CONDUCTIVE WALL","DEFAULT_WL_CNDTW",	"Blocks everything. Conductive."},
-		{PIXPACK(0x808080), PIXPACK(0x808080), 0, Renderer::WallIcon, "EWALL",			"DEFAULT_WL_EWALL",	"E-Wall. Becomes transparent when electricity is connected."},
-		{PIXPACK(0xFF8080), PIXPACK(0xFF2008), 1, Renderer::WallIcon, "DETECTOR",		"DEFAULT_WL_DTECT",	"Detector. Generates electricity when a particle is inside."},
-		{PIXPACK(0x808080), PIXPACK(0x000000), 0, Renderer::WallIcon, "STREAMLINE",		"DEFAULT_WL_STRM",	"Streamline. Set start point of a streamline."},
-		{PIXPACK(0x8080FF), PIXPACK(0x000000), 1, Renderer::WallIcon, "FAN",			"DEFAULT_WL_FAN",	"Fan. Accelerates air. Use the line tool to set direction and strength."},
-		{PIXPACK(0xC0C0C0), PIXPACK(0x101010), 2, Renderer::WallIcon, "LIQUID WALL",	"DEFAULT_WL_LIQD",	"Allows liquids, blocks all other particles. Conductive."},
-		{PIXPACK(0x808080), PIXPACK(0x000000), 1, Renderer::WallIcon, "ABSORB WALL",	"DEFAULT_WL_ABSRB",	"Absorbs particles but lets air currents through."},
-		{PIXPACK(0x808080), PIXPACK(0x000000), 3, Renderer::WallIcon, "WALL",			"DEFAULT_WL_WALL",	"Basic wall, blocks everything."},
-		{PIXPACK(0x3C3C3C), PIXPACK(0x000000), 1, Renderer::WallIcon, "AIRONLY WALL",	"DEFAULT_WL_AIR",	"Allows air, but blocks all particles."},
-		{PIXPACK(0x575757), PIXPACK(0x000000), 1, Renderer::WallIcon, "POWDER WALL",	"DEFAULT_WL_POWDR",	"Allows powders, blocks all other particles."},
-		{PIXPACK(0xFFFF22), PIXPACK(0x101010), 2, Renderer::WallIcon, "CONDUCTOR",		"DEFAULT_WL_CNDTR",	"Conductor. Allows all particles to pass through and conducts electricity."},
-		{PIXPACK(0x242424), PIXPACK(0x101010), 0, Renderer::WallIcon, "EHOLE",			"DEFAULT_WL_EHOLE",	"E-Hole. absorbs particles, releases them when powered."},
-		{PIXPACK(0x579777), PIXPACK(0x000000), 1, Renderer::WallIcon, "GAS WALL",		"DEFAULT_WL_GAS",	"Allows gases, blocks all other particles."},
-		{PIXPACK(0xFFEE00), PIXPACK(0xAA9900), 4, Renderer::WallIcon, "GRAVITY WALL",	"DEFAULT_WL_GRVTY",	"Gravity wall. Newtonian Gravity has no effect inside a box drawn with this."},
-		{PIXPACK(0xFFAA00), PIXPACK(0xAA5500), 4, Renderer::WallIcon, "ENERGY WALL",	"DEFAULT_WL_ENRGY",	"Allows energy particles, blocks all other particles."},
-		{PIXPACK(0xDCDCDC), PIXPACK(0x000000), 1, Renderer::WallIcon, "AIRBLOCK WALL",	"DEFAULT_WL_NOAIR",	"Allows all particles, but blocks air."},
-		{PIXPACK(0x808080), PIXPACK(0x000000), 0, Renderer::WallIcon, "ERASEALL",		"DEFAULT_WL_ERASEA","Erases walls, particles, and signs."},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 0, Renderer::WallIcon, "ERASE",			"DEFAULT_WL_ERASE",	"Erases walls.", NT},
+		{PIXPACK(0xC0C0C0), PIXPACK(0x101010), PIXPACK(0x000000), 0, Renderer::WallIcon, "CONDUCTIVE WALL", "DEFAULT_WL_CNDTW",	"Blocks everything. Conductive.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x808080), PIXPACK(0x000000), 0, Renderer::WallIcon, "EWALL",			"DEFAULT_WL_EWALL",	"E-Wall. Becomes transparent when electricity is connected.", NT},
+		{PIXPACK(0xFF8080), PIXPACK(0xFF2008), PIXPACK(0x000000), 1, Renderer::WallIcon, "DETECTOR",		"DEFAULT_WL_DTECT",	"Detector. Generates electricity when a particle is inside.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 0, Renderer::WallIcon, "STREAMLINE",		"DEFAULT_WL_STRM",	"Streamline. Set start point of a streamline.", NT},
+		{PIXPACK(0x8080FF), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "FAN",				"DEFAULT_WL_FAN",	"Fan. Accelerates air. Use the line tool to set direction and strength.", NT},
+		{PIXPACK(0xC0C0C0), PIXPACK(0x101010), PIXPACK(0x000000), 2, Renderer::WallIcon, "LIQUID WALL",		"DEFAULT_WL_LIQD",	"Allows liquids, blocks all other particles. Conductive.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "ABSORB WALL",		"DEFAULT_WL_ABSRB",	"Absorbs particles but lets air currents through.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 3, Renderer::WallIcon, "WALL",			"DEFAULT_WL_WALL",	"Basic wall, blocks everything.", NT},
+		{PIXPACK(0x3C3C3C), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "AIRONLY WALL",	"DEFAULT_WL_AIR",	"Allows air, but blocks all particles.", NT},
+		{PIXPACK(0x575757), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "POWDER WALL",		"DEFAULT_WL_POWDR",	"Allows powders, blocks all other particles.", NT},
+		{PIXPACK(0xFFFF22), PIXPACK(0x101010), PIXPACK(0x000000), 2, Renderer::WallIcon, "CONDUCTOR",		"DEFAULT_WL_CNDTR",	"Conductor. Allows all particles to pass through and conducts electricity.", NT},
+		{PIXPACK(0x242424), PIXPACK(0x101010), PIXPACK(0x000000), 0, Renderer::WallIcon, "EHOLE",			"DEFAULT_WL_EHOLE",	"E-Hole. absorbs particles, releases them when powered.", NT},
+		{PIXPACK(0x579777), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "GAS WALL",		"DEFAULT_WL_GAS",	"Allows gases, blocks all other particles.", NT},
+		{PIXPACK(0xFFEE00), PIXPACK(0x000000), PIXPACK(0xAA9900), 4, Renderer::WallIcon, "GRAVITY WALL",	"DEFAULT_WL_GRVTY",	"Gravity wall. Newtonian Gravity has no effect inside a box drawn with this.", NT},
+		{PIXPACK(0xFFAA00), PIXPACK(0x000000), PIXPACK(0xAA5500), 4, Renderer::WallIcon, "ENERGY WALL",		"DEFAULT_WL_ENRGY",	"Allows energy particles, blocks all other particles.", NT},
+		{PIXPACK(0xDCDCDC), PIXPACK(0x000000), PIXPACK(0x000000), 1, Renderer::WallIcon, "AIRBLOCK WALL",	"DEFAULT_WL_NOAIR",	"Allows all particles, but blocks air.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x000000), 0, Renderer::WallIcon, "ERASEALL",		"DEFAULT_WL_ERASEA","Erases walls, particles, and signs.", NT},
+		{PIXPACK(0x808080), PIXPACK(0x000000), PIXPACK(0x80C0FF), 5, Renderer::WallIcon, "BREAKABLE WALL",	"DEFAULT_WL_BRWALL","Breakable wall, but allows air.", PT_STNE},
+		{PIXPACK(0x808080), PIXPACK(0x101010), PIXPACK(0xFFE060), 5, Renderer::WallIcon, "BREAKABLE CONDUCTIVE WALL",
+		 "DEFAULT_WL_BCNDTW","Breakable conductive wall.", PT_BRMT},
 	};
 	wallCount = UI_WALLCOUNT;
 	wall_type * wtypesT = (wall_type*)malloc(UI_WALLCOUNT*sizeof(wall_type));

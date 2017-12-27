@@ -31,6 +31,7 @@ Element_PRTO::Element_PRTO()
 	Description = "Portal OUT. Particles come out here. Also has temperature dependent channels. (same as WIFI)";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_CTYPE_INTG;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

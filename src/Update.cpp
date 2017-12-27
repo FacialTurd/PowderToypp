@@ -23,6 +23,10 @@
 #include "Update.h"
 #include "Platform.h"
 
+#if defined(WIN) && defined(__GNUC__)
+	#define _stricmp stricmp
+#endif
+
 int update_start(char *data, unsigned int len)
 {
 	char *self = Platform::ExecutableName(), *temp;

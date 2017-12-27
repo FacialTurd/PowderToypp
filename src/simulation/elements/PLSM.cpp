@@ -31,6 +31,7 @@ Element_PLSM::Element_PLSM()
 	Description = "Plasma, extremely hot.";
 
 	Properties = TYPE_GAS|PROP_LIFE_DEC|PROP_LIFE_KILL;
+	Properties2 |= PROP_UNLIMSTACKING;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

@@ -60,6 +60,7 @@ public:
 	bool gravityZonesEnabled;
 	bool gravityFieldEnabled;
 	int decorations_enable;
+	// int extraLoopsCA;
 	bool blackDecorations;
 	bool debugLines;
 	pixel sampleColor;
@@ -96,6 +97,10 @@ public:
 	void ClearAccumulation();
 	void clearScreen(float alpha);
 	void SetSample(int x, int y);
+
+#ifndef OGLI
+	void decorate_sim();
+#endif
 
 #ifdef OGLR
 	void checkShader(GLuint shader, const char * shname);

@@ -31,6 +31,7 @@ Element_RFRG::Element_RFRG()
 	Description = "Refrigerant. Heats up and liquefies under pressure.";
 
 	Properties = TYPE_GAS|PROP_DEADLY;
+	Properties2 |= PROP_DEBUG_HIDE_TMP;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

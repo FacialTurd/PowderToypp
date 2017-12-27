@@ -33,6 +33,14 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
+#define MAX_LUA_DEBUG_FUNCTIONS 320
+
+#ifdef TPT_NEED_DLL_PLUGIN
+#include <windows.h>
+#define MAX_DLL_FUNCTIONS 256
+#define DLL_FUNCTIONS_ARGS Simulation*, int, int, int, void*
+#endif
+
 class TPTScriptInterface;
 class LuaScriptInterface: public CommandInterface
 {
@@ -56,15 +64,20 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_partNeighbours(lua_State * l);
 	static int simulation_partChangeType(lua_State * l);
 	static int simulation_partCreate(lua_State * l);
+	static int simulation_partCreate2(lua_State * l);
 	static int simulation_partProperty(lua_State * l);
+	static int simulation_secondaryDeco(lua_State * l);
 	static int simulation_partPosition(lua_State * l);
+	static int simulation_duplicateParticle(lua_State * l);
 	static int simulation_partID(lua_State * l);
 	static int simulation_partKill(lua_State * l);
+	static int simulation_partKillDestroyable(lua_State * l);
 	static int simulation_pressure(lua_State * l);
 	static int simulation_velocityX(lua_State * l);
 	static int simulation_velocityY(lua_State * l);
 	static int simulation_gravMap(lua_State * l);
 	static int simulation_ambientHeat(lua_State * l);
+	static int simulation_blockair(lua_State * l);
 	static int simulation_createParts(lua_State * l);
 	static int simulation_createLine(lua_State * l);
 	static int simulation_createBox(lua_State * l);
@@ -109,7 +122,29 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_framerender(lua_State * l);
 	static int simulation_gspeed(lua_State * l);
 	static int simulation_takeSnapshot(lua_State *l);
+	static int simulation_CAType(lua_State * l);
+	static int simulation_createDebugComponent(lua_State * l);
+	static int simulation_breakable_wall_count(lua_State * l);
+	static int simulation_setCustomGOLRule(lua_State * l);
+	static int simulation_getGOLRule(lua_State * l);
+	static int simulation_setCustomGOLGrad(lua_State * l);
+	static int simulation_get_pfree(lua_State * l);
+	static int simulation_pmap_move_to(lua_State * l);
+	static int simulation_isDestructible(lua_State * l);
 
+	//Stickman attributes
+	void initStickmanAPI();
+	static playerst* get_stickman_ptr(int id);
+	static int stickman_parent(lua_State * l);
+	static int stickman_firstChild(lua_State * l);
+	static int stickman_lastChild(lua_State * l);
+	static int stickman_previousSibling(lua_State * l);
+	static int stickman_nextSibling(lua_State * l);
+	static int stickman_flags(lua_State * l);
+	static int stickman_toElementID(lua_State * l);
+	static int stickman_fromElementID(lua_State * l);
+	static int stickman_lastUnused(lua_State * l);
+	
 	//Renderer
 	void initRendererAPI();
 	static int renderer_renderModes(lua_State * l);
@@ -127,6 +162,7 @@ class LuaScriptInterface: public CommandInterface
 	static int elements_property(lua_State * l);
 	static int elements_loadDefault(lua_State * l);
 	static int elements_free(lua_State * l);
+	static int elements_isDestructible(lua_State * l);
 
 	//Interface
 	void initInterfaceAPI();
@@ -134,6 +170,7 @@ class LuaScriptInterface: public CommandInterface
 	static int interface_closeWindow(lua_State * l);
 	static int interface_addComponent(lua_State * l);
 	static int interface_removeComponent(lua_State * l);
+	static int interface_addNotification(lua_State * l);
 
 	void initGraphicsAPI();
 	static int graphics_textSize(lua_State * l);
@@ -164,6 +201,7 @@ class LuaScriptInterface: public CommandInterface
 	static int platform_exeName(lua_State * l);
 	static int platform_restart(lua_State * l);
 	static int platform_openLink(lua_State * l);
+	// static int platform_openMyTool(lua_State * l);
 	static int platform_clipboardCopy(lua_State * l);
 	static int platform_clipboardPaste(lua_State * l);
 
@@ -188,6 +226,9 @@ public:
 	virtual int Command(std::string command);
 	virtual std::string FormatCommand(std::string command);
 	virtual ~LuaScriptInterface();
+#ifdef TPT_NEED_DLL_PLUGIN
+	static int (__stdcall *(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
+#endif
 };
 
 

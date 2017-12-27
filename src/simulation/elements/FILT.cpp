@@ -30,7 +30,8 @@ Element_FILT::Element_FILT()
 	HeatConduct = 251;
 	Description = "Filter for photons, changes the color.";
 
-	Properties = TYPE_SOLID | PROP_NOAMBHEAT | PROP_LIFE_DEC;
+	Properties = TYPE_SOLID | PROP_NOAMBHEAT | PROP_LIFE_DEC | PROP_TRANSPARENT;
+	Properties2 = PROP_INVISIBLE | PROP_CTYPE_WAVEL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -70,6 +71,51 @@ int Element_FILT::graphics(GRAPHICS_FUNC_ARGS)
 	*pixel_mode |= PMODE_BLEND;
 	return 0;
 }
+
+int my_clz (int value)
+{
+#ifdef __GNUC__
+	int x = __builtin_clz (value);
+#else
+	int x = 0;
+	unsigned int xx = 0x80000000;
+	while (!(value & xx))
+	{
+		xx >>= 1; x ++;
+	}
+#endif
+	return x;
+}
+
+int my_ctz (int value)
+{
+#ifdef __GNUC__
+	int x = __builtin_ctz (value);
+#else
+	int x = 0;
+	int xx = 1;
+	while (!(value & xx))
+	{
+		xx <<= 1; x ++;
+	}
+#endif
+	return x;
+}
+
+int my_popc (int value)
+{
+#ifdef __GNUC__
+	int x = __builtin_popcount (value);
+#else
+	int x = x - ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x + (x >> 4)) & 0x0F0F0F0F;
+	x = (x * 0x01010101) >> 24;
+#endif
+	return x;
+}
+
+#define FILT_NORMAL_OPERATIONS 12
 
 //#TPT-Directive ElementHeader Element_FILT static int interactWavelengths(Particle* cpart, int origWl)
 // Returns the wavelengths in a particle after FILT interacts with it (e.g. a photon)
@@ -123,6 +169,73 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			long long int lsb = filtWl & (-filtWl);
 			return (origWl / lsb) & 0x3FFFFFFF; // blue shift
 		}
+		//--- custom part ---//
+		case (FILT_NORMAL_OPERATIONS + 0): // random wavelength
+		{
+			int r1 = rand();
+			r1 += (rand() << 15);
+			if ((r1 ^ origWl) & mask == 0)
+				return origWl;
+			else
+				return (origWl ^ r1) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 1): // reversing wavelength from "Hacker's Delight"
+		{
+			int r1, r2;
+			r1  = origWl;
+			r2  = (r1 << 15) | (r1 >> 15); // wavelength rotate 15
+			r1  = (r2 ^ (r2>>10)) & 0x000F801F; // swap 10
+			r2 ^= (r1 | (r1<<10));
+			r1  = (r2 ^ (r2>> 3)) & 0x06318C63; // swap 3
+			r2 ^= (r1 | (r1<< 3));
+			r1  = (r2 ^ (r2>> 1)) & 0x1294A529; // swap 1
+			return (r1 | (r1<< 1)) ^ r2;
+		}
+		case (FILT_NORMAL_OPERATIONS + 2): // population count
+		{
+			return 1 << (my_popc(origWl & mask) - 1);
+		}
+		case (FILT_NORMAL_OPERATIONS + 3): // cyclic red shift
+		{
+			int x = my_ctz (filtWl);
+			return ((origWl << x) | (origWl >> (30 - x))) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 4): // cyclic blue shift
+		{
+			int x = my_ctz (filtWl);
+			return ((origWl >> x) | (origWl << (30 - x))) & mask;
+		}
+		case (FILT_NORMAL_OPERATIONS + 5): // addition
+			return ((origWl + filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 6): // subtraction
+			return ((origWl - filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 7): // multiplication
+			return ((origWl * filtWl) | 0x20000000) & mask;
+		case (FILT_NORMAL_OPERATIONS + 8): // binary to BCD
+		{
+			int t1 = origWl & 0x1FFFFFFF;
+			int t2 = 0x20000000;
+			for (int t3 = 0; t3 < 7; t3++)
+			{
+				t2 |= (origWl % 10) << (4 * t3);
+				origWl /= 10;
+			}
+			return t2;
+		}
+		case (FILT_NORMAL_OPERATIONS + 9): // BCD to binary
+		{
+			int t1 = 0x20000000;
+			int t2 = 1;
+			for (int t3 = 0; t3 < 7; t3++)
+			{
+				t1 += (origWl & 0xF) * t2;
+				t2 *= 10;
+				origWl >>= 4;
+			}
+			return t1;
+		}
+		case (FILT_NORMAL_OPERATIONS + 10):
+			return (origWl ^ filtWl) | 0x20000000; // XOR colours (29 bits)
 		default:
 			return filtWl;
 	}

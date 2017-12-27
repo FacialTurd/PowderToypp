@@ -49,7 +49,7 @@ Element_SPRK::Element_SPRK()
 //#TPT-Directive ElementHeader Element_SPRK static int update(UPDATE_FUNC_ARGS)
 int Element_SPRK::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, nearp, pavg, ct = parts[i].ctype, sender, receiver;
+	int r, rx, ry, nearp, pavg, ct = parts[i].ctype, sender, receiver, tmp; // ravg;
 	Element_FIRE::update(UPDATE_FUNC_SUBCALL_ARGS);
 
 	if (parts[i].life<=0)
@@ -83,7 +83,8 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 		if (parts[i].life==1)
 		{
 			nearp = Element_ETRD::nearestSparkablePart(sim, i);
-			if (nearp!=-1 && sim->parts_avg(i, nearp, PT_INSL)!=PT_INSL)
+			pavg = sim->parts_avg(i, nearp, PT_INSL);
+			if (nearp!=-1 && pavg!=PT_INSL && pavg!=PT_INDI)
 			{
 				sim->CreateLine(x, y, (int)(parts[nearp].x+0.5f), (int)(parts[nearp].y+0.5f), PT_PLSM);
 				parts[i].life = 20;
@@ -108,6 +109,8 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case PT_TESC:
+		if (parts[i].tmp <= 4)
+			break;
 		if (parts[i].tmp>300)
 			parts[i].tmp=300;
 		for (rx=-1; rx<2; rx++)
@@ -117,7 +120,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (r)
 						continue;
-					if (parts[i].tmp>4 && rand()%(parts[i].tmp*parts[i].tmp/20+6)==0)
+					if (/* parts[i].tmp>4 && */ rand()%(parts[i].tmp*parts[i].tmp/20+6)==0)
 					{
 						int p = sim->create_part(-1, x+rx*2, y+ry*2, PT_LIGH);
 						if (p!=-1)
@@ -181,7 +184,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				switch (receiver)
 				{
 				case PT_SWCH:
-					if (pavg!=PT_INSL && parts[i].life<4)
+					if (pavg!=PT_INSL && pavg!=PT_INDI && parts[i].life<4)
 					{
 						if(sender==PT_PSCN && parts[r>>8].life<10) {
 							parts[r>>8].life = 10;
@@ -194,7 +197,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_SPRK:
-					if (pavg!=PT_INSL && parts[i].life<4)
+					if (pavg!=PT_INSL && pavg!=PT_INDI && parts[i].life<4)
 					{
 						if (parts[r>>8].ctype==PT_SWCH)
 						{
@@ -227,14 +230,14 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					}
 					continue;
 				case PT_PPIP:
-					if (parts[i].life == 3 && pavg!=PT_INSL)
+					if (parts[i].life == 3 && pavg!=PT_INSL && pavg!=PT_INDI)
 					{
 						if (sender == PT_NSCN || sender == PT_PSCN || sender == PT_INST)
 							Element_PPIP::flood_trigger(sim, x+rx, y+ry, sender);
 					}
 					continue;
 				case PT_NTCT: case PT_PTCT: case PT_INWR:
-					if (sender==PT_METL && pavg!=PT_INSL && parts[i].life<4)
+					if (sender==PT_METL && pavg!=PT_INSL && pavg!=PT_INDI && parts[i].life<4)
 					{
 						parts[r>>8].temp = 473.0f;
 						if (receiver==PT_NTCT||receiver==PT_PTCT)
@@ -251,12 +254,34 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 						parts[r>>8].life = 220;
 					}
 					continue;
+				case PT_PINVIS:
+					tmp = sim->parts[r>>8].ctype & 0x0FFF;
+					// wireless2[][1] - whether channel should be active on next frame
+					// for wireless2[][0] - see PINVIS.cpp and Simulation.cpp
+					if (parts[i].life<4)
+					{
+						if (sender == PT_PSCN && parts[r>>8].life < 10)
+						{
+							// Instantly activate PINV
+							PropertyValue value;
+							value.Integer = 10;
+							sim->flood_prop(x+rx, y+ry, offsetof(Particle, life), value, StructProperty::Integer);
+						}
+						else if (sender == PT_NSCN && parts[r>>8].life >= 10)
+						{
+							// Instantly deactivate PINV
+							PropertyValue value;
+							value.Integer = 9;
+							sim->flood_prop(x+rx, y+ry, offsetof(Particle, life), value, StructProperty::Integer);
+						}
+					}
+					continue;
 				}
 
-				if (pavg == PT_INSL) continue; //Insulation blocks everything past here
-				if (!((sim->elements[receiver].Properties&PROP_CONDUCTS)||receiver==PT_INST||receiver==PT_QRTZ)) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
+				if (pavg == PT_INSL || pavg == PT_INDI) continue; //Insulation blocks everything past here
+				if (!(sim->elements[receiver].Properties&(PROP_CONDUCTS|PROP_CONDUCTS_SPEC))) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
 				if (abs(rx)+abs(ry)>=4 &&sender!=PT_SWCH&&receiver!=PT_SWCH) continue; //Only switch conducts really far
-				if (receiver==sender && receiver!=PT_INST && receiver!=PT_QRTZ) goto conduct; //Everything conducts to itself, except INST.
+				if (receiver==sender && !(sim->elements[receiver].Properties & PROP_CONDUCTS_SPEC)) goto conduct; //Everything conducts to itself, except INST.
 
 				//Sender cases, where elements can have specific outputs
 				switch (sender)
@@ -266,11 +291,11 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 						goto conduct;
 					continue;
 				case PT_SWCH:
-					if (receiver==PT_PSCN||receiver==PT_NSCN||receiver==PT_WATR||receiver==PT_SLTW||receiver==PT_NTCT||receiver==PT_PTCT||receiver==PT_INWR)
+					if (receiver==PT_PSCN||receiver==PT_NSCN|| (sim->elements[receiver].Properties&PROP_INSULATED) /* receiver==PT_WATR||receiver==PT_SLTW||receiver==PT_NTCT||receiver==PT_PTCT||receiver==PT_INWR */)
 						continue;
 					break;
 				case PT_ETRD:
-					if (receiver==PT_METL||receiver==PT_BMTL||receiver==PT_BRMT||receiver==PT_LRBD||receiver==PT_RBDM||receiver==PT_PSCN||receiver==PT_NSCN)
+					if (receiver==PT_METL||receiver==PT_BMTL||receiver==PT_BRMT||receiver==PT_LRBD||receiver==PT_RBDM||receiver==PT_PSCN||receiver==PT_NSCN||receiver==PT_INDC)
 						goto conduct;
 					continue;
 				case PT_NTCT:
@@ -285,6 +310,12 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (receiver==PT_NSCN || receiver==PT_PSCN)
 						goto conduct;
 					continue;
+				/*
+				case PT_INW2:
+					if (sender==PT_NSCN || sender==PT_PSCN || (sender==PT_INW2 && parts[r>>8].tmp == parts[i].tmp))
+						goto conduct;
+					continue;
+				*/
 				default:
 					break;
 				}
@@ -292,7 +323,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				switch (receiver)
 				{
 				case PT_QRTZ:
-					if ((sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ) && (parts[r>>8].temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
+					if ((sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ||sender==PT_INDC) && (parts[r>>8].temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
 						goto conduct;
 					continue;
 				case PT_NTCT:
@@ -307,6 +338,12 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (sender==PT_NSCN || sender==PT_PSCN)
 						goto conduct;
 					continue;
+				/*
+				case PT_INW2:
+					if (sender==PT_NSCN || sender==PT_PSCN)
+						goto conduct;
+					continue;
+				*/
 				case PT_INST:
 					if (sender==PT_PSCN)
 						goto conduct;
@@ -343,7 +380,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					parts[r>>8].life = 4;
 					parts[r>>8].ctype = receiver;
 					sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
-					if (parts[r>>8].temp+10.0f<673.0f&&!sim->legacy_enable&&(receiver==PT_METL||receiver==PT_BMTL||receiver==PT_BRMT||receiver==PT_PSCN||receiver==PT_NSCN||receiver==PT_ETRD||receiver==PT_NBLE||receiver==PT_IRON))
+					if (parts[r>>8].temp+10.0f<673.0f&&!sim->legacy_enable&& (sim->elements[receiver].Properties2 & PROP_ELEC_HEATING))
 						parts[r>>8].temp = parts[r>>8].temp+10.0f;
 				}
 				else if (!parts[r>>8].life && sender==PT_ETRD && parts[i].life==5) //ETRD is odd and conducts to others only at life 5, this could probably be somewhere else

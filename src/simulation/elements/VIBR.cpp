@@ -31,6 +31,7 @@ Element_VIBR::Element_VIBR()
 	Description = "Vibranium. Stores energy and releases it in violent explosions.";
 
 	Properties = TYPE_SOLID|PROP_LIFE_DEC;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

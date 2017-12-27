@@ -20,24 +20,26 @@
 #define SC_CRACKER2 17
 #define SC_TOTAL 16
 
-#define O_WL_WALLELEC	122
-#define O_WL_EWALL		123
-#define O_WL_DETECT		124
-#define O_WL_STREAM		125
-#define O_WL_SIGN		126
-#define O_WL_FAN		127
-#define O_WL_FANHELPER	255
+#define O_WL_WALLELEC		122
+#define O_WL_EWALL			123
+#define O_WL_DETECT			124
+#define O_WL_STREAM			125
+#define O_WL_SIGN			126
+#define O_WL_FAN			127
+
 #define O_WL_ALLOWLIQUID	128
-#define O_WL_DESTROYALL	129
-#define O_WL_ERASE		130
-#define O_WL_WALL		131
-#define O_WL_ALLOWAIR	132
-#define O_WL_ALLOWSOLID	133
+#define O_WL_DESTROYALL		129
+#define O_WL_ERASE			130
+#define O_WL_WALL			131
+#define O_WL_ALLOWAIR		132
+#define O_WL_ALLOWSOLID		133
+
 #define O_WL_ALLOWALLELEC	134
-#define O_WL_EHOLE		135
-#define O_WL_ALLOWGAS	140
-#define O_WL_GRAV		142
-#define O_WL_ALLOWENERGY 145
+#define O_WL_EHOLE			135
+#define O_WL_ALLOWGAS		140
+#define O_WL_GRAV			142
+#define O_WL_ALLOWENERGY	145
+#define O_WL_FANHELPER		255
 
 #define WL_ERASE		0
 #define WL_WALLELEC		1
@@ -45,24 +47,40 @@
 #define WL_DETECT		3
 #define WL_STREAM		4
 #define WL_FAN			5
+
 #define WL_ALLOWLIQUID	6
 #define WL_DESTROYALL	7
 #define WL_WALL			8
 #define WL_ALLOWAIR		9
 #define WL_ALLOWPOWDER	10
 #define WL_ALLOWALLELEC	11
+
 #define WL_EHOLE		12
 #define WL_ALLOWGAS		13
 #define WL_GRAV			14
 #define WL_ALLOWENERGY	15
 #define WL_BLOCKAIR		16
 #define WL_ERASEALL		17
+
+#define WL_BREAKABLE_WALL		18
+#define WL_BREAKABLE_WALLELEC	19
+
 #define WL_FLOODHELPER	255
 
-#define UI_WALLCOUNT 18
+#define UI_WALLCOUNT 20
 
 #define OLD_SPC_AIR 236
+/*
+#define OLD_SPC_HEAT 237
+#define OLD_SPC_COOL 238
+#define OLD_SPC_VACUUM 239
+#define OLD_SPC_WIND 241
+#define OLD_SPC_PGRV 243
+#define OLD_SPC_NGRV 244
+#define OLD_SPC_PROP 246
+*/
 #define SPC_AIR 256
+#define SPC_VACUUM 257
 
 #define DECO_DRAW	0
 #define DECO_CLEAR	1
@@ -123,6 +141,7 @@
 #define NGT_STAR 21
 #define NGT_FROG 22
 #define NGT_BRAN 23
+#define NGT_CUSTOM 24
 
 //replace mode / specific delete flags
 #define REPLACE_MODE 0x1

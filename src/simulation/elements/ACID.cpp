@@ -57,7 +57,7 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)!=PT_ACID && (r&0xFF)!=PT_CAUS)
+				if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != ELEM_MULTIPP)
 				{
 					if ((r&0xFF)==PT_PLEX || (r&0xFF)==PT_NITR || (r&0xFF)==PT_GUNP || (r&0xFF)==PT_RBDM || (r&0xFF)==PT_LRBD)
 					{
@@ -75,7 +75,9 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 							sim->kill_part(r>>8);
 						}
 					}
-					else if (((r&0xFF)!=PT_CLNE && (r&0xFF)!=PT_PCLN && sim->elements[r&0xFF].Hardness>(rand()%1000))&&parts[i].life>=50)
+					else if ((!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
+						((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)) &&
+						sim->elements[r&0xFF].Hardness>(rand()%1000))&&parts[i].life>=50)
 					{
 						if (sim->parts_avg(i, r>>8,PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
 						{

@@ -39,6 +39,201 @@ std::string sign::getText(Simulation *sim)
 			else
 				sprintf(buff, "Temp: 0.00");  //...temperature
 		}
+		else if (signText[1] == 'v') // air velocity
+		{
+			if (signText[3] == '}' && !signText[4])
+			{
+				float velocity = 0.0f;
+				if (signText[2] == 'x')
+				{
+					velocity = sim->vx[y/CELL][x/CELL];
+					sprintf(buff, "%3.2f", velocity);
+				}
+				else if (signText[2] == 'y')
+				{
+					velocity = sim->vy[y/CELL][x/CELL];
+					sprintf(buff, "%3.2f", velocity);
+				}
+				else
+				{
+					strcpy(buff, signText);
+				}
+			}
+			else
+				strcpy(buff, signText);
+		}
+		else if (signText[1] == '.') // element
+		{
+			int r = 0, num1, ptr1 = 2, ptr2 = 0, ptr3 = 0;
+			char cchar;
+			char dchar = 0;
+			char structtype = 0;
+			// structtype = 0: int
+			// structtype = 1: float
+			// structtype = 2/3: particle type
+			// structtype = 4/5: hexadecimal
+			char matched1 [256];
+			const char* matched1ptr = matched1;
+			
+			for (;;) // infinite loop
+			{
+				cchar = signText[ptr1++];
+				if (!cchar) // found end of string
+				{
+					strcpy(buff, signText);
+					return std::string(buff);
+				}
+				if (cchar == '}') // found "}"
+				{
+					if (signText[ptr1]) // if isn't end of string
+					{
+						strcpy(buff, signText);
+						return std::string(buff);
+					}
+					matched1[ptr2++] = '\0';
+					break;
+				}
+				if (cchar == ':' && !ptr3) // found ":"
+				{
+					ptr3 = ptr2 + 1;
+					cchar = '\0';
+				}
+				matched1[ptr2++] = cchar;
+			}
+			if (x>=0 && x<XRES && y>=0 && y<YRES)
+			{
+				r = sim->photons[y][x];
+				if (!r)
+					r = sim->pmap[y][x];
+			}
+			if (r)
+			{
+				bool sparked = false;
+				if (!strcmp(matched1, "i"))
+					num1 = r >> 8;
+				else if (!strcmp(matched1, "type"))
+				{
+					structtype = 2;
+					num1 = r & 0xFF;
+					int ctype = sim->parts[r>>8].ctype;
+					if (num1 == PT_SPRK && ctype)
+					{
+						sparked = true;
+						num1 = ctype;
+					}
+					else if (num1 == PT_LIFE)
+						num1 |= (ctype << 8);
+				}
+				else if (!strcmp(matched1, "life"))
+					num1 = sim->parts[r>>8].life;
+				else if (!strcmp(matched1, "ctype"))
+				{
+					structtype = 2;
+					num1 = sim->parts[r>>8].ctype;
+				}
+				else if (!strcmp(matched1, "temp"))
+				{
+					structtype = 1;
+					num1 = * (int*) & (sim->parts[r>>8].temp);
+				}
+				else if (!strcmp(matched1, "tmp"))
+					num1 = sim->parts[r>>8].tmp;
+				else if (!strcmp(matched1, "tmp2"))
+					num1 = sim->parts[r>>8].tmp2;
+				else if (!strcmp(matched1, "tmp3"))
+					num1 = sim->parts[r>>8].tmp3;
+				else if (!strcmp(matched1, "tmp4"))
+					num1 = sim->parts[r>>8].tmp4;
+				/*
+				else if (!strcmp(matched1, "vrad"))
+				{
+					float veloc_x = sim->parts[r>>8].vx;
+					float veloc_y = sim->parts[r>>8].vy;
+					float velocity = hypotf(veloc_x, veloc_y);
+					num1 = * (int*) & velocity;
+				}
+				*/
+				else if (!strcmp(matched1, "vx"))
+				{
+					structtype = 1;
+					num1 = * (int*) & (sim->parts[r>>8].vx);
+				}
+				else if (!strcmp(matched1, "vy"))
+				{
+					structtype = 1;
+					num1 = * (int*) & (sim->parts[r>>8].vy);
+				}
+				else if (!strcmp(matched1, "dcolor") || !strcmp(matched1, "dcolour"))
+				{
+					structtype = 4;
+					num1 = sim->parts[r>>8].dcolour;
+				}
+				else if (!strcmp(matched1, "pavg0"))
+				{
+					structtype = 1;
+					num1 = * (int*) & (sim->parts[r>>8].pavg[0]);
+				}
+				else if (!strcmp(matched1, "pavg1"))
+				{
+					structtype = 1;
+					num1 = * (int*) & (sim->parts[r>>8].pavg[1]);
+				}
+				else
+				{
+					strcpy(buff, signText);
+					return std::string(buff);
+				}
+
+				if (ptr3)
+				{
+					matched1ptr += ptr3;
+					if (!strcmp(matched1ptr, "f"))
+						structtype = 1;
+					else if (!strcmp(matched1ptr, "t") || !strcmp(matched1ptr, "xt"))
+					{
+						structtype = (*matched1ptr == 'x') ? 3 : 2;
+					}
+					else if (!strcmp(matched1ptr, "x"))
+						structtype = 4;
+					else if (!strcmp(matched1ptr, "X"))
+						structtype = 5;
+					else
+						structtype = 0;
+				}
+				
+				switch (structtype)
+				{
+					case 0: sprintf(buff, "%d", num1); break;
+					case 1: sprintf(buff, "%3.2f", * (float*) & num1); break;
+					case 2:
+					case 3:
+					{
+						bool overridden1 = false;
+						if ( structtype == 3 )
+						{
+							int num1h = (num1 >> 8); // .ctype?
+							if ( (num1 & 0xFF) == PT_LIFE && num1h >= 0 && num1h < NGOL )
+							{
+								sprintf(buff, "%s", sim->gmenu[num1h].name);
+								overridden1 = true;
+							}
+						}
+						if (!overridden1)
+						{
+							if (sparked)
+								sprintf(buff, "sparked %s", sim->elements[num1&0xFF].Name);
+							else
+								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
+						}
+					}
+					break;
+					case 4: sprintf(buff, "0x%08x", num1); break;
+					case 5: sprintf(buff, "0x%08X", num1); break;
+				}
+			}
+			else
+				strcpy(buff, "");
+		}
 		else
 		{
 			int pos = splitsign(signText);

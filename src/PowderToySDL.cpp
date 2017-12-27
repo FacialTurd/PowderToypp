@@ -57,6 +57,8 @@ extern "C" {
 
 #include "client/HTTP.h"
 
+#include "simulation/simplugin.h"
+
 using namespace std;
 
 #define INCLUDE_SYSWM
@@ -524,6 +526,8 @@ unsigned int GetTicks()
 	return SDL_GetTicks();
 }
 
+int sdl_my_extra_args[4] = {0, 0, 0, 0};
+
 std::map<std::string, std::string> readArguments(int argc, char * argv[])
 {
 	std::map<std::string, std::string> arguments;
@@ -541,7 +545,20 @@ std::map<std::string, std::string> readArguments(int argc, char * argv[])
 
 	for (int i=1; i<argc; i++)
 	{
-		if (!strncmp(argv[i], "scale:", 6) && argv[i]+6)
+#ifdef TPT_NEED_DLL_PLUGIN
+		if ((*(short*)argv[i]) == '-' * 0x101)
+		{
+			char *remain_part = argv[i]+2;
+			if (!strncmp(remain_part, "no-dll-plugin", 14))
+			{
+				sdl_my_extra_args[0] |= ARG0_NO_DLL_PLUGIN;
+			}
+			break;
+		}
+#else
+		if (false) {}
+#endif
+		else if (!strncmp(argv[i], "scale:", 6) && argv[i]+6)
 		{
 			arguments["scale"] = std::string(argv[i]+6);
 		}
@@ -765,10 +782,15 @@ void DoubleScreenDialog()
 void EngineProcess()
 {
 	double frameTimeAvg = 0.0f, correctedFrameTimeAvg = 0.0f;
+	int frameStart;
+	Element_MULTIPP::EngineFrameStart = &frameStart;
 	SDL_Event event;
 	while(engine->Running())
 	{
+	/* I might contact GitHub Support (allows account). please visit https://github.com/contact
 		int frameStart = SDL_GetTicks();
+	*/
+		frameStart = SDL_GetTicks();
 		if(engine->Broken()) { engine->UnBreak(); break; }
 		event.type = 0;
 		while (SDL_PollEvent(&event))
@@ -969,6 +991,11 @@ void SigHandler(int signal)
 		BlueScreen("Unexpected program abort");
 		break;
 	}
+}
+
+void DelayOperation1(Simulation * sim, int ms){
+	sim->delayEnd = SDL_GetTicks() + ms;
+	sim->SimExtraFunc |= 2;
 }
 
 int main(int argc, char * argv[])

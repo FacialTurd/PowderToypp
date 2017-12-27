@@ -30,7 +30,8 @@ Element_INVIS::Element_INVIS()
 	HeatConduct = 164;
 	Description = "Invisible to particles while under pressure.";
 
-	Properties = TYPE_SOLID | PROP_NEUTPASS;
+	Properties = TYPE_SOLID | PROP_NEUTPASS | PROP_TRANSPARENT;
+	Properties2 = PROP_INVISIBLE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -52,7 +53,7 @@ int Element_INVIS::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp > 0)
 		pressureResistance = (float) parts[i].tmp;
 	else
-		pressureResistance = 4.0f;
+		pressureResistance = sim->sim_max_pressure;
 
 	if (sim->pv[y/CELL][x/CELL] < -pressureResistance || sim->pv[y/CELL][x/CELL] > pressureResistance)
 		parts[i].tmp2 = 1;

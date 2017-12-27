@@ -31,6 +31,7 @@ Element_CRAY::Element_CRAY()
 	Description = "Particle Ray Emitter. Creates a beam of particles set by its ctype, with a range set by tmp.";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DRAWONCTYPE | PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -60,7 +61,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)!=PT_CRAY && (r&0xFF)!=PT_PSCN && (r&0xFF)!=PT_INST && (r&0xFF)!=PT_METL && (r&0xFF)!=PT_SPRK && (r&0xFF)<PT_NUM)
+					if ((r&0xFF)!=PT_CRAY && (r&0xFF)!=PT_PSCN && (r&0xFF)!=PT_INST && (r&0xFF)!=PT_METL && (r&0xFF)!=PT_SPRK && (r&0xFF)!=ELEM_MULTIPP && (r&0xFF)!=PT_INDC && (r&0xFF)<PT_NUM)
 					{
 						parts[i].ctype = r&0xFF;
 						parts[i].temp = parts[r>>8].temp;
@@ -69,6 +70,9 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 	}
 	else
 	{
+		int new_part_life = parts[i].life;
+		int new_part_ctype = parts[i].ctype;
+		size_t offset1 = ((new_part_ctype & 0xFF) == ELEM_MULTIPP) ? offsetof(Particle, ctype) : offsetof(Particle, life);
 		for (int rx =-1; rx <= 1; rx++)
 			for (int ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -91,14 +95,14 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 								break;
 							}
 							r = pmap[y+nyi+nyy][x+nxi+nxx];
-							if (!sim->IsWallBlocking(x+nxi+nxx, y+nyi+nyy, parts[i].ctype&0xFF) && (!sim->pmap[y+nyi+nyy][x+nxi+nxx] || createSpark)) { // create, also set color if it has passed through FILT
-								int nr = sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, parts[i].ctype&0xFF, parts[i].ctype>>8);
+							if (!sim->IsWallBlocking(x+nxi+nxx, y+nyi+nyy, new_part_ctype&0xFF) && (!sim->pmap[y+nyi+nyy][x+nxi+nxx] || createSpark)) { // create, also set color if it has passed through FILT
+								int nr = sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, new_part_ctype&0xFF, new_part_ctype>>8);
 								if (nr!=-1) {
 									if (colored)
 										parts[nr].dcolour = colored;
 									parts[nr].temp = parts[i].temp;
-									if (parts[i].life>0)
-										parts[nr].life = parts[i].life;
+									if (new_part_life >= 0)
+										*((int*)(((char*)&parts[nr]) + offset1)) = new_part_life;
 									if(!--partsRemaining)
 										docontinue = 0;
 								}
@@ -114,7 +118,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 								parts[r>>8].life = 4;
 							} else if ((r&0xFF) == PT_CRAY || nostop) {
 								docontinue = 1;
-							} else if(destroy && r && ((r&0xFF) != PT_DMND)) {
+							} else if(destroy && r && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT)) {
 								sim->kill_part(r>>8);
 								if(!--partsRemaining)
 									docontinue = 0;

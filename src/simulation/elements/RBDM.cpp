@@ -44,4 +44,63 @@ Element_RBDM::Element_RBDM()
 	Update = NULL;
 }
 
+#if 0
+Element_RBDM::Isotope_40K::Update (UPDATE_FUNC_ARGS)
+{
+	if ((slowly decays))
+	{
+		if (rand() % 10) // approx. 90%
+		{
+			int (ray id) = sim->create_part(-3, x, y, PT_ELEC); // beta decay
+			if ((ray id) >= 0)
+			{
+				parts[(ray id)].source = PT_RBDM;
+				parts[(ray id)].actual_source = ATOM_POTASSIUM; // Source: potassium-40
+				parts[(ray id)].energy = 1.311 * UNIT_MEV;
+				sim->part_change_type(i, x, y, PT_CALC); // producing Calcium-40
+			}
+			// anti-neutrinos are undetected
+		}
+		else
+		{
+			sim->part_change_type(i, x, y, PT_NBLE); // producing Argon-40
+			parts[(ray id)].actual_type = ATOM_ARGON;
+			// neutrinos are undetected
+		}
+	}
+}
+
+Element_RBDM::Isotope_87Rb::Update (UPDATE_FUNC_ARGS)
+{
+	if ((slowly decays))
+	{
+		int (ray id) = sim->create_part(-3, x, y, PT_ELEC); // beta decay
+		if ((ray id) >= 0)
+		{
+			parts[(ray id)].source = PT_RBDM; 
+			parts[(ray id)].actual_source = ATOM_RUBIDIUM; // Source: rubidium-87
+			parts[(ray id)].energy = 0.283 * UNIT_MEV;
+			sim->part_change_type(i, x, y, PT_STRN); // producing Strontium-87
+		}
+		// anti-neutrinos are undetected
+	}
+}
+
+Element_RBDM::Isotope_135Cs::Update (UPDATE_FUNC_ARGS)
+{
+	if ((slowly decays))
+	{
+		int (ray id) = sim->create_part(-3, x, y, PT_ELEC); // beta decay
+		// anti-neutrinos are undetected
+		if ((ray id) >= 0)
+		{
+			parts[(ray id)].source = PT_RBDM; 
+			parts[(ray id)].actual_source = ATOM_CAESIUM; // Source: rubidium-135
+			parts[(ray id)].energy = 0.269 * UNIT_MEV;
+			sim->part_change_type(i, x, y, PT_BARI); // producing Barium-135
+		}
+	}
+}
+#endif
+
 Element_RBDM::~Element_RBDM() {}

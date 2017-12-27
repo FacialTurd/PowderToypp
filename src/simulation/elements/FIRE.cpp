@@ -2,6 +2,7 @@
 #include "simulation/Elements.h"
 
 //#TPT-Directive ElementClass Element_FIRE PT_FIRE 4
+// in real life, burning is actually a reaction of oxygen and the burning material.
 Element_FIRE::Element_FIRE()
 {
 	Identifier = "DEFAULT_PT_FIRE";
@@ -132,23 +133,38 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 
 				if (t == PT_LAVA)
 				{
-					// LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
-					if (parts[i].ctype == PT_QRTZ && rt == PT_LAVA && parts[r>>8].ctype == PT_CLST)
+					switch (parts[i].ctype)
 					{
-						float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
-						if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
+					case PT_QRTZ: // LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
+						if (rt == PT_LAVA && parts[r>>8].ctype == PT_CLST)
 						{
-							parts[i].ctype = PT_CRMC;
-							parts[r>>8].ctype = PT_CRMC;
+							float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
+							if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
+							{
+								parts[i].ctype = PT_CRMC;
+								parts[r>>8].ctype = PT_CRMC;
+							}
 						}
-					}
-					else if (rt == PT_HEAC && parts[i].ctype == PT_HEAC)
-					{
-						if (parts[r>>8].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+						break;
+					case PT_HEAC:
+						if (rt == PT_HEAC)
 						{
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
-							parts[r>>8].ctype = PT_HEAC;
+							if (parts[r>>8].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+							{
+								sim->part_change_type(r>>8, x+rx, y+ry, PT_LAVA);
+								parts[r>>8].ctype = PT_HEAC;
+							}
 						}
+					case PT_POLO:
+						if (rt == PT_LAVA && parts[r>>8].ctype == PT_POLC)
+						{
+							if (!sim->legacy_enable)
+							{
+								parts[r>>8].temp -= 0.3f;
+								parts[i].temp -= 0.3f;
+							}
+						}
+						break;
 					}
 				}
 
@@ -172,9 +188,45 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
+#define ISPOLO(x) (x == PT_POLO || x == PT_POLC)
+
 //#TPT-Directive ElementHeader Element_FIRE static int updateLegacy(UPDATE_FUNC_ARGS)
 int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt, lpv, t = parts[i].type;
+	int t1, t2, nflags, rndstore, mt;
+	t1 = parts[i].ctype;
+	if (t == PT_LAVA)
+	{
+		if (t1 == PT_PLUT) parts[i].ctype = 0;
+		else if (!ISPOLO(t1))
+			goto update_fire;
+		nflags = parts[i].flags;
+		parts[i].flags &= ~0x10;
+		rndstore = rand();
+		bool rndc = false;
+		if (parts[i].life <= 0)
+		{
+			rndc = !(rndstore & 0x7F);
+			if (rndc && (nflags & 0x10))
+			{
+				lava_freeze(sim, parts[i], i, x, y);
+				return 1;
+			}
+		}
+		rx = rndstore % 5 - 2;
+		rndstore >>= 7;
+		ry = rndstore % 5 - 2;
+		r = pmap[y+ry][x+rx];
+		t2 = parts[r>>8].ctype;
+		if ((r&0xFF) == PT_LAVA && ISPOLO(t2))
+		{
+			(rndc&&t1!=t2) && (parts[i].flags |= 0x30);
+			parts[r>>8].flags |= (parts[i].flags & 0x20);
+		}
+		if (nflags & 0x20 && parts[i].life > 0)
+			return 1;
+	}
+update_fire:
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -188,7 +240,8 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 
 				lpv = (int)sim->pv[(y+ry)/CELL][(x+rx)/CELL];
 				if (lpv < 1) lpv = 1;
-				if (sim->elements[rt].Meltable  && ((rt!=PT_RBDM && rt!=PT_LRBD) || t!=PT_SPRK) && ((t!=PT_FIRE&&t!=PT_PLSM) || (rt!=PT_METL && rt!=PT_IRON && rt!=PT_ETRD && rt!=PT_PSCN && rt!=PT_NSCN && rt!=PT_NTCT && rt!=PT_PTCT && rt!=PT_BMTL && rt!=PT_BRMT && rt!=PT_SALT && rt!=PT_INWR)) &&sim->elements[rt].Meltable*lpv>(rand()%1000))
+				mt = sim->elements[rt].Meltable;
+				if (mt && ((t!=PT_FIRE&&t!=PT_PLSM) || (rt!=PT_METL && rt!=PT_IRON && rt!=PT_ETRD && rt!=PT_PSCN && rt!=PT_NSCN && rt!=PT_NTCT && rt!=PT_PTCT && rt!=PT_BMTL && rt!=PT_BRMT && rt!=PT_SALT && rt!=PT_INWR)) && mt*lpv>(rand()%1000))
 				{
 					if (t!=PT_LAVA || parts[i].life>0)
 					{
@@ -203,9 +256,7 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 					}
 					else
 					{
-						parts[i].life = 0;
-						parts[i].ctype = PT_NONE;//rt;
-						sim->part_change_type(i,x,y,(parts[i].ctype)?parts[i].ctype:PT_STNE);
+						lava_freeze(sim, parts[i], i, x, y);
 						return 1;
 					}
 				}
@@ -233,15 +284,21 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 					}
 					if (t==PT_LAVA)
 					{
-						parts[i].life = 0;
-						parts[i].ctype = PT_NONE;
-						sim->part_change_type(i,x,y,(parts[i].ctype)?parts[i].ctype:PT_STNE);
+						lava_freeze(sim, parts[i], i, x, y);
 					}
 				}
 			}
 	return 0;
 }
 
+//#TPT-Directive ElementHeader Element_FIRE static void lava_freeze(Simulation *sim, Particle &p, int i, int x, int y)
+void Element_FIRE::lava_freeze(Simulation *sim, Particle &p, int i, int x, int y)
+{
+	p.life = 0;
+	sim->part_change_type(i, x, y, p.ctype ? p.ctype : PT_STNE);
+	p.ctype = 0;
+	p.flags &= ~0x20;
+}
 
 //#TPT-Directive ElementHeader Element_FIRE static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_FIRE::graphics(GRAPHICS_FUNC_ARGS)

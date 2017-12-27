@@ -5,6 +5,9 @@
 #ifdef WIN
 #define PATH_SEP "\\"
 #define PATH_SEP_CHAR '\\'
+#ifdef __GNUC__
+// #define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
+#endif
 #else
 #define PATH_SEP "/"
 #define PATH_SEP_CHAR '/'
@@ -27,6 +30,9 @@
 #define SNAPSHOT_ID 0
 #endif
 
+// ELEM_MULTIPP == PT_E189
+#define ELEM_MULTIPP 189
+
 // Mod ID, used on the http://starcatcher.us/TPT build server
 // The build server will compile for all platforms for you, and send updates in game
 // See jacob1 to get a mod ID
@@ -34,13 +40,22 @@
 #define MOD_ID 0
 #endif
 
+#ifndef MOD_ID_2
+#define MOD_ID_2 1017640403
+#endif
+
+#ifndef PARENT_MOD_ID_2
+#define PARENT_MOD_ID_2 1017640403
+#endif
+
+
 #ifdef SNAPSHOT
 #define FUTURE_SAVE_VERSION 92
 #define FUTURE_MINOR_VERSION 1
 #endif
 //VersionInfoEnd
 
-//#define IGNORE_UPDATES //uncomment this for mods, to not get any update notifications
+#define IGNORE_UPDATES //uncomment this for mods, to not get any update notifications
 
 #if !(defined(MACOSX) && defined(DEBUG))
 #define HIGH_QUALITY_RESAMPLE			//High quality image resampling, slower but much higher quality than my terribad linear interpolation
@@ -143,7 +158,7 @@
 #define AIR_VLOSS 0.999f
 #define AIR_PLOSS 0.9999f
 
-#define NGOL 24
+#define NGOL 25
 
 #define CIRCLE_BRUSH 0
 #define SQUARE_BRUSH 1

@@ -31,6 +31,7 @@ Element_LCRY::Element_LCRY()
 	Description = "Liquid Crystal. Changes colour when charged. (PSCN Charges, NSCN Discharges)";
 
 	Properties = TYPE_SOLID;
+	Properties2 = PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

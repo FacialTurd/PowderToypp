@@ -56,7 +56,12 @@ int Element_WIRE::update(UPDATE_FUNC_ARGS)
 	  
 	  tmp is previous state, ctype is current state
 	*/
-	//parts[i].tmp=parts[i].ctype;
+	//parts[i].tmp = parts[i].ctype;
+	if (parts[i].flags & FLAG_SKIPMOVE)
+	{
+		parts[i].flags &= ~FLAG_SKIPMOVE;
+		return 0;
+	}
 	parts[i].ctype=0;
 	if (parts[i].tmp==1)
 	{
@@ -66,6 +71,7 @@ int Element_WIRE::update(UPDATE_FUNC_ARGS)
 	{
 		parts[i].ctype=0;
 	}
+	
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 		{

@@ -31,6 +31,7 @@ Element_EMBR::Element_EMBR()
 	Description = "Sparks. Formed by explosions.";
 
 	Properties = TYPE_PART|PROP_LIFE_DEC|PROP_LIFE_KILL|PROP_SPARKSETTLE;
+	Properties2 |= PROP_CTYPE_INTG | PROP_UNLIMSTACKING;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -55,6 +56,13 @@ int Element_EMBR::update(UPDATE_FUNC_ARGS) {
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
+				/*
+				if ((r&0xFF) == PT_PINVIS)
+				{
+					r = parts[r>>8].tmp4;
+					if (!r) continue;
+				}
+				*/
 				if ((sim->elements[r&0xFF].Properties & (TYPE_SOLID | TYPE_PART | TYPE_LIQUID)) && !(sim->elements[r&0xFF].Properties & PROP_SPARKSETTLE))
 				{
 					sim->kill_part(i);

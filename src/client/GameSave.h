@@ -63,10 +63,14 @@ public:
 	bool legacyEnable;
 	bool gravityEnable;
 	bool aheatEnable;
+	bool sextraLoopsCA;
 	bool paused;
+	bool isFromMyMod;
 	int gravityMode;
 	int airMode;
 	int edgeMode;
+	float sim_max_pressure;
+	// int PINV_wireless[128][2];
 	
 	//Signs
 	std::vector<sign> signs;

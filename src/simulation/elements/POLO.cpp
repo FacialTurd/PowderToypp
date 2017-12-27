@@ -49,11 +49,12 @@ Element_POLO::Element_POLO()
 #define COOLDOWN 15
 #define LIMIT 5
 
+
 //#TPT-Directive ElementHeader Element_POLO static int update(UPDATE_FUNC_ARGS)
 int Element_POLO::update(UPDATE_FUNC_ARGS)
 {
 	int r = sim->photons[y][x];
-	if (parts[i].tmp < LIMIT && !parts[i].life)
+	if (parts[i].tmp < LIMIT && !(parts[i].life || sim->isFromMyMod && (r & 0xFF) == PT_ELEC))
 	{
 		if (!(rand()%10000) && !parts[i].tmp)
 		{
@@ -85,20 +86,34 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	}
-	if (parts[i].tmp2 >= 10)
+	if (!parts[i].tmp3)
 	{
-		sim->part_change_type(i,x,y,PT_PLUT);
-		parts[i].temp = (parts[i].temp+600.0f)/2.0f;
-		return 1;
+		if (parts[i].tmp2 >= 10)
+		{
+			sim->part_change_type(i,x,y,PT_PLUT);
+			parts[i].temp = (parts[i].temp+600.0f)/2.0f;
+			return 1;
+		}
+		if (parts[i].temp < 388.15f)
+		{
+			parts[i].temp += 0.2f;
+		}
+	}
+	else
+	{
+		int rndstore = rand(), rr, rx, ry;
+		ry = rndstore%5-2;
+		rx = (rndstore>>6)%5-2;
+		rr = sim->pmap[y+ry][x+rx];
+		if ((rr & 0xFF) == PT_POLO || (rr & 0xFF) == PT_POLC)
+			parts[rr>>8].tmp = 0;
+		parts[i].tmp2 = 0;
+		parts[i].tmp3--;
 	}
 	if (parts[r>>8].type == PT_PROT)
 	{
 		parts[i].tmp2++;
 		sim->kill_part(r>>8);
-	}
-	if (parts[i].temp < 388.15f)
-	{
-		parts[i].temp += 0.2f;
 	}
 	return 0;
 }

@@ -27,11 +27,11 @@ extern "C"
 #ifndef OGLI
 #define VIDXRES WINDOWW
 #define VIDYRES WINDOWH
+#include "Simulation/simplugin.h"
 #else
 #define VIDXRES XRES
 #define VIDYRES YRES
 #endif
-
 
 void Renderer::RenderBegin()
 {
@@ -132,6 +132,54 @@ void Renderer::RenderBegin()
 	draw_other();
 	draw_grav_zones();
 	DrawSigns();
+	
+	if (mytxt_buffer1)
+	{
+		pixel * oldVid = vid;
+		vid = (pixel *) malloc(VIDXRES*VIDYRES*sizeof(pixel));
+		if (vid != NULL)
+		{
+			int boffset = 0;
+			memcpy(vid, oldVid, VIDXRES*YRES*sizeof(pixel));
+			while (mytxt_buffer1_parts--)
+			{
+				int16_t * bblock = (int16_t*)&mytxt_buffer1[boffset];
+				drawtext(bblock[1], bblock[2], (char*)&mytxt_buffer1[boffset+6], 255, 255, 255, 255);
+				boffset += (*bblock & 0xFFFF) << 1;
+			}
+			for (int y = 0; y < YRES; y++)
+			{
+				for (int x = 0; x < XRES; x++)
+				{
+					int tmp = y*(VIDXRES)+x;
+					int pixeldata = vid[tmp];
+					if (pixeldata != oldVid[tmp])
+					{
+						int r = sim->pmap[y][x];
+						int deco = 0xFF000000 | (PIXR(pixeldata) << 16) | (PIXG(pixeldata) << 8) | PIXB(pixeldata);
+						if (!r)
+						{
+							int i = sim->create_part(-1, x, y, ELEM_MULTIPP, 13);
+							if (i >= 0) sim->parts[i].ctype = deco;
+						}
+						else if ((r&0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 13)
+							sim->parts[r>>8].ctype = deco;
+						else
+							sim->parts[r>>8].dcolour = deco;
+					}
+				}
+			}
+		}
+		free(vid);
+		vid = oldVid;
+		free(mytxt_buffer1);
+		mytxt_buffer1 = NULL; 
+	}
+	if (sim->SimExtraFunc & 0x400)
+	{
+		sim->SimExtraFunc &= ~0x400;
+		decorate_sim();
+	}
 
 	if(display_mode & DISPLAY_WARP)
 	{
@@ -142,6 +190,54 @@ void Renderer::RenderBegin()
 #endif
 }
 
+#ifndef OGLI
+void Renderer::decorate_sim()
+{
+	pixel p; 
+	int i, nx, ny;
+	sim->sys_pause = true;
+	sim->emp_decor = 0;
+	ClearAccumulation();
+
+	// clear any particle
+	for (i = 0; i <= sim->parts_lastActiveIndex; i++)
+		sim->kill_part(i);
+
+	// clear any walls
+	sim->breakable_wall_count = 0;
+	for (ny = 0; ny < YRES/CELL; ny++)
+	{
+		for (nx = 0; nx < XRES/CELL; nx++)
+		{
+			sim->bmap[ny][nx] = 0;
+		}
+	}
+
+	// clear any signs
+	for (int i = sim->signs.size()-1; i >= 0; i--)
+	{
+		sim->signs.erase(sim->signs.begin()+i);
+	}
+
+	for (ny = 0; ny < YRES; ny++)
+	{
+		for (nx = 0; nx < XRES; nx++)
+		{
+			p = vid[ny*(VIDXRES)+nx];
+#ifdef PIX32OGL
+			p &= 0xFFFFFF;
+#endif
+			if (p)
+			{
+				i = sim->create_part(-1, nx, ny, PT_DMND);
+				if (i >= 0)
+					sim->parts[i].dcolour = 0xFF000000 | (PIXR(p) << 16) | (PIXG(p) << 8) | PIXB(p); // all dcolour stores ARGB!
+			}
+		}
+	}
+}
+#endif
+		
 void Renderer::RenderEnd()
 {
 #ifdef OGLI
@@ -551,14 +647,25 @@ VideoBuffer * Renderer::WallIcon(int wallID, int width, int height)
 	}
 	else if (wtypes[wt].drawstyle==4)
 	{
+		pixel pc2 = wtypes[wt].colour2;
 		for (j=0; j<height; j++)
 			for (i=0; i<width; i++)
 				if(i%CELL == j%CELL)
 					newTexture->SetPixel(i, j, PIXR(pc), PIXG(pc), PIXB(pc), 255);
 				else if  (i%CELL == (j%CELL)+1 || (i%CELL == 0 && j%CELL == CELL-1))
-					newTexture->SetPixel(i, j, PIXR(gc), PIXG(gc), PIXB(gc), 255);
+					newTexture->SetPixel(i, j, PIXR(pc2), PIXG(pc2), PIXB(pc2), 255);
 				else
 					newTexture->SetPixel(i, j, 0x20, 0x20, 0x20, 255);
+	}
+	else if (wtypes[wt].drawstyle==5)
+	{
+		pixel pc2 = wtypes[wt].colour2;
+		for (j=0; j<height; j++)
+			for (i=0; i<width; i++)
+				if ((i << 1 ^ j) & 3)
+					newTexture->SetPixel(i, j, PIXR(pc), PIXG(pc), PIXB(pc), 255);
+				else
+					newTexture->SetPixel(i, j, PIXR(pc2), PIXG(pc2), PIXB(pc2), 255);
 	}
 
 	// special rendering for some walls
@@ -852,14 +959,30 @@ void Renderer::DrawWalls()
 							vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
 					break;
 				case 4:
-					for (int j = 0; j < CELL; j++)
-						for (int i = 0; i < CELL; i++)
-							if (i == j)
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
-							else if (i == j+1 || (i == 0 && j == CELL-1))
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = gc;
-							else
-								vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+					{
+						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
+						for (int j = 0; j < CELL; j++)
+							for (int i = 0; i < CELL; i++)
+								if (i == j)
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+								else if (i == j+1 || (i == 0 && j == CELL-1))
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+								else
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+					}
+					break;
+				case 5:
+					{
+						pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+						if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
+						for (int j = 0; j < CELL; j++)
+							for (int i = 0; i < CELL; i++)
+								if ((i << 1 ^ j) & 3)
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+								else 
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+					}
 					break;
 				}
 
@@ -933,15 +1056,31 @@ void Renderer::DrawWalls()
 								drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
 						break;
 					case 4:
-						for (int j = 0; j < CELL; j++)
-							for (int i = 0; i < CELL; i++)
-								if (i == j)
-									drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
-								else if (i == j+1 || (i == 0 && j == CELL-1))
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = gc;
-								else
-									// looks bad if drawing black blobs
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+						{
+							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
+							for (int j = 0; j < CELL; j++)
+								for (int i = 0; i < CELL; i++)
+									if (i == j)
+										drawblob((x*CELL+i), (y*CELL+j), PIXR(pc), PIXG(pc), PIXB(pc));
+									else if (i == j+1 || (i == 0 && j == CELL-1))
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc2;
+									else
+										// looks bad if drawing black blobs
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x202020);
+						}
+						break;
+					case 5:
+						{
+							pixel pc2 = PIXPACK(sim->wtypes[wt].colour2);
+							if (findingElement) pc2 = PIXRGB(PIXR(pc2)/10,PIXG(pc2)/10,PIXB(pc2)/10);
+							for (int j = 0; j < CELL; j++)
+								for (int i = 0; i < CELL; i++)
+									if ((i << 1 ^ j) & 3)
+										vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
+									else 
+										drawblob((x*CELL+i), (y*CELL+j), PIXR(pc2), PIXG(pc2), PIXB(pc2));
+						}
 						break;
 					}
 				}
@@ -1194,7 +1333,7 @@ void Renderer::render_parts()
 {
 	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x, y, caddress;
 	int orbd[4] = {0, 0, 0, 0}, orbl[4] = {0, 0, 0, 0};
-	float gradv, flicker;
+	float gradv, flicker, q_float;
 	Particle * parts;
 	Element *elements;
 	if(!sim)
@@ -1236,6 +1375,9 @@ void Renderer::render_parts()
 		if (sim->parts[i].type && sim->parts[i].type >= 0 && sim->parts[i].type < PT_NUM) {
 			t = sim->parts[i].type;
 
+			if (t == PT_PINVIS && parts[i].tmp4)
+				continue;
+
 			nx = (int)(sim->parts[i].x+0.5f);
 			ny = (int)(sim->parts[i].y+0.5f);
 #ifdef OGLR
@@ -1245,6 +1387,12 @@ void Renderer::render_parts()
 
 			if(nx >= XRES || nx < 0 || ny >= YRES || ny < 0)
 				continue;
+			
+			/*
+			if ((sim->pmap[ny][nx]&0xFF) == PT_PINVIS)
+				sim->parts[sim->pmap[ny][nx]>>8].tmp4 = t|(i<<8);
+			*/
+
 			if((sim->photons[ny][nx]&0xFF) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
 				continue;
 
@@ -1375,14 +1523,17 @@ void Renderer::render_parts()
 					else if (!pixel_mode)
 						pixel_mode |= PMODE_FLAT;
 				}
-				else if(colour_mode & COLOUR_LIFE)
+				else if(colour_mode & (COLOUR_LIFE | COLOUR_TMP))
 				{
 					gradv = 0.4f;
-					if (!(sim->parts[i].life<5))
-						q = sqrt((float)sim->parts[i].life);
+					q = (colour_mode & COLOUR_LIFE) ? sim->parts[i].life : sim->parts[i].tmp;
+					if (q >= 5)
+						q_float = sqrt((float)q) + 2.25f;
+					else if (q > -5)
+						q_float = (float)q;
 					else
-						q = sim->parts[i].life;
-					colr = colg = colb = sin(gradv*q) * 100 + 128;
+						q_float = -sqrt((float)(-q)) - 2.25f;
+					colr = colg = colb = sin(gradv*q_float) * 100 + 128;
 					cola = 255;
 					if(pixel_mode & (FIREMODE | PMODE_GLOW))
 						pixel_mode = (pixel_mode & ~(FIREMODE|PMODE_GLOW)) | PMODE_BLUR;
@@ -1424,6 +1575,12 @@ void Renderer::render_parts()
 					{
 						colr = firer = 255;
 						colg = fireg = colb = fireb = 0;
+						if (findingElement == PT_WARP)
+						{
+							cola = 255;
+							pixel_mode &= ~PMODE;
+							pixel_mode |= PMODE_FLAT;
+						}
 					}
 					else
 					{
@@ -1478,7 +1635,8 @@ void Renderer::render_parts()
 				}
 				if(pixel_mode & PSPEC_STICKMAN)
 				{
-					int legr, legg, legb;
+					int STKM_grav_flag = sim->Extra_FIGH_pause & 0x200;
+					int legr, legg, legb, cplayer_elem;
 					playerst *cplayer;
 					if(t==PT_STKM)
 						cplayer = &sim->player;
@@ -1493,7 +1651,7 @@ void Renderer::render_parts()
 					{
 						char buff[12];  //Buffer for HP
 						sprintf(buff, "%3d", sim->parts[i].life);  //Show HP
-						drawtext(mousePos.X-8-2*(sim->parts[i].life<100)-2*(sim->parts[i].life<10), mousePos.Y-12, buff, 255, 255, 255, 255);
+						drawtext(mousePos.X-8-2*(sim->parts[i].life<100)-2*(sim->parts[i].life<10), mousePos.Y+ (STKM_grav_flag? (+6) : (-12)), buff, 255, 255, 255, 255);
 					}
 
 					if (findingElement == t)
@@ -1503,28 +1661,31 @@ void Renderer::render_parts()
 					}
 					else if (colour_mode != COLOUR_HEAT)
 					{
-						if (cplayer->elem<PT_NUM && cplayer->elem > 0)
-						{
-							if (cplayer->elem == SPC_AIR)
-							{
-								colr = PIXR(0x8080FF);
-								colg = PIXG(0x8080FF);
-								colb = PIXB(0x8080FF);
-							}
-							else
-							{
-								colr = PIXR(elements[cplayer->elem].Colour);
-								colg = PIXG(elements[cplayer->elem].Colour);
-								colb = PIXB(elements[cplayer->elem].Colour);
-							}
-						}
-						else
+						cplayer_elem = cplayer->elem;
+						if (cplayer_elem == PT_FIGH)
+							cplayer_elem = cplayer->pelem;
+
+						if (cplayer_elem == SPC_AIR)
 						{
 							colr = 0x80;
 							colg = 0x80;
 							colb = 0xFF;
 						}
+						else if (cplayer_elem == SPC_VACUUM)
+						{
+							colr = 0xFF;
+							colg = 0xB0;
+							colb = 0x80;
+						}
+						else if (cplayer_elem<PT_NUM && cplayer_elem > 0)
+						{
+							colr = PIXR(elements[cplayer_elem].Colour);
+							colg = PIXG(elements[cplayer_elem].Colour);
+							colb = PIXB(elements[cplayer_elem].Colour);
+						}
 					}
+					
+					int STKM_grav_mult = (STKM_grav_flag ? (-3) : (+3));
 
 #ifdef OGLR
 					glColor4f(((float)colr)/255.0f, ((float)colg)/255.0f, ((float)colb)/255.0f, 1.0f);
@@ -1556,13 +1717,13 @@ void Renderer::render_parts()
 							glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 					}
 
-					glVertex2f(nx, ny+3);
+					glVertex2f(nx, ny+STKM_grav_mult);
 					glVertex2f(cplayer->legs[0], cplayer->legs[1]);
 
 					glVertex2f(cplayer->legs[0], cplayer->legs[1]);
 					glVertex2f(cplayer->legs[4], cplayer->legs[5]);
 
-					glVertex2f(nx, ny+3);
+					glVertex2f(nx, ny+STKM_grav_mult);
 					glVertex2f(cplayer->legs[8], cplayer->legs[9]);
 
 					glVertex2f(cplayer->legs[8], cplayer->legs[9]);
@@ -1619,9 +1780,9 @@ void Renderer::render_parts()
 						draw_line(nx+2, ny-2, nx+2, ny+2, colr, colg, colb, 255);
 					}
 					//legs
-					draw_line(nx, ny+3, cplayer->legs[0], cplayer->legs[1], legr, legg, legb, 255);
+					draw_line(nx, ny+STKM_grav_mult, cplayer->legs[0], cplayer->legs[1], legr, legg, legb, 255);
 					draw_line(cplayer->legs[0], cplayer->legs[1], cplayer->legs[4], cplayer->legs[5], legr, legg, legb, 255);
-					draw_line(nx, ny+3, cplayer->legs[8], cplayer->legs[9], legr, legg, legb, 255);
+					draw_line(nx, ny+STKM_grav_mult, cplayer->legs[8], cplayer->legs[9], legr, legg, legb, 255);
 					draw_line(cplayer->legs[8], cplayer->legs[9], cplayer->legs[12], cplayer->legs[13], legr, legg, legb, 255);
 					if (cplayer->rocketBoots)
 					{
@@ -2588,7 +2749,7 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	AddRenderMode(RENDER_SPRK);
 
 	//Render mode presets. Possibly load from config in future?
-	renderModePresets = new RenderPreset[11];
+	renderModePresets = new RenderPreset[12];
 
 	renderModePresets[0].Name = "Alternative Velocity Display";
 	renderModePresets[0].RenderModes.push_back(RENDER_EFFE);
@@ -2646,6 +2807,10 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	renderModePresets[10].Name = "Life Gradient Display";
 	renderModePresets[10].RenderModes.push_back(RENDER_BASC);
 	renderModePresets[10].ColourMode = COLOUR_LIFE;
+	
+	renderModePresets[11].Name = "Tmp Gradient Display";
+	renderModePresets[11].RenderModes.push_back(RENDER_BASC);
+	renderModePresets[11].ColourMode = COLOUR_TMP;
 
 	//Prepare the graphics cache
 	graphicscache = (gcache_item *)malloc(sizeof(gcache_item)*PT_NUM);

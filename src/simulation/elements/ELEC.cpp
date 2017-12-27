@@ -31,6 +31,7 @@ Element_ELEC::Element_ELEC()
 	Description = "Electrons. Sparks electronics, reacts with NEUT and WATR.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
+	Properties2 |= PROP_ENERGY_PART;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -92,6 +93,7 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					if (parts[r>>8].tmp2 & 0x1)
 						break;
 				case PT_NEUT:
+					// in real life, "neutrons + electrons = hydrogen" is wrong reaction.
 					sim->part_change_type(r>>8, x+rx, y+ry, PT_H2);
 					parts[r>>8].life = 0;
 					parts[r>>8].ctype = 0;
@@ -107,10 +109,23 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					parts[r>>8].tmp2 += 5;
 					parts[r>>8].life = 1000;
 					break;
-				case PT_NONE: //seems to speed up ELEC even if it isn't used
+				case PT_POLO:
+					if (sim->isFromMyMod && !(rand() & 0x1FF)) // 1 in 512
+					{
+						int s = parts[r>>8].tmp;
+						if (s) parts[r>>8].tmp --;
+					}
 					break;
+				case PT_NONE: //seems to speed up ELEC even if it isn't used
+				case PT_ELEC:
+				case PT_POLC:
+				case ELEM_MULTIPP:
+					break;
+				case PT_NBLE:
+					if (parts[i].temp >= 2273.15)
+						break;
 				default:
-					if ((sim->elements[rt].Properties & PROP_CONDUCTS) && (rt!=PT_NBLE||parts[i].temp<2273.15))
+					if (sim->elements[rt].Properties & PROP_CONDUCTS)
 					{
 						sim->create_part(-1, x+rx, y+ry, PT_SPRK);
 						sim->kill_part(i);

@@ -12,6 +12,10 @@
 #include "Platform.h"
 #include "PowderToy.h"
 
+#if defined(TPT_NEED_DLL_PLUGIN)
+// #include <excpt.h>
+#endif
+
 #include "gui/dialogues/ErrorMessage.h"
 #include "gui/dialogues/InformationMessage.h"
 #include "gui/dialogues/TextPrompt.h"
@@ -19,7 +23,6 @@
 #include "gui/game/GameModel.h"
 #include "gui/interface/Keys.h"
 #include "simulation/Simulation.h"
-
 
 #ifndef FFI
 int luacon_partread(lua_State* l)
@@ -744,6 +747,181 @@ int luatpt_element_func(lua_State *l)
 	return 0;
 }
 
+#if defined(TPT_NEED_DLL_PLUGIN)
+// TODO: 64-bit
+int temp_SEH_Part_L0;
+char catchedexception;
+__cdecl int DLLAPI1(Simulation*,int,int,int,void*,int,int*,int*);
+
+asm (
+	"__Z7DLLAPI1P10SimulationiiiPviPiS2_:"
+	"movl $0, _catchedexception;"
+	"movl %fs:0, %eax;"
+	"popl %ecx;"
+	"movl 24(%esp), %edx;"
+	"movl %eax, (%edx);"
+	"movl $myasm_DLLAPI1_L2, 4(%edx);"
+	"movl %esp, 8(%edx);"
+	"movl %ebx, 12(%edx);"
+	"movl %esi, 16(%edx);"
+	"movl %edi, 20(%edx);"
+	"movl %ebp, 24(%edx);"
+	"movl 20(%esp), %eax;"
+	"movl %ecx, 20(%esp);"
+	"movl %edx, %fs:0\n\t"
+	".p2align 3,,7\n\t"
+	"movl %edx, _temp_SEH_Part_L0;"
+	"call *%eax\n\t"
+	"myasm_DLLAPI1_L1:"
+	"movl _temp_SEH_Part_L0, %eax;"
+	"movl 8(%eax), %esp;"
+	"movl 28(%esp), %edi;"
+	"movl _catchedexception, %esi;"
+	"orl %esi, (%edi);"
+	"movl 12(%eax), %ebx;"
+	"movl 16(%eax), %esi;"
+	"movl 20(%eax), %edi;"
+	"movl 24(%eax), %ebp;"
+	"movl (%eax), %ecx;"
+	"pushl 20(%esp);"
+	"movl %ecx, %fs:0;"
+	"ret\n"
+	"myasm_DLLAPI1_L2:"
+	"orb $1, _catchedexception;"
+	"jmp myasm_DLLAPI1_L1\n\t"
+	".p2align 4,,15\n\t"
+);
+#endif
+
+void luacon_debug_trigger(int tid, int pid, int x, int y)
+{
+	unsigned char fnmode = lua_trigger_fmode[tid];
+	/* fnmode:
+		0: no function / only DLL
+		1: replace
+		2: update after
+		3: update before
+	*/
+#ifdef TPT_NEED_DLL_PLUGIN
+	const static void *(simdata[6]) = {
+		luacon_sim->parts,		// particle data
+		luacon_sim->pmap,		// particle map
+		luacon_sim->photons,	// photons map
+		luacon_sim->bmap,		// block (wall) map
+		luacon_sim->pv,			// pressure map
+		&luacon_sim->pfree,		// last freed particle
+	};
+	const static short loadorder[4] = {
+		// 0x00FF: function process ID
+		// 0x0100: halt after process
+		// 0x0200: flag for using Lua
+		0x0100,0x0300,0x0001,0x0200
+	};
+	int currload = loadorder[fnmode];
+	int callfunc;
+	for (;;)
+	{
+		if (currload & 0x200)
+#else
+		if (fnmode)
+#endif
+			luacall_debug_trigger(tid, pid, x, y);
+#ifdef TPT_NEED_DLL_PLUGIN
+		else if (callfunc = (int)LuaScriptInterface::dll_trigger_func[tid])
+		{
+			int tmp[7];
+#if MAX_DLL_FUNCTIONS < 256
+			if (tid >= MAX_DLL_FUNCTIONS) return;
+#endif
+			DLLAPI1(luacon_sim, pid, x, y, simdata, callfunc, tmp, &luacon_sim->dllexceptionflag);
+		}
+		if (currload & 0x100)
+			break;
+		currload = loadorder[currload & 0xFF];
+	}
+#endif
+	return;
+}
+
+void luacall_debug_trigger(int t, int i, int x, int y)
+{
+	int fnid = lua_trigger_func[t];
+	lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
+	lua_pushinteger(luacon_ci->l, i);
+	lua_pushinteger(luacon_ci->l, x);
+	lua_pushinteger(luacon_ci->l, y);
+	int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
+	if (callret)
+	{
+		luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
+		lua_pop(luacon_ci->l, 1);
+	}
+}
+
+int luatpt_call_debug_trigger(lua_State* l)
+{
+	int t = lua_tointeger(l, 1);
+	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && lua_trigger_fmode[t])
+	{
+		int i = lua_tointeger(l, 2), x = lua_tointeger(l, 3), y = lua_tointeger(l, 4);
+		luacall_debug_trigger(t, i, x, y);
+	}
+	return 0;
+}
+
+#ifdef TPT_NEED_DLL_PLUGIN
+__declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int t, int v) // TPT common functions call
+{
+	static int ft;
+	__asm__ __volatile ("":"=a"(ft):);
+	switch (ft)
+	{
+		case 1: return luacon_sim->create_part(i, x, y, t, v);
+		case 2: luacon_sim->part_change_type(i, x, y, t); break;
+		case 3: luacon_sim->kill_part(i); break;
+		case 4: return luacon_sim->elements[i].Properties;
+		case 5: return luacon_sim->elements[i].Properties2;
+		case 6: {
+			int xx = (int)luacon_sim->parts[i].x+0.5f;
+			int yy = (int)luacon_sim->parts[i].y+0.5f;
+			luacon_sim->parts[i].x = (float)x;
+			luacon_sim->parts[i].y = (float)y;
+			luacon_sim->pmap[yy][xx] = 0;
+			luacon_sim->pmap[y][x] = luacon_sim->parts[i].type | (i << 8);
+			break;
+		}
+	}
+	return 0;
+}
+#endif
+
+int luatpt_debug_trigger_add(lua_State* l)
+{
+	int tid = luaL_checkinteger(l, 1);
+	if (tid < 0 || tid >= MAX_LUA_DEBUG_FUNCTIONS) // fix overflow bug
+		return 0;
+	if (lua_trigger_fmode[tid])
+		luaL_unref(l, LUA_REGISTRYINDEX, lua_trigger_func[tid]);
+	if (lua_type(l, 2) == LUA_TFUNCTION)
+	{
+		lua_pushvalue(l, 2);
+		int fn = luaL_ref(l, LUA_REGISTRYINDEX);
+		int n = 1;
+		lua_trigger_func[tid] = fn;
+#ifdef TPT_NEED_DLL_PLUGIN
+		if (lua_gettop(l) >= 3)
+		{
+			int m = lua_tointeger(l, 3);
+			(m >= 1) && (m <= 3) && (n = m);
+		}
+#endif
+		lua_trigger_fmode[tid] = n;
+	}
+	else
+		lua_trigger_fmode[tid] = 0;
+	return 0;
+}
+
 int luacon_graphicsReplacement(GRAPHICS_FUNC_ARGS, int i)
 {
 	int cache = 0, callret;
@@ -1193,9 +1371,13 @@ int luatpt_set_wallmap(lua_State* l)
 			width = (XRES/CELL)-x1;
 		if(y1+height > (YRES/CELL))
 			height = (YRES/CELL)-y1;
+		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count += width*height;
 		for (nx = x1; nx<x1+width; nx++)
 			for (ny = y1; ny<y1+height; ny++)
 			{
+				if (luacon_sim->wtypes[ luacon_sim->bmap[ny][nx] ].PressureTransition >= 0)
+					luacon_sim->breakable_wall_count--;
 				luacon_sim->bmap[ny][nx] = wallType;
 			}
 	}
@@ -1205,6 +1387,10 @@ int luatpt_set_wallmap(lua_State* l)
 			x1 = (XRES/CELL);
 		if(y1 > (YRES/CELL))
 			y1 = (YRES/CELL);
+		if (luacon_sim->wtypes[ luacon_sim->bmap[y1][x1] ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count--;
+		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
+			luacon_sim->breakable_wall_count++;
 		luacon_sim->bmap[y1][x1] = wallType;
 	}
 	return 0;
@@ -2042,6 +2228,42 @@ int luatpt_record(lua_State* l)
 	int recordingFolder = luacon_controller->Record(record);
 	lua_pushinteger(l, recordingFolder);
 	return 1;
+}
+
+int luatpt_two_state_update(lua_State * l)
+{
+	int i = lua_tointeger(l, 1), x = lua_tointeger(l, 2), y = lua_tointeger(l, 3), t = lua_tointeger(l, 4), r, rx, ry;
+	Particle * parts = luacon_sim->parts;
+
+	if (parts[i].life>0 && parts[i].life!=10)
+		parts[i].life--;
+	for (rx=-2; rx<3; rx++)
+		for (ry=-2; ry<3; ry++)
+			if (BOUNDS_CHECK && (rx || ry))
+			{
+				r = luacon_sim->pmap[y+ry][x+rx];
+				if (!r)
+					continue;
+				if ((r&0xFF) == t)
+				{
+					if (parts[i].life==10&&parts[r>>8].life<10&&parts[r>>8].life>0)
+						parts[i].life = 9;
+					else if (parts[i].life==0&&parts[r>>8].life==10)
+						parts[i].life = 10;
+				}
+				else if ((r&0xFF)==PT_SPRK)
+				{
+					if (parts[r>>8].life>0 && parts[r>>8].life<4)
+					{
+						if (parts[r>>8].ctype==PT_PSCN)
+							parts[i].life = 10;
+						else if (parts[r>>8].ctype==PT_NSCN)
+							parts[i].life = 9;
+					}
+				}
+			}
+
+	return 0;
 }
 
 #endif

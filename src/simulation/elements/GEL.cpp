@@ -122,6 +122,54 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					}
 					gel = true;
 					break;
+				case ELEM_MULTIPP:
+					if (parts[r>>8].life == 38 && (parts[r>>8].tmp2 & 7) != 4)
+					{
+						int * ctype = &parts[r>>8].ctype;
+						if (!(*ctype)) *ctype = PT_WATR;
+						if (*ctype == PT_WATR || *ctype == PT_DSTW)
+						{
+							parts[r>>8].tmp += parts[i].tmp;
+							parts[i].tmp = 0;
+						}
+						else if (*ctype == PT_GEL)
+						{
+							if (parts[i].tmp <= 1)
+							{
+								if (parts[i].tmp <= 0)
+									sim->kill_part(i);
+								else
+									sim->part_change_type(i, x, y, PT_WATR);
+								parts[r>>8].tmp++;
+								return 1;
+							}
+							else // merging N GELs
+							{
+								int rndstore = rand();
+								int mx, my, mr, ms;
+								mx = x + sim->portal_rx[rndstore&7];
+								my = y + sim->portal_ry[rndstore&7];
+								mr = pmap[my][mx];
+								if ((mr&0xFF) == PT_GEL)
+								{
+									ms = parts[mr>>8].tmp + parts[i].tmp;
+									if (ms < 100)
+									{
+										parts[i].tmp = ms;
+										sim->kill_part(mr>>8);
+										parts[r>>8].tmp++;
+									}
+								}
+							}
+						}
+					}
+					break;
+				case PT_PINVIS:
+					r = parts[r>>8].tmp4;
+					if (!r) continue;
+					rt = r & 0xFF;
+					if (rt == PT_GEL) gel = true;
+					break;
 				default:
 					break;
 				}

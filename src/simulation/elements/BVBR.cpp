@@ -31,6 +31,7 @@ Element_BVBR::Element_BVBR()
 	Description = "Broken vibranium.";
 
 	Properties = TYPE_PART|PROP_LIFE_DEC;
+	Properties2 |= PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

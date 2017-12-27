@@ -31,6 +31,7 @@ Element_NEUT::Element_NEUT()
 	Description = "Neutrons. Interact with matter in odd ways.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
+	Properties2 |= PROP_ENERGY_PART | PROP_NEUTRONS_LIKE;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -48,7 +49,8 @@ Element_NEUT::Element_NEUT()
 //#TPT-Directive ElementHeader Element_NEUT static int update(UPDATE_FUNC_ARGS)
 int Element_NEUT::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, target_r = -1;
+	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
@@ -174,14 +176,126 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(r>>8, x+rx, y+ry, PT_CAUS);
 					break;
+				case PT_POLC:
+					if (parts[r>>8].tmp && !(rand()%80))
+						parts[r>>8].tmp--;
+					break;
+				case ELEM_MULTIPP:
+					{
+					int rr, j, nr;
+					if (parts[r>>8].life == 22)
+					{
+						switch (parts[r>>8].tmp >> 3)
+						{
+						case 1:
+							parts[i].vx = 0, parts[i].vy = 0;
+							break;
+						case 2:
+							if (parts[r>>8].temp > 8000)
+							{
+								int temp = (int)(parts[r>>8].temp - 8272.65f);
+								if (!(rx || ry) && temp > (int)(rand() * 1000.0f / (RAND_MAX+1.0f)))
+								{
+									sim->kill_part(i);
+									return 1;
+								}
+							}
+							else if (!(rand()%25))
+							{
+								rr = sim->create_part(-1, x, y, PT_ELEC);
+								if (rr >= 0)
+								{
+									parts[i].tmp2 = 1;
+									sim->part_change_type(i, x, y, PT_PROT);
+								}
+							}
+							break;
+						case 3:
+							if (!(parts[r>>8].tmp2 || rand()%500))
+							{
+								int np = sim->create_part(-1, x, y, PT_NEUT);
+								if (np < 0) parts[np].temp = parts[i].temp;
+								parts[r>>8].tmp2 = 500;
+							}
+							if (!(rx || ry))
+							{
+								sim->ineutcount++;
+							}
+							break;
+						case 4:
+							parts[i].vx *= 0.995;
+							parts[i].vy *= 0.995;
+							break;
+						}
+					}
+					else if (parts[r>>8].life <= 8 && !(rx || ry))
+					{
+						if (parts[r>>8].life == 5 && !parts[r>>8].tmp)
+							target_r = r>>8;
+						if (parts[r>>8].life != 8)
+							continue;
+						parts[i].vx = 0, parts[i].vy = 0;
+						for (j = 0; j < 5; j++)
+						{
+							iX = rand() % (ISTP * 2 + 1) - ISTP;
+							iY = rand() % (ISTP * 2 + 1) - ISTP;
+							rr = pmap[y+iY][x+iX];
+							if ((rr&0xFF) == ELEM_MULTIPP && parts[rr>>8].life == 8)
+								break;
+						}
+						if (j == 5)
+							iY = 0, iX = 0;
+					}
+					else if (parts[r>>8].life == 16 && parts[r>>8].ctype == 25)
+					{
+						int tmp2 = parts[r>>8].tmp2;
+						int multiplier = (tmp2 >> 4) + 1;
+						tmp2 &= 0x0F;
+						if (Element_MULTIPP::Arrow_keys & 0x10 && tmp2 >= 1 && tmp2 <= 8)
+						{
+							iX += multiplier*sim->portal_rx[tmp2-1];
+							iY += multiplier*sim->portal_ry[tmp2-1];
+						}
+					}
+					}
+					break;
 				default:
 					break;
 				}
 			}
+	if (target_r >= 0)
+	{
+		ChangeDirection(sim, i, x, y, &parts[i], &parts[target_r]);
+	}
+	else
+	{
+		parts[i].vx += (float)iX;
+		parts[i].vy += (float)iY;
+	}
 	return 0;
 }
 
 
+//#TPT-Directive ElementHeader Element_NEUT static void ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
+void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
+{
+	if (under->tmp2 == 18)
+	{
+		neut->ctype = 0x100;
+		neut->tmp2 = 0x3FFFFFFF;
+		sim->part_change_type(i, x, y, PT_E186);
+	}
+	else if (under->tmp2 == 25)
+	{
+		int rr = under->ctype;
+		float angle = rand() / (float)(RAND_MAX) - 0.5f;
+		float radius = (float)(rr >> 4) / 16.0f;
+		if (rr & 8) angle *= 0.5f;
+		angle += (float)(rr & 7) / 4.0f;
+		neut->vx = sinf(angle * M_PI) * radius;
+		neut->vy = cosf(angle * M_PI) * radius;
+	}
+}
 
 //#TPT-Directive ElementHeader Element_NEUT static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_NEUT::graphics(GRAPHICS_FUNC_ARGS)

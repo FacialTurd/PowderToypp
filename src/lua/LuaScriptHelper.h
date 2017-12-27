@@ -12,7 +12,8 @@ extern bool *luacon_currentCommand;
 extern int luaL_tostring(lua_State* l, int n);
 extern std::string *luacon_lastError;
 
-extern int *lua_el_func, *lua_el_mode, *lua_gr_func;
+extern int *lua_el_func, *lua_el_mode, *lua_gr_func, *lua_trigger_func;
+extern unsigned char *lua_trigger_fmode;
 
 extern int getPartIndex_curIdx;
 extern int tptProperties; //Table for some TPT properties
@@ -48,6 +49,16 @@ int luatpt_graphics_func(lua_State *l);
 
 int luacon_elementReplacement(UPDATE_FUNC_ARGS);
 int luatpt_element_func(lua_State *l);
+
+void luacon_debug_trigger(int tid, int pid, int x, int y);
+int luatpt_debug_trigger_add(lua_State* l);
+int luatpt_call_debug_trigger(lua_State* l);
+
+#ifdef TPT_NEED_DLL_PLUGIN
+extern "C" { __declspec(dllexport) void luacall_debug_trigger(int t, int i, int x, int y); }
+#else
+void luacall_debug_trigger(int t, int i, int x, int y);
+#endif
 
 int luatpt_error(lua_State* l);
 int luatpt_drawtext(lua_State* l);
@@ -132,6 +143,8 @@ int luatpt_setwindowsize(lua_State* l);
 
 int luatpt_screenshot(lua_State* l);
 int luatpt_record(lua_State* l);
+
+int luatpt_two_state_update(lua_State* l);
 
 
 #endif /* LUASCRIPTHELPER_H_ */
