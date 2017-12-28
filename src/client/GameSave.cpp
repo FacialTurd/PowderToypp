@@ -1141,23 +1141,27 @@ void GameSave::readOPS(char * data, int dataLength)
 					//Read tmp3 and extra data
 					if(fieldDescriptor & 0x4000)
 					{
-						if (i >= partsDataLen) goto fail;
+						if (i >= partsDataLen)
+							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer");
 						int tempDesc = partsData[i++], tempData;
 						switch (tempDesc & 0x3)
 						{
 							case 0: break;
 							case 1:
-								if (i >= partsDataLen) goto fail;
+								if (i >= partsDataLen)
+									throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp3");
 								particles[newIndex].tmp3 = ((unsigned)partsData[i++]);
 								break;
 							case 2:
-								if (i+1 >= partsDataLen) goto fail;
+								if (i+1 >= partsDataLen)
+									throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp3");
 								tempData = ((unsigned)partsData[i++]);
 								tempData |= (((unsigned)partsData[i++]) << 8);
 								particles[newIndex].tmp3 = tempData;
 								break;
 							case 3:
-								if (i+3 >= partsDataLen) goto fail;
+								if (i+3 >= partsDataLen)
+									throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp3");
 								tempData = ((unsigned)partsData[i++]);
 								tempData |= (((unsigned)partsData[i++]) << 8);
 								tempData |= (((unsigned)partsData[i++]) << 24);
@@ -1167,20 +1171,23 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 						if (tempDesc & 0x4)
 						{
-							if (i+1 >= partsDataLen) goto fail;
+							if (i+1 >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp2");
 							tempData = (((unsigned)partsData[i++]) << 24);
 							tempData |= (((unsigned)partsData[i++]) << 16);
 							particles[newIndex].tmp2 |= tempData;
 						}
 						if (tempDesc & 0x8)
 						{
-							if (i+1 >= partsDataLen) goto fail;
+							if (i+1 >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp4");
 							tempData = ((unsigned)partsData[i++]) << 8;
 							tempData |= (unsigned)partsData[i++];
 							particles[newIndex].tmp4 |= tempData;
 							if (tempDesc & 0x10)
 							{
-								if (i+1 >= partsDataLen) goto fail;
+								if (i+1 >= partsDataLen)
+									throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading tmp4");
 								tempData = ((unsigned)partsData[i++]) << 24;
 								tempData |= ((unsigned)partsData[i++]) << 16;
 								particles[newIndex].tmp4 |= tempData;
@@ -1188,7 +1195,8 @@ void GameSave::readOPS(char * data, int dataLength)
 						}
 						if (tempDesc & 0x20)
 						{
-							if (i+1 >= partsDataLen) goto fail;
+							if (i+1 >= partsDataLen)
+								throw ParseException(ParseException::Corrupt, "Ran past particle data buffer while loading life");
 							tempData = ((unsigned)partsData[i++]) << 24;
 							tempData |= ((unsigned)partsData[i++]) << 16;
 							particles[newIndex].life |= tempData;

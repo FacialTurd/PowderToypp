@@ -2438,10 +2438,10 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			{
 				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
 				// 16 values per dword
-				static int E186_ilist[] = {
-					0x88222800,	//  0 - 15
-					0x02002006,	// 16 - 31
-					0xAAAA001A,	// 32 - 47
+				static unsigned int E186_ilist[] = {
+					0x88222800U,	//  0 - 15
+					0x02002006U,	// 16 - 31
+					0xAAAA001AU,	// 32 - 47
 				};
 				switch (rlife)
 				{

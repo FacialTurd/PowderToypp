@@ -2421,7 +2421,7 @@ void GameView::OnDraw()
 			"LUACALL"
 		};
 		const int maxE189Type = 40;
-		static const int E189IntM[] = {0x81055020, 0x00000127};
+		static const unsigned int E189IntM[] = {0x81055020U, 0x00000127U};
 		//Draw info about simulation under cursor
 		int wavelengthGfx = 0, alpha = 255;
 		if (toolTipPosition.Y < 120)
