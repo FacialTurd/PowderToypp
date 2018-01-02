@@ -912,6 +912,8 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, DECO_MULTIPLY);
 	SETCONST(l, DECO_DIVIDE);
 	SETCONST(l, DECO_SMUDGE);
+	lua_pushinteger(l, 8); lua_setfield(l, -2, "PMAPBITS");
+	lua_pushinteger(l, (1 << 8) - 1); lua_setfield(l, -2, "PMAPMASK");
 
 	//Declare FIELD_BLAH constants
 	std::vector<StructProperty> particlePropertiesV = Particle::GetProperties(); 
