@@ -1,4 +1,6 @@
 #include "simulation/Elements.h"
+#define ID(x) part_ID
+
 //#TPT-Directive ElementClass Element_ACID PT_ACID 21
 Element_ACID::Element_ACID()
 {
@@ -57,37 +59,38 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != ELEM_MULTIPP)
+				int rt = TYP(r)
+				if (rt != PT_ACID && rt != PT_CAUS && rt != ELEM_MULTIPP)
 				{
-					if ((r&0xFF)==PT_PLEX || (r&0xFF)==PT_NITR || (r&0xFF)==PT_GUNP || (r&0xFF)==PT_RBDM || (r&0xFF)==PT_LRBD)
+					if (rt==PT_PLEX || rt==PT_NITR || rt==PT_GUNP || rt==PT_RBDM || rt==PT_LRBD)
 					{
 						sim->part_change_type(i,x,y,PT_FIRE);
-						sim->part_change_type(r>>8,x+rx,y+ry,PT_FIRE);
+						sim->part_change_type(ID(r),x+rx,y+ry,PT_FIRE);
 						parts[i].life = 4;
-						parts[r>>8].life = 4;
+						partsi(r).life = 4;
 					}
-					else if ((r&0xFF)==PT_WTRV)
+					else if (rt==PT_WTRV)
 					{
 						if(!(rand()%250))
 						{
 							sim->part_change_type(i, x, y, PT_CAUS);
 							parts[i].life = (rand()%50)+25;
-							sim->kill_part(r>>8);
+							sim->kill_part(ID(r));
 						}
 					}
-					else if ((!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
-						((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)) &&
-						sim->elements[r&0xFF].Hardness>(rand()%1000))&&parts[i].life>=50)
+					else if ((!(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
+						(rt != PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)) &&
+						sim->elements[ID(r)].Hardness>(rand()%1000))&&parts[i].life>=50)
 					{
-						if (sim->parts_avg(i, r>>8,PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
+						if (sim->parts_avg(i, ID(r), PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
 						{
-							float newtemp = ((60.0f-(float)sim->elements[r&0xFF].Hardness))*7.0f;
-							if(newtemp < 0){
+							float newtemp = ((60.0f-(float)sim->elements[ID(r)].Hardness))*7.0f;
+							if (newtemp < 0){
 								newtemp = 0;
 							}
 							parts[i].temp += newtemp;
 							parts[i].life--;
-							sim->kill_part(r>>8);
+							sim->kill_part(ID(r));
 						}
 					}
 					else if (parts[i].life<=50)
@@ -106,17 +109,17 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
-			if ((r&0xFF)==PT_ACID && (parts[i].life>parts[r>>8].life) && parts[i].life>0)//diffusion
+			if (rt==PT_ACID && (parts[i].life>partsi(r).life) && parts[i].life>0)//diffusion
 			{
-				int temp = parts[i].life - parts[r>>8].life;
+				int temp = parts[i].life - partsi(r).life;
 				if (temp==1)
 				{
-					parts[r>>8].life++;
+					partsi(r).life++;
 					parts[i].life--;
 				}
 				else if (temp>0)
 				{
-					parts[r>>8].life += temp/2;
+					partsi(r).life += temp/2;
 					parts[i].life -= temp/2;
 				}
 			}

@@ -1,4 +1,6 @@
 #include "simulation/Elements.h"
+#define ID(x) part_ID
+
 //#TPT-Directive ElementClass Element_ARAY PT_ARAY 126
 Element_ARAY::Element_ARAY()
 {
@@ -70,11 +72,11 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 					int r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3)
+					if (CHECK_EL_SPRKL3(r))
 					{
 						// EmitRay (i, r, x, y, rx, ry, sim, parts);
 						bool isBlackDeco = false;
-						int inputType = parts[r>>8].ctype;
+						int inputType = partsi(r).ctype;
 						int destroy = (inputType == PT_PSCN) ? 1 : 0;
 						int nostop = (inputType == PT_INST) ? 1 : 0;
 						int spc_conduct = 0, ray_less = 0;
@@ -102,8 +104,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 
 						continue1a:
 							r = pmap[y+nyy][x+nxx];
-							rt = r & 0xFF;
-							r = r >> 8;
+							rt = TYP(r);
+							r = ID(r)
 							
 							if (!rt)
 							{
@@ -136,34 +138,34 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 2:
 									nyy += nyi; nxx += nxi;
 									tmp[0] = pmap[y+nyy][x+nxx];
-									switch (tmp[0]&0xFF)
+									switch (TYP(tmp[0]))
 									{
 									case PT_SWCH:
 									case PT_HSWC:
-										tmp[2] = tmp[0] & 0xFF;
+										tmp[2] = TYP(tmp[0]);
 										if (inputType == PT_INWR)
-											destroy = parts[tmp[0]>>8].life >= 10;
+											destroy = partsi(tmp[0]).life >= 10;
 										tmp[1] = destroy ? 9 : 10;
 										docontinue = 0;
 										do
 										{
-											parts[tmp[0]>>8].life = tmp[1];
+											partsi(tmp[0]).life = tmp[1];
 											nyy += nyi; nxx += nxi;
 											if (!BOUNDS_CHECK)
 												goto break1a;
 											tmp[0] = pmap[y+nyy][x+nxx];
 										}
-										while ((tmp[0]&0xFF) == tmp[2]);
+										while (TYP(tmp[0]) == tmp[2]);
 										break;
 									case PT_LAVA: 
-										if (!parts[tmp[0]>>8].ctype || parts[tmp[0]>>8].ctype == PT_STNE)
+										if (!partsi(tmp[0]).ctype || partsi(tmp[0]).ctype == PT_STNE)
 										{
-											parts[tmp[0]>>8].ctype = PT_BRCK;
-											parts[tmp[0]>>8].tmp = 0;
+											partsi(tmp[0]).ctype = PT_BRCK;
+											partsi(tmp[0]).tmp = 0;
 										}
 										break;
 									case PT_CRAY:
-										partt = &parts[tmp[0]>>8];
+										partt = &partsi(tmp[0]);
 										ny2 = y + nyy + nyi * partt->tmp2;
 										nx2 = x + nxx + nxi * partt->tmp2;
 										{
@@ -174,41 +176,41 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												nx2 += nxi; ny2 += nyi;
 												if (!sim->InBounds(nx2, ny2)) break;
 												r = pmap[ny2][nx2];
-												if ((sim->elements[r&0xFF].Properties2 & PROP_DRAWONCTYPE) || (r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 35)
-													parts[r>>8].ctype = partt->ctype;
+												if ((sim->elements[TYP(r)].Properties2 & PROP_DRAWONCTYPE) || CHECK_EXTEL(r, 35))
+													partsi(r).ctype = partt->ctype;
 											}
 										}
 										goto break1a;
 									case ELEM_MULTIPP:
-										b = parts[tmp[0]>>8].life;
+										b = partsi(tmp[0]).life;
 										if (b == 4)
 										{
-											parts[tmp[0]>>8].ctype = colored;
+											partsi(tmp[0]).ctype = colored;
 											docontinue = nostop;
 										}
 										else if (b == 35)
 										{
-											parts[tmp[0]>>8].ctype &= 0xFF;
-											parts[tmp[0]>>8].ctype |= (colored << 8);
+											partsi(tmp[0]).ctype &= PMAPMASK;
+											partsi(tmp[0]).ctype |= PMAPID(colored));
 											docontinue = nostop;
 										}
 										break;
 									default:
-										tmp[2] = tmp[0]&0xFF;
+										tmp[2] = TYP(tmp[0]);
 										if (tmp[2] == PT_INWR || tmp[2] == PT_QRTZ)
 										{
 											do
 											{
 												if (tmp[2] == PT_INWR)
 													sim->create_part(-1, x+nxx, y+nyy, PT_SPRK);
-												else if (parts[tmp[0]>>8].tmp < 0)
-													parts[tmp[0]>>8].tmp = 0;
+												else if (partsi(tmp[0]).tmp < 0)
+													partsi(tmp[0]).tmp = 0;
 												nyy += nyi; nxx += nxi;
 												if (!BOUNDS_CHECK)
 													goto break1a;
 												tmp[0] = pmap[y+nyy][x+nxx];
 											}
-											while ((tmp[0]&0xFF) == tmp[2]);
+											while (TYP(tmp[0]) == tmp[2]);
 										}
 										goto continue1a;
 									}
@@ -229,7 +231,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											r = pmap[y+nyy][x+nxx];
 											if (!r)
 												continue;
-											parts[r>>8].dcolour = tmp[0];
+											partsi(r).dcolour = tmp[0];
 										}
 										goto break1a;
 									}
@@ -256,22 +258,22 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										continue;
 									case 17:
 									case 18:
-										parts[r].tmp = PT_BRAY | (destroy << 8);
+										parts[r].tmp = PMAP(destroy, PT_BRAY);
 										parts[r].tmp2 = 1;
 										break;
 									case 20:
 										nyy += nyi; nxx += nxi;
 										front1 = pmap[y+nyy][x+nxx];
-										while (BOUNDS_CHECK && (front1&0xFF) == PT_FILT)
+										while (BOUNDS_CHECK && TYP(front1) == PT_FILT)
 										{
-											parts[front1>>8].life = 4;
+											partsi(front1).life = 4;
 											nyy += nyi; nxx += nxi;
 											front1 = pmap[y+nyy][x+nxx];
 										}
 										tmp[0] = parts[r].tmp2 + (r < i); // delay time
 										if (tmp[0] <= 0)
 											tmp[0] += parts[r].tmp; // add pulse time
-										switch (front1&0xFF)
+										switch (TYP(front1))
 										{
 										case PT_DLAY:
 											front1 >>= 8;
@@ -284,9 +286,9 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										case PT_INST:
 											if (tmp[0] == 1)
 											{
-												parts[front1>>8].life = 4;
-												parts[front1>>8].ctype = PT_INST;
-												sim->part_change_type(front1>>8, x+nxx, y+nyy, PT_SPRK);
+												partsi(front1).life = 4;
+												partsi(front1).ctype = PT_INST;
+												sim->part_change_type(ID(front1), x+nxx, y+nyy, PT_SPRK);
 											}
 										}
 										goto break1a;
@@ -317,8 +319,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											while (sim->InBounds(x+nxx, y+nyy))
 											{
 												front1 = pmap[y+nyy][x+nxx];
-												if ((front1&0xFF) == PT_FILT)
-													sim->kill_part(front1>>8);
+												if (TYP(front1) == PT_FILT)
+													sim->kill_part(ID(front1));
 												else if (!rem1) break;
 												if (rem1 && !--rem1) break;
 												nyy += nyi, nxx += nxi;
@@ -338,7 +340,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											if (!colored)
 												colored = 0x3FFFFFFF;
-											tmp[0] = sim->elements[parts[r].ctype & 0xFF].PhotonReflectWavelengths;
+											tmp[0] = sim->elements[TYP(parts[r].ctype)].PhotonReflectWavelengths;
 											if (parts[r].tmp2 & 0x1)
 												tmp[0] = ~tmp[0];
 											colored &= tmp[0];
@@ -356,17 +358,17 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 23:
 									{
 										front1 = pmap[y+nyi+nyy][x+nxi+nxx];
-										int ftype1 = front1 & 0xFF;
+										int ftype1 = TYP(front1);
 										while (ftype1 == PT_BIZR || ftype1 == PT_BIZRG || ftype1 == PT_BIZRS)
 										{
-											colored = parts[front1 >> 8].ctype;
+											colored = partsi(front1).ctype;
 											nyy+=nyi; nxx+=nxi;
 											front1 = pmap[y+nyi+nyy][x+nxi+nxx];
-											ftype1 = front1 & 0xFF;
+											ftype1 = TYP(front1);
 										}
 										if (ftype1 == PT_SWCH && (parts[r].tmp > 0))
 										{
-											parts[front1 >> 8].life = 9 + (parts[r].tmp & 1);
+											partsi(front1).life = 9 + (parts[r].tmp & 1);
 											docontinue = nostop;
 										}
 									}
@@ -411,19 +413,19 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											{
 												front1 = pmap[y+nyy][x+nxx];
 												if (!front1) goto break1a;
-												switch (front1 & 0xFF)
+												switch (TYP(front1))
 												{
 												case PT_FILT:
-													parts[front1>>8].life = 4; break;
+													partsi(front1).life = 4; break;
 												case PT_ARAY: case PT_CRAY:
 													{
-													float ftemp = parts[front1>>8].temp + tdiff;
-													parts[front1>>8].temp = restrict_flt(ftemp, MIN_TEMP, MAX_TEMP);
+													float ftemp = partsi(front1).temp + tdiff;
+													partsi(front1).temp = restrict_flt(ftemp, MIN_TEMP, MAX_TEMP);
 													}
 													goto break1a;
 												case ELEM_MULTIPP:
-													if (parts[front1>>8].life == 28)
-														parts[front1>>8].tmp2 += tdiff;
+													if (partsi(front1).life == 28)
+														partsi(front1).tmp2 += tdiff;
 													break;
 												default: goto break1a;
 												}
@@ -439,8 +441,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											while (nxx += nxi2, nyy += nyi2, BOUNDS_CHECK)
 											{
 												r = pmap[y+nyy][x+nxx];
-												if ((r&0xFF) != PT_FILT) break;
-												parts[r>>8].ctype = colored;
+												if (TYP(r) != PT_FILT) break;
+												partsi(r).ctype = colored;
 											}
 											nxx = tmp[2] - nxi; nyy = tmp[3] - nyi;
 										}
@@ -516,7 +518,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											nxx += nxi; nyy += nyi;
 											front1 = pmap[y+nyy][x+nxx];
-											switch (front1 & 0xFF)
+											switch (TYP(front1))
 											{
 											case PT_NONE:
 												sim->create_part(-1, x+nxx, y+nyy, PT_BRAY);
@@ -525,33 +527,33 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											case PT_CRAY:
 												if (modFlag & 2)
 												{
-													parts[front1 >> 8].temp = flt1;
+													partsi(front1).temp = flt1;
 													goto break1a;
 												}
 												break;
 											case PT_STOR:
 												modFlag |= 2;
-												flt1  = parts[front1 >> 8].temp;
+												flt1  = partsi(front1).temp;
 												break;
 											case PT_FRAY:
-												tmpz2 += parts[front1 >> 8].tmp;
+												tmpz2 += partsi(front1).tmp;
 												break;
 											case PT_INVIS:
 												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
 												break;
 											case ELEM_MULTIPP:
-												while (BOUNDS_CHECK && (front1&0xFF) == ELEM_MULTIPP && parts[front1>>8].life == 5)
+												while (BOUNDS_CHECK && CHECK_EXTEL(front1, 5))
 												{
 													if (!destroy)
 													{
-														parts[front1 >> 8].tmp  = 1;
-														parts[front1 >> 8].tmp2 = tmp[0]*nxi;
-														parts[front1 >> 8].tmp3 = tmp[0]*nyi;
+														partsi(front1).tmp  = 1;
+														partsi(front1).tmp2 = tmp[0]*nxi;
+														partsi(front1).tmp3 = tmp[0]*nyi;
 													}
 													else
 													{
-														parts[front1 >> 8].tmp  = 0;
-														parts[front1 >> 8].tmp2 = 0;
+														partsi(front1).tmp  = 0;
+														partsi(front1).tmp2 = 0;
 													}
 													nxx += nxi; nyy += nyi;
 													front1 = pmap[y+nyy][x+nxx];
@@ -567,16 +569,16 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													if (sim->InBounds(nx2, ny2))
 													{
 														front2 = pmap[ny2][nx2];
-														if ((front2 & 0xFF) == PT_SWCH)
-															parts[front1 >> 8].life = ((parts[front1 >> 8].life >= 10) ? 9 : 10);
+														if (TYP(front2) == PT_SWCH)
+															partsi(front1).life = ((partsi(front1).life >= 10) ? 9 : 10);
 													}
 													docontinue = nostop;
 												}
 												continue;
 											case PT_FILT: continue1c:
-												parts[front1>>8].ctype = colored;
+												partsi(front1).ctype = colored;
 												nxx += nxi; nyy += nyi;
-												if (BOUNDS_CHECK && ((front1 = pmap[y+nyy][x+nxx])&0xFF) == PT_FILT)
+												if (BOUNDS_CHECK && ((front1 = TYP(pmap[y+nyy][x+nxx]))) == PT_FILT)
 													goto continue1c;
 												goto break1a;
 											}
@@ -586,20 +588,20 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											nxx += nxi; nyy += nyi;
 											front1 = pmap[y+nyy][x+nxx];
-											int f_type = front1 & 0xFF;
-											if ((front1 & 0xFF) == PT_SPRK)
+											int f_type = TYP(front1);
+											if (TYP(front1) == PT_SPRK)
 											{
-												f_type = parts[front1>>8].ctype;
+												f_type = partsi(front1).ctype;
 												if (f_type <= 0 || f_type >= PT_NUM || !sim->elements[f_type].Enabled)
 													f_type = PT_METL;
-												sim->part_change_type(front1>>8, x+nxi+nxx, y+nyi+nyy, f_type);
-												parts[front1>>8].ctype = PT_NONE; // clear ctype
+												sim->part_change_type(ID(front1), x+nxi+nxx, y+nyi+nyy, f_type);
+												partsi(front1).ctype = PT_NONE; // clear ctype
 												if (f_type == PT_SWCH)
-													parts[front1>>8].life = 19; // keep SWCH on
+													partsi(front1).life = 19; // keep SWCH on
 											}
 											else if (f_type == PT_SWCH)
 											{
-												tmp[2] = tmp[0] & 0xFF;
+												tmp[2] = TYP(tmp[0]);
 												tmp[0] >>= 8;
 												if (tmp[0])
 												{
@@ -608,24 +610,24 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													if (!sim->InBounds(nx2, ny2))
 														goto continue1b;
 													front2 = pmap[ny2][nx2];
-													if ((front2 & 0xFF) == PT_SWCH)
+													if (TYP(front2) == PT_SWCH)
 													{
-														b = ((parts[front2>>8].life >= 10) ? 4 : 0) | ((parts[front1>>8].life >= 10) ? 2 : 0);
+														b = ((partsi(front2).life >= 10) ? 4 : 0) | ((partsi(front1).life >= 10) ? 2 : 0);
 														b = (tmp[2] >> b);
-														parts[front1>>8].life = ((b & 1) ? 10 : 9);
-														parts[front2>>8].life = ((b & 2) ? 10 : 9);
+														partsi(front1).life = ((b & 1) ? 10 : 9);
+														partsi(front2).life = ((b & 2) ? 10 : 9);
 													}
 												continue1b:
 													docontinue = nostop;
 													continue;
 												}
-												else if (parts[front1>>8].life >= 10)
+												else if (partsi(front1).life >= 10)
 												{
-													parts[front1>>8].life = 19; // keep SWCH on
+													partsi(front1).life = 19; // keep SWCH on
 												}
 											}
 											if (sim->elements[f_type].Properties & (PROP_CONDUCTS|PROP_CONDUCTS_SPEC))
-												parts[front1>>8].life = 8;
+												partsi(front1).life = 8;
 											goto break1a;
 										}
 										break;
@@ -641,16 +643,16 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										if (sim->InBounds(nx2, ny2))
 										{
 											int rr = pmap[ny2][nx2];
-											if ((rr&0xFF) == PT_FILT)
+											if (TYP(rr) == PT_FILT)
 											{
 												if (inputType == PT_NSCN)
 												{
-													parts[pmap[ny2][nx2]>>8].ctype = colored;
+													partsi(pmap[ny2][nx2]).ctype = colored;
 													goto break1a;
 												}
-												colored = Element_FILT::interactWavelengths(&parts[pmap[ny2][nx2]>>8], colored);
+												colored = Element_FILT::interactWavelengths(&partsi(pmap[ny2][nx2]), colored);
 											}
-											else if ((rr&0xFF) == PT_VOID || (rr&0xFF) == PT_PVOD && parts[rr>>8].life >= 10)
+											else if (TYP(rr) == PT_VOID || TYP(rr) == PT_PVOD && partsi(rr).life >= 10)
 												goto break1a;
 										}
 										break;
@@ -814,7 +816,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										{
 											for (rx1 = 0; rx1 >= -1 && rx1 <= 1; rx1 = -rx1 - rx1 + 1)
 											{
-												int np = sim->create_part(-1, x + nxx + rx1, y + nyy + ry1, parts[r].tmp&0xFF);
+												int np = sim->create_part(-1, x + nxx + rx1, y + nyy + ry1, TYP(parts[r].tmp));
 												if (np != -1)
 												{
 													parts[np].temp = parts[r].temp;

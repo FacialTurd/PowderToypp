@@ -66,6 +66,35 @@
 #define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E186"
 
 
+#define PMAPBITS 8
+
+#define PMAPMASK ((1<<PMAPBITS)-1)
+#define part_ID(r) ((r)>>PMAPBITS)
+#define TYP(r) ((r)&PMAPMASK)
+#define PMAP(id, typ) (PMAPID(id) | TYP(typ))
+#define PMAPID(id) ((id)<<PMAPBITS)
+
+#define partsi(id) parts[ID(r)]
+#define CHECK_EL_SPRK(r, t) \
+	(TYP(r) == t || TYP(r) == PT_SPRK && partsi(r).ctype == t)
+#define CHECK_EL_SPRKT(r, t) \
+	(TYP((r) == PT_SPRK && partsi(r).ctype == (t))
+#define CHECK_EL_SPRKL3(r) \
+	(TYP(r) == PT_SPRK && partsi(r).life == 3)
+#define CHECK_EL_SPRKL3T(r, t) \
+	(CHECK_EL_SPRKL3(r) && partsi(r).ctype == (t))
+#define CHECK_EXTEL(r, t) \
+	(TYP(r) == ELEM_MULTIPP && partsi(r).life == (t))
+#define CHECK_EL_INSL(t) ((t) == PT_INSL || (t) == PT_INDI)
+#define PAVG_INSL(r) sim->parts_avg(i, ID(r), PT_INSL)
+
+#define ELEMPROP(t) sim->elements[t].Properties
+#define ELEMPROP2(t) sim->elements[t].Properties2
+#define ELEMPROPT(t) ELEMPROP(TYP(t))
+#define ELEMPROPP(r, p) ELEMPROP(partsi(r).p)
+#define ELEMPROPW(id, op) (parts[id].flags op (FLAG_SKIPMOVE))
+
+
 #define UPDATE_FUNC_ARGS Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 #define UPDATE_FUNC_SUBCALL_ARGS sim, i, x, y, surround_space, nt, parts, pmap
 

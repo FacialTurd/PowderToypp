@@ -14,34 +14,9 @@
 #define __builtin_clz msvc_clz
 #endif
 
+#define ID part_ID
+
 Renderer * MULTIPPE_Update::ren_;
-
-#define PMAPBITS 8
-
-#define PMAPMASK ((1<<PMAPBITS)-1)
-#define ID(r) ((r)>>PMAPBITS)
-#define TYP(r) ((r)&PMAPMASK)
-#define PMAP(id, typ) ((id)<<PMAPBITS | ((typ)&PMAPMASK))
-#define PMAPID(id) ((id)<<PMAPBITS)
-
-#define partsi(id) parts[ID(r)]
-#define CHECK_EL_SPRK(r, t) \
-	(TYP(r) == t || TYP(r) == PT_SPRK && partsi(r).ctype == t)
-#define CHECK_EL_SPRKT(r, t) \
-	(TYP((r) == PT_SPRK && partsi(r).ctype == (t))
-#define CHECK_EL_SPRKL3(r) \
-	(TYP(r) == PT_SPRK && partsi(r).life == 3)
-#define CHECK_EL_SPRKL3T(r, t) \
-	(CHECK_EL_SPRKL3(r) && partsi(r).ctype == (t))
-#define CHECK_EXTEL(r, t) \
-	(TYP(r) == ELEM_MULTIPP && partsi(r).life == t)
-#define CHECK_EL_INSL(t) ((t) == PT_INSL || (t) == PT_INDI)
-#define PAVG_INSL(r) sim->parts_avg(i, ID(r), PT_INSL)
-
-#define ELEMPROP(t) sim->elements[t].Properties
-#define ELEMPROP2(t) sim->elements[t].Properties2
-#define ELEMPROPT(t) ELEMPROP(TYP(t))
-#define ELEMPROPP(r, p) ELEMPROP(partsi(r).p)
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 // FLAG_SKIPMOVE: not only implemented for PHOT
@@ -185,10 +160,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		rdif = (float)((((rtmp >> 8) ^ 0x80) & 0xFF) - 0x80);
 
 		ri = sim->create_part(-3, x + (int)rvx, y + (int)rvy, PT_PHOT);
-		if (ri < 0)
-			break;
-		if (ri > i)
-			parts[ri].flags |= FLAG_SKIPMOVE;
+		if (ri < 0) break;
+		if (ri > i) ELEMPROPW(ri, |=);
 		parts[ri].vx = rvx * rdif / 16.0f;
 		parts[ri].vy = rvy * rdif / 16.0f;
 		rctype = parts[i].ctype;
@@ -762,9 +735,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		case 1: // conduct->insulate counter
 			if (parts[i].tmp)
 			{
-				if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
+				if (ELEMPROPW(i, &) // if wait flag exist
 				{
-					parts[i].flags &= ~FLAG_SKIPMOVE; // clear wait flag
+					ELEMPROPW(i, &=~); // clear wait flag
 					return return_value;
 				}
 				if (parts[i].tmp2)
@@ -1055,8 +1028,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										parts[rii].tmp = partsi(ri).tmp;
 										parts[rii].tmp2 = partsi(ri).tmp2;
 										parts[rii].tmp3 = parts[i].tmp;
-										if (rii > i)
-											parts[rii].flags |= FLAG_SKIPMOVE; // set wait flag
+										if (rii > i) ELEMPROPW(rii, |=); // set wait flag
 									}
 									r = pmap[y-rry][x-rrx]; // variable "r" value override
 									if (CHECK_EXTEL(r, 25))
@@ -1068,8 +1040,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											parts[rii].tmp = partsi(ri).tmp;
 											parts[rii].tmp2 = partsi(ri).tmp2;
 											parts[rii].tmp3 = partsi(r).tmp; // fixed overflow?
-											if (rii > i)
-												parts[rii].flags |= FLAG_SKIPMOVE; // set wait flag
+											if (rii > i) ELEMPROPW(rii, |=); // set wait flag
 										}
 									}
 									return return_value;
@@ -1607,7 +1578,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r) continue;
 						pavg = PAVG_INSL(r);
-						if (CHECK_EL_INSL(pavg) && CHECK_EL_SPRKL3(r))
+						if (!CHECK_EL_INSL(pavg) && CHECK_EL_SPRKL3(r))
 						{
 							parts[i].tmp = partsi(r).ctype;
 							parts[i].tmp2 = 1;
@@ -1646,8 +1617,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							else if (!partsi(r).tmp && rii == 2)
 							{
 								partsi(r).ctype = 1;
-								if (ID(r) > i)
-									partsi(r).flags |= FLAG_SKIPMOVE;
+								if (ID(r) > i) ELEMPROPW(ID(r), |=);
 							}
 						}
 						else if (rii == 2)
@@ -1687,8 +1657,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							else if (TYP(r) == PT_WIRE)
 							{
 								partsi(r).ctype = 1;
-								if (ID(r) > i)
-									partsi(r).flags |= FLAG_SKIPMOVE;
+								if (ID(r) > i) ELEMPROPW(ID(r), |=);
 							}
 						}
 				parts[i].tmp2 = parts[i].tmp - 1;
@@ -1821,7 +1790,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				pavg = PAVG_INSL(r);
-				if (CHECK_EL_INSL(pavg))
+				if (!CHECK_EL_INSL(pavg))
 				{
 					rt = TYP(r);
 					if (rt == PT_SPRK && partsi(r).life == 3)
@@ -1958,7 +1927,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				pavg = PAVG_INSL(r);
-				if (CHECK_EL_INSL(pavg))
+				if (!CHECK_EL_INSL(pavg))
 				{
 					rt = TYP(r);
 					r >>= PMAPBITS;
@@ -1985,9 +1954,9 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 27: // powered BRAY shifter
-			if (parts[i].flags & FLAG_SKIPMOVE)
+			if (ELEMPROPW(i, &));
 			{
-				parts[i].flags &= ~FLAG_SKIPMOVE;
+				ELEMPROPW(i, &=~);
 				return return_value;
 			}
 			parts[i].pavg[0] = parts[i].pavg[1];
@@ -2016,7 +1985,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				pavg = PAVG_INSL(r);
-				if (CHECK_EL_INSL(pavg))
+				if (!CHECK_EL_INSL(pavg))
 				{
 					rt = TYP(r);
 					if (rt == PT_SPRK && partsi(r).life == 3 && partsi(r).ctype == PT_PSCN)
@@ -2065,8 +2034,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			rtmp >>= 2;
 			parts[ri].vx = rx * rtmp;
 			parts[ri].vy = ry * rtmp;
-			if (ri > i)
-				parts[ri].flags |= FLAG_SKIPMOVE;
+			if (ri > i) ELEMPROPW(ri, |=);
 			break;
 		case 32: // capacitor
 			rii = parts[i].tmp2;
@@ -2190,7 +2158,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								switch (rctype)
 								{
 								case PT_PHOT:
-									if (np > i) parts[np].flags |= FLAG_SKIPMOVE; // like E189 (life = 11)
+									if (np > i) ELEMPROPW(np, |=); // like E189 (life = 11)
 									parts[np].temp = parts[i].temp;
 									break;
 								case PT_LIGH:
@@ -2366,8 +2334,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	case 22:
 		if (parts[i].tmp2) parts[i].tmp2 --; break;
 	case 24: // moving duplicator particle
-		if (parts[i].flags & FLAG_SKIPMOVE) // if wait flag exist
-			parts[i].flags &= ~FLAG_SKIPMOVE; // clear wait flag
+		if (ELEMPROPW(i, &)) ELEMPROPW(i, &=~); // if wait flag exist, then clear wait flag
 		else if (BOUNDS_CHECK)
 		{
 			/* definition:
@@ -2845,10 +2812,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case 39:
-		if (parts[i].ctype & ~PMAPMASK)
+		if (ID(parts[i].ctype))
 		{
 			parts[i].ctype -= PMAPID(1);
-			if (!(parts[i].ctype & ~PMAPMASK))
+			if (!ID(parts[i].ctype))
 			{
 				parts[i].life = 0;
 				sim->part_change_type(i, x, y, parts[i].ctype);

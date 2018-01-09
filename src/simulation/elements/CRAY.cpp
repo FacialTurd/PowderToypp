@@ -1,4 +1,6 @@
 #include "simulation/Elements.h"
+#define ID(x) part_ID
+
 //#TPT-Directive ElementClass Element_CRAY PT_CRAY 167
 Element_CRAY::Element_CRAY()
 {
@@ -50,7 +52,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 {
 	int nxx, nyy, docontinue, nxi, nyi;
 	// set ctype to things that touch it if it doesn't have one already
-	if (parts[i].ctype<=0 || !sim->elements[parts[i].ctype&0xFF].Enabled)
+	if (parts[i].ctype<=0 || !sim->elements[TYP(parts[i].ctype)].Enabled)
 	{
 		for (int rx = -1; rx <= 1; rx++)
 			for (int ry = -1; ry <= 1; ry++)
@@ -61,10 +63,11 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)!=PT_CRAY && (r&0xFF)!=PT_PSCN && (r&0xFF)!=PT_INST && (r&0xFF)!=PT_METL && (r&0xFF)!=PT_SPRK && (r&0xFF)!=ELEM_MULTIPP && (r&0xFF)!=PT_INDC && (r&0xFF)<PT_NUM)
+					int rt = TYP(r)
+					if (rt!=PT_CRAY && rt!=PT_PSCN && rt!=PT_INST && rt!=PT_METL && rt!=PT_SPRK && rt!=ELEM_MULTIPP && rt!=PT_INDC && rt<PT_NUM)
 					{
-						parts[i].ctype = r&0xFF;
-						parts[i].temp = parts[r>>8].temp;
+						parts[i].ctype = TYP(r);
+						parts[i].temp = partsi(r).temp;
 					}
 				}
 	}
@@ -72,7 +75,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 	{
 		int new_part_life = parts[i].life;
 		int new_part_ctype = parts[i].ctype;
-		size_t offset1 = ((new_part_ctype & 0xFF) == ELEM_MULTIPP) ? offsetof(Particle, ctype) : offsetof(Particle, life);
+		size_t offset1 = (TYP(new_part_ctype) == ELEM_MULTIPP) ? offsetof(Particle, ctype) : offsetof(Particle, life);
 		for (int rx =-1; rx <= 1; rx++)
 			for (int ry = -1; ry <= 1; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
@@ -80,11 +83,11 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 					int r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_SPRK && parts[r>>8].life==3) { //spark found, start creating
+					if (CHECK_EL_SPRKL3(r)) { //spark found, start creating
 						unsigned int colored = 0;
-						bool destroy = parts[r>>8].ctype==PT_PSCN;
-						bool nostop = parts[r>>8].ctype==PT_INST;
-						bool createSpark = (parts[r>>8].ctype==PT_INWR);
+						bool destroy = partsi(r).ctype==PT_PSCN;
+						bool nostop = partsi(r).ctype==PT_INST;
+						bool createSpark = (partsi(r).ctype==PT_INWR);
 						int partsRemaining = 255;
 						if (parts[i].tmp) //how far it shoots
 							partsRemaining = parts[i].tmp;
@@ -95,8 +98,8 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 								break;
 							}
 							r = pmap[y+nyi+nyy][x+nxi+nxx];
-							if (!sim->IsWallBlocking(x+nxi+nxx, y+nyi+nyy, new_part_ctype&0xFF) && (!sim->pmap[y+nyi+nyy][x+nxi+nxx] || createSpark)) { // create, also set color if it has passed through FILT
-								int nr = sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, new_part_ctype&0xFF, new_part_ctype>>8);
+							if (!sim->IsWallBlocking(x+nxi+nxx, y+nyi+nyy, TYP(new_part_ctype)) && (!sim->pmap[y+nyi+nyy][x+nxi+nxx] || createSpark)) { // create, also set color if it has passed through FILT
+								int nr = sim->create_part(-1, x+nxi+nxx, y+nyi+nyy, TYP(new_part_ctype), ID(new_part_ctype));
 								if (nr!=-1) {
 									if (colored)
 										parts[nr].dcolour = colored;
@@ -106,20 +109,20 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 									if(!--partsRemaining)
 										docontinue = 0;
 								}
-							} else if ((r&0xFF)==PT_FILT) { // get color if passed through FILT
-								if (parts[r>>8].dcolour == 0xFF000000)
+							} else if (TYP(r)==PT_FILT) { // get color if passed through FILT
+								if (partsi(r).dcolour == 0xFF000000)
 									colored = 0xFF000000;
-								else if (parts[r>>8].tmp==0)
+								else if (partsi(r).tmp==0)
 								{
-									colored = wavelengthToDecoColour(Element_FILT::getWavelengths(&parts[r>>8]));
+									colored = wavelengthToDecoColour(Element_FILT::getWavelengths(&partsi(r)));
 								}
 								else if (colored==0xFF000000)
 									colored = 0;
-								parts[r>>8].life = 4;
-							} else if ((r&0xFF) == PT_CRAY || nostop) {
+								partsi(r).life = 4;
+							} else if (TYP(r) == PT_CRAY || nostop) {
 								docontinue = 1;
-							} else if(destroy && r && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT)) {
-								sim->kill_part(r>>8);
+							} else if(destroy && r && !(sim->elements[TYP(r)].Properties2 & PROP_NODESTRUCT)) {
+								sim->kill_part(ID(r));
 								if(!--partsRemaining)
 									docontinue = 0;
 							}

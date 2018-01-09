@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
-#define ID(x) ((x) >> 8)
-#define TYP(x) ((x) & 0xFF)
+#define ID(x) part_ID
+
 //Temp particle used for graphics
 //Don't conflict with 186.cpp "tpart_phot"
 Particle tpart;
@@ -401,7 +401,6 @@ void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Parti
 	part->tmp2 = pipe->pavg[0];
 	part->tmp3 = pipe->pavg[1];
 	part->dcolour = pipe->cdcolour;
-	pipe->tmp &= ~0xFF;
 
 	if (!(sim->elements[part->type].Properties & TYPE_ENERGY))
 	{
@@ -452,7 +451,6 @@ void Element_PIPE::transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STO
 	dest->tmp3 = src->tmp3;
 	dest->tmp4 = src->tmp4;
 	dest->cdcolour = src->cdcolour;
-	src->tmp &= ~0xFF;
 }
 
 //#TPT-Directive ElementHeader Element_PIPE static void pushParticle(Simulation * sim, int i, int count, int original)
