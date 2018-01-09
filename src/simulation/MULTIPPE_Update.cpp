@@ -524,7 +524,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											rii = PMAP(1, parts[ID(rrx)].ctype);
 									}
 								}
-								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 3))
+								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 3)))
 									break;
 								if (rctype == PT_PSCN || rctype == PT_INST)
 									Element_STKM::STKM_set_element(sim, &sim->player, rii),
@@ -1318,7 +1318,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 												{
 													nx -= rx; ny -= ry;
 													rr = pmap[ny][nx];
-													if ((TYP(rr) == PT_BRCK)
+													if (TYP(rr) == PT_BRCK)
 														partsi(rr).tmp = 0;
 												}
 												break;

@@ -1,6 +1,19 @@
 #include "simulation/Elements.h"
-int DMGBreaksInto[256];
+
+#define PT_DMG_HASH_SIZE	17
+
+int DMGBreaksHash[PT_DMG_HASH_SIZE];
 bool DMGBreaksInit = false;
+
+static int DMGBreaksPairs[][2] = {
+	{PT_BMTL, PT_BRMT},
+	{PT_GLAS, PT_BGLA},
+	{PT_COAL, PT_BCOL},
+	{PT_QRTZ, PT_PQRT},
+	{PT_TUNG, PT_BRMT},
+	{PT_WOOD, PT_SAWD},
+	{0, 0}
+};
 
 //#TPT-Directive ElementClass Element_DMG PT_DMG 163
 Element_DMG::Element_DMG()
@@ -50,18 +63,13 @@ Element_DMG::Element_DMG()
 	if (!DMGBreaksInit)
 	{
 		DMGBreaksInit = true;
-		int i;
-		for (i = 0; i < 256; i++)
+		int i, v;
+		for (i = 0; i < PT_DMG_HASH_SIZE; i++)
 		{
-			DMGBreaksInto[i] = -1;
+			DMGBreaksHash[i] = -1;
 		}
-		// "pairs" is pointer, or array? but using unsigned char
-		// "*pairs" is binary array
-		unsigned char pairs[][2] = {
-			{PT_BMTL, PT_BRMT}, {PT_GLAS, PT_BGLA}, {PT_COAL, PT_BCOL}, {PT_QRTZ, PT_PQRT}, {PT_TUNG, PT_BRMT}, {PT_WOOD, PT_SAWD}
-		};
-		for (i = 0; i < 6; i++)
-			DMGBreaksInto[pairs[i][0]] = pairs[i][1];
+		for (i = 0; v = DMGBreaksPairs[i][0]; i++)
+			DMGBreaksHash[v % PT_DMG_HASH_SIZE] = i;
 	}
 }
 
@@ -105,11 +113,16 @@ int Element_DMG::update(UPDATE_FUNC_ARGS)
 										{
 											if (sim->elements[t].HighPressureTransition>-1 && sim->elements[t].HighPressureTransition<PT_NUM)
 												sim->part_change_type(rr>>8, x+nxi, y+nxj, sim->elements[t].HighPressureTransition);
-											else if (DMGBreaksInto[t] > -1)
+											else
 											{
-												sim->part_change_type(rr>>8, x+nxi, y+nxj, DMGBreaksInto[t]);
-												if (t == PT_TUNG)
-													parts[rr>>8].ctype = PT_TUNG;
+												int hashv = DMGBreaksHash[t % PT_DMG_HASH_SIZE];
+												int *pairs = DMGBreaksPairs[hashv];
+												if (hashv >= 0 && pairs[0] == t)
+												{
+													sim->part_change_type(rr>>8, x+nxi, y+nxj, pairs[1]);
+													if (t == PT_TUNG)
+														parts[rr>>8].ctype = PT_TUNG;
+												}
 											}
 										}
 									}
