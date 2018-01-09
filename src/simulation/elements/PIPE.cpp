@@ -1,4 +1,6 @@
 #include "simulation/Elements.h"
+#define ID(x) ((x) >> 8)
+#define TYP(x) ((x) & 0xFF)
 //Temp particle used for graphics
 //Don't conflict with 186.cpp "tpart_phot"
 Particle tpart;
@@ -51,7 +53,21 @@ Element_PIPE::Element_PIPE()
 	memset(&tpart, 0, sizeof(Particle));
 }
 
-#define PFLAG_NORMALSPEED 0x00010000
+// 0x000000FF reserved
+// 0x00000100 is single pixel pipe
+// 0x00000200 will transfer like a single pixel pipe when in forward mode
+// 0x00001C00 forward single pixel pipe direction
+// 0x00002000 will transfer like a single pixel pipe when in reverse mode
+// 0x0001C000 reverse single pixel pipe direction
+// 0x000E0000 PIPE color data stored here
+
+#define PFLAG_NORMALSPEED	0x00010000
+#define PFLAG_INITIALIZING	0x00020000 // colors haven't been set yet
+#define PFLAG_COLOR_RED		0x00040000
+#define PFLAG_COLOR_GREEN	0x00080000
+#define PFLAG_COLOR_BLUE	0x000C0000
+#define PFLAG_COLORS		0x000C0000
+
 // parts[].tmp flags
 // trigger flags to be processed this frame (trigger flags for next frame are shifted 3 bits to the left):
 #define PPIP_TMPFLAG_TRIGGER_ON 0x10000000
@@ -61,12 +77,6 @@ Element_PIPE::Element_PIPE()
 // current status of the pipe
 #define PPIP_TMPFLAG_PAUSED 0x02000000
 #define PPIP_TMPFLAG_REVERSED 0x01000000
-// 0x000000FF element
-// 0x00000100 is single pixel pipe
-// 0x00000200 will transfer like a single pixel pipe when in forward mode
-// 0x00001C00 forward single pixel pipe direction
-// 0x00002000 will transfer like a single pixel pipe when in reverse mode
-// 0x0001C000 reverse single pixel pipe direction
 
 signed char pos_1_rx[] = {-1,-1,-1, 0, 0, 1, 1, 1};
 signed char pos_1_ry[] = {-1, 0, 1,-1, 1,-1, 0, 1};
@@ -76,8 +86,8 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, np;
 	int rnd, rndstore;
-	if ((parts[i].tmp&0xFF)>=PT_NUM || !sim->elements[parts[i].tmp&0xFF].Enabled)
-		parts[i].tmp &= ~0xFF;
+	if ((parts[i].ctype)>=PT_NUM || !sim->elements[parts[i].ctype].Enabled)
+		parts[i].ctype = 0;
 	if (parts[i].tmp & PPIP_TMPFLAG_TRIGGERS)
 	{
 		int pause_changed = 0;
@@ -105,9 +115,9 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 						if ((r&0xFF) == PT_BRCK)
 						{
 							if (parts[i].tmp & PPIP_TMPFLAG_PAUSED)
-								parts[r>>8].tmp = 0;
+								parts[ID(r)].tmp = 0;
 							else
-								parts[r>>8].tmp = 1; //make surrounding BRCK glow
+								parts[ID(r)].tmp = 1; //make surrounding BRCK glow
 						}
 					}
 				}
@@ -116,10 +126,8 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 		if (parts[i].tmp & PPIP_TMPFLAG_TRIGGER_REVERSE)
 		{
 			parts[i].tmp ^= PPIP_TMPFLAG_REVERSED;
-			if (parts[i].ctype == 2) //Switch colors so it goes in reverse
-				parts[i].ctype = 4;
-			else if (parts[i].ctype == 4)
-				parts[i].ctype = 2;
+			if ((parts[i].tmp & PFLAG_COLORS) != PFLAG_COLOR_GREEN)
+				parts[i].tmp ^= PFLAG_COLOR_GREEN;
 			if (parts[i].tmp & 0x100) //Switch one pixel pipe direction
 			{
 				int coords = (parts[i].tmp>>13)&0xF;
@@ -132,7 +140,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 		
 		parts[i].tmp &= ~PPIP_TMPFLAG_TRIGGERS;
 	}
-	if (parts[i].ctype>=2 && parts[i].ctype<=4 && !(parts[i].tmp & PPIP_TMPFLAG_PAUSED))
+	if ((parts[i].tmp&PFLAG_COLORS) && !(parts[i].tmp & PPIP_TMPFLAG_PAUSED))
 	{
 		if (parts[i].life==3)
 		{
@@ -147,24 +155,28 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
-						if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP)&&parts[r>>8].ctype==1)
+						if (TYP(r) != PT_PIPE && TYP(r) != PT_PPIP)
+							continue;
+						unsigned int nextColor = (((((parts[i].tmp&PFLAG_COLORS)>>18)+1)%3)+1)<<18;
+						if (parts[ID(r)].tmp&PFLAG_INITIALIZING)
 						{
-							parts[r>>8].ctype = (((parts[i].ctype)%3)+2);//reverse
-							parts[r>>8].life = 6;
-							if ( parts[i].tmp&0x100)//is a single pixel pipe
+							parts[ID(r)].tmp |= nextColor;
+							parts[ID(r)].tmp &= ~PFLAG_INITIALIZING;
+							parts[ID(r)].life = 6;
+							if (parts[i].tmp&0x100)//is a single pixel pipe
 							{
-								parts[r>>8].tmp |= 0x200;//will transfer to a single pixel pipe
-								parts[r>>8].tmp |= count<<10;//coords of where it came from
+								parts[ID(r)].tmp |= 0x200;//will transfer to a single pixel pipe
+								parts[ID(r)].tmp |= count<<10;//coords of where it came from
 								parts[i].tmp |= ((7-count)<<14);
 								parts[i].tmp |= 0x2000;
 							}
 							neighborcount ++;
-							lastneighbor = r>>8;
+							lastneighbor = ID(r);
 						}
-						else if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP)&&parts[r>>8].ctype!=(((parts[i].ctype-1)%3)+2))
+						else if ((parts[ID(r)].tmp&PFLAG_COLORS) != nextColor)
 						{
 							neighborcount ++;
-							lastneighbor = r>>8;
+							lastneighbor = ID(r);
 						}
 						count++;
 					}
@@ -194,34 +206,34 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if(!r)
 						r = sim->photons[y+ry][x+rx];
-					if (surround_space && !r && (parts[i].tmp&0xFF)!=0)  //creating at end
+					if (surround_space && !r && parts[i].ctype)  //creating at end
 					{
-						np = sim->create_part(-1,x+rx,y+ry,parts[i].tmp&0xFF);
+						np = sim->create_part(-1,x+rx,y+ry,parts[i].ctype);
 						if (np!=-1)
 						{
 							transfer_pipe_to_part(sim, parts+i, parts+np);
 						}
 					}
 					//try eating particle at entrance
-					else if ((parts[i].tmp&0xFF) == 0 && (
-						(sim->elements[r&0xFF].Properties  & (TYPE_PART | TYPE_LIQUID | TYPE_GAS)) ||
-						(sim->elements[r&0xFF].Properties2 & (PROP_ENERGY_PART))))
+					else if (!TYP(parts[i].ctype) && (
+						(sim->elements[TYP(r)].Properties  & (TYPE_PART | TYPE_LIQUID | TYPE_GAS)) ||
+						(sim->elements[TYP(r)].Properties2 & (PROP_ENERGY_PART))))
 					{
-						if ((r&0xFF)==PT_SOAP)
-							Element_SOAP::detach(sim, r>>8);
-						transfer_part_to_pipe(parts+(r>>8), parts+i);
-						sim->kill_part(r>>8);
+						if (TYP(r)==PT_SOAP)
+							Element_SOAP::detach(sim, ID(r));
+						transfer_part_to_pipe(parts+(ID(r)), parts+i);
+						sim->kill_part(ID(r));
 					}
-					else if ((parts[i].tmp&0xFF) == 0 && (r&0xFF)==PT_STOR && parts[r>>8].tmp>0 && sim->IsValidElement(parts[r>>8].tmp) && (sim->elements[parts[r>>8].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
+					else if (!TYP(parts[i].ctype) == 0 && TYP(r)==PT_STOR && parts[ID(r)].tmp>0 && sim->IsValidElement(parts[ID(r)].tmp) && (sim->elements[parts[ID(r)].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
 					{
 						// STOR stores properties in the same places as PIPE does
-						transfer_pipe_to_pipe(parts+(r>>8), parts+i);
+						transfer_pipe_to_pipe(parts+(ID(r)), parts+i, true);
 					}
 				}
 			}
 		}
 	}
-	else if (!parts[i].ctype && parts[i].life<=10)
+	else if (!(parts[i].tmp&(PFLAG_COLORS|PFLAG_INITIALIZING)) && parts[i].life<=10)
 	{
 		// make a border
 		for (rx=-2; rx<3; rx++)
@@ -239,9 +251,9 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 				}
 			}
 		if (parts[i].life<=1)
-			parts[i].ctype = 1;
+			parts[i].tmp |= PFLAG_INITIALIZING;
 	}
-	else if (parts[i].ctype==1)//wait for empty space before starting to generate automatic pipe pattern
+	else if (parts[i].tmp & PFLAG_INITIALIZING)//wait for empty space before starting to generate automatic pipe pattern
 	{
 		if (!parts[i].life)
 		{
@@ -267,7 +279,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP) && parts[i].ctype==1 && parts[i].life )
+						if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && parts[i].life )
 							issingle = 0;
 					}
 			if (issingle)
@@ -275,7 +287,8 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 		}
 		else if (parts[i].life==2)
 		{
-			parts[i].ctype = 2;
+			parts[i].tmp |= PFLAG_COLOR_RED;
+			parts[i].tmp &= ~PFLAG_INITIALIZING;
 			parts[i].life = 6;
 		}
 	}
@@ -287,7 +300,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_PIPE static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 {
-	int t = cpart->tmp & 0xFF;
+	int t = TYP(cpart->ctype);
 	if (t>0 && t<PT_NUM && ren->sim->elements[t].Enabled)
 	{
 		if (t == PT_STKM || t == PT_STKM2 || t == PT_FIGH)
@@ -343,18 +356,18 @@ int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 	}
 	else
 	{
-		switch (cpart->ctype){
-		case 2:
+		switch ((cpart->tmp & PFLAG_COLORS) >> 18){
+		case (PFLAG_COLOR_RED >> 18):
 			*colr = 50;
 			*colg = 1;
 			*colb = 1;
 			break;
-		case 3:
+		case (PFLAG_COLOR_GREEN >> 18):
 			*colr = 1;
 			*colg = 50;
 			*colb = 1;
 			break;
-		case 4:
+		case (PFLAG_COLOR_BLUE >> 18):
 			*colr = 1;
 			*colg = 1;
 			*colb = 50;
@@ -366,10 +379,15 @@ int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_PIPE static void transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part)
-void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part)
+//#TPT-Directive ElementHeader Element_PIPE static void transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part, bool STOR=false)
+void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part, bool STOR)
 {
-	part->type = (pipe->tmp & 0xFF);
+	if (STOR)
+		part->type = TYP(pipe->tmp),
+		pipe->tmp = 0;
+	else
+		part->type = TYP(pipe->ctype),
+		pipe->ctype = 0;
 	part->temp = pipe->temp;
 	part->life = pipe->tmp2;
 	/* original code:
@@ -402,7 +420,7 @@ void Element_PIPE::transfer_pipe_to_part(Simulation * sim, Particle *pipe, Parti
 //#TPT-Directive ElementHeader Element_PIPE static void transfer_part_to_pipe(Particle *part, Particle *pipe)
 void Element_PIPE::transfer_part_to_pipe(Particle *part, Particle *pipe)
 {
-	pipe->tmp = (pipe->tmp&~0xFF) | part->type;
+	pipe->ctype = part->type;
 	pipe->temp = part->temp;
 	pipe->tmp2 = part->life;
 	/* original code:
@@ -418,10 +436,15 @@ void Element_PIPE::transfer_part_to_pipe(Particle *part, Particle *pipe)
 	pipe->cdcolour = part->dcolour;
 }
 
-//#TPT-Directive ElementHeader Element_PIPE static void transfer_pipe_to_pipe(Particle *src, Particle *dest)
-void Element_PIPE::transfer_pipe_to_pipe(Particle *src, Particle *dest)
+//#TPT-Directive ElementHeader Element_PIPE static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR=false)
+void Element_PIPE::transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
 {
-	dest->tmp = (dest->tmp&~0xFF) | (src->tmp&0xFF);
+	if (STOR)
+		dest->ctype = src->tmp,
+		src->tmp = 0;
+	else
+		dest->ctype = src->ctype,
+		src->ctype = 0;
 	dest->temp = src->temp;
 	dest->tmp2 = src->tmp2;
 	dest->pavg[0] = src->pavg[0];
@@ -435,8 +458,9 @@ void Element_PIPE::transfer_pipe_to_pipe(Particle *src, Particle *dest)
 //#TPT-Directive ElementHeader Element_PIPE static void pushParticle(Simulation * sim, int i, int count, int original)
 void Element_PIPE::pushParticle(Simulation * sim, int i, int count, int original)
 {
-	int rndstore, rnd, rx, ry, r, x, y, np, q, notctype=(((sim->parts[i].ctype)%3)+2);
-	if ((sim->parts[i].tmp&0xFF) == 0 || count >= 2)//don't push if there is nothing there, max speed of 2 per frame
+	int rndstore, rnd, rx, ry, r, x, y, np, q;
+	unsigned int notctype = (((((sim->parts[i].tmp&PFLAG_COLORS)>>18)+1)%3)+1)<<18;
+	if (!TYP(sim->parts[i].ctype) || count >= 2)//don't push if there is nothing there, max speed of 2 per frame
 		return;
 	x = (int)(sim->parts[i].x+0.5f);
 	y = (int)(sim->parts[i].y+0.5f);
@@ -457,17 +481,17 @@ void Element_PIPE::pushParticle(Simulation * sim, int i, int count, int original
 				r = sim->pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				else if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP) && sim->parts[r>>8].ctype!=notctype && (sim->parts[r>>8].tmp&0xFF)==0)
+				else if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 				{
-					transfer_pipe_to_pipe(sim->parts+i, sim->parts+(r>>8));
-					if (r>>8 > original)
-						sim->parts[r>>8].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
+					transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)));
+					if (ID(r) > original)
+						sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 					count++;
-					pushParticle(sim, r>>8,count,original);
+					pushParticle(sim, ID(r),count,original);
 				}
-				else if ((r&0xFF) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
+				else if (TYP(r) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
 				{
-					int portaltmp = sim->parts[r>>8].tmp;
+					int portaltmp = sim->parts[ID(r)].tmp;
 					if (portaltmp >= CHANNELS)
 						portaltmp = CHANNELS-1;
 					else if (portaltmp < 0)
@@ -487,17 +511,17 @@ void Element_PIPE::pushParticle(Simulation * sim, int i, int count, int original
 	{
 		int coords = 7 - ((sim->parts[i].tmp>>10)&7);
 		r = sim->pmap[y+ pos_1_ry[coords]][x+ pos_1_rx[coords]];
-		if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP) && sim->parts[r>>8].ctype!=notctype && (sim->parts[r>>8].tmp&0xFF)==0)
+		if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 		{
-			transfer_pipe_to_pipe(sim->parts+i, sim->parts+(r>>8));
-			if (r>>8 > original)
-				sim->parts[r>>8].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
+			transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)));
+			if (ID(r) > original)
+				sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 			count++;
-			pushParticle(sim, r>>8,count,original);
+			pushParticle(sim, ID(r),count,original);
 		}
-		else if ((r&0xFF) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
+		else if (TYP(r) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
 		{
-			int portaltmp = sim->parts[r>>8].tmp;
+			int portaltmp = sim->parts[ID(r)].tmp;
 			if (portaltmp >= CHANNELS)
 				portaltmp = CHANNELS-1;
 			else if (portaltmp < 0)
@@ -510,11 +534,11 @@ void Element_PIPE::pushParticle(Simulation * sim, int i, int count, int original
 					break;
 				}
 		}
-		else if ((r&0xFF) == PT_NONE) //Move particles out of pipe automatically, much faster at ends
+		else if (!r) //Move particles out of pipe automatically, much faster at ends
 		{
 			rx = pos_1_rx[coords];
 			ry = pos_1_ry[coords];
-			np = sim->create_part(-1,x+rx,y+ry,sim->parts[i].tmp&0xFF);
+			np = sim->create_part(-1,x+rx,y+ry,TYP(sim->parts[i].ctype));
 			if (np!=-1)
 			{
 				transfer_pipe_to_part(sim, sim->parts+i, sim->parts+np);

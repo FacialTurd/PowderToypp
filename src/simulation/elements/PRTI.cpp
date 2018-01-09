@@ -95,7 +95,7 @@ int Element_PRTI::update(UPDATE_FUNC_ARGS)
 						if (sim->IsValidElement(parts[r>>8].tmp) && (sim->elements[parts[r>>8].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
 						{
 							// STOR uses same format as PIPE, so we can use this function to do the transfer
-							Element_PIPE::transfer_pipe_to_part(sim, parts+(r>>8), &sim->portalp[parts[i].tmp][count][nnx]);
+							Element_PIPE::transfer_pipe_to_part(sim, parts+(r>>8), &sim->portalp[parts[i].tmp][count][nnx], true);
 							break;
 						}
 					}

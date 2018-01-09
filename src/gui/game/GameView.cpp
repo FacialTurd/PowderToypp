@@ -2445,8 +2445,6 @@ void GameView::OnDraw()
 			int parttmp = sample_particle->tmp;
 			int partint = 0;
 			int partstr = 0;
-			if (type == PT_PIPE || type == PT_PPIP)
-				ctype = sample_particle->tmp&0xFF;
 
 			if (el_prop & PROP_CTYPE_SPEC)
 			{

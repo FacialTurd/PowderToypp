@@ -1021,12 +1021,12 @@ RequestStatus Client::UploadSave(SaveInfo & save)
 			lastError = "Cannot serialize game save";
 			return RequestFailure;
 		}
-#ifdef SNAPSHOT
-		else if (save.gameSave->fromNewerVersion && save.GetPublished())
-		{
-			lastError = "Cannot publish save";
-			return RequestFailure;
-		}
+#if defined(SNAPSHOT) || defined(DEBUG)
+		else if (save.gameSave->fromNewerVersion)
+  		{
+			lastError = "Cannot upload save, incompatible with latest release version";
+  			return RequestFailure;
+  		}
 #endif
 
 		char *saveName = new char[save.GetName().length() + 1];

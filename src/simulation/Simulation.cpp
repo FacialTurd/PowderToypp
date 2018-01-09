@@ -38,6 +38,18 @@ int Simulation::Load(GameSave * save, bool includePressure)
 int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure)
 {
 	int blockX, blockY, x, y, r;
+	
+	static int32_t inctype [(PT_NUM + 63) >> 5] = {0};
+	if (inctype[0])
+	{
+		inctype[0] = 1;
+		memset(inctype, 0, 4 * ((PT_NUM + 31) >> 5));
+		static int inctypel[] = {
+			PT_CLNE, PT_PCLN, PT_BCLN, PT_PBCN, PT_STOR, PT_CONV, PT_STKM, PT_STKM2, PT_FIGH, PT_LAVA, PT_SPRK, PT_PSTN, PT_CRAY, PT_DTEC, PT_DRAY, PT_PIPE, PT_PPIP,
+		0};
+		for (int i = 0; inctypel[i]; i++)
+			inctype[(inctypel[i] >> 5) + 1] |= 1 << (inctypel[i] & 0x1F);
+	}
 
 	if (!save)
 		return 1;
@@ -107,14 +119,16 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		if (!elements[tempPart.type].Enabled)
 			continue;
 
-		if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
-			if (tempPart.type == PT_CLNE || tempPart.type == PT_PCLN || tempPart.type == PT_BCLN || tempPart.type == PT_PBCN || tempPart.type == PT_STOR || tempPart.type == PT_CONV || tempPart.type == PT_STKM || tempPart.type == PT_STKM2 || tempPart.type == PT_FIGH || tempPart.type == PT_LAVA || tempPart.type == PT_SPRK || tempPart.type == PT_PSTN || tempPart.type == PT_CRAY || tempPart.type == PT_DTEC || tempPart.type == PT_DRAY)
+		if (tempPart.type == PT_CRAY || tempPart.type == PT_DRAY || tempPart.type == PT_CONV)
+			tempPart.ctype = (tempPart.ctype & ~0xFF) | partMap[tempPart.ctype & 0xFF];
+		else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
+			if (inctype[(tempPart.type >> 5) + 1] & (1 << (tempPart.type & 0x1F)))
 			{
 				tempPart.ctype = partMap[tempPart.ctype];
 			}
-		if (tempPart.type == PT_PIPE || tempPart.type == PT_PPIP || tempPart.type == PT_STOR)
+		if (tempPart.type == PT_STOR)
 		{
-			tempPart.tmp = partMap[tempPart.tmp&0xFF] | (tempPart.tmp&~0xFF);
+			tempPart.tmp = partMap[tempPart.tmp];
 		}
 		if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSG || tempPart.type == PT_VRSS) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
 		{

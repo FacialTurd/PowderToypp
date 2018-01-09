@@ -578,6 +578,8 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned partsCount = 0;
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int savedVersion = inputData[4];
+	
+	bool fakeNewerVersion = false; // used for development builds only
 
 	bson b;
 	b.data = NULL;
@@ -788,7 +790,7 @@ void GameSave::readOPS(char * data, int dataLength)
 							fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
 					}
 				}
-#ifdef SNAPSHOT
+#if defined(SNAPSHOT) || defined(DEBUG)
 				if (major > FUTURE_SAVE_VERSION || (major == FUTURE_SAVE_VERSION && minor > FUTURE_MINOR_VERSION))
 #else
 				if (major > SAVE_VERSION || (major == SAVE_VERSION && minor > MINOR_VERSION))
@@ -798,6 +800,10 @@ void GameSave::readOPS(char * data, int dataLength)
 					errorMessage << "Save from a newer version: Requires version " << major << "." << minor;
 					throw ParseException(ParseException::WrongVersion, errorMessage.str());
 				}
+#if defined(SNAPSHOT) || defined(DEBUG)
+				else if (major > SAVE_VERSION || (major == SAVE_VERSION && minor > MINOR_VERSION))
+					fakeNewerVersion = true;
+#endif
 			}
 			else
 			{
@@ -1003,6 +1009,10 @@ void GameSave::readOPS(char * data, int dataLength)
 					if (newIndex < 0 || newIndex >= NPART)
 						throw ParseException(ParseException::Corrupt, "Too many particles");
 
+					// Read type (2nd byte)
+					if (fieldDescriptor & 0x4000)
+						throw ParseException(ParseException::Corrupt, "Doesn't support 2nd byte of type");
+
 					//Clear the particle, ready for our new properties
 					memset(&(particles[newIndex]), 0, sizeof(Particle));
 
@@ -1139,7 +1149,7 @@ void GameSave::readOPS(char * data, int dataLength)
 					}
 					
 					//Read tmp3 and extra data
-					if(fieldDescriptor & 0x4000)
+					if(fieldDescriptor & 0x8000)
 					{
 						if (i >= partsDataLen)
 							throw ParseException(ParseException::Corrupt, "Ran past particle data buffer");
@@ -1315,9 +1325,19 @@ void GameSave::readOPS(char * data, int dataLength)
 						break;
 					case PT_PIPE:
 					case PT_PPIP:
+						if (isFromMyMod) break;
+						if (!savedVersion < 93 && !fakeNewerVersion)
+						{
+							if (particles[newIndex].ctype == 1)
+								particles[newIndex].tmp |= 0x00020000; //PFLAG_INITIALIZING
+							particles[newIndex].tmp |= (particles[newIndex].ctype-1)<<18;
+							particles[newIndex].ctype = particles[newIndex].tmp&0xFF;
+						}
+						goto STOR1;
 					case PT_STOR:
 						if (!isFromMyMod)
 						{
+						STOR1:
 							particles[newIndex].tmp3 = particles[newIndex].pavg[0];
 							particles[newIndex].tmp4 = particles[newIndex].pavg[1];
 							particles[newIndex].pavg[0] = particles[newIndex].pavg[1] = 0;
@@ -1998,6 +2018,14 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 					}
 				}
 			}
+			// Version 93.0
+			if (particles[i-1].type == PT_PIPE || particles[i-1].type == PT_PPIP)
+			{
+				if (particles[i-1].ctype == 1)
+					particles[i-1].tmp |= 0x00020000; //PFLAG_INITIALIZING
+				particles[i-1].tmp |= (particles[i-1].ctype-1)<<18;
+				particles[i-1].ctype = particles[i-1].tmp&0xFF;
+			}
 		}
 	}
 
@@ -2176,11 +2204,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	}
 
 	//Copy parts data
-	/* Field descriptor format:
-	 |		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|		0		|
-									|	   pavg		|	 tmp[3+4]	|	tmp2[2]		|		tmp2	|	ctype[2]	|		vy		|		vx		|	dcololour	|	ctype[1]	|		tmp[2]	|		tmp[1]	|		life[2]	|		life[1]	|	temp dbl len|
-	 life[2] means a second byte (for a 16 bit field) if life[1] is present
-	 */
+ 	/* Field descriptor format:
+	 |      0       |      14       |      13       |      12       |      11       |      10       |       9       |       8       |       7       |       6       |       5       |       4       |       3       |       2       |       1       |       0       |
+	 |   RESERVED   |    type[2]    |     pavg      |   tmp[3+4]    |   tmp2[2]     |     tmp2      |   ctype[2]    |      vy       |      vx       |  decorations  |   ctype[1]    |    tmp[2]     |    tmp[1]     |    life[2]    |    life[1]    | temp dbl len  |
+  	 life[2] means a second byte (for a 16 bit field) if life[1] is present		  	 life[2] means a second byte (for a 16 bit field) if life[1] is present
+	 last bit is reserved. If necessary, use it to signify that fieldDescriptor will have another byte
+	 That way, if we ever need a 17th bit, we won't have to change the save format
+  	 */
 	auto partsData = std::unique_ptr<unsigned char[]>(new unsigned char[NPART * (sizeof(Particle)+1)]);
 	unsigned int partsDataLen = 0;
 	auto partsSaveIndex = std::unique_ptr<unsigned[]>(new unsigned[NPART]);
@@ -2394,7 +2424,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					//Write the extra field descriptor
 					if (desc2Data)
 					{
-						fieldDesc |= 1 << 14;
+						fieldDesc |= 1 << 15;
 						partsData[desc2Pos] = desc2Data;
 						partsDataLen = partsDataOffset;
 					}
@@ -2430,6 +2460,13 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					RESTRICTVERSION(92, 0);
 					fromNewerVersion = true;
 				}
+/*
+				else if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
+				{
+					RESTRICTVERSION(93, 0);
+					fromNewerVersion = true; // TODO: remove on 93.0 release
+				}
+*/
 
 				//Get the pmap entry for the next particle in the same position
 				i = partsPosLink[i];
