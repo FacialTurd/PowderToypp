@@ -12,6 +12,7 @@ static int DMGBreaksPairs[][2] = {
 	{PT_QRTZ, PT_PQRT},
 	{PT_TUNG, PT_BRMT},
 	{PT_WOOD, PT_SAWD},
+	{PT_WIFI, PT_BRMT}, // Added WIFI + DMG -> BRMT for compatible with official TPT.
 	{0, 0}
 };
 
