@@ -1328,9 +1328,7 @@ void GameSave::readOPS(char * data, int dataLength)
 						if (isFromMyMod) break;
 						if (!savedVersion < 93 && !fakeNewerVersion)
 						{
-							if (particles[newIndex].ctype == 1)
-								particles[newIndex].tmp |= 0x00020000; //PFLAG_INITIALIZING
-							particles[newIndex].tmp |= (particles[newIndex].ctype-1)<<18;
+							particles[newIndex].tmp |= (0x0248C << (4 * particles[newIndex].ctype)) & 0xE0000;
 							particles[newIndex].ctype = particles[newIndex].tmp&0xFF;
 						}
 						goto STOR1;
