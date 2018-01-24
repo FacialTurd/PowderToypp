@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID
+#define ID(x) part_ID(x)
 
 //Temp particle used for graphics
 //Don't conflict with 186.cpp "tpart_phot"

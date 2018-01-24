@@ -858,6 +858,26 @@ void luacall_debug_trigger(int t, int i, int x, int y)
 	}
 }
 
+void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
+{
+	int fnid;
+	if (f2 >= 0 && f2 < MAX_LUA_DEBUG_FUNCTIONS && (fnid = lua_trigger_fmode[f2]))
+		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
+	else
+		return;
+	lua_pushinteger(luacon_ci->l, i);
+	lua_pushinteger(luacon_ci->l, ri);
+	lua_pushinteger(luacon_ci->l, wl);
+	lua_pushinteger(luacon_ci->l, f1);
+	lua_pushinteger(luacon_ci->l, f2);
+	int callret = lua_pcall(luacon_ci->l, 5, 0, 0);
+	if (callret)
+	{
+		luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
+		lua_pop(luacon_ci->l, 1);
+	}
+}
+
 int luatpt_call_debug_trigger(lua_State* l)
 {
 	int t = lua_tointeger(l, 1);

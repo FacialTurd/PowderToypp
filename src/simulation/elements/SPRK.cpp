@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID
+#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_SPRK PT_SPRK 15
 Element_SPRK::Element_SPRK()
@@ -153,7 +153,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = TYP(r);
+					int rt = TYP(r);
 					if (rt == PT_DSTW || rt == PT_SLTW || rt == PT_WATR)
 					{
 						int rnd = rand()%100;

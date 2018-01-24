@@ -735,7 +735,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		case 1: // conduct->insulate counter
 			if (parts[i].tmp)
 			{
-				if (ELEMPROPW(i, &) // if wait flag exist
+				if (ELEMPROPW(i, &)) // if wait flag exist
 				{
 					ELEMPROPW(i, &=~); // clear wait flag
 					return return_value;

@@ -2627,7 +2627,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				switch (parts[r>>8].life)
 				{
 				case 5:
-					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
+					Element_MULTIPP::interactDir(this, i, x, y, r>>8, &parts[i], &parts[r>>8]);
 					break;
 				case 7:
 					Element_MULTIPP::duplicatePhotons(this, i, nx, ny, &parts[i], &parts[r>>8]); // already check by FLAG_SKIPMOVE
@@ -2723,7 +2723,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 5)
 			{
 				if (parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
-					Element_MULTIPP::interactDir(this, i, x, y, &parts[i], &parts[r>>8]);
+					Element_MULTIPP::interactDir(this, i, x, y, -1, &parts[i], &parts[r>>8]);
 			}
 			break;
 		case PT_ELEC:  // type = 136

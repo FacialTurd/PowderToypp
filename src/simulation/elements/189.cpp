@@ -2,6 +2,11 @@
 #include "simulation/MULTIPPE_Update.h"
 #include "Probability.h"
 
+#ifdef LUACONSOLE
+#include "lua/LuaScriptInterface.h"
+#include "lua/LuaScriptHelper.h"
+#endif
+
 #ifdef _MSC_VER
 #define __builtin_ctz msvc_ctz
 #define __builtin_clz msvc_clz
@@ -156,8 +161,8 @@ VideoBuffer * Element_MULTIPP::iconGen(int toolID, int width, int height)
 	return newTexture;
 }
 
-//#TPT-Directive ElementHeader Element_MULTIPP static void interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
-void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other) // photons direction/type changer
+//#TPT-Directive ElementHeader Element_MULTIPP static void interactDir(Simulation* sim, int i, int x, int y, int ri, Particle* part_phot, Particle* part_other)
+void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, Particle* part_phot, Particle* part_other) // photons direction/type changer
 {
 	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype;
 	int ctype, r1, r2, r3, temp;
@@ -228,6 +233,13 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, Particle
 			if (part_phot->ctype == PT_PROT)
 				part_phot->flags |= FLAG_SKIPCREATE;
 			sim->part_change_type(i, x, y, PT_E186);
+			break;
+#ifdef LUACONSOLE
+		case 7:
+			if (ri >= 0)
+				luatpt_interactDirELEM(i, ri, part_phot->ctype, rct, rtmp2);
+			break;
+#endif
 		}
 	}
 	else

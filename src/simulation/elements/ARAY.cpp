@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID
+#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_ARAY PT_ARAY 126
 Element_ARAY::Element_ARAY()
@@ -105,7 +105,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						continue1a:
 							r = pmap[y+nyy][x+nxx];
 							rt = TYP(r);
-							r = ID(r)
+							r = ID(r);
 							
 							if (!rt)
 							{
@@ -191,7 +191,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										else if (b == 35)
 										{
 											partsi(tmp[0]).ctype &= PMAPMASK;
-											partsi(tmp[0]).ctype |= PMAPID(colored));
+											partsi(tmp[0]).ctype |= PMAPID(colored);
 											docontinue = nostop;
 										}
 										break;

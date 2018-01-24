@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID
+#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_CRAY PT_CRAY 167
 Element_CRAY::Element_CRAY()
@@ -63,7 +63,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					int rt = TYP(r)
+					int rt = TYP(r);
 					if (rt!=PT_CRAY && rt!=PT_PSCN && rt!=PT_INST && rt!=PT_METL && rt!=PT_SPRK && rt!=ELEM_MULTIPP && rt!=PT_INDC && rt<PT_NUM)
 					{
 						parts[i].ctype = TYP(r);

@@ -1,5 +1,5 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID
+#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_ACID PT_ACID 21
 Element_ACID::Element_ACID()
@@ -59,7 +59,7 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				int rt = TYP(r)
+				int rt = TYP(r);
 				if (rt != PT_ACID && rt != PT_CAUS && rt != ELEM_MULTIPP)
 				{
 					if (rt==PT_PLEX || rt==PT_NITR || rt==PT_GUNP || rt==PT_RBDM || rt==PT_LRBD)
@@ -109,6 +109,7 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
+			int rt = TYP(r);
 			if (rt==PT_ACID && (parts[i].life>partsi(r).life) && parts[i].life>0)//diffusion
 			{
 				int temp = parts[i].life - partsi(r).life;
