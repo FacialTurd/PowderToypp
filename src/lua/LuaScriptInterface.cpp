@@ -1068,9 +1068,9 @@ int LuaScriptInterface::simulation_partCreate2(lua_State * l)
 	int x = lua_tointeger(l, 2);
 	int y = lua_tointeger(l, 3);
 	if (argCount > 5)
-	{
 		multiplier = lua_tointeger(l, 6);
-	}
+	else
+		multiplier = 1;
 	do
 	{
 		newID2 = luacon_sim->create_part(newID, x, y, part_type, part_value);

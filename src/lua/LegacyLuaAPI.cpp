@@ -861,7 +861,7 @@ void luacall_debug_trigger(int t, int i, int x, int y)
 void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
 {
 	int fnid;
-	if (f2 >= 0 && f2 < MAX_LUA_DEBUG_FUNCTIONS && (fnid = lua_trigger_fmode[f2]))
+	if (f2 >= 0 && f2 < MAX_LUA_DEBUG_FUNCTIONS && (fnid = lua_trigger_func[f2]))
 		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
 	else
 		return;
