@@ -816,6 +816,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"partProperty", simulation_partProperty},
 		{"secondaryDeco", simulation_secondaryDeco},
 		{"partPosition", simulation_partPosition},
+		{"partVelocity", simulation_partVelocity},
 		{"partID", simulation_partID},
 		{"partKill", simulation_partKill},
 		{"pressure", simulation_pressure},
@@ -825,6 +826,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"gravMap", simulation_gravMap},
 		{"blockAir", simulation_blockair},
 		{"createParts", simulation_createParts},
+		{"createDirChanger7", simulation_createDirChanger7},
 		{"createLine", simulation_createLine},
 		{"createBox", simulation_createBox},
 		{"floodParts", simulation_floodParts},
@@ -1132,6 +1134,43 @@ int LuaScriptInterface::simulation_partPosition(lua_State * l)
 	}
 }
 
+int LuaScriptInterface::simulation_partVelocity(lua_State * l)
+{
+	int argCount = lua_gettop(l);
+	int srcID, dstID, retargs = (argCount < 2) ? 2 : 0;
+	float vx, vy;
+
+	if (argCount < 3)
+	{
+		srcID = lua_tointeger(l, -1);
+		if (srcID < 0 || srcID >= NPART || !luacon_sim->parts[srcID].type)
+			goto fail;
+		vx = luacon_sim->parts[srcID].vx,
+		vy = luacon_sim->parts[srcID].vy;
+	}
+	else
+		vx = lua_tonumber(l, 2),
+		vy = lua_tonumber(l, 3);
+	
+	if (argCount >= 2)
+	{
+		dstID = lua_tointeger(l, 1);
+		if (dstID < 0 || dstID >= NPART || !luacon_sim->parts[dstID].type)
+			goto fail;
+		luacon_sim->parts[dstID].vx = vx;
+		luacon_sim->parts[dstID].vy = vy;
+	}
+	else
+		lua_pushnumber(l, vx),
+		lua_pushnumber(l, vy);	
+ret:
+	return retargs;
+fail:
+	for (int i = 0; i < retargs; i++)
+		lua_pushnil(l);
+	goto ret;
+}
+
 int LuaScriptInterface::simulation_pmap_move_to(lua_State * l)
 {
 	int argCount = lua_gettop(l), particleID = lua_tointeger(l, 1);
@@ -1361,6 +1400,8 @@ int LuaScriptInterface::simulation_partKill(lua_State * l)
 	return 0;
 }
 
+#define PROP_INDESTRUCTIBLE PROP_NODESTRUCT
+
 int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 {
 	int i = lua_tointeger(l, 1);
@@ -1373,7 +1414,7 @@ int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 		if (!r) return 0; // luaL_error(l, "Dead particle");
 		i = r >> 8;
 	}
-	if (i>=0 && i<NPART && !(luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_NODESTRUCT))
+	if (i>=0 && i<NPART && !(luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_INDESTRUCTIBLE))
 		luacon_sim->kill_part(i);
 	return 0;
 }
@@ -1575,6 +1616,55 @@ int LuaScriptInterface::simulation_blockair(lua_State* l)
 	if (z == 1 || z == 2)
 		luacon_sim->air->bmap_blockairh[y][x] = 0x8;
 	return 0;
+}
+
+int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
+{
+	int argCount = lua_gettop(l);
+	int x = lua_tointeger(l, 1);
+	int y = lua_tointeger(l, 2);
+	int f = lua_tointeger(l, 3);
+	int np = -1;
+	char d = 0;
+	float vx, vy, tmp;
+	if (argCount >= 4)
+	{
+		int ri = lua_tointeger(l, 4); 
+		d = ri & 7, ri >>= 3;
+		if (ri >= 0 && ri < NPART)
+		{
+			Particle * pt = &(luacon_sim->parts[ri]);
+			if (pt->type)
+				vx = pt->vx, vy = pt->vy,
+				(d & 2) && (vx = -vx, vy = -vy),
+				(d & 1) && (tmp = vx, vx = -vy, vy = tmp),
+				(vx > 0.5) ? (x++) : (vx < -0.5) && (x--),
+				(vy > 0.5) ? (y++) : (vy < -0.5) && (y--);
+		}
+	}
+	if (x >= 0 && y >= 0 && x < XRES && y < YRES)
+	{
+		unsigned int r = luacon_sim->pmap[y][x];
+		// TODO: replace &0xFF and >>8/<<8 with macro
+		int rt = TYP(r);
+		int ri = rt ? part_ID(r) : -3;
+		if (ri < 0 || !(luacon_sim->elements[luacon_sim->parts[ri].type].Properties2 & PROP_INDESTRUCTIBLE))
+		{
+			np = luacon_sim->create_part(ri, x, y, ELEM_MULTIPP, 5);
+			if (np >= 0)
+			{
+				luacon_sim->parts[np].tmp  = 7;
+				luacon_sim->parts[np].tmp2 = f;
+				if (d & 4)
+				{
+					luacon_sim->parts[np].vx = -vx;
+					luacon_sim->parts[np].vy = -vy;
+				}
+			}
+		}
+	}
+	lua_pushinteger(l, np);
+	return 1;
 }
 
 int LuaScriptInterface::simulation_createParts(lua_State * l)
@@ -2355,8 +2445,8 @@ int LuaScriptInterface::simulation_isDestructible(lua_State * l) // input argume
 			return luaL_error(l, "coordinates out of range (%d, %d)", i, t);
 	}
 	if (i < 0 || i >= NPART) goto ret_true;
-	t = luacon_sim->parts[i].type & 0xFF;
-	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_NODESTRUCT) == 0);
+	t = luacon_sim->parts[i].type;
+	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_INDESTRUCTIBLE) == 0);
 	return 1;
 ret_true:
 	lua_pushboolean(l, true);
@@ -3673,7 +3763,7 @@ int LuaScriptInterface::elements_isDestructible(lua_State * l) // input argument
 	t = lua_tointeger(l, 1);
 	if (t < 0 || t >= PT_NUM)
 		return luaL_error(l, "Invalid element");
-	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_NODESTRUCT) == 0);
+	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_INDESTRUCTIBLE) == 0);
 	return 1;
 }
 

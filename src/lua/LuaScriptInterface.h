@@ -68,6 +68,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_partProperty(lua_State * l);
 	static int simulation_secondaryDeco(lua_State * l);
 	static int simulation_partPosition(lua_State * l);
+	static int simulation_partVelocity(lua_State * l);
 	static int simulation_duplicateParticle(lua_State * l);
 	static int simulation_partID(lua_State * l);
 	static int simulation_partKill(lua_State * l);
@@ -78,6 +79,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_gravMap(lua_State * l);
 	static int simulation_ambientHeat(lua_State * l);
 	static int simulation_blockair(lua_State * l);
+	static int simulation_createDirChanger7(lua_State * l);
 	static int simulation_createParts(lua_State * l);
 	static int simulation_createLine(lua_State * l);
 	static int simulation_createBox(lua_State * l);
