@@ -1369,8 +1369,9 @@ int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 		int y = lua_tointeger(l, 2);
 		if (i<0 || i>=XRES || y<0 || y>=YRES)
 			return luaL_error(l, "coordinates out of range (%d,%d)", i, y);
-		i = luacon_sim->pmap[y][i]>>8;
-		if (!i) return 0; // luaL_error(l, "Dead particle");
+		int r = luacon_sim->pmap[y][i];
+		if (!r) return 0; // luaL_error(l, "Dead particle");
+		i = r >> 8;
 	}
 	if (i>=0 && i<NPART && !(luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_NODESTRUCT))
 		luacon_sim->kill_part(i);
