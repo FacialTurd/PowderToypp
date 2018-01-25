@@ -191,7 +191,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			part_phot->vy = rvx2 * rvy + rvy2 * rvx;
 			break;
 		case 4:
-			rvx2 = rvx * 0.0174532925f;
+			rvx2 = rvx * (M_PI / 180.0f);
 			rdif = hypotf(part_phot->vx, part_phot->vy);
 			if (rtmp & 0x100)
 			{
@@ -202,34 +202,32 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			part_phot->vy = rdif * sinf(rvx2);
 			break;
 		case 5: // FILT wavelength changer (check 8 directions)
-			x = (int)(part_other->x+0.5f);
-			y = (int)(part_other->y+0.5f);
-			if (rtmp2 <= 0)
 			{
-				rvx = part_phot->vx;
-				rvy = part_phot->vy;
-				sim->kill_part(i);
-				r1 = 1, r2 = 1;
-				(rvx < 0) && (rvx = -rvx, r1 = -r1, r2 = -r2);
-				(rvy < 0) && (rvy = -rvy, r1 = -r1);
-				r3 = (2 * rvy > rvx ? r1 * r2 : 0);
-				(2 * rvx > rvy) || (r2 = 0);
-			}
-			else
-			{
-				rtmp2 = (rtmp2-1) & 7;
-				r2 = sim->portal_rx[rtmp2];
-				r3 = sim->portal_ry[rtmp2];
-			}
-			while (x += r2, y += r3, sim->InBounds(x, y))
-			{
-				r1 = sim->pmap[y][x];
-				if ((r1&0xFF) != PT_FILT) break;
-				sim->parts[r1>>8].ctype = part_phot->ctype;
+				x = (int)(part_other->x+0.5f);
+				y = (int)(part_other->y+0.5f);
+				int r, ix, iy, a;
+				if (rtmp2 <= 0)
+				{
+					float angle = atan2f(part_phot->vy, part_phot->vx);
+					sim->kill_part(i);
+					a = floor(angle * (4.0f / M_PI) + 3.5f);
+				}
+				else
+					a = rtmp2 - 1;
+
+				ix = sim->portal_rx[a&7];
+				iy = sim->portal_ry[a&7];
+
+				while (x += ix, y += iy, sim->InBounds(x, y))
+				{
+					r = sim->pmap[y][x];
+					if (TYP(r) != PT_FILT) break;
+					sim->partsi(r).ctype = part_phot->ctype;
+				}
 			}
 			break;
 		case 6:
-			part_phot->ctype = (rtmp2 & 0xFF);
+			part_phot->ctype = TYP(rtmp2);
 			if (part_phot->ctype == PT_PROT)
 				part_phot->flags |= FLAG_SKIPCREATE;
 			sim->part_change_type(i, x, y, PT_E186);
@@ -244,7 +242,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 	}
 	else
 	{
-		int mask = 0x3FFFFFFF;
+		const int mask = 0x3FFFFFFF;
 		switch (rtmp2)
 		{
 			case 1: // beam splitter (50% turn left)
@@ -287,6 +285,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->ctype = 0x101;
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
+			killing:
 			case 6: // photons absorber
 				sim->kill_part(i);
 				break;
@@ -373,34 +372,14 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->vy = r1 * sim->portal_ry[rct&7];
 				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
 				break;
-			case 20:
-				rvx = part_phot->vx;
-				rvy = part_phot->vy;
-				r1 = (rvx >= rvy) ? 0 : 1;
-				(rvx < -rvy) && (r1 ^= 3);
-				// (rvx <= rvy && rvx <= -rvy) && (r1 = 2);
-				switch ((rct>>2) & 0x3)
+			case 20: // conditional photon absorber
+				switch (rct & 4)
 				{
-				case 0:
-					if ((rct ^ r1) & 1) // if direction is perpendicular to "ELEM_MULTIPP"
-					{
-						part_other->ctype ^= 1;
-						r1 = (r1 + ((rct & 2) | 1)) & 0x3;
-					}
-					break;
-				case 1:
-					r2 = (rct << 1) | 1;
-					r1 = (rct & 0x2 ? r2 - r1 : r2 + r1) & 0x3;
-					part_other->ctype ^= 1;
-					break;
-				case 2:
-					part_other->ctype &= ~0x3;
-					part_other->ctype |= (r1^2);
-					r1 = rct & 0x3;
-					break;
+					case 0: if (part_phot->vx <= 0) goto killing; break;
+					case 1: if (part_phot->vy >= 0) goto killing; break;
+					case 2: if (part_phot->vx >= 0) goto killing; break;
+					case 3: if (part_phot->vy <= 0) goto killing; break;
 				}
-				part_phot->vx = (float)((rct >> 4) * arr1[r1]);
-				part_phot->vy = (float)((rct >> 4) * arr2[r1]);
 				break;
 			case 21: // skip movement for N frame
 				// part_phot->flags |= FLAG_SKIPMOVE;
@@ -430,10 +409,13 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->temp = part_other->temp;
 				break;
 			case 26:
-				rvx = part_other->ctype / 256.0f;
-				rvy = rand() * 6.283185307f / (RAND_MAX + 1.0f);
-				part_phot->vx = rvx*cosf(rvy);
-				part_phot->vy = rvx*sinf(rvy);
+				{
+					float rr = part_other->ctype / 256.0f;
+					float ra = rand() * (2.0f * M_PI) / (RAND_MAX + 1.0f);
+					part_phot->vx = rr*cosf(ra);
+					part_phot->vy = rr*sinf(ra);
+				}
+				break;
 		}
 	}
 }

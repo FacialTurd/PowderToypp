@@ -74,7 +74,7 @@
 #define PMAP(id, typ) (PMAPID(id) | TYP(typ))
 #define PMAPID(id) ((id)<<PMAPBITS)
 
-#define partsi(id) parts[ID(r)]
+#define partsi(id) parts[part_ID(r)]
 #define CHECK_EL_SPRK(r, t) \
 	(TYP(r) == t || TYP(r) == PT_SPRK && partsi(r).ctype == t)
 #define CHECK_EL_SPRKT(r, t) \
