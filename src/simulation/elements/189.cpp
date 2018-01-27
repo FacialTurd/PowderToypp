@@ -375,20 +375,20 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			case 20: // conditional photon absorber
 				if (rct & 0x8)
 				{
-					int c = DIRCHInteractCount;
-					int s = DIRCHInteractSize;
-					int * t = sim->DIRCHInteractTable;
+					int &c = sim->DIRCHInteractCount;
+					int &s = sim->DIRCHInteractSize;
+					int *t = sim->DIRCHInteractTable;
 					if (c >= s)
 					{
 						s = (t == NULL) ? 64 : (s * 2);
-						t = realloc(t, s * sizeof(int));
+						t = (int*)realloc(t, s * sizeof(int));
 						(t != NULL) && (sim->DIRCHInteractTable = t);
 					}
 					if (t != NULL)
 					{
-						t[DIRCHInteractCount++] = i;
-						parts[ri].flags |= (fabsf(parts[i].vx) > fabsf(parts[i].vy)
-							? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V);
+						t[c++] = i;
+						sim->parts[ri].flags |= fabsf(sim->parts[i].vx) > fabsf(
+							sim->parts[i].vy) ? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V;
 					}
 				}
 				else
