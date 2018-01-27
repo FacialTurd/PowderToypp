@@ -146,6 +146,10 @@ public:
 	//Cooldowns and random seeds
 	static int check_neut_cooldown;
 	static int rndseed;
+	
+	int  DIRCHInteractCount;
+	int  DIRCHInteractSize;
+	int* DIRCHInteractTable;
 
 	int Load(GameSave * save, bool includePressure = true);
 	int Load(int x, int y, GameSave * save, bool includePressure = true);

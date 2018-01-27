@@ -373,12 +373,30 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
 				break;
 			case 20: // conditional photon absorber
-				switch (rct & 4)
+				if (rct & 0x8)
 				{
-					case 0: if (part_phot->vx <= 0) goto killing; break;
-					case 1: if (part_phot->vy >= 0) goto killing; break;
-					case 2: if (part_phot->vx >= 0) goto killing; break;
-					case 3: if (part_phot->vy <= 0) goto killing; break;
+					int c = DIRCHInteractCount;
+					int s = DIRCHInteractSize;
+					int * t = sim->DIRCHInteractTable;
+					if (c >= s)
+					{
+						s = (t == NULL) ? 64 : (s * 2);
+						t = realloc(t, s * sizeof(int));
+						(t != NULL) && (sim->DIRCHInteractTable = t);
+					}
+					if (t != NULL)
+					{
+						t[DIRCHInteractCount++] = i;
+						parts[ri].flags |= (fabsf(parts[i].vx) > fabsf(parts[i].vy)
+							? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V);
+					}
+				}
+				else
+				{
+					const static int rot[8] = {1,1,0,-1,-1,-1,0,1};
+					if (rot[(rct  )&7] * part_phot->vx +
+					    rot[(rct+6)&7] * part_phot->vy <= 0)
+						goto killing;
 				}
 				break;
 			case 21: // skip movement for N frame

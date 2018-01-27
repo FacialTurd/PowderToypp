@@ -65,6 +65,11 @@
 #define FLAG_PHOTDECO   0x8  // compatibility with old saves (decorated photons), only applies to PHOT. Having the same value as FLAG_MOVABLE is fine because they apply to different elements, and this saves space for future flags,
 #define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E186"
 
+// additional flags (only implemented for DIRCH, but currently unused)
+#define FLAG_DIRCH_MARK_H	0x10
+#define FLAG_DIRCH_MARK_V	0x20
+#define FLAG_DIRCH_MARK		0x30
+
 
 #define PMAPBITS 8
 

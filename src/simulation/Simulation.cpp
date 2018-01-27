@@ -2143,6 +2143,11 @@ void Simulation::clear_sim(void)
 		air->ClearAirH();
 	}
 	SetEdgeMode(edgeMode);
+
+	DIRCHInteractCount = 0;
+	DIRCHInteractSize  = 0;
+	free(DIRCHInteractTable);
+	DIRCHInteractTable = NULL;
 }
 
 static int bltable[][2] = { // blocked, allowcondition
@@ -6137,7 +6142,38 @@ void Simulation::BeforeSim()
 
 bool rnd_init = false;
 
-void Simulation::AfterSim()
+void Simulation::DIRCH_op(Simulation * sim, int * t)
+{
+	int c = sim->DIRCHInteractCount;
+	Particle * parts = sim->parts;
+	int i, j, r, rr, x, y, f;
+	for (i = 0, j = 0; i < c; i++)
+	{
+		r = t[i];
+		if (parts[r].type != PT_PHOT) continue;
+		x = (int)(parts[r].x + 0.5f);
+		y = (int)(parts[r].y + 0.5f);
+		if (x < 0 || y < 0 || x >= XRES || y >= YRES)
+			continue;
+		rr = pmap[y][x];
+		if (!rr) continue;
+		rr >>= PMAPBITS;
+		if (parts[rr].type != ELEM_MULTIPP || partsi[rr].life != 5)
+			continue;
+		f = parts[rr].flags & FLAG_DIRCH_MARK;
+		if (f == FLAG_DIRCH_MARK)
+			kill_part(r);
+		t[j++] = rr;
+	}
+	for (int i = 0; i < j; i++)
+	{
+		r = t[i];
+		parts[r].flags &= ~FLAG_DIRCH_MARK;
+	}
+	sim->DIRCHInteractCount = 0;
+}
+
+static void _ELEM_DIRCH_op()
 {
 	if (emp_trigger_count)
 	{
@@ -6200,7 +6236,7 @@ void Simulation::AfterSim()
 		mask <<= 1;
 #endif
 		} while (temp_flags);
-		SimExtraFunc &= ~0x00001BF4;
+		SimExtraFunc &= ~0x00003BF4;
 		Element_MULTIPP::maxPrior = 0;
 	}
 	if (Extra_FIGH_pause_check)
@@ -6208,6 +6244,8 @@ void Simulation::AfterSim()
 		Extra_FIGH_pause ^= Extra_FIGH_pause_check;
 		Extra_FIGH_pause_check = 0;
 	}
+	if (DIRCHInteractTable != NULL)
+		_ELEM_DIRCH_op(this, DIRCHInteractTable);
 	if (ineutcount >= 10)
 	{
 		if (!rnd_init)
@@ -6441,6 +6479,8 @@ Simulation::Simulation():
 	temporary_sim_variable[1] = NT; // on WIFI
 	temporary_sim_variable[2] = 0;  // STOR's Hardness
 	
+	DIRCHInteractTable = NULL;
+
 	init_can_move();
 	clear_sim();
 
