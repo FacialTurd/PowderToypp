@@ -6158,11 +6158,11 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 		rr = sim->pmap[y][x];
 		if (!rr) continue;
 		rr >>= PMAPBITS;
-		if (parts[rr].type != ELEM_MULTIPP || partsi[rr].life != 5)
+		if (parts[rr].type != ELEM_MULTIPP || parts[rr].life != 5)
 			continue;
 		f = parts[rr].flags & FLAG_DIRCH_MARK;
 		if (f == FLAG_DIRCH_MARK)
-			kill_part(r);
+			sim->kill_part(r);
 		t[j++] = rr;
 	}
 	for (int i = 0; i < j; i++)
