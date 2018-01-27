@@ -6142,7 +6142,7 @@ void Simulation::BeforeSim()
 
 bool rnd_init = false;
 
-void Simulation::DIRCH_op(Simulation * sim, int * t)
+static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 {
 	int c = sim->DIRCHInteractCount;
 	Particle * parts = sim->parts;
@@ -6155,7 +6155,7 @@ void Simulation::DIRCH_op(Simulation * sim, int * t)
 		y = (int)(parts[r].y + 0.5f);
 		if (x < 0 || y < 0 || x >= XRES || y >= YRES)
 			continue;
-		rr = pmap[y][x];
+		rr = sim->pmap[y][x];
 		if (!rr) continue;
 		rr >>= PMAPBITS;
 		if (parts[rr].type != ELEM_MULTIPP || partsi[rr].life != 5)
@@ -6173,7 +6173,7 @@ void Simulation::DIRCH_op(Simulation * sim, int * t)
 	sim->DIRCHInteractCount = 0;
 }
 
-static void _ELEM_DIRCH_op()
+void Simulation::AfterSim()
 {
 	if (emp_trigger_count)
 	{
