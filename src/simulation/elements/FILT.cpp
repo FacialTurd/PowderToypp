@@ -236,6 +236,14 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 		}
 		case (FILT_NORMAL_OPERATIONS + 10):
 			return (origWl ^ filtWl) | 0x20000000; // XOR colours (29 bits)
+		case (FILT_NORMAL_OPERATIONS + 11):
+		{
+			int shift = cpart->tmp2 - 29;
+			if (shift >=  30) shift =  29;
+			if (shift <= -30) shift = -29;
+			int t1 = (shift < 0) ? (filtWl >> -shift) : (filtWl << shift);
+			return (origWl ^ t1) & mask;
+		}
 		default:
 			return filtWl;
 	}

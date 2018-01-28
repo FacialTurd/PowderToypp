@@ -6161,6 +6161,13 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 		if (parts[rr].type != ELEM_MULTIPP || parts[rr].life != 5)
 			continue;
 		f = parts[rr].flags & FLAG_DIRCH_MARK;
+
+		if (parts[rr].ctype & 4)
+		{
+			if ((fabsf(parts[r].vx) > fabsf(parts[r].vy)) == !(parts[rr].ctype & 1))
+				f = FLAG_DIRCH_MARK;
+		}
+
 		if (f == FLAG_DIRCH_MARK)
 			sim->kill_part(r);
 		t[j++] = rr;

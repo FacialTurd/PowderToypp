@@ -1620,26 +1620,31 @@ int LuaScriptInterface::simulation_blockair(lua_State* l)
 
 int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 {
+	const static int rot[4] = {1,0,-1,0};
 	int argCount = lua_gettop(l);
 	int x = lua_tointeger(l, 1);
 	int y = lua_tointeger(l, 2);
 	int f = lua_tointeger(l, 3);
-	int np = -1;
-	char d = 0;
-	float vx, vy, tmp;
-	if (argCount >= 4)
+	int np = -1, ri;
+	unsigned char d = 0, dd;
+	float vx, vy, avx[2], avy[2];
+	if (argCount >= 4 && lua_isnumber(l, 4))
 	{
-		int ri = lua_tointeger(l, 4); 
-		d = ri & 7, ri >>= 3;
+		ri = lua_tointeger(l, 4);
+		d = dd = ri & 0x1F, ri >>= 5; // don't replace &0xFF and >>8/<<8 in this line
 		if (ri >= 0 && ri < NPART)
 		{
 			Particle * pt = &(luacon_sim->parts[ri]);
 			if (pt->type)
-				vx = pt->vx, vy = pt->vy,
-				(d & 2) && (vx = -vx, vy = -vy),
-				(d & 1) && (tmp = vx, vx = -vy, vy = tmp),
-				(vx > 0.5) ? (x++) : (vx < -0.5) && (x--),
-				(vy > 0.5) ? (y++) : (vy < -0.5) && (y--);
+			{
+				vx = pt->vx, vy = pt->vy;
+				for (int i = 0; i < 2; i++)
+					avx[i] = vx * rot[d & 3] + vy * rot[(d+1) & 3],
+					avy[i] = vy * rot[d & 3] - vx * rot[(d+1) & 3],
+					d >>= 2;
+				(avx[0] > 0.5) ? (x++) : (avx[0] < -0.5) && (x--),
+				(avy[0] > 0.5) ? (y++) : (avy[0] < -0.5) && (y--);
+			}
 		}
 	}
 	if (x >= 0 && y >= 0 && x < XRES && y < YRES)
@@ -1650,16 +1655,17 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 		int ri = rt ? part_ID(r) : -3;
 		if (ri < 0 || !(luacon_sim->elements[luacon_sim->parts[ri].type].Properties2 & PROP_INDESTRUCTIBLE))
 		{
-			np = luacon_sim->create_part(ri, x, y, ELEM_MULTIPP, 5);
+			if (f < 0)
+				luacon_sim->kill_part(ri);
+			else
+				np = luacon_sim->create_part(ri, x, y, ELEM_MULTIPP, 5);
 			if (np >= 0)
 			{
 				luacon_sim->parts[np].tmp  = 7;
 				luacon_sim->parts[np].tmp2 = f;
-				if (d & 4)
-				{
-					luacon_sim->parts[np].vx = -vx;
-					luacon_sim->parts[np].vy = -vy;
-				}
+				if (dd & 0x10)
+					luacon_sim->parts[np].vx = avx[1],
+					luacon_sim->parts[np].vy = avy[1];
 			}
 		}
 	}
