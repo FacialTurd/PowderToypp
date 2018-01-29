@@ -2198,14 +2198,11 @@ void Simulation::init_can_move()
 
 	static int passAllTypes[PT_NUM];
 
-	int *numTypePassThroughs = 0;
+	int numTypePassThroughs = 0;
 	
 	for (movingType = 0; movingType < PT_NUM; movingType++)
-	{
-		if (elements[destinationType].Properties2 & PROP_PASSTHROUGHALL)
-			passAllTypes[numTypePassThroughs++] = t;
-		t++;
-	}
+		if (elements[movingType].Properties2 & PROP_PASSTHROUGHALL)
+			passAllTypes[numTypePassThroughs++] = movingType;
 
 	// can_move[moving type][type at destination]
 	//  0 = No move/Bounce
@@ -2300,7 +2297,7 @@ void Simulation::init_can_move()
 			can_move[PT_PHOT][destinationType] = 2;
 
 		if (destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_INDI && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO && destinationType != PT_E187)
-			for (i = 0; i < numTypePassThroughs; i++)
+			for (int i = 0; i < numTypePassThroughs; i++)
 				can_move[passAllTypes[i]][destinationType] = 2; // PROT, GRVT, "E186"
 
 		if (elements[destinationType].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
