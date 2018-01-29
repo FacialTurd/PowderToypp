@@ -386,9 +386,22 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 					}
 					if (t != NULL)
 					{
+						int f = sim->parts[ri].flags;
 						t[c++] = i;
-						sim->parts[ri].flags |= fabsf(sim->parts[i].vx) > fabsf(
-							sim->parts[i].vy) ? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V;
+						bool d = fabsf(sim->parts[i].vx) > fabsf(sim->parts[i].vy);
+						int omsk = 0;
+
+						if (rct & 4)
+							part_phot->vx = arr1[rct & 3],
+							part_phot->vy = arr2[rct & 3],
+							omsk = f & (FLAG_DIRCH_MARK_H | FLAG_DIRCH_MARK_V) ?
+								(FLAG_DIRCH_MARK_HK | FLAG_DIRCH_MARK_VK) : 0; 
+						else
+							omsk = (rct & 2) ? (rct & 1) ? FLAG_DIRCH_MARK_HK : FLAG_DIRCH_MARK_VK : 0,
+							omsk |= d ? FLAG_DIRCH_MARK_VK : FLAG_DIRCH_MARK_HK;
+						
+						omsk |= d ? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V;
+						sim->parts[ri].flags = f | omsk;
 					}
 				}
 				else

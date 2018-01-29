@@ -2195,6 +2195,18 @@ bool Simulation::IsWallBlocking(int x, int y, int type)
 void Simulation::init_can_move()
 {
 	int movingType, destinationType;
+
+	static int passAllTypes[PT_NUM];
+
+	int *numTypePassThroughs = 0;
+	
+	for (movingType = 0; movingType < PT_NUM; movingType++)
+	{
+		if (elements[destinationType].Properties2 & PROP_PASSTHROUGHALL)
+			passAllTypes[numTypePassThroughs++] = t;
+		t++;
+	}
+
 	// can_move[moving type][type at destination]
 	//  0 = No move/Bounce
 	//  1 = Swap
@@ -2286,23 +2298,13 @@ void Simulation::init_can_move()
 	{
 		if (destinationType == PT_PHOT || elements[destinationType].Properties&PROP_TRANSPARENT)
 			can_move[PT_PHOT][destinationType] = 2;
+
 		if (destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_INDI && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO && destinationType != PT_E187)
-		{
-			can_move[PT_PROT][destinationType] = 2;
-			can_move[PT_GRVT][destinationType] = 2;
-			can_move[PT_E186][destinationType] = 2;
-		}
+			for (i = 0; i < numTypePassThroughs; i++)
+				can_move[passAllTypes[i]][destinationType] = 2; // PROT, GRVT, "E186"
+
 		if (elements[destinationType].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
 			can_move[PT_DEST][destinationType] = 0;
-
-/*
-		if (destinationType == PT_POLO || destinationType == PT_POLC  || destinationType == PT_URAN || destinationType == PT_H2   ||
-			destinationType == PT_PLSM || destinationType == PT_NBLE  || destinationType == PT_CO2  || destinationType == PT_O2   ||
-			destinationType == PT_FILT || destinationType == PT_ISOZ  || destinationType == PT_ISZS || destinationType == PT_EXOT ||
-			destinationType == PT_TUNG || destinationType == PT_INVIS || destinationType == PT_SPNG || destinationType == PT_GEL  ||
-			destinationType == PT_VIRS || destinationType == PT_VRSS)
-			can_move[PT_E186][destinationType] = 2;
-*/
 	}
 	
 	for (movingType = 1; movingType < PT_NUM; movingType++)
@@ -2313,11 +2315,6 @@ void Simulation::init_can_move()
 	
 
 	//other special cases that weren't covered above
-	// can_move[PT_DEST][PT_DMND] = 0;
-	// can_move[PT_DEST][PT_CLNE] = 0;
-	// can_move[PT_DEST][PT_PCLN] = 0;
-	// can_move[PT_DEST][PT_BCLN] = 0;
-	// can_move[PT_DEST][PT_PBCN] = 0;
 	can_move[PT_DEST][PT_SPRK] = 3;
 
 	can_move[PT_NEUT][PT_INVIS] = 2;
@@ -2327,11 +2324,8 @@ void Simulation::init_can_move()
 	can_move[PT_PHOT][PT_LCRY] = 3; //varies according to LCRY life
 	can_move[PT_PHOT][PT_GPMP] = 3;
 
-	// can_move[PT_PHOT][PT_BIZR] = 2;
 	can_move[PT_ELEC][PT_BIZR] = 2;
-	// can_move[PT_PHOT][PT_BIZRG] = 2;
 	can_move[PT_ELEC][PT_BIZRG] = 2;
-	// can_move[PT_PHOT][PT_BIZRS] = 2;
 	can_move[PT_ELEC][PT_BIZRS] = 2;
 	can_move[PT_BIZR][PT_FILT] = 2;
 	can_move[PT_BIZRG][PT_FILT] = 2;
@@ -2342,15 +2336,15 @@ void Simulation::init_can_move()
 	can_move[PT_THDR][PT_THDR] = 2;
 	can_move[PT_EMBR][PT_EMBR] = 2;
 	can_move[PT_TRON][PT_SWCH] = 3;
-	
+
 	can_move[PT_ELEC][PT_POLC] = 2;
 	can_move[PT_GLOW][PT_E187] = 0;
 	can_move[PT_E186][PT_E187] = 2; // "E186" pass through "E187"
-	
+
 	can_move[PT_E186][PT_VIBR] = 2;
 	can_move[PT_E186][PT_BVBR] = 2;
 	can_move[PT_E186][PT_PRTO] = 2;
-	
+
 	can_move[PT_PROT][ELEM_MULTIPP] = 3;
 	can_move[PT_GRVT][ELEM_MULTIPP] = 3;
 	can_move[PT_NEUT][ELEM_MULTIPP] = 3;
@@ -2361,8 +2355,6 @@ void Simulation::init_can_move()
 	can_move[PT_STKM2][ELEM_MULTIPP] = 3;
 	can_move[PT_FIGH][ELEM_MULTIPP] = 3;
 	restrict_can_move();
-	
-	// can_move[PT_CNCT][PT_E191] = 0;
 }
 
 /*
@@ -6144,9 +6136,11 @@ bool rnd_init = false;
 
 static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 {
+	static int vt[4] = {1,0,-1,0};
+
 	int c = sim->DIRCHInteractCount;
 	Particle * parts = sim->parts;
-	int i, j, r, rr, x, y, f;
+	int i, j, r, rr, x, y, f, ct;
 	for (i = 0, j = 0; i < c; i++)
 	{
 		r = t[i];
@@ -6160,15 +6154,10 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 		rr >>= PMAPBITS;
 		if (parts[rr].type != ELEM_MULTIPP || parts[rr].life != 5)
 			continue;
-		f = parts[rr].flags & FLAG_DIRCH_MARK;
 
-		if (parts[rr].ctype & 4)
-		{
-			if ((fabsf(parts[r].vx) > fabsf(parts[r].vy)) == !(parts[rr].ctype & 1))
-				f = FLAG_DIRCH_MARK;
-		}
-
-		if (f == FLAG_DIRCH_MARK)
+		f = parts[rr].flags & (fabsf(parts[r].vx) > fabsf(parts[r].vy) ? FLAG_DIRCH_MARK_HK : FLAG_DIRCH_MARK_VK);
+		
+		if (f)
 			sim->kill_part(r);
 		t[j++] = rr;
 	}

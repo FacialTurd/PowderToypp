@@ -244,6 +244,8 @@ int Element_FILT::interactWavelengths(Particle* cpart, int origWl)
 			int t1 = (shift < 0) ? (filtWl >> -shift) : (filtWl << shift);
 			return (origWl ^ t1) & mask;
 		}
+		case (FILT_NORMAL_OPERATIONS + 12): // pass through if equal
+			return (origWl ^ filtWl) & mask ? 0 : origWl;
 		default:
 			return filtWl;
 	}

@@ -31,7 +31,7 @@ Element_PROT::Element_PROT()
 	Description = "Protons. Transfer heat to materials, and removes sparks.";
 
 	Properties = TYPE_ENERGY;
-	Properties2 |= PROP_ENERGY_PART;
+	Properties2 |= PROP_ENERGY_PART | PROP_PASSTHROUGHALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

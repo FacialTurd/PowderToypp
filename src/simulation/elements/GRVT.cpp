@@ -31,7 +31,7 @@ Element_GRVT::Element_GRVT()
 	Description = "Gravitons. Create Newtonian Gravity.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
-	Properties2 |= PROP_ENERGY_PART;
+	Properties2 |= PROP_ENERGY_PART | PROP_PASSTHROUGHALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

@@ -1176,19 +1176,21 @@ int LuaScriptInterface::simulation_pmap_move_to(lua_State * l)
 	int argCount = lua_gettop(l), particleID = lua_tointeger(l, 1);
 	if (argCount < 3 || particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type) return 0;
 
-	int newX = lua_tointeger(l, 2);
-	int newY = lua_tointeger(l, 3);
+	float newX = lua_tonumber(l, 2);
+	float newY = lua_tonumber(l, 3);
+	int newX_i = (int)(newX + 0.5f);
+	int newY_i = (int)(newY + 0.5f);
 	int oldX = (int)(luacon_sim->parts[particleID].x+0.5f);
 	int oldY = (int)(luacon_sim->parts[particleID].y+0.5f);
 	int type = luacon_sim->parts[particleID].type;
 	
-	if (IN_BOUNDS(newX, newY))
+	if (IN_BOUNDS(newX_i, newY_i))
 	{
 		if (IN_BOUNDS(oldX, oldY) && (luacon_sim->pmap[oldY][oldX] >> 8) == particleID)
 			luacon_sim->pmap[oldY][oldX] = 0;
-		luacon_sim->pmap[newY][newX] = type | (particleID << 8);
-		luacon_sim->parts[particleID].x = (float)newX;
-		luacon_sim->parts[particleID].y = (float)newY;
+		luacon_sim->pmap[newY_i][newX_i] = type | (particleID << 8);
+		luacon_sim->parts[particleID].x = newX;
+		luacon_sim->parts[particleID].y = newY;
 	}
 	else
 		luacon_sim->kill_part(particleID);
@@ -3235,6 +3237,7 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, PROP_ENERGY_PART);
 	SETCONST(l, PROP_DEBUG_HIDE_TMP);
 	SETCONST(l, PROP_NEUTRONS_LIKE);
+	SETCONST(l, PROP_PASSTHROUGHALL);
 	SETCONST(l, PROP_NODESTRUCT);
 	SETCONST(l, PROP_CLONE);
 	SETCONST(l, PROP_ALLOWS_WALL);

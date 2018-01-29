@@ -49,6 +49,7 @@
 #define PROP_ENERGY_PART		0x00000040	//  64 VIBR absorb-able particle
 #define PROP_DEBUG_HIDE_TMP		0x00000080	// 128 .tmp is hidden from the debug HUD
 #define PROP_NEUTRONS_LIKE		0x00000100	// 256 neutrons-like element
+#define PROP_PASSTHROUGHALL		0x00000200	// 512 travel acts like PROT
 #define PROP_UNBREAKABLECLONE	0x00004000  // 2^14
 #define PROP_NODESTRUCT			0x00008000  // 2^15 Indestructible property
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it
@@ -65,10 +66,13 @@
 #define FLAG_PHOTDECO   0x8  // compatibility with old saves (decorated photons), only applies to PHOT. Having the same value as FLAG_MOVABLE is fine because they apply to different elements, and this saves space for future flags,
 #define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E186"
 
-// additional flags (only implemented for DIRCH, but currently unused)
+// additional flags (only implemented for DIRCH)
 #define FLAG_DIRCH_MARK_H	0x10
 #define FLAG_DIRCH_MARK_V	0x20
-#define FLAG_DIRCH_MARK		0x30
+#define FLAG_DIRCH_MARK_HK	0x40
+#define FLAG_DIRCH_MARK_VK	0x80
+#define FLAG_DIRCH_MARK_K	0xC0
+#define FLAG_DIRCH_MARK		0xF0
 
 
 #define PMAPBITS 8
