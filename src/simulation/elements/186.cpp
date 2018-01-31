@@ -97,6 +97,14 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					return 1;
 				}
 			}
+			transportPhotons(sim, i, x, y, parts[i].x + parts[i].vx, parts[i].y + parts[i].vy, parts[i].type, &parts[i]);
+			x = (int)(parts[i].x + 0.5f); y = (int)(parts[i].y + 0.5f);
+			if (TYP(pmap[y][x]) != ELEM_MULTIPP)
+			{
+				parts[i].ctype = parts[i].tmp2;
+				parts[i].tmp2 = 0;
+				sim->part_change_type(i, x, y, PT_PHOT)
+			}
 			return 1;
 		case 1:
 			if ((r&0xFF) != ELEM_MULTIPP)

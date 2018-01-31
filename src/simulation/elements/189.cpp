@@ -206,17 +206,17 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				x = (int)(part_other->x+0.5f);
 				y = (int)(part_other->y+0.5f);
 				int r, ix, iy, a;
-				if (rtmp2 <= 0)
+				if (rtmp2 <= 0 || rtmp2 > 8)
 				{
 					float angle = atan2f(part_phot->vy, part_phot->vx);
 					sim->kill_part(i);
-					a = floor(angle * (4.0f / M_PI) + 3.5f);
+					a = (int)(floor(angle * (4.0f / M_PI) + 3.5f)) & 7;
 				}
 				else
 					a = rtmp2 - 1;
 
-				ix = sim->portal_rx[a&7];
-				iy = sim->portal_ry[a&7];
+				ix = sim->portal_rx[a];
+				iy = sim->portal_ry[a];
 
 				while (x += ix, y += iy, sim->InBounds(x, y))
 				{
@@ -373,8 +373,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
 				break;
 			case 20: // conditional photon absorber
-				if (rct & 0x8)
+				if (rct >= 0x8 && rct <= 0x13)
 				{
+					static int ktable[8] = {
+						FLAG_DIRCH_MARK_HK, FLAG_DIRCH_MARK_TVOID_K, FLAG_DIRCH_MARK_K, FLAG_DIRCH_MARK_HK,
+						FLAG_DIRCH_MARK_VK, FLAG_DIRCH_MARK_TVOID_K, FLAG_DIRCH_MARK_VK, FLAG_DIRCH_MARK_K
+					};
 					int &c = sim->DIRCHInteractCount;
 					int &s = sim->DIRCHInteractSize;
 					int *t = sim->DIRCHInteractTable;
@@ -391,14 +395,23 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 						bool d = fabsf(sim->parts[i].vx) > fabsf(sim->parts[i].vy);
 						int omsk = 0;
 
-						if (rct & 4)
+						if (rct >= 0xC)
 							part_phot->vx = arr1[rct & 3],
-							part_phot->vy = arr2[rct & 3],
+							part_phot->vy = arr2[rct & 3];
+
+						switch (rct >> 2)
+						{
+						case 2:
+							omsk = ktable[(rct & 3) + (d ? 4 : 0)];
+							break;
+						case 3:
 							omsk = f & (FLAG_DIRCH_MARK_H | FLAG_DIRCH_MARK_V) ?
-								(FLAG_DIRCH_MARK_HK | FLAG_DIRCH_MARK_VK) : 0; 
-						else
-							omsk = (rct & 2) ? (rct & 1) ? FLAG_DIRCH_MARK_HK : FLAG_DIRCH_MARK_VK : 0,
-							omsk |= d ? FLAG_DIRCH_MARK_VK : FLAG_DIRCH_MARK_HK;
+								(FLAG_DIRCH_MARK_HK | FLAG_DIRCH_MARK_VK) : 0;
+							break;
+						case 4:
+							omsk = FLAG_DIRCH_MARK_TVOID_K;
+							break;
+						}
 						
 						omsk |= d ? FLAG_DIRCH_MARK_H : FLAG_DIRCH_MARK_V;
 						sim->parts[ri].flags = f | omsk;

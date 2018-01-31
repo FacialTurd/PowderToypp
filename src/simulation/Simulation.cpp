@@ -2742,14 +2742,6 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			*/
 			}
 			break;
-		case PT_E186: // TODO: move into another element
-			if (parts[i].ctype == 0x100 && (r&0xFF) != ELEM_MULTIPP) // exit from E189 area
-			{
-				parts[i].ctype = parts[i].tmp2;
-				parts[i].tmp2 = 0;
-				part_change_type(i, x, y, PT_PHOT);
-			}
-			break;
 		}
 		return 1;
 	}
@@ -6133,17 +6125,18 @@ bool rnd_init = false;
 
 static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 {
-	static int vt[4] = {1,0,-1,0};
-
 	int c = sim->DIRCHInteractCount;
 	Particle * parts = sim->parts;
-	int i, j, r, rr, x, y, f, ct;
+	int i, j, r, rr, x, y, f, ct, kf;
+	float xf, yf, vx, vy;
 	for (i = 0, j = 0; i < c; i++)
 	{
 		r = t[i];
 		if (parts[r].type != PT_PHOT) continue;
-		x = (int)(parts[r].x + 0.5f);
-		y = (int)(parts[r].y + 0.5f);
+
+		xf = parts[r].x, yf = parts[r].y;
+		x = (int)(xf + 0.5f), y = (int)(yf + 0.5f);
+
 		if (x < 0 || y < 0 || x >= XRES || y >= YRES)
 			continue;
 		rr = sim->pmap[y][x];
@@ -6152,10 +6145,29 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 		if (parts[rr].type != ELEM_MULTIPP || parts[rr].life != 5)
 			continue;
 
-		f = parts[rr].flags & (fabsf(parts[r].vx) > fabsf(parts[r].vy) ? FLAG_DIRCH_MARK_HK : FLAG_DIRCH_MARK_VK);
+		f = parts[rr].flags;
+		vx = parts[r].vx;
+		vy = parts[r].vy;
+		kf = f & (fabsf(vx) > fabsf(vy) ? FLAG_DIRCH_MARK_HK : FLAG_DIRCH_MARK_VK);
 		
-		if (f)
+		if (kf)
 			sim->kill_part(r);
+		if (f & FLAG_DIRCH_MARK_TVOID)
+			do
+			{
+				int xx = (int)(xf + vx + 0.5f);
+				int yy = (int)(yf + vy + 0.5f);
+				if (xx < 0 || yy < 0 || xx >= XRES || yy >= YRES)
+					break;
+				r = sim->pmap[yy][xx];
+				int rt = TYP(r);
+				if (!rt)
+					sim->create_part(-1, xx, yy, PT_VOID);
+				else if (rt == PT_VOID || rt == PT_PVOD)
+					sim->kill_part(part_ID(r));
+			}
+			while(0);
+
 		t[j++] = rr;
 	}
 	for (int i = 0; i < j; i++)

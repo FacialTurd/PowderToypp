@@ -67,12 +67,13 @@
 #define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E186"
 
 // additional flags (only implemented for DIRCH)
-#define FLAG_DIRCH_MARK_H	0x10
-#define FLAG_DIRCH_MARK_V	0x20
-#define FLAG_DIRCH_MARK_HK	0x40
-#define FLAG_DIRCH_MARK_VK	0x80
-#define FLAG_DIRCH_MARK_K	0xC0
-#define FLAG_DIRCH_MARK		0xF0
+#define FLAG_DIRCH_MARK_TVOID	0x08
+#define FLAG_DIRCH_MARK_H		0x10
+#define FLAG_DIRCH_MARK_V		0x20
+#define FLAG_DIRCH_MARK_HK		0x40
+#define FLAG_DIRCH_MARK_VK		0x80
+#define FLAG_DIRCH_MARK_K		0xC0
+#define FLAG_DIRCH_MARK			0xF8
 
 
 #define PMAPBITS 8
