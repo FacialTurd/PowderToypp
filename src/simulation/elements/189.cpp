@@ -12,6 +12,8 @@
 #define __builtin_clz msvc_clz
 #endif
 
+#define ID part_ID
+
 //#TPT-Directive ElementClass Element_MULTIPP PT_E189 189
 Element_MULTIPP::Element_MULTIPP()
 {
@@ -460,6 +462,21 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 					part_phot->vy = rr*sinf(ra);
 				}
 				break;
+			case 27: // PHOT duplicator/splitter
+			{
+				int np = sim->create_part(-1, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), PT_PHOT);
+				if (np < 0)
+					goto killing;
+				float tvx = part_phot->vx, tvy = part_phot->vy;
+				part_phot->vx =  tvy; sim->parts[np].vx = -tvy;
+				part_phot->vy = -tvx; sim->parts[np].vy =  tvx;
+				sim->parts[np].life = part_phot->life;
+				sim->parts[np].ctype = part_phot->ctype;
+				sim->parts[np].temp = part_phot->temp;
+				sim->parts[np].flags = part_phot->flags | (np > i ? FLAG_SKIPMOVE : 0);
+				sim->parts[np].tmp = part_phot->tmp;
+				break;
+			}
 		}
 	}
 }
@@ -758,7 +775,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		while (x1 >= 0)
 		{
 			r = pmap[y][x1-1];
-			if ((r&0xFF) != ELEM_MULTIPP || parts[r>>8].life != 26)
+			if (!CHECK_EXTEL(r, 26))
 			{
 				break;
 			}
@@ -768,7 +785,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		while (x2 < XRES)
 		{
 			r = pmap[y][x2+1];
-			if ((r&0xFF) != ELEM_MULTIPP || parts[r>>8].life != 26)
+			if (!CHECK_EXTEL(r, 26))
 			{
 				break;
 			}
@@ -778,7 +795,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		// fill span
 		for (x=x1; x<=x2; x++)
 		{
-			r = pmap[y][x]>>8;
+			r = ID(pmap[y][x]);
 			parts[r].tmp = 8;
 			// parts[r].flags |= 0x80000000;
 		}
@@ -788,7 +805,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y-1][x];
-				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
+				if (CHECK_EXTEL(r, 26) && !partsi(r).tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y-1;
@@ -804,7 +821,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y+1][x];
-				if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 26 && !parts[r>>8].tmp)
+				if (CHECK_EXTEL(r, 26) && !partsi(r).tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y+1;
