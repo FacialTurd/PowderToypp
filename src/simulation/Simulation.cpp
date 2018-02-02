@@ -30,6 +30,8 @@
 #include "lua/LuaScriptHelper.h"
 #endif
 
+#define ID part_ID
+
 int Simulation::Load(GameSave * save, bool includePressure)
 {
 	return Load(0, 0, save, includePressure);
@@ -45,7 +47,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		inctype[0] = 1;
 		memset(inctype, 0, 4 * ((PT_NUM + 31) >> 5));
 		static int inctypel[] = {
-			PT_CLNE, PT_PCLN, PT_BCLN, PT_PBCN, PT_STOR, PT_CONV, PT_STKM, PT_STKM2, PT_FIGH, PT_LAVA, PT_SPRK, PT_PSTN, PT_CRAY, PT_DTEC, PT_DRAY, PT_PIPE, PT_PPIP,
+			PT_CLNE, PT_PCLN, PT_BCLN, PT_PBCN, PT_STOR, PT_CONV, PT_STKM, PT_STKM2, PT_FIGH, PT_LAVA, PT_SPRK, PT_PSTN, PT_CRAY, PT_DTEC, PT_DRAY, PT_PIPE, PT_PPIP, PT_E186,
 		0};
 		for (int i = 0; inctypel[i]; i++)
 			inctype[(inctypel[i] >> 5) + 1] |= 1 << (inctypel[i] & 0x1F);
@@ -67,6 +69,8 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	blockY = (fullY + CELL/2)/CELL;
 	fullX = blockX*CELL;
 	fullY = blockY*CELL;
+	unsigned int pmapmask = (1<<save->pmapbits)-1;
+	unsigned int ctype_diff = (1<<save->pmapbits)-PMAPID(1);
 
 	int partMap[PT_NUM];
 	for(int i = 0; i < PT_NUM; i++)
@@ -120,15 +124,30 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			continue;
 
 		if (tempPart.type == PT_CRAY || tempPart.type == PT_DRAY || tempPart.type == PT_CONV)
-			tempPart.ctype = (tempPart.ctype & ~0xFF) | partMap[tempPart.ctype & 0xFF];
+		{
+			int ctype = tempPart.ctype & pmapmask;
+			int extra = tempPart.ctype >> save->pmapbits;
+			if (ctype >= 0 && ctype < PT_NUM)
+				ctype = partMap[ctype];
+			tempPart.ctype = PMAP(extra, ctype);
+		}
 		else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
+		{
 			if (inctype[(tempPart.type >> 5) + 1] & (1 << (tempPart.type & 0x1F)))
 			{
 				tempPart.ctype = partMap[tempPart.ctype];
 			}
+		}
+		else if (tempPart.type == PT_E186)
+		{
+			tempPart.ctype += ctype_diff;
+		}
+
 		if (tempPart.type == PT_STOR)
 		{
-			tempPart.tmp = partMap[tempPart.tmp];
+			int tmp = tempPart.tmp & pmapmask;
+			int extra = tempPart.tmp >> save->pmapbits;
+			tempPart.tmp = PMAP(extra, tmp);
 		}
 		if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSG || tempPart.type == PT_VRSS) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
 		{
@@ -138,16 +157,16 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		//Replace existing
 		if ((r = pmap[y][x]))
 		{
-			elementCount[parts[r>>8].type]--;
-			parts[r>>8] = tempPart;
-			i = r>>8;
+			elementCount[partsi(r).type]--;
+			partsi(r) = tempPart;
+			i = ID(r);
 			elementCount[tempPart.type]++;
 		}
 		else if ((r = photons[y][x]))
 		{
-			elementCount[parts[r>>8].type]--;
-			parts[r>>8] = tempPart;
-			i = r>>8;
+			elementCount[partsi(r).type]--;
+			partsi(r) = tempPart;
+			i = ID(r);
 			elementCount[tempPart.type]++;
 		}
 		//Allocate new particle
@@ -163,30 +182,27 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			elementCount[tempPart.type]++;
 		}
 
-		if (parts[i].type == PT_STKM)
+		switch (parts[i].type)
 		{
+		case PT_STKM:
 			Element_STKM::STKM_init_legs(this, &player, i);
 			player.spwn = 1;
 			player.elem = PT_DUST;
 			player.rocketBoots = false;
-		}
-		else if (parts[i].type == PT_STKM2)
-		{
+			break;
+		case PT_STKM2:
 			Element_STKM::STKM_init_legs(this, &player2, i);
 			player2.spwn = 1;
 			player2.elem = PT_DUST;
 			player2.rocketBoots = false;
-		}
-		else if (parts[i].type == PT_SPAWN)
-		{
+			break;
+		case PT_SPAWN:
 			player.spawnID = i;
-		}
-		else if (parts[i].type == PT_SPAWN2)
-		{
+			break;
+		case PT_SPAWN2:
 			player2.spawnID = i;
-		}
-		else if (parts[i].type == PT_FIGH)
-		{
+			break;
+		case PT_FIGH:
 			for (int fcount = 0; fcount < MAX_FIGHTERS; fcount++)
 			{
 				if(!fighters[fcount].spwn)
@@ -200,10 +216,10 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 					break;
 				}
 			}
-		}
-		else if (parts[i].type == PT_SOAP)
-		{
+			break;
+		case PT_SOAP:
 			soapList.insert(std::pair<unsigned int, unsigned int>(n, i));
+			break;
 		}
 	}
 	parts_lastActiveIndex = NPART-1;
@@ -416,6 +432,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 	}
 
 	SaveSimOptions(newSave);
+	newSave->pmapbits = PMAPBITS;
 	return newSave;
 }
 
@@ -488,6 +505,7 @@ void Simulation::Restore(const Snapshot & snap)
 		std::copy(snap.GravValue.begin(), snap.GravValue.end(), gravp);
 		std::copy(snap.GravMap.begin(), snap.GravMap.end(), gravmap);
 	}
+	gravWallChanged = true;
 	std::copy(snap.BlockMap.begin(), snap.BlockMap.end(), &bmap[0][0]);
 	std::copy(snap.ElecMap.begin(), snap.ElecMap.end(), &emap[0][0]);
 	std::copy(snap.FanVelocityX.begin(), snap.FanVelocityX.end(), &fvx[0][0]);

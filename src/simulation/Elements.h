@@ -85,7 +85,7 @@
 #define PMAP(id, typ) (PMAPID(id) | TYP(typ))
 #define PMAPID(id) ((id)<<PMAPBITS)
 
-#define partsi(id) parts[part_ID(r)]
+#define partsi(r) parts[part_ID(r)]
 #define CHECK_EL_SPRK(r, t) \
 	(TYP(r) == t || TYP(r) == PT_SPRK && partsi(r).ctype == t)
 #define CHECK_EL_SPRKT(r, t) \
@@ -97,7 +97,7 @@
 #define CHECK_EXTEL(r, t) \
 	(TYP(r) == ELEM_MULTIPP && partsi(r).life == (t))
 #define CHECK_EL_INSL(t) ((t) == PT_INSL || (t) == PT_INDI)
-#define PAVG_INSL(r) sim->parts_avg(i, ID(r), PT_INSL)
+#define PAVG_INSL(r) sim->parts_avg(i, part_ID(r), PT_INSL)
 
 #define ELEMPROP(t) sim->elements[t].Properties
 #define ELEMPROP2(t) sim->elements[t].Properties2
