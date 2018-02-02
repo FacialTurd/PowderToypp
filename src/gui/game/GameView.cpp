@@ -2449,7 +2449,7 @@ void GameView::OnDraw()
 				switch (type)
 				{
 				case PT_E186:
-					if (ctype == 0x100)
+					if (ctype == PMAPID(1))
 					{
 						wavelengthGfx = sample_particle->tmp2;
 						el_prop |= PROP_DEBUG_USE_TMP2;
@@ -2526,11 +2526,11 @@ void GameView::OnDraw()
 				}
 				else if (type == PT_PINVIS)
 				{
-					ctype = sample_particle->tmp4 & 0xFF;
+					ctype = TYP(sample_particle->tmp4);
 					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
-						partnerID = sample_particle->tmp4 >> 8;
+						partnerID = part_ID(sample_particle->tmp4);
 						tpt_hasPartner = true;
 						sample_particle = sample.cparticle;
 						goto showDebugBack;
@@ -2561,14 +2561,14 @@ void GameView::OnDraw()
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
-						if ((ctype&0xFF) == ELEM_MULTIPP && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= maxE189Type)
-							sampleInfo << E189Modes[ctype>>8];
+						if (TYP(ctype) == ELEM_MULTIPP && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= maxE189Type)
+							sampleInfo << E189Modes[part_ID(ctype)];
 						else
 						{
-							sampleInfo << c->ElementResolve(ctype&0xFF, ctype>>8);
-							if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && (ctype>>8) >= 0 && (ctype>>8) <= 11)
+							sampleInfo << c->ElementResolve(TYP(ctype), part_ID(ctype));
+							if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= 11)
 							{
-								sampleInfo << " (" << filtModes[ctype>>8] << ")";
+								sampleInfo << " (" << filtModes[part_ID(ctype)] << ")";
 							}
 						}
 						sampleInfo << ")";
@@ -2719,11 +2719,11 @@ void GameView::OnDraw()
 				}
 				else if (type == PT_PINVIS)
 				{
-					ctype = sample_particle->tmp4 & 0xFF;
+					ctype = TYP(sample_particle->tmp4);
 					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
-						// partnerID = sample_particle->tmp4 >> 8;
+						// partnerID = part_ID(sample_particle->tmp4);
 						tpt_hasPartner = true;
 						sample_particle = sample.cparticle;
 						goto showDebugBack;

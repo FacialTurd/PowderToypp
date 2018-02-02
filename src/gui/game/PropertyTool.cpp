@@ -309,14 +309,14 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 	switch (propType)
 	{
 		case StructProperty::Float:
-			*((float*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Float;
+			*((float*)(((char*)&sim->partsi(i))+propOffset)) = propValue.Float;
 			break;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
-			*((int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.Integer;
+			*((int*)(((char*)&sim->partsi(i))+propOffset)) = propValue.Integer;
 			break;
 		case StructProperty::UInteger:
-			*((unsigned int*)(((char*)&sim->parts[i>>8])+propOffset)) = propValue.UInteger;
+			*((unsigned int*)(((char*)&sim->partsi(i))+propOffset)) = propValue.UInteger;
 			break;
 		default:
 			break;

@@ -2079,7 +2079,7 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	// minimum version this save is compatible with
 	// when building, this number may be increased depending on what elements are used
 	// or what properties are detected
-	int minimumMajorVersion = 90, minimumMinorVersion = 2;
+	int minimumMajorVersion = 92, minimumMinorVersion = 0;
 
 	//Get coords in blocks
 	blockX = 0;//orig_x0/CELL;
@@ -2438,36 +2438,11 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				if (particles[i].type == PT_SOAP)
 					soapCount++;
 
-				if (particles[i].type == PT_RPEL && particles[i].ctype)
-				{
-					RESTRICTVERSION(91, 4);
-				}
-				else if (particles[i].type == PT_NWHL && particles[i].tmp)
-				{
-					RESTRICTVERSION(91, 5);
-				}
-				if (particles[i].type == PT_HEAC || particles[i].type == PT_SAWD || particles[i].type == PT_POLO
-					|| particles[i].type == PT_RFRG || particles[i].type == PT_RFGL || particles[i].type == PT_LSNS
-#ifdef MOD_ID_2
-					|| particles[i].type == PT_POLC || particles[i].type == PT_E186 || particles[i].type == PT_E187 || particles[i].type == ELEM_MULTIPP
-#endif
-				)
-				{
-					RESTRICTVERSION(92, 0);
-					fromNewerVersion = true;
-				}
-				else if ((particles[i].type == PT_FRAY || particles[i].type == PT_INVIS) && particles[i].tmp)
-				{
-					RESTRICTVERSION(92, 0);
-					fromNewerVersion = true;
-				}
-/*
-				else if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
+				if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
 				{
 					RESTRICTVERSION(93, 0);
 					fromNewerVersion = true; // TODO: remove on 93.0 release
 				}
-*/
 
 				//Get the pmap entry for the next particle in the same position
 				i = partsPosLink[i];
