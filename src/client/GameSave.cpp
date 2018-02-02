@@ -30,6 +30,7 @@ GameSave::GameSave(GameSave & save) :
 	edgeMode(save.edgeMode),
 	signs(save.signs),
 	palette(save.palette),
+	pmapbits(save.pmapbits),
 	expanded(save.expanded),
 	sim_max_pressure(save.sim_max_pressure),
 	hasOriginalData(save.hasOriginalData),
@@ -175,6 +176,7 @@ void GameSave::InitVars()
 	edgeMode = 0;
 	sim_max_pressure = 4.0f;
 	translated.x = translated.y = 0;
+	pmapbits = 8;
 }
 
 bool GameSave::Collapsed()
@@ -673,6 +675,7 @@ void GameSave::readOPS(char * data, int dataLength)
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
+		CheckBsonFieldInt(iter, "pmapbits", &pmapbits);
 		CheckBsonFieldInt(iter, "phot_ignite", &Element_PHOT::ignite_flammable);
 		if (!strcmp(bson_iterator_key(&iter), "signs"))
 		{
@@ -2553,12 +2556,10 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
 	bson_append_int(&b, "edgeMode", edgeMode);
+	bson_append_int(&b, "pmapbits", pmapbits);
 	bson_append_int(&b, "phot_ignite", Element_PHOT::ignite_flammable);
 	bson_append_int(&b, "sim_max_pressure", * (int*) &sim_max_pressure);
-	
-	//bson_append_int(&b, "leftSelectedElement", sl);
-	//bson_append_int(&b, "rightSelectedElement", sr);
-	//bson_append_int(&b, "activeMenu", active_menu);
+
 	if (partsData && partsDataLen)
 	{
 		bson_append_binary(&b, "parts", BSON_BIN_USER, (const char *)partsData.get(), partsDataLen);

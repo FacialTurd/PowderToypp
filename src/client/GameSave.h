@@ -82,6 +82,8 @@ public:
 	// author information
 	Json::Value authors;
 
+	int pmapbits;
+
 	GameSave();
 	GameSave(GameSave & save);
 	GameSave(int width, int height);

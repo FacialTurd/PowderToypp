@@ -199,15 +199,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			sim->kill_part(i);
 			return 1;
 		}
-		bool u2pu = false;
+		bool u2pu = false, isbray = (sctype == PT_BRAY);
 		r = pmap[y][x];
+		
 		if (parts[i].flags & FLAG_SKIPCREATE)
 		{
 			if (TYP(r) != ELEM_MULTIPP)
 				parts[i].flags &= ~FLAG_SKIPCREATE;
-			goto skip1a;
+			// goto skip1a;
 		}
-		else if (!(rand()%60))
+		else if (isbray || !(rand()%60))
 		{
 			int rt = TYP(r);
 			if (!sctype || sctype == PT_E186)
@@ -218,7 +219,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				s = -1, u2pu = true;
 			if(s >= 0)
 			{
-				parts[i].temp += 400.0f;
+				isbray || (parts[i].temp += 400.0f);
 				parts[s].temp = parts[i].temp;
 				sim->pv[y/CELL][x/CELL] += 1.5f;
 				switch (sctype)
@@ -309,6 +310,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[i].vx += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
 					parts[i].vy += 0.01f*(rand()/(0.5f*RAND_MAX)-1.0f);
 				}
+				break;
+			case PT_BRAY:
+				if (isbray)
+					partsi(r).life = 1020,
+					partsi(r).tmp = 1;
 				break;
 /*
 			case PT_STOR:
