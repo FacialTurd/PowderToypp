@@ -182,18 +182,18 @@ public:
 	{
 		// NB: all arguments are assumed to be within bounds
 		if (elements[t].Properties & TYPE_ENERGY)
-			photons[y][x] = t|(i<<8);
+			photons[y][x] = PMAP(i, t);
 		else if ((!pmap[y][x] || elements[t].Properties2 & PROP_INVISIBLE))
-			pmap[y][x] = t|(i<<8);
+			pmap[y][x] = PMAP(i, t);
 	}
 	inline void pmap_remove(unsigned int i, int x, int y)
 	{
 		// NB: all arguments are assumed to be within bounds
-		if ((pmap[y][x]>>8)==i)
+		if (part_ID(pmap[y][x])==i)
 			pmap[y][x] = 0;
-		else if ((pmap[y][x]&0xFF)==PT_PINVIS && (unsigned int)(parts[pmap[y][x]>>8].tmp4>>8)==i)
-			parts[pmap[y][x]>>8].tmp4 = 0;
-		else if ((photons[y][x]>>8)==i)
+		else if (part_ID(pmap[y][x])==PT_PINVIS && part_ID((unsigned int)(partsi(pmap[y][x]).tmp4))==i)
+			partsi(pmap[y][x]).tmp4 = 0;
+		else if (part_ID(photons[y][x])==i)
 			photons[y][x] = 0;
 	}
 	void restrict_can_move(/* bool oldstate, bool newstate */);
@@ -275,7 +275,7 @@ public:
 		return (x>=0 && y>=0 && x<XRES && y<YRES);
 	}
 
-	// these don't really belong anywhere at the moment, so go here for loop edge mode
+	// These don't really belong anywhere at the moment, so go here for loop edge mode
 	static int remainder_p(int x, int y)
 	{
 		return (x % y) + (x>=0 ? 0 : y);

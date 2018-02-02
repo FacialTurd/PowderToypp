@@ -3,6 +3,7 @@
 #include "Tool.h"
 #include "GameModel.h"
 #include "gui/interface/Colour.h"
+#define ID part_ID
 
 VideoBuffer * SampleTool::GetIcon(int toolID, int width, int height)
 {
@@ -35,13 +36,13 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 		int particleCtype = 0;
 		if (sim->photons[position.Y][position.X])
 		{
-			particleType = sim->parts[sim->photons[position.Y][position.X]>>8].type;
-			particleCtype = sim->parts[sim->pmap[position.Y][position.X]>>8].ctype;
+			particleType = sim->parts[ID(sim->photons[position.Y][position.X])].type;
+			particleCtype = sim->parts[ID(sim->pmap[position.Y][position.X])].ctype;
 		}
 		else if (sim->pmap[position.Y][position.X])
 		{
-			particleType = sim->parts[sim->pmap[position.Y][position.X]>>8].type;
-			particleCtype = sim->parts[sim->pmap[position.Y][position.X]>>8].ctype;
+			particleType = sim->parts[ID(sim->pmap[position.Y][position.X])].type;
+			particleCtype = sim->parts[ID(sim->pmap[position.Y][position.X])].ctype;
 		}
 
 		if(particleType)
@@ -57,7 +58,7 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 					if(elementTool)
 					{
 						int ToolID1 = elementTool->GetToolID();
-						if (ToolID1 / 256 == particleCtype && ToolID1 % 256 == PT_LIFE)
+						if (ID(ToolID1) == particleCtype && TYP(ToolID1) == PT_LIFE)
 							gameModel->SetActiveTool(0, elementTool);
 					}
 				}
@@ -66,11 +67,11 @@ void SampleTool::Draw(Simulation * sim, Brush * brush, ui::Point position)
 			{
 				if (particleType == ELEM_MULTIPP)
 				{
-					int particleLife = sim->parts[sim->pmap[position.Y][position.X]>>8].life;
+					int particleLife = sim->partsi(sim->pmap[position.Y][position.X]).life;
 					int menu_section_1 = SC_SPECIAL;
 					if (particleLife == 33 || particleLife == 37)
 					{
-						particleType |= particleLife<<8;
+						particleType |= PMAPID(particleLife);
 						menu_section_1 = (particleLife == 37 ? SC_LIFE : SC_ELEC);
 					}
 

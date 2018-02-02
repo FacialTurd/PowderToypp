@@ -236,7 +236,6 @@ void GameModel::BuildQuickOptionMenu(GameController * controller)
 	quickOptions.push_back(new NGravityOption(this));
 	quickOptions.push_back(new AHeatOption(this));
 	quickOptions.push_back(new ConsoleShowOption(this, controller));
-	// quickOptions.push_back(new LangtonsLoopsOption(this));
 
 	notifyQuickOptionsChanged();
 	UpdateQuickOptions();
@@ -319,14 +318,14 @@ void GameModel::BuildMenus()
 	//Build menu for GOL types
 	for(int i = 0; i < NGOL; i++)
 	{
-		Tool * tempTool = new ElementTool(PT_LIFE|(i<<8), sim->gmenu[i].name, std::string(sim->gmenu[i].description), PIXR(sim->gmenu[i].colour), PIXG(sim->gmenu[i].colour), PIXB(sim->gmenu[i].colour), "DEFAULT_PT_LIFE_"+std::string(sim->gmenu[i].name));
+		Tool * tempTool = new ElementTool(PT_LIFE|PMAPID(i), sim->gmenu[i].name, std::string(sim->gmenu[i].description), PIXR(sim->gmenu[i].colour), PIXG(sim->gmenu[i].colour), PIXB(sim->gmenu[i].colour), "DEFAULT_PT_LIFE_"+std::string(sim->gmenu[i].name));
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 	
 	{
-		Tool * tempTool = new ElementTool(ELEM_MULTIPP|(33<<8), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
+		Tool * tempTool = new ElementTool(PMAP(33, ELEM_MULTIPP), "WFI2", std::string("Another selection of WIFI channels"), 0x40, 0xA0, 0x60, "DEFAULT_PT_ELEC_WIFI2");
 		menuList[SC_ELEC]->AddTool(tempTool);
-		tempTool = new ElementTool(ELEM_MULTIPP|(37<<8), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
+		tempTool = new ElementTool(PMAP(37, ELEM_MULTIPP), "ANT", std::string("Langton's Ant"), 0xFF, 0x00, 0x55, "DEFAULT_PT_LIFE2_ANT");
 		menuList[SC_LIFE]->AddTool(tempTool);
 	}
 
@@ -983,24 +982,10 @@ void GameModel::SetDecoration(bool decorationState /*, bool no_tip */ )
 	}
 }
 
-#if 0
-void MULTIPPE_Update::SetDecoration(bool decorationState)
-{
-	GameModel::SetDecoration(bool decorationState, true);
-}
-#endif
-
 bool GameModel::GetDecoration()
 {
 	return ren->decorations_enable?true:false;
 }
-
-#if 0
-bool MULTIPPE_Update::GetDecoration()
-{
-	return GameModel::GetDecoration();
-}
-#endif
 
 void GameModel::SetLLCA(bool m)
 {

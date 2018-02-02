@@ -116,8 +116,11 @@
 
 #define OLD_PT_WIND 147
 
-//#define PT_NUM  161
-#define PT_NUM	256
+#define PT_NUM	(1<<PMAPBITS)
+
+#if PMAPBITS > 16
+#error PMAPBITS is too large
+#endif
 
 struct playerst;
 

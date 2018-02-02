@@ -584,7 +584,7 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 		delete quickOptionButtons[i];
 	}
 
-	int currentY = 1, iterid = 0;
+	int currentY = 1;
 	vector<QuickOption*> optionList = sender->GetQuickOptions();
 	for(vector<QuickOption*>::iterator iter = optionList.begin(), end = optionList.end(); iter != end; ++iter)
 	{
@@ -1405,8 +1405,6 @@ void GameView::BeginStampSelection()
 	buttonTip = "\x0F\xEF\xEF\020Click-and-drag to specify an area to create a stamp (right click = cancel)";
 	buttonTipShow = 120;
 }
-
-// char sdl_ignore_quit = 0;
 
 void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool alt)
 {
@@ -2399,7 +2397,7 @@ void GameView::OnDraw()
 			}
 		}
 	}
-	
+
 	if(recording)
 	{
 		std::stringstream sampleInfo;

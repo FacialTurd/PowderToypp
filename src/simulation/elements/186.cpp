@@ -221,7 +221,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			{
 				isbray || (parts[i].temp += 400.0f);
 				parts[s].temp = parts[i].temp;
-				sim->pv[y/CELL][x/CELL] += 1.5f;
+				isbray || (sim->pv[y/CELL][x/CELL] += 1.5f);
 				switch (sctype)
 				{
 				case PT_GRVT:

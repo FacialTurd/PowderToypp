@@ -1389,11 +1389,11 @@ void Renderer::render_parts()
 				continue;
 			
 			/*
-			if ((sim->pmap[ny][nx]&0xFF) == PT_PINVIS)
-				sim->parts[sim->pmap[ny][nx]>>8].tmp4 = t|(i<<8);
+			if (TYP(sim->pmap[ny][nx]) == PT_PINVIS)
+				sim->partsi(sim->pmap[ny][nx]).tmp4 = PMAP(i, t);
 			*/
 
-			if((sim->photons[ny][nx]&0xFF) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
+			if(TYP(sim->photons[ny][nx]) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
 				continue;
 
 			//Defaults
@@ -2155,7 +2155,7 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && (sim->pmap[ny+nyo][nx+nxo]&0xFF) != PT_PRTI)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTI)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}
@@ -2172,7 +2172,7 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && (sim->pmap[ny+nyo][nx+nxo]&0xFF) != PT_PRTO)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTO)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}

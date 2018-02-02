@@ -82,7 +82,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		for(std::vector<GameSave::PaletteItem>::iterator iter = save->palette.begin(), end = save->palette.end(); iter != end; ++iter)
 		{
 			GameSave::PaletteItem pi = *iter;
-			//This makes it only apply to lua elements (greater than the default number of elements), because if not it glitches for default elements when they change name
 			if (pi.second > 0 && pi.second < PT_NUM)
 			{
 				int myId = 0;
@@ -123,6 +122,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		if (!elements[tempPart.type].Enabled)
 			continue;
 
+		// These store type in ctype, but are special because they store extra information in the bits after type
 		if (tempPart.type == PT_CRAY || tempPart.type == PT_DRAY || tempPart.type == PT_CONV)
 		{
 			int ctype = tempPart.ctype & pmapmask;
@@ -450,7 +450,6 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 	gameSave->sextraLoopsCA = extraLoopsCA;
 	gameSave->sim_max_pressure = sim_max_pressure;
 	gameSave->isFromMyMod = isFromMyMod = true;
-	// gameSave->PINV_wireless = wireless2;
 }
 
 Snapshot * Simulation::CreateSnapshot()
@@ -553,9 +552,9 @@ bool Simulation::FloodFillPmapCheck(int x, int y, int type)
 	if (type == 0)
 		return !pmap[y][x] && !photons[y][x];
 	if (elements[type].Properties&TYPE_ENERGY)
-		return (photons[y][x]&0xFF) == type;
+		return TYP(photons[y][x]) == type;
 	else
-		return (pmap[y][x]&0xFF) == type;
+		return TYP(pmap[y][x]) == type;
 }
 
 int Simulation::flood_prop(int x, int y, size_t propoffset, PropertyValue propvalue, StructProperty::PropertyType proptype)
@@ -567,7 +566,7 @@ int Simulation::flood_prop(int x, int y, size_t propoffset, PropertyValue propva
 		r = photons[y][x];
 	if (!r)
 		return 0;
-	int parttype = (r&0xFF);
+	int parttype = TYP(r);
 	char * bitmap = (char*)malloc(XRES*YRES); //Bitmap for checking
 	if (!bitmap) return -1;
 	memset(bitmap, 0, XRES*YRES);
@@ -600,16 +599,16 @@ int Simulation::flood_prop(int x, int y, size_t propoffset, PropertyValue propva
 					continue;
 				switch (proptype) {
 					case StructProperty::Float:
-						*((float*)(((char*)&parts[i>>8])+propoffset)) = propvalue.Float;
+						*((float*)(((char*)&parts[ID(i)])+propoffset)) = propvalue.Float;
 						break;
 						
 					case StructProperty::ParticleType:
 					case StructProperty::Integer:
-						*((int*)(((char*)&parts[i>>8])+propoffset)) = propvalue.Integer;
+						*((int*)(((char*)&parts[ID(i)])+propoffset)) = propvalue.Integer;
 						break;
 						
 					case StructProperty::UInteger:
-						*((unsigned int*)(((char*)&parts[i>>8])+propoffset)) = propvalue.UInteger;
+						*((unsigned int*)(((char*)&parts[ID(i)])+propoffset)) = propvalue.UInteger;
 						break;
 						
 					default:
@@ -646,18 +645,22 @@ SimulationSample Simulation::GetSample(int x, int y)
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
 		sample.cparticle = NULL;
+		int i;
 		if (photons[y][x])
 		{
-			sample.particle = parts[photons[y][x]>>8];
-			sample.ParticleID = photons[y][x]>>8;
+			int i = ID(photons[y][x]);
+			sample.particle = parts[i];
+			sample.ParticleID = i;
 		}
 		else if (pmap[y][x])
 		{
-			sample.particle = parts[pmap[y][x]>>8];
-			sample.ParticleID = pmap[y][x]>>8;
-			if ((pmap[y][x] & 0xFF) == PT_PINVIS)
+			int r = pmap[y][x];
+			int i = ID(r);
+			sample.particle = parts[i];
+			sample.ParticleID = i;
+			if (TYP(r) == PT_PINVIS)
 			{
-				int ParticleID2 = sample.particle.tmp4>>8;
+				int ParticleID2 = ID(sample.particle.tmp4);
 				if (ParticleID2 >= 0 && ParticleID2 < NPART)
 					sample.cparticle = &(parts[ParticleID2]);
 			}
@@ -686,11 +689,11 @@ SimulationSample Simulation::GetSample(int x, int y)
 	return sample;
 }
 
-#define PMAP_CMP_CONDUCTIVE(pmap, t) (((pmap)&0xFF)==(t) || (((pmap)&0xFF)==PT_SPRK && parts[(pmap)>>8].ctype==(t)))
+#define PMAP_CMP_CONDUCTIVE(pmap, t) (TYP(pmap)==(t) || (TYP(pmap)==PT_SPRK && partsi(pmap).ctype==(t)))
 
 int Simulation::FloodINST(int x, int y, int fullc, int cm)
 {
-	int c = fullc&0xFF;
+	int c = TYP(fullc);
 	int x1, x2;
 	int coord_stack_limit = XRES*YRES;
 	unsigned short (*coord_stack)[2];
@@ -704,7 +707,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 	{
 		if (c==0)
 		{
-			cm = pmap[y][x]&0xFF;
+			cm = TYP(pmap[y][x]);
 			if (!cm)
 				return 0;
 		}
@@ -712,7 +715,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 			cm = 0;
 	}
 
-	if ((pmap[y][x]&0xFF)!=cm || parts[pmap[y][x]>>8].life!=0)
+	if (TYP(pmap[y][x]) != cm || partsi(pmap[y][x]).life != 0)
 		return 1;
 
 	coord_stack = (short unsigned int (*)[2])malloc(sizeof(unsigned short)*2*coord_stack_limit);
@@ -729,7 +732,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 		// go left as far as possible
 		while (x1>=CELL)
 		{
-			if ((pmap[y][x1-1]&0xFF)!=cm || parts[pmap[y][x1-1]>>8].life!=0)
+			if (TYP(pmap[y][x1-1]) != cm || partsi(pmap[y][x1-1]).life != 0)
 			{
 				break;
 			}
@@ -738,7 +741,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 		// go right as far as possible
 		while (x2<XRES-CELL)
 		{
-			if ((pmap[y][x2+1]&0xFF)!=cm || parts[pmap[y][x2+1]>>8].life!=0)
+			if (TYP(pmap[y][x2+1]) != cm || partsi(pmap[y][x2+1]).life != 0)
 			{
 				break;
 			}
@@ -747,7 +750,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 		// fill span
 		for (x=x1; x<=x2; x++)
 		{
-			if (create_part(-1, x, y, c, fullc>>8)>=0)
+			if (create_part(-1, x, y, c, ID(fullc))>=0)
 				created_something = 1;
 		}
 
@@ -758,7 +761,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 				!PMAP_CMP_CONDUCTIVE(pmap[y-2][x1-1], cm) && PMAP_CMP_CONDUCTIVE(pmap[y-2][x1], cm) && !PMAP_CMP_CONDUCTIVE(pmap[y-2][x1+1], cm))
 		{
 			// travelling vertically up, skipping a horizontal line
-			if ((pmap[y-2][x1]&0xFF)==cm && !parts[pmap[y-2][x1]>>8].life)
+			if (TYP(pmap[y-2][x1]) == cm && !partsi(pmap[y-2][x1]).life)
 			{
 				coord_stack[coord_stack_size][0] = x1;
 				coord_stack[coord_stack_size][1] = y-2;
@@ -774,7 +777,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 		{
 			for (x=x1; x<=x2; x++)
 			{
-				if ((pmap[y-1][x]&0xFF)==cm && !parts[pmap[y-1][x]>>8].life)
+				if (TYP(pmap[y-1][x]) == cm && !partsi(pmap[y-1][x]).life)
 				{
 					if (x==x1 || x==x2 || y>=YRES-CELL-1 || !PMAP_CMP_CONDUCTIVE(pmap[y+1][x], cm) || PMAP_CMP_CONDUCTIVE(pmap[y+1][x+1], cm) || PMAP_CMP_CONDUCTIVE(pmap[y+1][x-1], cm))
 					{
@@ -797,7 +800,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 				!PMAP_CMP_CONDUCTIVE(pmap[y+2][x1-1], cm) && PMAP_CMP_CONDUCTIVE(pmap[y+2][x1], cm) && !PMAP_CMP_CONDUCTIVE(pmap[y+2][x1+1], cm))
 		{
 			// travelling vertically down, skipping a horizontal line
-			if ((pmap[y+2][x1]&0xFF)==cm && !parts[pmap[y+2][x1]>>8].life)
+			if (TYP(pmap[y+2][x1]) == cm && !partsi(pmap[y+2][x1]).life)
 			{
 				coord_stack[coord_stack_size][0] = x1;
 				coord_stack[coord_stack_size][1] = y+2;
@@ -813,7 +816,7 @@ int Simulation::FloodINST(int x, int y, int fullc, int cm)
 		{
 			for (x=x1; x<=x2; x++)
 			{
-				if ((pmap[y+1][x]&0xFF)==cm && !parts[pmap[y+1][x]>>8].life)
+				if (TYP(pmap[y+1][x]) == cm && !partsi(pmap[y+1][x]).life)
 				{
 					if (x==x1 || x==x2 || y<0 || !PMAP_CMP_CONDUCTIVE(pmap[y-1][x], cm) || PMAP_CMP_CONDUCTIVE(pmap[y-1][x+1], cm) || PMAP_CMP_CONDUCTIVE(pmap[y-1][x-1], cm))
 					{
@@ -846,7 +849,7 @@ int Simulation::flood_water(int x, int y, int i, int originaly, int check)
 
 	while (x1>=CELL)
 	{
-		if ((elements[(pmap[y][x1-1]&0xFF)].Falldown)!=2)
+		if ((elements[TYP(pmap[y][x1-1])].Falldown) != 2)
 		{
 			break;
 		}
@@ -854,7 +857,7 @@ int Simulation::flood_water(int x, int y, int i, int originaly, int check)
 	}
 	while (x2<XRES-CELL)
 	{
-		if ((elements[(pmap[y][x2+1]&0xFF)].Falldown)!=2)
+		if ((elements[TYP(pmap[y][x2+1])].Falldown) != 2)
 		{
 			break;
 		}
@@ -865,9 +868,9 @@ int Simulation::flood_water(int x, int y, int i, int originaly, int check)
 	for (x=x1; x<=x2; x++)
 	{
 		if (check)
-			parts[pmap[y][x]>>8].flags &= ~FLAG_WATEREQUAL;//flag it as checked (different from the original particle's checked flag)
+			partsi(pmap[y][x]).flags &= ~FLAG_WATEREQUAL;//flag it as checked (different from the original particle's checked flag)
 		else
-			parts[pmap[y][x]>>8].flags |= FLAG_WATEREQUAL;
+			partsi(pmap[y][x]).flags |= FLAG_WATEREQUAL;
 		//check above, maybe around other sides too?
 		if ( ((y-1) > originaly) && !pmap[y-1][x] && eval_move(parts[i].type, x, y-1, NULL))
 		{
@@ -884,12 +887,12 @@ int Simulation::flood_water(int x, int y, int i, int originaly, int check)
 
 	if (y>=CELL+1)
 		for (x=x1; x<=x2; x++)
-			if ((elements[(pmap[y-1][x]&0xFF)].Falldown)==2 && (parts[pmap[y-1][x]>>8].flags & FLAG_WATEREQUAL) == check)
+			if ((elements[TYP(pmap[y-1][x])].Falldown)==2 && (partsi(pmap[y-1][x]).flags & FLAG_WATEREQUAL) == check)
 				if (!flood_water(x, y-1, i, originaly, check))
 					return 0;
 	if (y<YRES-CELL-1)
 		for (x=x1; x<=x2; x++)
-			if ((elements[(pmap[y+1][x]&0xFF)].Falldown)==2 && (parts[pmap[y+1][x]>>8].flags & FLAG_WATEREQUAL) == check)
+			if ((elements[TYP(pmap[y+1][x])].Falldown)==2 && (partsi(pmap[y+1][x]).flags & FLAG_WATEREQUAL) == check)
 				if (!flood_water(x, y+1, i, originaly, check))
 					return 0;
 	return 1;
@@ -940,10 +943,10 @@ void Simulation::ApplyDecoration(int x, int y, int colR_, int colG_, int colB_, 
 	if (!rp)
 		return;
 
-	ta = (parts[rp>>8].dcolour>>24)&0xFF;
-	tr = (parts[rp>>8].dcolour>>16)&0xFF;
-	tg = (parts[rp>>8].dcolour>>8)&0xFF;
-	tb = (parts[rp>>8].dcolour)&0xFF;
+	ta = (parts[ID(rp)].dcolour>>24)&0xFF;
+	tr = (parts[ID(rp)].dcolour>>16)&0xFF;
+	tg = (parts[ID(rp)].dcolour>>8)&0xFF;
+	tb = (parts[ID(rp)].dcolour)&0xFF;
 
 	ta /= 255.0f; tr /= 255.0f; tg /= 255.0f; tb /= 255.0f;
 	colR /= 255.0f; colG /= 255.0f; colB /= 255.0f; colA /= 255.0f;
@@ -996,9 +999,9 @@ void Simulation::ApplyDecoration(int x, int y, int colR_, int colG_, int colB_, 
 			for (rx=-2; rx<3; rx++)
 				for (ry=-2; ry<3; ry++)
 				{
-					if (abs(rx)+abs(ry) > 2 && (pmap[y+ry][x+rx]&0xFF) && parts[pmap[y+ry][x+rx]>>8].dcolour)
+					if (abs(rx)+abs(ry) > 2 && TYP(pmap[y+ry][x+rx]) && parts[ID(pmap[y+ry][x+rx])].dcolour)
 					{
-						Particle part = parts[pmap[y+ry][x+rx]>>8];
+						Particle part = parts[ID(pmap[y+ry][x+rx])];
 						num += 1.0f;
 						tas += ((float)((part.dcolour>>24)&0xFF));
 						trs += ((float)((part.dcolour>>16)&0xFF));
@@ -1012,7 +1015,7 @@ void Simulation::ApplyDecoration(int x, int y, int colR_, int colG_, int colB_, 
 			tr = (trs/num)/255.0f;
 			tg = (tgs/num)/255.0f;
 			tb = (tbs/num)/255.0f;
-			if (!parts[rp>>8].dcolour)
+			if (!parts[ID(rp)].dcolour)
 				ta -= 3/255.0f;
 		}
 	}
@@ -1041,7 +1044,7 @@ void Simulation::ApplyDecoration(int x, int y, int colR_, int colG_, int colB_, 
 		colB_ = 255;
 	else if(colB_ < 0)
 		colB_ = 0;
-	parts[rp>>8].dcolour = ((colA_<<24)|(colR_<<16)|(colG_<<8)|colB_);
+	parts[ID(rp)].dcolour = ((colA_<<24)|(colR_<<16)|(colG_<<8)|colB_);
 }
 
 void Simulation::ApplyDecorationPoint(int positionX, int positionY, int colR, int colG, int colB, int colA, int mode, Brush * cBrush)
@@ -1228,9 +1231,9 @@ int Simulation::Tool(int x, int y, int tool, float strength)
 		Particle * cpart = NULL;
 		int r;
 		if ((r = pmap[y][x]))
-			cpart = &(parts[r>>8]);
+			cpart = &(partsi(r));
 		else if ((r = photons[y][x]))
-			cpart = &(parts[r>>8]);
+			cpart = &(partsi(r));
 		return tools[tool]->Perform(this, cpart, x, y, strength);
 	}
 	return 0;
@@ -1539,7 +1542,7 @@ int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush,
 			int newlife = radiusX + radiusY;
 			if (newlife > 55)
 				newlife = 55;
-			c = c|newlife<<8;
+			c = PMAP(newlife, c);
 			lightningRecreate = currentTick+newlife/4;
 			return CreatePartFlags(positionX, positionY, c, flags);
 		}
@@ -1548,7 +1551,7 @@ int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush,
 			int newtmp = (radiusX*4+radiusY*4+7);
 			if (newtmp > 300)
 				newtmp = 300;
-			c = c|newtmp<<8;
+			c = PMAP(newtmp, c);
 		}
 		
 		for (int y = sizeY-1; y >=0; y--)
@@ -1580,7 +1583,7 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 		int newlife = rx + ry;
 		if (newlife > 55)
 			newlife = 55;
-		c = c|newlife<<8;
+		c = PMAP(newlife, c);
 		lightningRecreate = currentTick+newlife/4;
 		rx = ry = 0;
 	}
@@ -1589,7 +1592,7 @@ int Simulation::CreateParts(int x, int y, int rx, int ry, int c, int flags)
 		int newtmp = (rx*4+ry*4+7);
 		if (newtmp > 300)
 			newtmp = 300;
-		c = c|newtmp<<8;
+		c = PMAP(newtmp, c);
 	}
 
 	for (int j = -ry; j <= ry; j++)
@@ -1607,7 +1610,7 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	//specific delete
 	else if ((flags&SPECIFIC_DELETE) && !(flags&REPLACE_MODE))
 	{
-		if (!replaceModeSelected || (pmap[y][x]&0xFF) == replaceModeSelected || (photons[y][x]&0xFF) == replaceModeSelected)
+		if (!replaceModeSelected || TYP(pmap[y][x]) == replaceModeSelected || TYP(photons[y][x]) == replaceModeSelected)
 			delete_part(x, y);
 	}
 	//replace mode
@@ -1615,18 +1618,18 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	{
 		if (x<0 || y<0 || x>=XRES || y>=YRES)
 			return 0;
-		if (replaceModeSelected && (pmap[y][x]&0xFF) != replaceModeSelected && (photons[y][x]&0xFF) != replaceModeSelected)
+		if (replaceModeSelected && TYP(pmap[y][x]) != replaceModeSelected && TYP(photons[y][x]) != replaceModeSelected)
 			return 0;
 		if ((pmap[y][x]))
 		{
 			delete_part(x, y);
 			if (c!=0)
-				create_part(-2, x, y, c&0xFF, c>>8);
+				create_part(-2, x, y, TYP(c), ID(c));
 		}
 	}
 	//normal draw
 	else
-		if (create_part(-2, x, y, c&0xFF, c>>8) == -1)
+		if (create_part(-2, x, y, TYP(c), ID(c)) == -1)
 			return 1;
 	return 0;
 }
@@ -1690,8 +1693,8 @@ void Simulation::CreateLine(int x1, int y1, int x2, int y2, int c)
 	bool reverseXY = abs(y2-y1) > abs(x2-x1);
 	int x, y, dx, dy, sy;
 	float e, de;
-	int v = c>>8;
-	c = c&0xFF;
+	int v = ID(c);
+	c = TYP(c);
 	if (reverseXY)
 	{
 		y = x1;
@@ -1763,7 +1766,7 @@ void Simulation::CreateBox(int x1, int y1, int x2, int y2, int c, int flags)
 
 int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 {
-	int c = fullc&0xFF;
+	int c = TYP(fullc);
 	int x1, x2, dy = (c<PT_NUM)?1:CELL;
 	int coord_stack_limit = XRES*YRES;
 	unsigned short (*coord_stack)[2];
@@ -1779,10 +1782,10 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 			return 1;
 		if (c == 0)
 		{
-			cm = pmap[y][x]&0xFF;
+			cm = TYP(pmap[y][x]);
 			if (!cm)
 			{
-				cm = photons[y][x]&0xFF;
+				cm = TYP(photons[y][x]);
 				if (!cm)
 				{
 					if (bmap[y/CELL][x/CELL])
@@ -1839,13 +1842,13 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 				{
 					if (photons[y][x])
 					{
-						kill_part(photons[y][x]>>8);
+						kill_part(ID(photons[y][x]));
 						created_something = 1;
 					}
 				}
 				else if (pmap[y][x])
 				{
-					kill_part(pmap[y][x]>>8);
+					kill_part(ID(pmap[y][x]));
 					created_something = 1;
 				}
 			}
@@ -2052,7 +2055,7 @@ int Simulation::parts_avg(int ci, int ni,int t)
 	{
 		int pmr = pmap[((int)(parts[ci].y+0.5f) + (int)(parts[ni].y+0.5f))/2][((int)(parts[ci].x+0.5f) + (int)(parts[ni].x+0.5f))/2];
 		if (pmr)
-			return parts[pmr>>8].type;
+			return parts[ID(pmr)].type;
 		else
 			return PT_NONE;
 	}
@@ -2061,7 +2064,7 @@ int Simulation::parts_avg(int ci, int ni,int t)
 		int pmr2 = pmap[(int)((parts[ci].y + parts[ni].y)/2+0.5f)][(int)((parts[ci].x + parts[ni].x)/2+0.5f)];//seems to be more accurate.
 		if (pmr2)
 		{
-			if (parts[pmr2>>8].type==t)
+			if (parts[ID(pmr2)].type==t)
 				return t;
 		}
 		else
@@ -2389,33 +2392,33 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 
 	r = pmap[ny][nx];
 	if (r)
-		r = (r&~0xFF) | parts[r>>8].type;
+		r = (r&~PMAPMASK) | parts[ID(r)].type;
 	// modified code
-	if ((r&0xFF) == PT_PINVIS && parts[r>>8].tmp4)
-		r = parts[r>>8].tmp4;
+	if (TYP(r) == PT_PINVIS && partsi(r).tmp4)
+		r = partsi(r).tmp4;
 
 	if (rr)
 		*rr = r;
-	if (pt>=PT_NUM || (r&0xFF)>=PT_NUM)
+	if (pt>=PT_NUM || TYP(r)>=PT_NUM)
 		return 0;
-	result = can_move[pt][r&0xFF];
+	result = can_move[pt][TYP(r)];
 	if (result == 3)
 	{
-		switch (r&0xFF)
+		switch (TYP(r))
 		{
 		case PT_LCRY:
 			if (pt==PT_PHOT)
-				result = (parts[r>>8].life > 5)? 2 : 0;
+				result = (parts[ID(r)].life > 5)? 2 : 0;
 			break;
 		case PT_GPMP:
 			if (pt == PT_PHOT)
-				result = (parts[r>>8].life < 10) ? 2 : 0;
+				result = (parts[ID(r)].life < 10) ? 2 : 0;
 			break;
 		case PT_INVIS:
 			{
 				float pressureResistance = 0.0f;
-				if (parts[r>>8].tmp > 0)
-					pressureResistance = (float)parts[r>>8].tmp;
+				if (parts[ID(r)].tmp > 0)
+					pressureResistance = (float)parts[ID(r)].tmp;
 				else
 					pressureResistance = sim_max_pressure;
 
@@ -2426,35 +2429,35 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			}
 			break;
 		case PT_PINVIS:
-			if (parts[r>>8].life >= 10)
+			if (parts[ID(r)].life >= 10)
 				result = 2;
 			else
 				result = 0;
 			break;
 		case PT_PVOD:
-			if (parts[r>>8].life == 10)
+			if (parts[ID(r)].life == 10)
 			{
-				if (!parts[r>>8].ctype || (parts[r>>8].ctype==pt)!=(parts[r>>8].tmp&1))
+				if (!parts[ID(r)].ctype || (parts[ID(r)].ctype==pt)!=(parts[ID(r)].tmp&1))
 					result = 1;
 				else
 					result = 0;
 			}
 			else result = 0;
-			//	if (result == 0 && (r & 0xFF) == PT_E186)
+			//	if (result == 0 && TYP(r) == PT_E186)
 			//		result = 2
 			break;
 		case PT_VOID:
-			if (!parts[r>>8].ctype || (parts[r>>8].ctype==pt)!=(parts[r>>8].tmp&1))
+			if (!parts[ID(r)].ctype || (parts[ID(r)].ctype==pt)!=(parts[ID(r)].tmp&1))
 				result = 1;
 			else
 				result = 0;
-			//	if (result == 0 && (r & 0xFF) == PT_E186)
+			//	if (result == 0 && TYP(r) == PT_E186)
 			//		result = 2
 			break;
 		case PT_SWCH:
 			if (pt == PT_TRON)
 			{
-				if (parts[r>>8].life >= 10)
+				if (parts[ID(r)].life >= 10)
 					return 2;
 				else
 					return 0;
@@ -2462,7 +2465,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			break;
 		case ELEM_MULTIPP:
 			{
-				int rlife = parts[r>>8].life, tmp_flag = parts[r>>8].tmp;
+				int rlife = partsi(r).life, tmp_flag = partsi(r).tmp;
 				// 16 values per dword
 				static unsigned int E186_ilist[] = {
 					0x88222800U,	//  0 - 15
@@ -2472,7 +2475,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				switch (rlife)
 				{
 				case 16:
-					if (parts[r>>8].ctype == 5)
+					if (partsi(r).ctype == 5)
 					{
 						if ((tmp_flag & 1) && pt == PT_STKM)
 							return 2;
@@ -2504,7 +2507,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 							result = 2;
 						switch (tmp_flag >> 3)
 						{
-							case 2: if (parts[r>>8].temp >= 9273) return 1;
+							case 2: if (partsi(r).temp >= 9273) return 1;
 						}
 						return result;
 					}
@@ -2527,7 +2530,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 		case PT_SPRK:
 			if (pt == PT_DEST)
 			{
-				if (elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)
+				if (elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)
 					return 0;
 				else
 					return 4;
@@ -2563,34 +2566,35 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 
 	/* half-silvered mirror */
 	if (!e && parts[i].type==PT_PHOT &&
-	        (((r&0xFF)==PT_BMTL && rand()<RAND_MAX/2) ||
-	         (pmap[y][x]&0xFF)==PT_BMTL))
+	        ((TYP(r)==PT_BMTL && rand()<RAND_MAX/2) ||
+	         TYP(pmap[y][x])==PT_BMTL))
 		e = 2;
 
 	if (!e) //if no movement
 	{
-		if ((r&0xFF) == PT_WOOD)
+		int rt = TYP(r);
+		if (rt == PT_WOOD)
 		{
 			float vel = std::sqrt(std::pow(parts[i].vx, 2) + std::pow(parts[i].vy, 2));
 			if (vel > 5)
-				part_change_type(r>>8, nx, ny, PT_SAWD);
+				part_change_type(ID(r), nx, ny, PT_SAWD);
 		}
 		if (!(elements[parts[i].type].Properties & TYPE_ENERGY))
 			return 0;
 		if (!legacy_enable && parts[i].type==PT_PHOT && r)//PHOT heat conduction
 		{
-			if ((r & 0xFF) == PT_COAL || (r & 0xFF) == PT_BCOL)
-				parts[r>>8].temp = parts[i].temp;
+			if (rt == PT_COAL || rt == PT_BCOL)
+				parts[ID(r)].temp = parts[i].temp;
 
-			if ((r & 0xFF) < PT_NUM && elements[r&0xFF].HeatConduct && ((r&0xFF)!=PT_HSWC||parts[r>>8].life==10) && (r&0xFF)!=PT_FILT)
-				parts[i].temp = parts[r>>8].temp = restrict_flt((parts[r>>8].temp+parts[i].temp)/2, MIN_TEMP, MAX_TEMP);
+			if (rt < PT_NUM && elements[rt].HeatConduct && (rt!=PT_HSWC||parts[ID(r)].life==10) && rt!=PT_FILT)
+				parts[i].temp = parts[ID(r)].temp = restrict_flt((parts[ID(r)].temp+parts[i].temp)/2, MIN_TEMP, MAX_TEMP);
 		}
-		else if ((parts[i].type==PT_NEUT || parts[i].type==PT_ELEC) && ((r&0xFF)==PT_CLNE || (r&0xFF)==PT_PCLN || (r&0xFF)==PT_BCLN || (r&0xFF)==PT_PBCN))
+		else if ((parts[i].type==PT_NEUT || parts[i].type==PT_ELEC) && (rt==PT_CLNE || rt==PT_PCLN || rt==PT_BCLN || rt==PT_PBCN))
 		{
 			if (!parts[r>>8].ctype)
 				parts[r>>8].ctype = parts[i].type;
 		}
-		if ((r&0xFF)==PT_PRTI && (elements[parts[i].type].Properties & TYPE_ENERGY))
+		if (rt==PT_PRTI && (elements[parts[i].type].Properties & TYPE_ENERGY))
 		{
 			int nnx, count;
 			for (count=0; count<8; count++)
@@ -2599,13 +2603,13 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					break;
 			}
 			count = count%8;
-			parts[r>>8].tmp = (int)((parts[r>>8].temp-73.15f)/100+1);
-			if (parts[r>>8].tmp>=CHANNELS) parts[r>>8].tmp = CHANNELS-1;
-			else if (parts[r>>8].tmp<0) parts[r>>8].tmp = 0;
+			parts[ID(r)].tmp = (int)((parts[ID(r)].temp-73.15f)/100+1);
+			if (parts[ID(r)].tmp>=CHANNELS) parts[ID(r)].tmp = CHANNELS-1;
+			else if (parts[ID(r)].tmp<0) parts[ID(r)].tmp = 0;
 			for ( nnx=0; nnx<80; nnx++)
-				if (!portalp[parts[r>>8].tmp][count][nnx].type)
+				if (!portalp[parts[ID(r)].tmp][count][nnx].type)
 				{
-					portalp[parts[r>>8].tmp][count][nnx] = parts[i];
+					portalp[parts[ID(r)].tmp][count][nnx] = parts[i];
 					parts[i].type=PT_NONE;
 					break;
 				}
@@ -2619,21 +2623,21 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		{
 		case PT_PHOT:  // type = 31
 		{
-			switch (r&0xFF)
+			switch (TYP(r))
 			{
 			case PT_PINVIS:
 				// PINV + PHOT -> PINV + ?
 				// part_change_type(i, x, y, PT_???);
 				return 1;
 			case PT_GLOW:
-				if (!parts[r>>8].life && rand() < RAND_MAX/30)
+				if (!parts[ID(r)].life && rand() < RAND_MAX/30)
 				{
-					parts[r>>8].life = 120;
+					parts[ID(r)].life = 120;
 					create_gain_photon(i);
 				}
 				return 1;
 			case PT_FILT:
-				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
+				parts[i].ctype = Element_FILT::interactWavelengths(&parts[ID(r)], parts[i].ctype);
 				return 1;
 			case ELEM_MULTIPP:
 				switch (parts[r>>8].life)
@@ -2647,10 +2651,10 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				}
 				return 1;
 			case PT_C5:
-				if (parts[r>>8].life > 0 && (parts[r>>8].ctype & parts[i].ctype & 0xFFFFFFC0))
+				if (parts[ID(r)].life > 0 && (parts[ID(r)].ctype & parts[i].ctype & 0xFFFFFFC0))
 				{
-					float vx = ((parts[r>>8].tmp << 16) >> 16) / 255.0f;
-					float vy = (parts[r>>8].tmp >> 16) / 255.0f;
+					float vx = ((parts[ID(r)].tmp << 16) >> 16) / 255.0f;
+					float vy = (parts[ID(r)].tmp >> 16) / 255.0f;
 					float vn = parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy;
 					// if the resulting velocity would be 0, that would cause division by 0 inside the else
 					// shoot the photon off at a 90 degree angle instead (probably particle order dependent)
@@ -2661,7 +2665,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					}
 					else
 					{
-						parts[i].ctype = (parts[r>>8].ctype & parts[i].ctype) >> 6;
+						parts[i].ctype = (parts[ID(r)].ctype & parts[i].ctype) >> 6;
 						// add momentum of photons to each other
 						parts[i].vx += vx;
 						parts[i].vy += vy;
@@ -2671,15 +2675,15 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 						parts[i].vx *= vn;
 						parts[i].vy *= vn;
 					}
-					parts[r>>8].life = 0;
-					parts[r>>8].ctype = 0;
+					parts[ID(r)].life = 0;
+					parts[ID(r)].ctype = 0;
 				}
-				else if(!parts[r>>8].ctype && parts[i].ctype & 0xFFFFFFC0)
+				else if(!parts[ID(r)].ctype && parts[i].ctype & 0xFFFFFFC0)
 				{
-					parts[r>>8].life = 1;
-					parts[r>>8].ctype = parts[i].ctype;
-					parts[r>>8].tmp = (0xFFFF & (int)(parts[i].vx * 255.0f)) | (0xFFFF0000 & (int)(parts[i].vy * 16711680.0f));
-					parts[r>>8].tmp2 = (0xFFFF & (int)((parts[i].x - x) * 255.0f)) | (0xFFFF0000 & (int)((parts[i].y - y) * 16711680.0f));
+					parts[ID(r)].life = 1;
+					parts[ID(r)].ctype = parts[i].ctype;
+					parts[ID(r)].tmp = (0xFFFF & (int)(parts[i].vx * 255.0f)) | (0xFFFF0000 & (int)(parts[i].vy * 16711680.0f));
+					parts[ID(r)].tmp2 = (0xFFFF & (int)((parts[i].x - x) * 255.0f)) | (0xFFFF0000 & (int)((parts[i].y - y) * 16711680.0f));
 					kill_part(i);
 				}
 				return 1;
@@ -2688,8 +2692,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					return 1;
 				{
 					float pressureResistance = 0.0f;
-					if (parts[r>>8].tmp > 0)
-						pressureResistance = (float)parts[r>>8].tmp;
+					if (parts[ID(r)].tmp > 0)
+						pressureResistance = (float)parts[ID(r)].tmp;
 					else
 						pressureResistance = sim_max_pressure;
 					if (pv[ny/CELL][nx/CELL] >= -pressureResistance && pv[ny/CELL][nx/CELL] <= pressureResistance)
@@ -2712,48 +2716,48 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 					parts[i].ctype = 0;
 					parts[i].tmp2 = 0x1;
 
-					create_part(r>>8, x, y, PT_ELEC);
+					create_part(ID(r), x, y, PT_ELEC);
 					return 1;
 				}
 				break;
 			case PT_GPMP:
-				if (parts[r>>8].life == 0 && !(SimExtraFunc & 0x8))
+				if (parts[ID(r)].life == 0 && !(SimExtraFunc & 0x8))
 				{
 					part_change_type(i, x, y, PT_GRVT);
-					parts[i].tmp = parts[r>>8].temp - 273.15f;
+					parts[i].tmp = parts[ID(r)].temp - 273.15f;
 				}
 				break;
 			}
 			break;
 		}
 		case PT_NEUT:  // type = 18
-			if ((r&0xFF) == PT_GLAS || (r&0xFF) == PT_BGLA)
+			if (TYP(r) == PT_GLAS || TYP(r) == PT_BGLA)
 			{
 				if (rand() < RAND_MAX/10)
 					create_cherenkov_photon(i);
 			}
-			else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 5)
+			else if (TYP(r) == ELEM_MULTIPP && partsi(r).life == 5)
 			{
-				if (parts[r>>8].tmp > 0 && parts[r>>8].tmp <= 4)
-					Element_MULTIPP::interactDir(this, i, x, y, -1, &parts[i], &parts[r>>8]);
+				if (partsi(r).tmp > 0 && partsi(r).tmp <= 4)
+					Element_MULTIPP::interactDir(this, i, x, y, -1, &parts[i], &partsi(r));
 			}
 			break;
 		case PT_ELEC:  // type = 136
-			if ((r&0xFF) == PT_GLOW)
+			if (TYP(r) == PT_GLOW)
 			{
 				part_change_type(i, x, y, PT_PHOT);
 				parts[i].ctype = 0x3FFFFFFF;
 			}
 			break;
 		case PT_PROT:  // type = 173
-			if ((r&0xFF) == PT_INVIS)
+			if (TYP(r) == PT_INVIS)
 				part_change_type(i, x, y, PT_NEUT);
 			break;
 		case PT_BIZR:  // type = 103
 		case PT_BIZRG: // type = 104
-			if ((r&0xFF) == PT_FILT)
+			if (TYP(r) == PT_FILT)
 			{
-				parts[i].ctype = Element_FILT::interactWavelengths(&parts[r>>8], parts[i].ctype);
+				parts[i].ctype = Element_FILT::interactWavelengths(&parts[ID(r)], parts[i].ctype);
 			/*
 				pmap[y][x] = parts[i].cdcolour;
 				parts[i].cdcolour = r;
@@ -2765,7 +2769,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	}
 	// else e=1 , we are trying to swap the particles, return 0 no swap/move, 1 is still overlap/move, because the swap takes place later
 
-	switch (r&0xFF)
+	switch (TYP(r))
 	{
 	case PT_VOID:
 	case PT_PVOD:
@@ -2778,17 +2782,18 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		// this is where blackhole eats particles
 		if (!legacy_enable)
 		{
-			parts[r>>8].temp = restrict_flt(parts[r>>8].temp+parts[i].temp/2, MIN_TEMP, MAX_TEMP);//3.0f;
+			parts[ID(r)].temp = restrict_flt(parts[ID(r)].temp+parts[i].temp/2, MIN_TEMP, MAX_TEMP);//3.0f;
 		}
 		kill_part(i);
 		return 0;
 	case PT_WHOL:
 	case PT_NWHL:
+		// whitehole eats anar
 		if (parts[i].type == PT_ANAR)
 		{
 			if (!legacy_enable)
 			{
-				parts[r>>8].temp = restrict_flt(parts[r>>8].temp - (MAX_TEMP-parts[i].temp)/2, MIN_TEMP, MAX_TEMP);
+				parts[ID(r)].temp = restrict_flt(parts[ID(r)].temp - (MAX_TEMP-parts[i].temp)/2, MIN_TEMP, MAX_TEMP);
 			}
 			kill_part(i);
 			return 0;
@@ -2797,9 +2802,9 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	case PT_DEUT:
 		if (parts[i].type == PT_ELEC)
 		{
-			if(parts[r>>8].life < 6000)
-				parts[r>>8].life += 1;
-			parts[r>>8].temp = 0;
+			if(parts[ID(r)].life < 6000)
+				parts[ID(r)].life += 1;
+			parts[ID(r)].temp = 0;
 			kill_part(i);
 			return 0;
 		}
@@ -2808,7 +2813,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	case PT_BVBR:
 		if ((elements[parts[i].type].Properties2 & PROP_ENERGY_PART))
 		{
-			parts[r>>8].tmp += 20;
+			parts[ID(r)].tmp += 20;
 			kill_part(i);
 			return 0;
 		}
@@ -2823,14 +2828,14 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	case ELEM_MULTIPP:
 		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
 		{
-			if (parts[r>>8].life == 17)
+			if (partsi(r).life == 17)
 			{
 				kill_part(i);
 				return 0;
 			}
 			return 1;
 		}
-		else if (parts[r>>8].life == 8)
+		else if (partsi(r).life == 8)
 		{
 			int elec_temp = (int)(parts[i].temp + 0.5f);
 			int *vibr_tmp = & parts[r>>8].tmp;
@@ -2849,7 +2854,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				return 1;
 			}
 		}
-		else if (parts[r>>8].life == 22 && parts[i].type == PT_NEUT)
+		else if (partsi(r).life == 22 && parts[i].type == PT_NEUT)
 		{
 			kill_part(i);
 			return 0;
@@ -2860,26 +2865,26 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	switch (parts[i].type)
 	{
 	case PT_NEUT:
-		if (elements[r & 0xFF].Properties & PROP_NEUTABSORB)
+		if (elements[TYP(r)].Properties & PROP_NEUTABSORB)
 		{
 			kill_part(i);
 			return 0;
 		}
 		break;
 	case PT_CNCT:
-		if (y<ny)
+		if (y < ny)
 		{
 			rr = pmap[y+1][x];
 			/*
-			if ((rr&0xFF) == PT_PINVIS)
-				rr = parts[rr>>8].tmp4;
+			if (TYP(rr) == PT_PINVIS)
+				rr = partsi(rr).tmp4;
 			*/
-			if ((rr&0xFF) == PT_CNCT) // check below CNCT for another CNCT
+			if (TYP(rr) == PT_CNCT) // check below CNCT for another CNCT
 				return 0;
 		}
 		break;
 	case PT_GBMB:
-		if (parts[i].life>0)
+		if (parts[i].life > 0)
 			return 0;
 		break;
 	}
@@ -2887,36 +2892,36 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 	if ((bmap[y/CELL][x/CELL]==WL_EHOLE && !emap[y/CELL][x/CELL]) && !(bmap[ny/CELL][nx/CELL]==WL_EHOLE && !emap[ny/CELL][nx/CELL]))
 		return 0;
 
-	int ri = r >> 8; //ri is the particle number at r (pmap[ny][nx])
+	int ri = ID(r); //ri is the particle number at r (pmap[ny][nx])
 	if (r)//the swap part, if we make it this far, swap
 	{
 		if (parts[i].type==PT_NEUT) {
 			// target material is NEUTPENETRATE, meaning it gets moved around when neutron passes
 			unsigned s = pmap[y][x];
-			if (s && !(elements[s&0xFF].Properties&PROP_NEUTPENETRATE))
+			if (s && !(elements[TYP(s)].Properties&PROP_NEUTPENETRATE))
 				return 1; // if the element currently underneath neutron isn't NEUTPENETRATE, don't move anything except the neutron
 			// if nothing is currently underneath neutron, only move target particle
 			if(bmap[y/CELL][x/CELL] == WL_ALLOWENERGY)
 				return 1; // do not drag target particle into an energy only wall
 			if (s)
 			{
-				pmap[ny][nx] = (s&~(0xFF))|parts[s>>8].type;
-				parts[s>>8].x = nx;
-				parts[s>>8].y = ny;
+				pmap[ny][nx] = (s&~PMAPMASK)|parts[ID(s)].type;
+				parts[ID(s)].x = nx;
+				parts[ID(s)].y = ny;
 			}
 			else
 				pmap[ny][nx] = 0;
 			parts[ri].x = x;
 			parts[ri].y = y;
-			pmap[y][x] = (ri<<8)|parts[ri].type;
+			pmap[y][x] = PMAP(ri, parts[ri].type);
 			return 1;
 		}
 
-		if ((pmap[ny][nx]>>8) == ri)
+		if (ID(pmap[ny][nx]) == ri)
 			pmap[ny][nx] = 0;
 		parts[ri].x += x-nx;
 		parts[ri].y += y-ny;
-		pmap[(int)(parts[ri].y+0.5f)][(int)(parts[ri].x+0.5f)] = (ri<<8)|parts[ri].type;
+		pmap[(int)(parts[ri].y+0.5f)][(int)(parts[ri].x+0.5f)] = PMAP(ri, parts[ri].type);
 	}
 	return 1;
 }
@@ -2961,11 +2966,11 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 				return -1;
 			}
 			if (elements[t].Properties & TYPE_ENERGY)
-				photons[ny][nx] = t|(i<<8);
-			else if (t && (pmap[ny][nx]&0xFF) == PT_PINVIS)
-				parts[pmap[ny][nx]>>8].tmp4 = t|(i<<8);
+				photons[ny][nx] = PMAP(i, t);
+			else if (t && TYP(pmap[ny][nx]) == PT_PINVIS)
+				partsi(pmap[ny][nx]).tmp4 = PMAP(i, t);
 			else if (t)
-				pmap[ny][nx] = t|(i<<8);
+				pmap[ny][nx] = PMAP(i, t);
 		}
 	}
 	return result;
@@ -2974,7 +2979,7 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 int Simulation::pn_junction_sprk(int x, int y, int pt)
 {
 	int r = pmap[y][x];
-	if ((r & 0xFF) != pt)
+	if (TYP(r) != pt)
 		return 0;
 	r >>= 8;
 	if (parts[r].type != pt)
@@ -2992,11 +2997,11 @@ void Simulation::photoelectric_effect(int nx, int ny)//create sparks from PHOT w
 {
 	unsigned r = pmap[ny][nx];
 
-	if ((r&0xFF) == PT_PSCN) {
-		if ((pmap[ny][nx-1] & 0xFF) == PT_NSCN ||
-		        (pmap[ny][nx+1] & 0xFF) == PT_NSCN ||
-		        (pmap[ny-1][nx] & 0xFF) == PT_NSCN ||
-		        (pmap[ny+1][nx] & 0xFF) == PT_NSCN)
+	if (TYP(r) == PT_PSCN) {
+		if (TYP(pmap[ny][nx-1]) == PT_NSCN ||
+		        TYP(pmap[ny][nx+1]) == PT_NSCN ||
+		        TYP(pmap[ny-1][nx]) == PT_NSCN ||
+		        TYP(pmap[ny+1][nx]) == PT_NSCN)
 			pn_junction_sprk(nx, ny, PT_PSCN);
 	}
 }
@@ -3035,7 +3040,7 @@ int Simulation::is_blocking(int t, int x, int y)
 	if (t & REFRACT) {
 		if (x<0 || y<0 || x>=XRES || y>=YRES)
 			return 0;
-		if ((pmap[y][x] & 0xFF) == PT_GLAS || (pmap[y][x] & 0xFF) == PT_BGLA)
+		if (TYP(pmap[y][x]) == PT_GLAS || TYP(pmap[y][x]) == PT_BGLA)
 			return 1;
 		return 0;
 	}
@@ -3324,7 +3329,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 }
 
 //the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, or a particle number to replace a particle.
-//tv = Type (8 bits) + Var (24 bits), var is usually 0
+//tv = Type (PMAPBITS bits) + Var (32-PMAPBITS bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
 	int i, retcode, E189ID, drawOn;
@@ -3355,8 +3360,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	else if (t==PT_SPRK)
 	{
-		int type = pmap[y][x]&0xFF;
-		int index = pmap[y][x]>>8;
+		int type = TYP(pmap[y][x]);
+		int index = ID(pmap[y][x]);
 		if(type == PT_WIRE)
 		{
 			parts[index].ctype = PT_DUST;
@@ -3398,7 +3403,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[index].type = PT_SPRK;
 		parts[index].life = 4;
 		parts[index].ctype = type;
-		pmap[y][x] = (pmap[y][x]&~0xFF) | PT_SPRK;
+		pmap[y][x] = (pmap[y][x]&~PMAPMASK) | PT_SPRK;
 		if (parts[index].temp+10.0f < 673.0f && !legacy_enable && (elements[type].Properties2 & PROP_ELEC_HEATING))
 			parts[index].temp = parts[index].temp+10.0f;
 		return index;
@@ -3416,7 +3421,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		// If there's no particle and no wall, assume creation is allowed
 		if (pmap[y][x] ? (eval_move(t, x, y, NULL)!=2) : (bmap[y/CELL][x/CELL] && eval_move(t, x, y, NULL)==0))
 		{
-			if ((pmap[y][x]&0xFF)!=PT_SPAWN&&(pmap[y][x]&0xFF)!=PT_SPAWN2)
+			if (TYP(pmap[y][x]) != PT_SPAWN && TYP(pmap[y][x]) != PT_SPAWN2)
 			{
 				if (t!=PT_STKM&&t!=PT_STKM2&&t!=PT_FIGH)
 				{
@@ -3433,10 +3438,10 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		if (pmap[y][x])
 		{
-			/* int */ drawOn = pmap[y][x]&0xFF;
+			/* int */ drawOn = TYP(pmap[y][x]);
 			if (drawOn == ELEM_MULTIPP)
 			{
-				E189ID = pmap[y][x]>>8;
+				E189ID = ID(pmap[y][x]);
 				if (parts[E189ID].life == 26 && !parts[E189ID].tmp)
 				{
 					Element_MULTIPP::FloodButton(this, E189ID, x, y);
@@ -3448,7 +3453,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 				drawOnE189Ctype:
 					parts[E189ID].ctype = t;
 					if ((t == PT_LIFE && v >= 0 && v < NGOL) || t == ELEM_MULTIPP)
-						parts[E189ID].ctype |= v << 8;
+						parts[E189ID].ctype |= PMAPID(v);
 					return retcode;
 				}
 				else if (parts[E189ID].life == 10 && t == PT_BIZR)
@@ -3458,6 +3463,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 				}
 			}
 			// If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
+			int drawOn = TYP(pmap[y][x]);
 			if (drawOn == t)
 				return -1;
 			if (((elements[drawOn].Properties & PROP_DRAWONCTYPE) ||
@@ -3466,34 +3472,34 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 				 (drawOn == PT_PBCN && t != PT_PSCN && t != PT_NSCN))
 				&& (!(elements[t].Properties & PROP_NOCTYPEDRAW)))
 			{
-				parts[pmap[y][x]>>8].ctype = t;
+				parts[ID(pmap[y][x])].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL)
 				{
 					if (drawOn == PT_CONV)
-						parts[pmap[y][x]>>8].ctype |= v<<8;
+						parts[ID(pmap[y][x])].ctype |= PMAPID(v);
 					else if (drawOn != PT_STOR)
-						parts[pmap[y][x]>>8].tmp = v;
+						parts[ID(pmap[y][x])].tmp = v;
 				}
 			}
 			else if (drawOn == PT_DTEC || (drawOn == PT_PSTN && t != PT_FRME) || drawOn == PT_DRAY)
 			{
-				parts[pmap[y][x]>>8].ctype = t;
+				parts[ID(pmap[y][x])].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL)
 				{
 					if (drawOn == PT_DTEC)
-						parts[pmap[y][x]>>8].tmp = v;
+						parts[ID(pmap[y][x])].tmp = v;
 					else if (drawOn == PT_DRAY)
-						parts[pmap[y][x]>>8].ctype |= v<<8;
+						parts[ID(pmap[y][x])].ctype |= PMAPID(v);
 				}
 			}
 			else if (drawOn == PT_CRAY)
 			{
-				parts[pmap[y][x]>>8].ctype = t;
+				parts[ID(pmap[y][x])].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL || t == ELEM_MULTIPP)
-					parts[pmap[y][x]>>8].ctype |= v<<8;
+					parts[ID(pmap[y][x])].ctype |= PMAPID(v);
 				if (t == PT_LIGH)
-					parts[pmap[y][x]>>8].ctype |= 30<<8;
-				parts[pmap[y][x]>>8].temp = elements[t].Temperature;
+					parts[ID(pmap[y][x])].ctype |= PMAPID(30);
+				parts[ID(pmap[y][x])].temp = elements[t].Temperature;
 			}
 			return -1;
 		}
@@ -3766,8 +3772,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].ctype = 0x3FFFFFFF;
 		parts[i].vx = 3.0f*cosf(a);
 		parts[i].vy = 3.0f*sinf(a);
-		if ((pmap[y][x]&0xFF) == PT_FILT)
-			parts[i].ctype = Element_FILT::interactWavelengths(&parts[pmap[y][x]>>8], parts[i].ctype);
+		if (TYP(pmap[y][x]) == PT_FILT)
+			parts[i].ctype = Element_FILT::interactWavelengths(&parts[ID(pmap[y][x])], parts[i].ctype);
 		break;
 	}
 	case PT_ELEC:
@@ -3861,9 +3867,9 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	//and finally set the pmap/photon maps to the newly created particle
 	if (elements[t].Properties & TYPE_ENERGY)
-		photons[y][x] = t|(i<<8);
+		photons[y][x] = PMAP(i, t);
 	else if (t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
-		pmap[y][x] = t|(i<<8);
+		pmap[y][x] = PMAP(i, t);
 
 	//Fancy dust effects for powder types
 	if((elements[t].Properties & TYPE_PART) && pretty_powder)
@@ -3928,7 +3934,7 @@ void Simulation::create_gain_photon(int pp)//photons from PHOT going through GLO
 	if (nx<0 || ny<0 || nx>=XRES || ny>=YRES)
 		return;
 
-	if ((pmap[ny][nx] & 0xFF) != PT_GLOW)
+	if (TYP(pmap[ny][nx]) != PT_GLOW)
 		return;
 
 	pfree = parts[i].life;
@@ -3940,10 +3946,10 @@ void Simulation::create_gain_photon(int pp)//photons from PHOT going through GLO
 	parts[i].y = yy;
 	parts[i].vx = parts[pp].vx;
 	parts[i].vy = parts[pp].vy;
-	parts[i].temp = parts[pmap[ny][nx] >> 8].temp;
+	parts[i].temp = parts[ID(pmap[ny][nx])].temp;
 	parts[i].tmp = 0;
 	parts[i].pavg[0] = parts[i].pavg[1] = 0.0f;
-	photons[ny][nx] = PT_PHOT|(i<<8);
+	photons[ny][nx] = PMAP(i, PT_PHOT);
 
 	temp_bin = (int)((parts[i].temp-273.0f)*0.25f);
 	if (temp_bin < 0) temp_bin = 0;
@@ -3962,7 +3968,7 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 
 	nx = (int)(parts[pp].x + 0.5f);
 	ny = (int)(parts[pp].y + 0.5f);
-	if ((pmap[ny][nx] & 0xFF) != PT_GLAS && (pmap[ny][nx] & 0xFF) != PT_BGLA)
+	if (TYP(pmap[ny][nx]) != PT_GLAS && TYP(pmap[ny][nx]) != PT_BGLA)
 		return;
 
 	if (hypotf(parts[pp].vx, parts[pp].vy) < 1.44f)
@@ -3978,10 +3984,10 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 	parts[i].life = 680;
 	parts[i].x = parts[pp].x;
 	parts[i].y = parts[pp].y;
-	parts[i].temp = parts[pmap[ny][nx] >> 8].temp;
+	parts[i].temp = parts[ID(pmap[ny][nx])].temp;
 	parts[i].tmp = 0;
 	parts[i].pavg[0] = parts[i].pavg[1] = 0.0f;
-	photons[ny][nx] = PT_PHOT|(i<<8);
+	photons[ny][nx] = PMAP(i, PT_PHOT);
 
 	if (lr) {
 		parts[i].vx = parts[pp].vx - 2.5f*parts[pp].vy;
@@ -4011,7 +4017,7 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 
 	if (!i)
 		return;
-	kill_part(i>>8);
+	kill_part(ID(i));
 }
 
 void Simulation::UpdateParticles(int start, int end)
@@ -4158,9 +4164,9 @@ void Simulation::UpdateParticles(int start, int end)
 					if (nx||ny) {
 						surround[j] = r = pmap[y+ny][x+nx];
 						j++;
-						if (!(r&0xFF))
+						if (!TYP(r))
 							surround_space++;//there is empty space
-						if ((r&0xFF)!=t)
+						if (TYP(r)!=t)
 							nt++;//there is nothing or a different particle
 					}
 				}
@@ -4179,11 +4185,11 @@ void Simulation::UpdateParticles(int start, int end)
 			{
 				if (y-2 >= 0 && y-2 < YRES && (elements[t].Properties&TYPE_LIQUID) && (t!=PT_GEL || gel_scale>(1+rand()%255))) {//some heat convection for liquids
 					r = pmap[y-2][x];
-					if (!(!r || parts[i].type != (r&0xFF))) {
-						if (parts[i].temp>parts[r>>8].temp) {
+					if (!(!r || parts[i].type != TYP(r))) {
+						if (parts[i].temp>parts[ID(r)].temp) {
 							swappage = parts[i].temp;
-							parts[i].temp = parts[r>>8].temp;
-							parts[r>>8].temp = swappage;
+							parts[i].temp = parts[ID(r)].temp;
+							parts[ID(r)].temp = swappage;
 						}
 					}
 				}
@@ -4224,23 +4230,23 @@ void Simulation::UpdateParticles(int start, int end)
 						r = surround[j];
 						if (!r)
 							continue;
-						rt = r&0xFF;
-						if (rt&&elements[rt].HeatConduct&&(rt!=PT_HSWC||parts[r>>8].life==10)
+						rt = TYP(r);
+						if (rt&&elements[rt].HeatConduct&&(rt!=PT_HSWC||parts[ID(r)].life==10)
 						        &&(t!=PT_FILT||(rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
 						        &&(rt!=PT_FILT||(t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_BIZR&&t!=PT_BIZRG))
 						        &&(t!=PT_ELEC||rt!=PT_DEUT)
 						        &&(t!=PT_DEUT||rt!=PT_ELEC))
 						{
-							surround_hconduct[j] = r>>8;
+							surround_hconduct[j] = ID(r);
 #ifdef REALISTIC
 							if (rt==PT_GEL)
-								gel_scale = parts[r>>8].tmp*2.55f;
+								gel_scale = parts[ID(r)].tmp*2.55f;
 							else gel_scale = 1.0f;
 
-							c_heat += parts[r>>8].temp*96.645/elements[rt].HeatConduct*gel_scale*fabs(elements[rt].Weight);
+							c_heat += parts[ID(r)].temp*96.645/elements[rt].HeatConduct*gel_scale*fabs(elements[rt].Weight);
 							c_Cm += 96.645/elements[rt].HeatConduct*gel_scale*fabs(elements[rt].Weight);
 #else
-							c_heat += parts[r>>8].temp;
+							c_heat += parts[ID(r)].temp;
 #endif
 							h_count++;
 						}
@@ -4486,7 +4492,7 @@ void Simulation::UpdateParticles(int start, int end)
 						if (t==PT_ICEI || t==PT_LAVA || t==PT_SNOW)
 							parts[i].ctype = parts[i].type;
 						if (!(t==PT_ICEI && parts[i].ctype==PT_FRZW ||
-							(t==PT_VIRS || t==PT_VRSS || t==PT_VRSG) && parts[i].tmp4==ELEM_MULTIPP // don't clear VIRS-infected E189's life
+							(t == PT_VIRS || t == PT_VRSS || t == PT_VRSG) && parts[i].tmp4 == ELEM_MULTIPP // don't clear VIRS-infected E189's life
 						))
 							parts[i].life = 0;
 						if (t == PT_FIRE)
@@ -4779,7 +4785,7 @@ killed:
 					//also photons are still blocked (slowed down) by any particle (even ones it can move through), and absorb wall also blocks particles
 					int eval = eval_move(t, fin_x, fin_y, NULL);
 					int pmap_fin0 = pmap[fin_y][fin_x];
-					if (!eval || (can_move[t][pmap_fin0&0xFF] == 3 && eval == 1) || (/* pmap_fin0 && */ !((tempFlag0 | elements[pmap_fin0&0xFF].Properties) & PROP_NOSLOWDOWN)) || bmap[fin_y/CELL][fin_x/CELL]==WL_DESTROYALL || closedEholeStart!=(bmap[fin_y/CELL][fin_x/CELL] == WL_EHOLE && !emap[fin_y/CELL][fin_x/CELL]))
+					if (!eval || (can_move[t][TYP(pmap_fin0)] == 3 && eval == 1) || (/* pmap_fin0 && */ !((tempFlag0 | elements[TYP(pmap_fin0)].Properties) & PROP_NOSLOWDOWN)) || bmap[fin_y/CELL][fin_x/CELL]==WL_DESTROYALL || closedEholeStart!=(bmap[fin_y/CELL][fin_x/CELL] == WL_EHOLE && !emap[fin_y/CELL][fin_x/CELL]))
 					{
 						// found an obstacle
 						clear_xf = fin_xf-dx;
@@ -4862,14 +4868,14 @@ killed:
 						pmap[y][x] = stickman->underp;
 						int part1 = pmap[ny][nx];
 						if (part1 == PT_PINVIS)
-							part1 = parts[part1>>8].tmp4;
-						int part_type = part1 & 0xFF;
+							part1 = partsi(part1).tmp4;
+						int part_type = TYP(part1);
 						if (part_type == PT_STKM)
 							stickman->underp = player.underp;
 						else if (part_type == PT_STKM2)
 							stickman->underp = player2.underp;
-						else if (part_type == PT_FIGH && parts[part1>>8].tmp >= 0 && parts[part1>>8].tmp < MAX_FIGHTERS)
-							stickman->underp = fighters[parts[part1>>8].tmp].underp;
+						else if (part_type == PT_FIGH && partsi(part1).tmp >= 0 && partsi(part1).tmp < MAX_FIGHTERS)
+							stickman->underp = fighters[partsi(part1).tmp].underp;
 						else
 							stickman->underp = part1;
 					}	
@@ -4880,9 +4886,9 @@ killed:
 						continue;
 					}
 					if (elements[t].Properties & TYPE_ENERGY)
-						photons[ny][nx] = t|(i<<8);
+						photons[ny][nx] = PMAP(i, t);
 					else if (t)
-						pmap[ny][nx] = t|(i<<8);
+						pmap[ny][nx] = PMAP(i, t);
 				}
 			}
 			else if (elements[t].Properties & TYPE_ENERGY)
@@ -4897,8 +4903,8 @@ killed:
 
 					if (eval_move(PT_PHOT, fin_x, fin_y, NULL))
 					{
-						int rt = pmap[fin_y][fin_x] & 0xFF;
-						int lt = pmap[y][x] & 0xFF;
+						int rt = TYP(pmap[fin_y][fin_x]);
+						int lt = TYP(pmap[y][x]);
 						int rt_glas = (rt == PT_GLAS) || (rt == PT_BGLA);
 						int lt_glas = (lt == PT_GLAS) || (lt == PT_BGLA);
 						if ((rt_glas && !lt_glas) || (lt_glas && !rt_glas))
@@ -4960,33 +4966,34 @@ killed:
 						continue;
 					}
 					r = pmap[fin_y][fin_x];
+					int rt = TYP(r);
 
-					if (((r&0xFF)==PT_PIPE || (r&0xFF) == PT_PPIP) && !(parts[r>>8].tmp&0xFF))
+					if ((rt==PT_PIPE || rt == PT_PPIP) && !TYP(partsi(r).ctype))
 					{
-						parts[r>>8].tmp =  (parts[r>>8].tmp&~0xFF) | parts[i].type;
-						parts[r>>8].temp = parts[i].temp;
-						parts[r>>8].tmp2 = parts[i].life;
+						parts[ID(r)].ctype = parts[i].type;
+						parts[ID(r)].temp = parts[i].temp;
+						parts[ID(r)].tmp2 = parts[i].life;
 						/* original code:
-						parts[r>>8].pavg[0] = parts[i].tmp;
-						parts[r>>8].pavg[1] = parts[i].ctype;
-						parts[r>>8].tmp3 = parts[i].tmp2;
-						parts[r>>8].tmp4 = parts[i].tmp3;
+						parts[ID(r)].pavg[0] = parts[i].tmp;
+						parts[ID(r)].pavg[1] = parts[i].ctype;
+						parts[ID(r)].tmp3 = parts[i].tmp2;
+						parts[ID(r)].tmp4 = parts[i].tmp3;
 						*/
-						parts[r>>8].tmp3 = parts[i].tmp;
-						parts[r>>8].tmp4 = parts[i].ctype;
-						parts[r>>8].pavg[0] = parts[i].tmp2;
-						parts[r>>8].pavg[1] = parts[i].tmp3;
-						parts[r>>8].cdcolour = parts[i].dcolour;
+						parts[ID(r)].tmp3 = parts[i].tmp;
+						parts[ID(r)].tmp4 = parts[i].ctype;
+						parts[ID(r)].pavg[0] = parts[i].tmp2;
+						parts[ID(r)].pavg[1] = parts[i].tmp3;
+						parts[ID(r)].cdcolour = parts[i].dcolour;
 						kill_part(i);
 						continue;
 					}
 
 					if (!(elements[t].Properties2 & PROP_NOWAVELENGTHS))
-						parts[i].ctype &= elements[r&0xFF].PhotonReflectWavelengths;
+						parts[i].ctype &= elements[TYP(r)].PhotonReflectWavelengths;
 
 					if (get_normal_interp(t, parts[i].x, parts[i].y, parts[i].vx, parts[i].vy, &nrx, &nry))
 					{
-						if ((r & 0xFF) == PT_CRMC)
+						if (TYP(r) == PT_CRMC)
 						{
 							float r = (rand() % 101 - 50) * 0.01f, rx, ry, anrx, anry;
 							r = r * r * r;
@@ -5116,21 +5123,21 @@ killed:
 
 							for (j=clear_x+r; j>=0 && j>=clear_x-rt && j<clear_x+rt && j<XRES; j+=r)
 							{
-								if (((pmap[fin_y][j]&0xFF)!=t || bmap[fin_y/CELL][j/CELL])
+								if ((TYP(pmap[fin_y][j])!=t || bmap[fin_y/CELL][j/CELL])
 									&& (s=do_move(i, x, y, (float)j, fin_yf)))
 								{
 									nx = (int)(parts[i].x+0.5f);
 									ny = (int)(parts[i].y+0.5f);
 									break;
 								}
-								if (fin_y!=clear_y && ((pmap[clear_y][j]&0xFF)!=t || bmap[clear_y/CELL][j/CELL])
+								if (fin_y!=clear_y && (TYP(pmap[clear_y][j])!=t || bmap[clear_y/CELL][j/CELL])
 									&& (s=do_move(i, x, y, (float)j, clear_yf)))
 								{
 									nx = (int)(parts[i].x+0.5f);
 									ny = (int)(parts[i].y+0.5f);
 									break;
 								}
-								if ((pmap[clear_y][j]&0xFF)!=t || (bmap[clear_y/CELL][j/CELL] && bmap[clear_y/CELL][j/CELL]!=WL_STREAM))
+								if (TYP(pmap[clear_y][j])!=t || (bmap[clear_y/CELL][j/CELL] && bmap[clear_y/CELL][j/CELL]!=WL_STREAM))
 									break;
 							}
 							if (parts[i].vy>0)
@@ -5140,9 +5147,9 @@ killed:
 							if (s==1)
 								for (j=ny+r; j>=0 && j<YRES && j>=ny-rt && j<ny+rt; j+=r)
 								{
-									if (((pmap[j][nx]&0xFF)!=t || bmap[j/CELL][nx/CELL]) && do_move(i, nx, ny, (float)nx, (float)j))
+									if ((TYP(pmap[j][nx])!=t || bmap[j/CELL][nx/CELL]) && do_move(i, nx, ny, (float)nx, (float)j))
 										break;
-									if ((pmap[j][nx]&255)!=t || (bmap[j/CELL][nx/CELL] && bmap[j/CELL][nx/CELL]!=WL_STREAM))
+									if (TYP(pmap[j][nx])!=t || (bmap[j/CELL][nx/CELL] && bmap[j/CELL][nx/CELL]!=WL_STREAM))
 										break;
 								}
 							else if (s==-1) {} // particle is out of bounds
@@ -5217,7 +5224,7 @@ killed:
 								ny = (int)(nyf+0.5f);
 								if (nx<0 || ny<0 || nx>=XRES || ny >=YRES)
 									break;
-								if ((pmap[ny][nx]&0xFF)!=t || bmap[ny/CELL][nx/CELL])
+								if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL])
 								{
 									s = do_move(i, x, y, nxf, nyf);
 									if (s)
@@ -5228,7 +5235,7 @@ killed:
 										break;
 									}
 									// A particle of a different type, or a wall, was found. Stop trying to move any further horizontally unless the wall should be completely invisible to particles.
-									if ((pmap[ny][nx]&0xFF)!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
+									if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 										break;
 								}
 							}
@@ -5275,10 +5282,10 @@ killed:
 									if (nx<0 || ny<0 || nx>=XRES || ny>=YRES)
 										break;
 									// If the space is anything except the same element (a wall, empty space, or occupied by a particle of a different element), try to move into it
-									if ((pmap[ny][nx]&0xFF)!=t || bmap[ny/CELL][nx/CELL])
+									if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL])
 									{
 										s = do_move(i, clear_x, clear_y, nxf, nyf);
-										if (s || (pmap[ny][nx]&0xFF)!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
+										if (s || TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 											break; // found the edge of the liquid and movement into it succeeded, so stop moving down
 									}
 								}
@@ -5314,7 +5321,6 @@ int Simulation::GetParticleType(std::string type)
 	char * txt = (char*)type.c_str();
 
 	// alternative names for some elements
-
 	if (!strcasecmp(txt, "C4"))
 		return PT_PLEX;
 	else if (!strcasecmp(txt, "C5"))
@@ -5346,15 +5352,15 @@ void Simulation::SimulateGoL()
 				gol[ny][nx] = 0;
 				continue;
 			}
-			if ((r&0xFF)==PT_LIFE)
+			if (TYP(r)==PT_LIFE)
 			{
-				int golnum = parts[r>>8].ctype+1;
+				int golnum = parts[ID(r)].ctype+1;
 				if (golnum<=0 || golnum>NGOL) {
-					kill_part(r>>8);
+					kill_part(ID(r));
 					continue;
 				}
 				gol[ny][nx] = golnum;
-				if (parts[r>>8].tmp == grule[golnum][9]-1)
+				if (parts[ID(r)].tmp == grule[golnum][9]-1)
 				{
 					for (int nnx = -1; nnx < 2; nnx++)
 					{
@@ -5364,7 +5370,7 @@ void Simulation::SimulateGoL()
 							int adx = ((nx+nnx+XRES-3*CELL)%(XRES-2*CELL))+CELL;
 							int ady = ((ny+nny+YRES-3*CELL)%(YRES-2*CELL))+CELL;
 							int rt = pmap[ady][adx];
-							if (!rt || (rt&0xFF)==PT_LIFE)
+							if (!rt || TYP(rt)==PT_LIFE)
 							{
 								//the total neighbor count is in 0
 								gol2[ady][adx][0] ++;
@@ -5388,7 +5394,7 @@ void Simulation::SimulateGoL()
 				}
 				else
 				{
-					parts[r>>8].tmp --;
+					parts[ID(r)].tmp --;
 				}
 			}
 		}
@@ -5399,7 +5405,7 @@ void Simulation::SimulateGoL()
 		for (int nx = CELL; nx < XRES-CELL; nx++)
 		{
 			int r = pmap[ny][nx];
-			if (r && (r&0xFF)!=PT_LIFE)
+			if (r && TYP(r)!=PT_LIFE)
 				continue;
 			int neighbors = gol2[ny][nx][0];
 			if (neighbors)
@@ -5423,15 +5429,15 @@ void Simulation::SimulateGoL()
 				}
 				else if (grule[golnum][neighbors-1]==0 || grule[golnum][neighbors-1]==2)//subtract 1 because it counted itself
 				{
-					if (parts[r>>8].tmp==grule[golnum][9]-1)
-						parts[r>>8].tmp --;
+					if (parts[ID(r)].tmp==grule[golnum][9]-1)
+						parts[ID(r)].tmp --;
 				}
 				for (int z = 0; z < 9; z++)
 					gol2[ny][nx][z] = 0;//this improves performance A LOT compared to the memset, i was getting ~23 more fps with this.
 			}
 			//we still need to kill things with 0 neighbors (higher state life)
-			if (r && parts[r>>8].tmp<=0)
-					kill_part(r>>8);
+			if (r && parts[ID(r)].tmp<=0)
+					kill_part(ID(r));
 		}
 	}
 	//memset(gol2, 0, sizeof(gol2));
@@ -5602,7 +5608,7 @@ void Simulation::SimulateLLoops()
 				int golnum = parts[r>>8].ctype + 1;
 				if (golnum<=0 || golnum>=9)
 				{
-					kill_part(r>>8);
+					kill_part(ID(r));
 					continue;
 				}
 				
@@ -5677,11 +5683,11 @@ void Simulation::SimulateLLoops()
 				}
 				else if (matchedgol)
 				{
-					parts[r>>8].ctype = matchedgol - 1;
+					parts[ID(r)].ctype = matchedgol - 1;
 				}
 				else
 				{
-					kill_part(r>>8);
+					kill_part(ID(r));
 				}
 				for (int z = 0; z < 5; z++)
 					gol2[ny][nx][z] = 0;//this improves performance A LOT compared to the memset.
@@ -5719,34 +5725,34 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 			{
 				
 				if (elements[t].Properties & TYPE_ENERGY)
-					photons[y][x] = t|(i<<8);
+					photons[y][x] = PMAP(i, t);
 				else
 				{
 					pmapp1 = pmapp2 = &(pmap[y][x]);
 					if ((*pmapp1 & 0xFF) == PT_PINVIS) // if pmap [y][x] value is PINV
-						pmapp2 = &(parts[*pmapp1 >> 8].tmp4);
+						pmapp2 = &(partsi(*pmapp1).tmp4);
 
 					// Particles are sometimes allowed to go inside INVS and FILT
 					// To make particles collide correctly when inside these elements, these elements must not overwrite an existing pmap entry from particles inside them
 					if (t == PT_PINVIS)
 					{
 						parts[i].tmp4 = *pmapp2;
-						*pmapp1 = PT_PINVIS | (i<<8);
+						*pmapp1 = PMAP(i, PT_PINVIS);
 					}
 					else if (!*pmapp2 || !(elements[t].Properties2 & PROP_INVISIBLE))
 					{
-						*pmapp2 = t | (i<<8);
+						*pmapp2 = PMAP(i, t);
 					}
 
 #if 0
-					if (!tt || ( (tt & 0xFF) != PT_PINVIS && !(elements[t].Properties2 & PROP_INVISIBLE) ))
+					if (!tt || ( TYP(tt) != PT_PINVIS && !(elements[t].Properties2 & PROP_INVISIBLE) ))
 					{
 						if (t == PT_PINVIS)
 							parts[i].tmp4 = tt;
-						pmap[y][x] = t|(i<<8);
+						pmap[y][x] = PMAP(i, t);
 					}
 					else if ((tt & 0xFF) == PT_PINVIS)
-						parts[tt>>8].tmp4 = t|(i<<8);
+						parts[tt>>8].tmp4 = PMAP(i, t);
 #endif
 
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
@@ -6002,13 +6008,13 @@ void Simulation::BeforeSim()
 					{
 						continue;
 					}
-					else if ((ny<9||nx<9||ny>YRES-7||nx>XRES-10)&&(parts[r>>8].type==PT_LOVE||parts[r>>8].type==PT_LOLZ))
-						kill_part(r>>8);
-					else if (parts[r>>8].type==PT_LOVE)
+					else if ((ny<9||nx<9||ny>YRES-7||nx>XRES-10)&&(parts[ID(r)].type==PT_LOVE||parts[ID(r)].type==PT_LOLZ))
+						kill_part(ID(r));
+					else if (parts[ID(r)].type==PT_LOVE)
 					{
 						Element_LOVE::love[nx/9][ny/9] = 1;
 					}
-					else if (parts[r>>8].type==PT_LOLZ)
+					else if (parts[ID(r)].type==PT_LOLZ)
 					{
 						Element_LOLZ::lolz[nx/9][ny/9] = 1;
 					}
@@ -6030,8 +6036,8 @@ void Simulation::BeforeSim()
 										create_part(-1,nx+nnx,ny+nny,PT_LOVE);
 									else if (!rt)
 										continue;
-									else if (parts[rt>>8].type==PT_LOVE&&Element_LOVE::RuleTable[nnx][nny]==0)
-										kill_part(rt>>8);
+									else if (parts[ID(rt)].type==PT_LOVE&&Element_LOVE::RuleTable[nnx][nny]==0)
+										kill_part(ID(rt));
 								}
 							}
 					}
@@ -6048,8 +6054,8 @@ void Simulation::BeforeSim()
 										create_part(-1,nx+nnx,ny+nny,PT_LOLZ);
 									else if (!rt)
 										continue;
-									else if (parts[rt>>8].type==PT_LOLZ&&Element_LOLZ::RuleTable[nny][nnx]==0)
-										kill_part(rt>>8);
+									else if (parts[ID(rt)].type==PT_LOLZ&&Element_LOLZ::RuleTable[nny][nnx]==0)
+										kill_part(ID(rt));
 
 								}
 							}
@@ -6069,8 +6075,8 @@ void Simulation::BeforeSim()
 					int r = pmap[ny][nx];
 					if (!r)
 						continue;
-					if(parts[r>>8].type == PT_WIRE)
-						parts[r>>8].tmp = parts[r>>8].ctype;
+					if(parts[ID(r)].type == PT_WIRE)
+						parts[ID(r)].tmp = parts[ID(r)].ctype;
 				}
 			}
 		}
@@ -6328,7 +6334,7 @@ void Simulation::check_neut()
 					int u = pmap[y][x];
 					if (!(blockdata.flags & 0x80))
 						blockdata.flags ++;
-					if ((u&0xFF) == ELEM_MULTIPP && parts[u>>8].life == 22 && (parts[u>>8].tmp >> 3) == 3)
+					if (TYP(u) == ELEM_MULTIPP && partsi(u).life == 22 && (partsi(u).tmp >> 3) == 3)
 						blockdata.flags |= 0x100;
 					*(int*)(&parts[i].pavg[0]) = tmp;
 					*(int*)(&parts[i].pavg[1]) = (yb << 16) | xb;
@@ -6419,7 +6425,7 @@ Simulation::Simulation():
 	int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 	int tportal_ry[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 
-	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));   
+	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));
 	memcpy(portal_ry, tportal_ry, sizeof(tportal_ry));
 
 	currentTick = 0;
