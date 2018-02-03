@@ -83,7 +83,7 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 						else
 							rr = (rand()%228+128)/127.0f;
 						partsi(r).vx = rr*cosf(rrr);
-						partsi(r)..vy = rr*sinf(rrr);
+						partsi(r).vy = rr*sinf(rrr);
 						sim->pv[y/CELL][x/CELL] -= 15.0f * CFDS;
 					}
 				}

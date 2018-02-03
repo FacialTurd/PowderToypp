@@ -65,12 +65,12 @@ int Element_PINVIS::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_PINVIS)
+					if (TYP(r)==PT_PINVIS)
 					{
-						if (parts[r>>8].life<10&&parts[r>>8].life>0)
+						if (partsi(r).life < 10 && partsi(r).life > 0)
 							parts[i].life = 9;
-						else if (parts[r>>8].life==0)
-							parts[r>>8].life = 10;
+						else if (partsi(r).life == 0)
+							partsi(r).life = 10;
 					}
 				}
 	}
