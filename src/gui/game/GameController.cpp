@@ -1219,7 +1219,7 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 		((PropertyTool *)tool)->OpenWindow(gameModel->GetSimulation());
 }
 
-void GameController::SetActiveTool(int toolSelection, Tool * tool)
+void GameController::SetActiveTool(int toolSelection, std::string identifier)
 {
 	Tool *tool = gameModel->GetToolFromIdentifier(identifier);
 	if (!tool)

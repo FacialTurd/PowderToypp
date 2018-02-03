@@ -954,12 +954,12 @@ void LuaScriptInterface::initSimulationAPI()
 	lua_setfield(l, -2, "signs");
 }
 
-int simulation_makeCyclone(lua_State * L)
+int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 {
 	int x = luaL_checkinteger(L, 1);
 	int y = luaL_checkinteger(L, 2);
 	int r = luaL_checkinteger(L, 3);
-	int s = luaL_checkinteger(L, 4);
+	float s = luaL_optnumber(L, 4, 1.0);
 	int r_sq = r * r;
 
 	int x1 = x - r, x2 = x + r;
