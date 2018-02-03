@@ -80,7 +80,7 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 					}
 					else if ((!(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
 						(rt != PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)) &&
-						sim->elements[ID(r)].Hardness>(rand()%1000))&&parts[i].life>=50)
+						sim->elements[rt].Hardness>(rand()%1000))&&parts[i].life>=50)
 					{
 						if (sim->parts_avg(i, ID(r), PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
 						{
