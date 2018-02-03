@@ -58,7 +58,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	fullX = blockX*CELL;
 	fullY = blockY*CELL;
 
-	unsigned int pmapbits = save->pmapbits
+	unsigned int pmapbits = save->pmapbits;
 	unsigned int pmapmask = (1 << pmapbits) - 1;
 	unsigned int ctype_diff = PMAPID(1) - (1 << pmapbits);
 
@@ -120,15 +120,17 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		case PT_CRAY:
 		case PT_DRAY:
 		case PT_CONV:
-			int ctype = tempPart.ctype & pmapmask;
-			int extra = tempPart.ctype >> pmapbits;
-			if (ctype >= 0 && ctype < PT_NUM)
-				ctype = partMap[ctype];
-			tempPart.ctype = PMAP(extra, ctype);
+			{
+				int ctype = tempPart.ctype & pmapmask;
+				int extra = tempPart.ctype >> pmapbits;
+				if (ctype >= 0 && ctype < PT_NUM)
+					ctype = partMap[ctype];
+				tempPart.ctype = PMAP(extra, ctype);
+			}
 			break;
 		case PT_E186:
-			if (ctype > pmapmask)
-				ctype += ctype_diff;
+			if (tempPart.ctype > pmapmask)
+				tempPart.ctype += ctype_diff;
 			else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
 				tempPart.ctype = partMap[tempPart.ctype];
 			break;
