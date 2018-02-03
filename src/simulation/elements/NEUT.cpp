@@ -262,6 +262,8 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					}
 					}
 					break;
+				case PT_NONE:
+					break;
 				default:
 					break;
 				}

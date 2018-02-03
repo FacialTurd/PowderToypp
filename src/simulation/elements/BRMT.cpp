@@ -61,15 +61,15 @@ int Element_BRMT::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_BREC && !(rand()%tempFactor))
+					if (TYP(r)==PT_BREC && !(rand()%tempFactor))
 					{
 						if(rand()%2)
 						{
-							sim->create_part(r>>8, x+rx, y+ry, PT_THRM);
+							sim->create_part(part_ID(r), x+rx, y+ry, PT_THRM);
 						}
 						else
 							sim->create_part(i, x, y, PT_THRM);
-						//part_change_type(r>>8,x+rx,y+ry,PT_BMTL);
+						//part_change_type(part_ID(r),x+rx,y+ry,PT_BMTL);
 						//parts[r>>8].tmp=(parts[i].tmp<=7)?parts[i].tmp=1:parts[i].tmp-(rand()%5);//rand()/(RAND_MAX/300)+100;
 					}
 				}

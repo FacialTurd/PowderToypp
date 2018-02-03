@@ -69,24 +69,25 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_ISOZ || (r&0xFF)==PT_ISZS)
+				int rt = TYP(r);
+				if (rt==PT_ISOZ || rt==PT_ISZS)
 				{
 					if (!(rand()%400))
 					{
 						parts[i].vx *= 0.90;
 						parts[i].vy *= 0.90;
-						sim->create_part(r>>8, x+rx, y+ry, PT_PHOT);
+						sim->create_part(part_ID(r), x+rx, y+ry, PT_PHOT);
 						rrr = (rand()%360)*3.14159f/180.0f;
-						if ((r&0xFF) == PT_ISOZ)
+						if (rt == PT_ISOZ)
 							rr = (rand()%128+128)/127.0f;
 						else
 							rr = (rand()%228+128)/127.0f;
-						parts[r>>8].vx = rr*cosf(rrr);
-						parts[r>>8].vy = rr*sinf(rrr);
+						partsi(r).vx = rr*cosf(rrr);
+						partsi(r)..vy = rr*sinf(rrr);
 						sim->pv[y/CELL][x/CELL] -= 15.0f * CFDS;
 					}
 				}
-				else if(((r&0xFF) == PT_QRTZ || (r&0xFF) == PT_PQRT) && !ry && !rx) //if on QRTZ or PQRT
+				else if((rt == PT_QRTZ || rt == PT_PQRT) && !ry && !rx) //if on QRTZ or PQRT
 				{
 					float a = (rand()%360)*3.14159f/180.0f;
 					parts[i].vx = 3.0f*cosf(a);
@@ -97,7 +98,7 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 					if (parts[i].life)
 						parts[i].life++; //Delay death
 				}
-				else if((r&0xFF) == PT_BGLA && !ry && !rx)//if on BGLA
+				else if(rt == PT_BGLA && !ry && !rx)//if on BGLA
 				{
 					float a = (rand()%101 - 50) * 0.001f;
 					float rx = cosf(a), ry = sinf(a), vx, vy;
@@ -106,7 +107,7 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 					parts[i].vx = vx;
 					parts[i].vy = vy;
 				}
-				else if ((r&0xFF) == PT_FILT && parts[r>>8].tmp==9)
+				else if (rt == PT_FILT && partsi(r).tmp==9)
 				{
 					parts[i].vx += ((float)(rand()%1000-500))/1000.0f;
 					parts[i].vy += ((float)(rand()%1000-500))/1000.0f;

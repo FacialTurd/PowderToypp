@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_ELEC PT_ELEC 136
+#define ID part_ID
 Element_ELEC::Element_ELEC()
 {
 	Identifier = "DEFAULT_PT_ELEC";
@@ -58,7 +59,7 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = r&0xFF;
+				rt = TYP(r);
 				switch (rt)
 				{
 				case PT_GLAS:
@@ -77,43 +78,43 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					sim->kill_part(i);
 					return 1;
 				case PT_LCRY:
-					parts[r>>8].tmp2 = 5+rand()%5;
+					partsi(r).tmp2 = 5+rand()%5;
 					break;
 				case PT_WATR:
 				case PT_DSTW:
 				case PT_SLTW:
 				case PT_CBNW:
 					if(!(rand()%3))
-						sim->create_part(r>>8, x+rx, y+ry, PT_O2);
+						sim->create_part(ID(r), x+rx, y+ry, PT_O2);
 					else
-						sim->create_part(r>>8, x+rx, y+ry, PT_H2);
+						sim->create_part(ID(r), x+rx, y+ry, PT_H2);
 					sim->kill_part(i);
 					return 1;
 				case PT_PROT: // this is the correct reaction, not NEUT, but leaving NEUT in anyway
-					if (parts[r>>8].tmp2 & 0x1)
+					if (parts[ID(r)].tmp2 & 0x1)
 						break;
 				case PT_NEUT:
 					// in real life, "neutrons + electrons = hydrogen" is wrong reaction.
-					sim->part_change_type(r>>8, x+rx, y+ry, PT_H2);
-					parts[r>>8].life = 0;
-					parts[r>>8].ctype = 0;
+					sim->part_change_type(ID(r), x+rx, y+ry, PT_H2);
+					parts[ID(r)].life = 0;
+					parts[ID(r)].ctype = 0;
 					sim->kill_part(i);
 					break;
 				case PT_DEUT:
-					if(parts[r>>8].life < 6000)
-						parts[r>>8].life += 1;
-					parts[r>>8].temp = 0;
+					if(parts[ID(r)].life < 6000)
+						parts[ID(r)].life += 1;
+					parts[ID(r)].temp = 0;
 					sim->kill_part(i);
 					return 1;
 				case PT_EXOT:
-					parts[r>>8].tmp2 += 5;
-					parts[r>>8].life = 1000;
+					parts[ID(r)].tmp2 += 5;
+					parts[ID(r)].life = 1000;
 					break;
 				case PT_POLO:
 					if (sim->isFromMyMod && !(rand() & 0x1FF)) // 1 in 512
 					{
-						int s = parts[r>>8].tmp;
-						if (s) parts[r>>8].tmp --;
+						int s = partsi(r).tmp;
+						if (s) partsi(r).tmp --;
 					}
 					break;
 				case PT_NONE: //seems to speed up ELEC even if it isn't used

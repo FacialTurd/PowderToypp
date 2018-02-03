@@ -54,29 +54,30 @@ int Element_CAUS::update(UPDATE_FUNC_ARGS)
 				int r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF) == PT_GAS)
+				int rt = TYP(r);
+				if (rt == PT_GAS)
 				{
 					if (sim->pv[(y+ry)/CELL][(x+rx)/CELL] > 3)
 					{
-						sim->part_change_type(r>>8, x+rx, y+ry, PT_RFRG);
+						sim->part_change_type(part_ID(r), x+rx, y+ry, PT_RFRG);
 						sim->part_change_type(i, x, y, PT_RFRG);
 					}
 				}
-				else if ((r&0xFF) != PT_ACID && (r&0xFF) != PT_CAUS && (r&0xFF) != PT_RFRG && (r&0xFF) != PT_RFGL && (r&0xFF) != ELEM_MULTIPP)
+				else if (rt != PT_ACID && rt != PT_CAUS && rt != PT_RFRG && rt != PT_RFGL && rt != ELEM_MULTIPP)
 				{
-					if ((!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
-						((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)) &&
-						sim->elements[r&0xFF].Hardness > (rand() % 1000)) && parts[i].life >= 50)
+					if ((!(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
+						(rt != PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)) &&
+						sim->elements[rt].Hardness > (rand() % 1000)) && parts[i].life >= 50)
 					{
 						// GLAS protects stuff from acid
-						if (sim->parts_avg(i, r>>8,PT_GLAS) != PT_GLAS)
+						if (sim->parts_avg(i, rt, PT_GLAS) != PT_GLAS)
 						{
-							float newtemp = ((60.0f - (float)sim->elements[r&0xFF].Hardness)) * 7.0f;
+							float newtemp = ((60.0f - (float)sim->elements[rt].Hardness)) * 7.0f;
 							if (newtemp < 0)
 								newtemp = 0;
 							parts[i].temp += newtemp;
 							parts[i].life--;
-							sim->kill_part(r>>8);
+							sim->kill_part(part_ID(r));
 						}
 					}
 					else if (parts[i].life <= 50)

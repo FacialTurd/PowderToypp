@@ -55,15 +55,15 @@ int Element_BTRY::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = (r&0xFF);
-				pavg = sim->parts_avg(i,r>>8,PT_INSL);
-				if (pavg != PT_INSL && pavg != PT_INDI)
+				rt = TYP(r);
+				pavg = PAVG_INSL(r);
+				if (CHECK_EL_INSL(pavg))
 				{
-					if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */ && parts[r>>8].life==0)
+					if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */ && partsi(r).life==0)
 					{
-						parts[r>>8].life = 4;
-						parts[r>>8].ctype = rt;
-						sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
+						partsi(r).life = 4;
+						partsi(r).ctype = rt;
+						sim->part_change_type(part_ID(r),x+rx,y+ry,PT_SPRK);
 					}
 				}
 			}
