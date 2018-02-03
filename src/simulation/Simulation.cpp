@@ -40,18 +40,6 @@ int Simulation::Load(GameSave * save, bool includePressure)
 int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure)
 {
 	int blockX, blockY, x, y, r;
-	
-	static int32_t inctype [(PT_NUM + 63) >> 5] = {0};
-	if (inctype[0])
-	{
-		inctype[0] = 1;
-		memset(inctype, 0, 4 * ((PT_NUM + 31) >> 5));
-		static int inctypel[] = {
-			PT_CLNE, PT_PCLN, PT_BCLN, PT_PBCN, PT_STOR, PT_CONV, PT_STKM, PT_STKM2, PT_FIGH, PT_LAVA, PT_SPRK, PT_PSTN, PT_CRAY, PT_DTEC, PT_DRAY, PT_PIPE, PT_PPIP, PT_E186,
-		0};
-		for (int i = 0; inctypel[i]; i++)
-			inctype[(inctypel[i] >> 5) + 1] |= 1 << (inctypel[i] & 0x1F);
-	}
 
 	if (!save)
 		return 1;
@@ -69,8 +57,10 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	blockY = (fullY + CELL/2)/CELL;
 	fullX = blockX*CELL;
 	fullY = blockY*CELL;
-	unsigned int pmapmask = (1<<save->pmapbits)-1;
-	unsigned int ctype_diff = (1<<save->pmapbits)-PMAPID(1);
+
+	unsigned int pmapbits = save->pmapbits
+	unsigned int pmapmask = (1 << pmapbits) - 1;
+	unsigned int ctype_diff = PMAPID(1) - (1 << pmapbits);
 
 	int partMap[PT_NUM];
 	for(int i = 0; i < PT_NUM; i++)
@@ -110,46 +100,52 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		x = int(tempPart.x + 0.5f);
 		y = int(tempPart.y + 0.5f);
 
-		if (tempPart.type >= 0 && tempPart.type < PT_NUM)
-			tempPart.type = partMap[tempPart.type];
+		int tempPType = tempPart.type;
+
+		if (tempPType >= 0 && tempPType < PT_NUM)
+			tempPType = partMap[tempPType];
 		else
 			continue;
 
-		if ((player.spwn == 1 && tempPart.type==PT_STKM) || (player2.spwn == 1 && tempPart.type==PT_STKM2))
+		if ((player.spwn == 1 && tempPType == PT_STKM) || (player2.spwn == 1 && tempPType == PT_STKM2))
 			continue;
 		if ((tempPart.type == PT_SPAWN && elementCount[PT_SPAWN]) || (tempPart.type == PT_SPAWN2 && elementCount[PT_SPAWN2]))
 			continue;
-		if (!elements[tempPart.type].Enabled)
+		if (!elements[tempPType].Enabled)
 			continue;
 
 		// These store type in ctype, but are special because they store extra information in the bits after type
-		if (tempPart.type == PT_CRAY || tempPart.type == PT_DRAY || tempPart.type == PT_CONV)
+		switch (tempPType)
 		{
+		case PT_CRAY:
+		case PT_DRAY:
+		case PT_CONV:
 			int ctype = tempPart.ctype & pmapmask;
-			int extra = tempPart.ctype >> save->pmapbits;
+			int extra = tempPart.ctype >> pmapbits;
 			if (ctype >= 0 && ctype < PT_NUM)
 				ctype = partMap[ctype];
 			tempPart.ctype = PMAP(extra, ctype);
-		}
-		else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
-		{
-			if (inctype[(tempPart.type >> 5) + 1] & (1 << (tempPart.type & 0x1F)))
+			break;
+		case PT_E186:
+			if (ctype > pmapmask)
+				ctype += ctype_diff;
+			else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
+				tempPart.ctype = partMap[tempPart.ctype];
+			break;
+		default:
+			if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM && TypeInCtype(tempPart.type))
 			{
 				tempPart.ctype = partMap[tempPart.ctype];
 			}
 		}
-		else if (tempPart.type == PT_E186)
-		{
-			tempPart.ctype += ctype_diff;
-		}
 
-		if (tempPart.type == PT_STOR)
+		if (TypeInTmp(tempPType))
 		{
 			int tmp = tempPart.tmp & pmapmask;
-			int extra = tempPart.tmp >> save->pmapbits;
+			int extra = tempPart.tmp >> pmapbits;
 			tempPart.tmp = PMAP(extra, tmp);
 		}
-		if ((tempPart.type == PT_VIRS || tempPart.type == PT_VRSG || tempPart.type == PT_VRSS) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
+		if (TypeInTmp4(tempPType) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
 		{
 			tempPart.tmp4 = partMap[tempPart.tmp4];
 		}
@@ -160,14 +156,14 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			elementCount[partsi(r).type]--;
 			partsi(r) = tempPart;
 			i = ID(r);
-			elementCount[tempPart.type]++;
+			elementCount[tempPType]++;
 		}
 		else if ((r = photons[y][x]))
 		{
 			elementCount[partsi(r).type]--;
 			partsi(r) = tempPart;
 			i = ID(r);
-			elementCount[tempPart.type]++;
+			elementCount[tempPType]++;
 		}
 		//Allocate new particle
 		else
@@ -179,7 +175,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			if (i > parts_lastActiveIndex)
 				parts_lastActiveIndex = i;
 			parts[i] = tempPart;
-			elementCount[tempPart.type]++;
+			elementCount[tempPType]++;
 		}
 
 		switch (parts[i].type)
@@ -296,6 +292,25 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	air->RecalculateBlockAirMaps();
 
 	return 0;
+}
+
+bool Simulation::TypeInCtype(int el)
+{
+	return el == PT_CLNE || el == PT_PCLN || el == PT_BCLN || el == PT_PBCN ||
+	        el == PT_STOR || el == PT_CONV || el == PT_STKM || el == PT_STKM2 ||
+	        el == PT_FIGH || el == PT_LAVA || el == PT_SPRK || el == PT_PSTN ||
+	        el == PT_CRAY || el == PT_DTEC || el == PT_DRAY || el == PT_PIPE ||
+	        el == PT_PPIP || el == PT_E186;
+}
+
+bool Simulation::TypeInTmp(int el)
+{
+	return el == PT_STOR;
+}
+
+bool Simulation::TypeInTmp4(int el)
+{
+	return el == PT_VIRS || el == PT_VRSG || el == PT_VRSS;
 }
 
 GameSave * Simulation::Save(bool includePressure)
