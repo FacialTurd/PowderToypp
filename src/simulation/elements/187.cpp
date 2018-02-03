@@ -93,13 +93,13 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 					if (!(r && (rx || ry))) continue;
 					if ((r&0xFF) == PT_GLOW || (r&0xFF) == PT_ISOZ)
 					{
-						parts[i].x = parts[r>>8].x;
-						parts[i].y = parts[r>>8].y;
-						parts[r>>8].x = x;
-						parts[r>>8].y = y;
+						parts[i].x = partsi(r).x;
+						parts[i].y = partsi(r).y;
+						partsi(r).x = x;
+						partsi(r).y = y;
 						pmap[y][x] = r;
-						pmap[y+ry][x+rx] = (i<<8)|parts[i].type;
-						return 1;
+						pmap[y+ry][x+rx] = PMAP(i, parts[i].type);
+						break;
 					}
 					else if ((r&0xFF) == PT_E187 && parts[r>>8].ctype && parts[r>>8].tmp && !(rand()%40))
 					{

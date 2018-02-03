@@ -4698,7 +4698,7 @@ void Simulation::UpdateParticles(int start, int end)
 			{
 				if ((*(elements[t].Update))(this, i, x, y, surround_space, nt, parts, pmap))
 					continue;
-				else if (t==PT_WARP)
+				else if (t == PT_WARP || t == PT_E187)
 				{
 					// Warp does some movement in its update func, update variables to avoid incorrect data in pmap
 					x = (int)(parts[i].x+0.5f);
