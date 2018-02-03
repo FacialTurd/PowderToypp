@@ -1495,7 +1495,15 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 		case 'p':
 		case SDLK_F2:
-			screenshot();
+			if (ctrl)
+			{
+				if (shift)
+					c->SetActiveTool(1, "DEFAULT_UI_PROPERTY");
+				else
+					c->SetActiveTool(0, "DEFAULT_UI_PROPERTY");
+			}
+			else
+				screenshot();
 			break;
 		case SDLK_F3:
 			SetDebugHUD(!GetDebugHUD());
@@ -1505,8 +1513,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			break;
 		case 'a':
 			if ((Client::Ref().GetAuthUser().UserElevation == User::ElevationModerator
-			     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin
-			     || Client::Ref().GetAuthUser().Username == "Mrprocom") && ctrl)
+			     || Client::Ref().GetAuthUser().UserElevation == User::ElevationAdmin) && ctrl)
 			{
 				  std::string authorString = Client::Ref().GetAuthorInfo().toStyledString();
 				  new InformationMessage("Save authorship info", authorString, true);

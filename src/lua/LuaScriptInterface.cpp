@@ -796,7 +796,7 @@ int simulation_deletesign(lua_State *l)
 
 	luacon_sim->signs.erase(luacon_sim->signs.begin()+signID-1);
  	return 1;
- }
+}
 
 //// Begin Simulation API
 
@@ -881,6 +881,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"partKillDestroyable", simulation_partKillDestroyable},
 		{"pmap_moveTo", simulation_pmap_move_to},
 		{"isDestructible", &simulation_isDestructible},
+		{"makeCyclone", simulation_makeCyclone},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -951,6 +952,47 @@ void LuaScriptInterface::initSimulationAPI()
 	lua_pushcfunction(l, simulation_deletesign);
 	lua_setfield(l, -2, "delete");
 	lua_setfield(l, -2, "signs");
+}
+
+int simulation_makeCyclone(lua_State * L)
+{
+	int x = luaL_checkinteger(L, 1);
+	int y = luaL_checkinteger(L, 2);
+	int r = luaL_checkinteger(L, 3);
+	int s = luaL_checkinteger(L, 4);
+	int r_sq = r * r;
+
+	int x1 = x - r, x2 = x + r;
+	int y1 = y - r, y2 = y + r;
+
+	(r  < 0) && (r = -r);
+	(x1 < 0) && (x1 = 0);
+	(y1 < 0) && (y1 = 0);
+	(x2 >= (XRES / CELL)) && (x2 = (XRES / CELL) - 1);
+	(y2 >= (YRES / CELL)) && (y2 = (YRES / CELL) - 1);
+
+	for (int yy = y1; yy <= y2; yy++)
+	{
+		int x_sq = r * r, y_sq = (yy - y) * (yy - y);
+		int d = 1 - 2 * r, ii;
+		for (int xx = y1; xx <= y2; xx++)
+		{
+			ii = x_sq + y_sq;
+			if (ii <= r_sq)
+			{
+				if (ii <= 0)
+					continue;
+				float rf  = (float)s / sqrtf(ii);
+				float vxd = (float)(yy - y) * rf;
+				float vyd = (float)(x - xx) * rf;
+				luacon_sim->vx[yy][xx] += vxd;
+				luacon_sim->vy[yy][xx] += vyd;
+			}
+			x_sq += d, d += 2;
+		}
+	}
+
+ 	return 1;
 }
 
 void LuaScriptInterface::set_map(int x, int y, int width, int height, float value, int map) // A function so this won't need to be repeated many times later
