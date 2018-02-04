@@ -250,8 +250,11 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_FILT:
-				sim->part_change_type(i, x, y, PT_PHOT);
-				parts[i].ctype = 0x3FFFFFFF;
+				if (isbray)
+					partsi(r).life = 4;
+				else
+					sim->part_change_type(i, x, y, PT_PHOT),
+					parts[i].ctype = 0x3FFFFFFF;
 				break;
 			case PT_EXOT:
 				if (!(rand()%3))
@@ -288,7 +291,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_INVIS:
-				if (!partsi(r).tmp2)
+				if (!(partsi(r).tmp2 || isbray))
 					parts[i].ctype = PT_NEUT;
 				break;
 			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
@@ -312,7 +315,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_BRAY:
-				if (isbray)
+				if (isbray && (partsi(r).tmp == 0 || partsi(r).tmp == 1))
 					partsi(r).life = 1020,
 					partsi(r).tmp = 1;
 				break;
