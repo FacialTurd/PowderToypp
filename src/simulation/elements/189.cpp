@@ -13,6 +13,7 @@
 #endif
 
 #define ID part_ID
+#define saveWl cdcolour
 
 //#TPT-Directive ElementClass Element_MULTIPP PT_E189 189
 Element_MULTIPP::Element_MULTIPP()
@@ -375,7 +376,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_other->ctype = r1<<6 | ((rct&7)<<3) | ((rct>>3)&7);
 				break;
 			case 20: // conditional photon absorber
-				if (rct >= 0x8 && rct <= 0x13)
+				if (rct >= 0x8 && rct <= 0x17)
 				{
 					static int ktable[8] = {
 						FLAG_DIRCH_MARK_HK, FLAG_DIRCH_MARK_TVOID_K, FLAG_DIRCH_MARK_K, FLAG_DIRCH_MARK_HK,
@@ -407,11 +408,17 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 							omsk = ktable[(rct & 3) + (d ? 4 : 0)];
 							break;
 						case 3:
-							omsk = f & (FLAG_DIRCH_MARK_H | FLAG_DIRCH_MARK_V) ?
-								(FLAG_DIRCH_MARK_HK | FLAG_DIRCH_MARK_VK) : 0;
+							omsk = f & (FLAG_DIRCH_MARK_HV) ? (FLAG_DIRCH_MARK_K) : 0;
 							break;
 						case 4:
 							omsk = FLAG_DIRCH_MARK_TVOID_K;
+							break;
+						case 5:
+							(f & (FLAG_DIRCH_MARK_HV)) ? (
+								(sim->parts[ri].saveWl != sim->parts[i].ctype) &&
+									(omsk |= FLAG_DIRCH_MARK_K)) :
+								(sim->parts[ri].saveWl = sim->parts[i].ctype),
+							sim->kill_part(i);
 							break;
 						}
 						
