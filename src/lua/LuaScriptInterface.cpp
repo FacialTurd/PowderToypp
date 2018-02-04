@@ -975,9 +975,10 @@ int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 	{
 		int x_sq = r * r, y_sq = (yy - y) * (yy - y);
 		int d = 1 - 2 * r, ii;
-		for (int xx = y1; xx <= y2; xx++)
+		for (int xx = x1; xx <= x2; xx++)
 		{
 			ii = x_sq + y_sq;
+			x_sq += d, d += 2;
 			if (ii <= r_sq)
 			{
 				if (ii <= 0)
@@ -988,11 +989,10 @@ int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 				luacon_sim->vx[yy][xx] += vxd;
 				luacon_sim->vy[yy][xx] += vyd;
 			}
-			x_sq += d, d += 2;
 		}
 	}
 
- 	return 1;
+ 	return 0;
 }
 
 void LuaScriptInterface::set_map(int x, int y, int width, int height, float value, int map) // A function so this won't need to be repeated many times later
