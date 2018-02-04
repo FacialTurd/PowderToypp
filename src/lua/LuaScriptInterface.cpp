@@ -973,8 +973,8 @@ int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 
 	for (int yy = y1; yy <= y2; yy++)
 	{
-		int x_sq = r * r, y_sq = (yy - y) * (yy - y);
-		int d = 1 - 2 * r, ii;
+		int x_sq = (x1 - x) * (x1 - x), y_sq = (yy - y) * (yy - y);
+		int d = 1 - 2 * (x - x1), ii;
 		for (int xx = x1; xx <= x2; xx++)
 		{
 			ii = x_sq + y_sq;
