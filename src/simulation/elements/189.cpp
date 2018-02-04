@@ -415,10 +415,10 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 							break;
 						case 5:
 							(f & (FLAG_DIRCH_MARK_HV)) ? (
+								sim->kill_part(i),
 								(sim->parts[ri].saveWl != sim->parts[i].ctype) &&
 									(omsk |= FLAG_DIRCH_MARK_K)) :
-								(sim->parts[ri].saveWl = sim->parts[i].ctype),
-							sim->kill_part(i);
+								(sim->parts[ri].saveWl = sim->parts[i].ctype);
 							break;
 						}
 						
