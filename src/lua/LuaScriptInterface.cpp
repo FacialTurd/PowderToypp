@@ -954,6 +954,8 @@ void LuaScriptInterface::initSimulationAPI()
 	lua_setfield(l, -2, "signs");
 }
 
+#define ID part_ID
+
 int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 {
 	int x = luaL_checkinteger(L, 1);
@@ -983,11 +985,16 @@ int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 			{
 				if (ii <= 0)
 					continue;
-				float rf  = (float)s / sqrtf(ii);
-				float vxd = (float)(yy - y) * rf;
-				float vyd = (float)(x - xx) * rf;
-				luacon_sim->vx[yy][xx] += vxd;
-				luacon_sim->vy[yy][xx] += vyd;
+				float rf = s / sqrtf(ii);
+				float nvx = luacon_sim->vx[yy][xx] + (float)(yy - y) * rf;
+				float nvy = luacon_sim->vy[yy][xx] + (float)(x - xx) * rf;
+				// clamping velocity
+				if (nvx < -256.0f) nvx = -256.0f;
+				if (nvx >  256.0f) nvx =  256.0f;
+				if (nvy < -256.0f) nvy = -256.0f;
+				if (nvy >  256.0f) nvy =  256.0f;
+				luacon_sim->vx[yy][xx] = nvx;
+				luacon_sim->vy[yy][xx] = nvy;
 			}
 		}
 	}
@@ -1035,11 +1042,11 @@ int LuaScriptInterface::simulation_partNeighbours(lua_State * l)
 				if (x+rx >= 0 && y+ry >= 0 && x+rx < XRES && y+ry < YRES && (rx || ry))
 				{
 					n = luacon_sim->pmap[y+ry][x+rx];
-					if (!n || (n&0xFF) != t)
+					if (!n || TYP(n) != t)
 						n = luacon_sim->photons[y+ry][x+rx];
-					if (n && (n&0xFF) == t)
+					if (n && TYP(n) == t)
 					{
-						lua_pushinteger(l, n>>8);
+						lua_pushinteger(l, ID(n));
 						lua_rawseti(l, -2, id++);
 					}
 				}
@@ -1056,7 +1063,7 @@ int LuaScriptInterface::simulation_partNeighbours(lua_State * l)
 						n = luacon_sim->photons[y+ry][x+rx];
 					if (n)
 					{
-						lua_pushinteger(l, n>>8);
+						lua_pushinteger(l, ID(n));
 						lua_rawseti(l, -2, id++);
 					}
 				}
@@ -1088,10 +1095,10 @@ int LuaScriptInterface::simulation_partCreate(lua_State * l)
 	}
 	int type = lua_tointeger(l, 4);
 	int v = -1;
-	if (type>>8)
+	if (ID(type))
 	{
-		v = type>>8;
-		type = type&0xFF;
+		v = ID(type);
+		type = TYP(type);
 	}
 	lua_pushinteger(l, luacon_sim->create_part(newID, lua_tointeger(l, 2), lua_tointeger(l, 3), type, v));
 	return 1;
@@ -1104,7 +1111,7 @@ int LuaScriptInterface::simulation_partCreate2(lua_State * l)
 	int part_type = lua_tointeger(l, 4);
 	int part_value = lua_tointeger(l, 5);
 	int newID2, multiplier;
-	if(newID >= NPART || newID < -3 || part_type < 0 || part_type > 0xFF) // exclude SPC_AIR
+	if(newID >= NPART || newID < -3 || part_type < 0 || part_type >= PT_NUM) // exclude SPC_AIR
 	{
 		lua_pushinteger(l, -1);
 		return 1;
@@ -1142,7 +1149,7 @@ int LuaScriptInterface::simulation_partID(lua_State * l)
 	if (!amalgam)
 		lua_pushnil(l);
 	else
-		lua_pushinteger(l, amalgam >> 8);
+		lua_pushinteger(l, ID(amalgam));
 	return 1;
 }
 
@@ -1228,9 +1235,9 @@ int LuaScriptInterface::simulation_pmap_move_to(lua_State * l)
 	
 	if (IN_BOUNDS(newX_i, newY_i))
 	{
-		if (IN_BOUNDS(oldX, oldY) && (luacon_sim->pmap[oldY][oldX] >> 8) == particleID)
+		if (IN_BOUNDS(oldX, oldY) && ID(luacon_sim->pmap[oldY][oldX]) == particleID)
 			luacon_sim->pmap[oldY][oldX] = 0;
-		luacon_sim->pmap[newY_i][newX_i] = type | (particleID << 8);
+		luacon_sim->pmap[newY_i][newX_i] = PMAP(particleID, type);
 		luacon_sim->parts[particleID].x = newX;
 		luacon_sim->parts[particleID].y = newY;
 	}
@@ -1675,7 +1682,10 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 	if (argCount >= 4 && lua_isnumber(l, 4))
 	{
 		ri = lua_tointeger(l, 4);
-		d = dd = ri & 0x1F, ri >>= 5; // don't replace &0xFF and >>8/<<8 in this line
+		if (argCount == 5)
+			d = dd = lua_tointeger(l, 5) & 0x1F;
+		else
+			d = dd = ri & 0x1F, ri >>= 5; // don't replace &0xFF and >>8/<<8 in this line
 		if (ri >= 0 && ri < NPART)
 		{
 			Particle * pt = &(luacon_sim->parts[ri]);
@@ -1696,7 +1706,7 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 		unsigned int r = luacon_sim->pmap[y][x];
 		// TODO: replace &0xFF and >>8/<<8 with macro
 		int rt = TYP(r);
-		int ri = rt ? part_ID(r) : -3;
+		int ri = rt ? ID(r) : -3;
 		if (ri < 0 || !(luacon_sim->elements[luacon_sim->parts[ri].type].Properties2 & PROP_INDESTRUCTIBLE))
 		{
 			if (f < 0)
