@@ -56,10 +56,10 @@ int Element_AMTR::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = r&0xFF;
+				rt = TYP(r);
 				if (rt!=PT_AMTR && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE))
 				    && rt!=PT_VOID && rt!=PT_BHOL && rt!=PT_NBHL && rt!=PT_PRTI && rt!=PT_PRTO
-					&& (rt!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
+					&& (rt!=PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)))
 				{
 					parts[i].life++;
 					if (parts[i].life==4)
@@ -68,9 +68,9 @@ int Element_AMTR::update(UPDATE_FUNC_ARGS)
 						return 1;
 					}
 					if (!(rand()%10))
-						sim->create_part(r>>8, x+rx, y+ry, PT_PHOT);
+						sim->create_part(part_ID(r), x+rx, y+ry, PT_PHOT);
 					else
-						sim->kill_part(r>>8);
+						sim->kill_part(part_ID(r));
 					sim->pv[y/CELL][x/CELL] -= 2.0f;
 				}
 			}

@@ -59,7 +59,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 					continue;
 				rt = TYP(r);
 				if (rt!=PT_BOMB && rt!=PT_EMBR && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && rt!=PT_VIBR
-					&& (rt!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
+					&& (rt!=PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)))
 				{
 					int rad = 8, nt;
 					int nxi, nxj;
@@ -76,7 +76,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 								int rr = pmap[ynxj][xnxi];
 								nt = TYP(rr);
 								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && (nt!=ELEM_MULTIPP || (partsi(rr).life&~0x1)!=8)
-									&& (nt!=PT_SPRK || !(sim->elements[parts[rr>>8].ctype].Properties2 & PROP_NODESTRUCT)))
+									&& (nt!=PT_SPRK || !(sim->elements[partsi(rr).ctype].Properties2 & PROP_NODESTRUCT)))
 								{
 									if (nt)
 										sim->kill_part(part_ID(rr));

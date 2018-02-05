@@ -47,7 +47,7 @@ Element_BANG::Element_BANG()
 //#TPT-Directive ElementHeader Element_BANG static int update(UPDATE_FUNC_ARGS)
 int Element_BANG::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, rt;
 	if(parts[i].tmp==0)
 	{
 		if(parts[i].temp>=673.0f)
@@ -60,7 +60,8 @@ int Element_BANG::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
-						if ((r&0xFF)==PT_FIRE || (r&0xFF)==PT_PLSM || (r&0xFF)==PT_SPRK || (r&0xFF)==PT_LIGH)
+						rt = TYP(r);
+						if (rt==PT_FIRE || rt==PT_PLSM || rt==PT_SPRK || rt==PT_LIGH)
 						{
 							parts[i].tmp = 1;
 						}
@@ -69,7 +70,7 @@ int Element_BANG::update(UPDATE_FUNC_ARGS)
 	}
 	else if(parts[i].tmp==1)
 	{
-		if ((pmap[y][x]>>8 == i))
+		if (part_ID(pmap[y][x]) == i)
 		{
 			PropertyValue value;
 			value.Integer = 2;
