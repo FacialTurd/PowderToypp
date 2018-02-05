@@ -1,6 +1,8 @@
 #ifndef __MULTIPPE_Update_H__
 #define __MULTIPPE_Update_H__
 
+#define NUM_COLOR_SPC 41
+
 class Simulation;
 class Renderer;
 struct Particle;
@@ -9,6 +11,7 @@ class MULTIPPE_Update
 public:
 	MULTIPPE_Update() { }
 	virtual ~MULTIPPE_Update() { }
+	static pixel ColorsSpc [NUM_COLOR_SPC];
 	static Renderer * ren_;
 	static int update(UPDATE_FUNC_ARGS);
 	static int graphics(GRAPHICS_FUNC_ARGS);

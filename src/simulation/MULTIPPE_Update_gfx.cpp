@@ -1,11 +1,7 @@
 #include "simulation/Elements.h"
 #include "simulation/MULTIPPE_Update.h"
 
-pixel tempPartColor;
-
-#define NUM_SPC 41
-
-pixel special_colors [NUM_SPC] = {
+pixel MULTIPPE_Update::ColorsSpc [NUM_COLOR_SPC] = {
 	PIXPACK(0x999999), PIXPACK(0x9C9C9C), PIXPACK(0xFA9999), PIXPACK(0x99CC70), PIXPACK(0x702088),
 	PIXPACK(0x9040A8), PIXPACK(0xFF9999), PIXPACK(0x525252), PIXPACK(0x065206), PIXPACK(0xD2FFCF), //  10
 	PIXPACK(0xBC00BC), PIXPACK(0x9040A8), PIXPACK(0xBFFF05), PIXPACK(0xFF33FF), PIXPACK(0xFF22FF),
@@ -22,11 +18,8 @@ int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 	static char excitedtable [16] = {  0, 8, 2,10,12, 4,14, 6, 3,11, 1, 9,15, 7,13, 5 };
 	int ptmp, ppos, pexc1, temp, tmp2v;
 	int clife = cpart->life;
-	if (clife >= 0 && clife < NUM_SPC) // pre-decoration
-	{
-		tempPartColor = special_colors[clife];
-		*colr = PIXR(tempPartColor); *colg = PIXG(tempPartColor); *colb = PIXB(tempPartColor); 
-	}
+	pixel tempPartColor;
+
 	switch(clife)
 	{
 	case 0:
@@ -229,8 +222,8 @@ int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 					tempPartColor = Element_LIFE::Element_GOL_colour[ppos];
 				break;
 			case ELEM_MULTIPP:
-				if (ppos >= 0 && ppos < NUM_SPC)
-					tempPartColor = special_colors[ppos];
+				if (ppos >= 0 && ppos < NUM_COLOR_SPC)
+					tempPartColor = ColorsSpc[ppos];
 				break;
 			}
 			

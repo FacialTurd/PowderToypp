@@ -12,6 +12,7 @@
 #include "simulation/Elements.h"
 #include "simulation/ElementGraphics.h"
 #include "simulation/Air.h"
+#include "simulation/MULTIPPE_Update.h"
 #ifdef LUACONSOLE
 #include "lua/LuaScriptInterface.h"
 #include "lua/LuaScriptHelper.h"
@@ -1331,7 +1332,7 @@ void Renderer::prepare_alpha(int size, float intensity)
 
 void Renderer::render_parts()
 {
-	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x, y, caddress;
+	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x, y, caddress, storcol, tmplife;
 	int orbd[4] = {0, 0, 0, 0}, orbl[4] = {0, 0, 0, 0};
 	float gradv, flicker, q_float;
 	Particle * parts;
@@ -1399,9 +1400,11 @@ void Renderer::render_parts()
 			//Defaults
 			pixel_mode = 0 | PMODE_FLAT;
 			cola = 255;
-			colr = PIXR(elements[t].Colour);
-			colg = PIXG(elements[t].Colour);
-			colb = PIXB(elements[t].Colour);
+			storcol = (t != ELEM_MULTIPP || (tmplife = sim->parts[i].life) < 0 || tmplife >= NUM_COLOR_SPC) ?
+				elements[t].Colour : MULTIPPE_Update::ColorsSpc[tmplife];
+			colr = PIXR(storcol);
+			colg = PIXG(storcol);
+			colb = PIXB(storcol);
 			firer = fireg = fireb = firea = 0;
 
 			deca = (sim->parts[i].dcolour>>24)&0xFF;
@@ -1544,9 +1547,9 @@ void Renderer::render_parts()
 				}
 				else if(colour_mode & COLOUR_BASC)
 				{
-					colr = PIXR(elements[t].Colour);
-					colg = PIXG(elements[t].Colour);
-					colb = PIXB(elements[t].Colour);
+					colr = PIXR(storcol);
+					colg = PIXG(storcol);
+					colb = PIXB(storcol);
 					pixel_mode = PMODE_FLAT;
 				}
 

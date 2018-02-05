@@ -243,7 +243,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			switch (TYP(r))
 			{
 			case PT_CAUS:
-				if (sctype != PT_CAUS && sctype != PT_NEUT)
+				if (!(isbray || sctype == PT_CAUS || sctype == PT_NEUT))
 				{
 					sim->part_change_type(ID(r), x, y, PT_RFRG); // probably inverse for NEUT???
 					partsi(r).tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
