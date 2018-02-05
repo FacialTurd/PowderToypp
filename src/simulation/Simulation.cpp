@@ -4445,41 +4445,49 @@ void Simulation::UpdateParticles(int start, int end)
 						}
 						else if (t == PT_LAVA)
 						{
-							if (parts[i].ctype>0 && parts[i].ctype<PT_NUM && parts[i].ctype!=PT_LAVA && parts[i].ctype!=PT_LAVA && elements[parts[i].ctype].Enabled)
+							int ct = parts[i].ctype;
+							if (ct>0 && ct<PT_NUM && ct!=PT_LAVA && ct!=ELEM_MULTIPP && elements[ct].Enabled)
 							{
-								if (parts[i].ctype==PT_THRM&&pt>=elements[PT_BMTL].HighTemperature)
-									s = 0;
-								else if ((parts[i].ctype==PT_VIBR || parts[i].ctype==PT_BVBR) && pt>=273.15f)
-									s = 0;
-								else if (parts[i].ctype==PT_TUNG)
+								switch (ct)
 								{
+								case PT_THRM:
+									if (pt >= elements[PT_BMTL].HighTemperature || pt >= 973.0f)
+										s = 0;
+									s && (ct = PT_BMTL, parts[i].tmp = 0);
+									break;
+								case PT_VIBR: case PT_BVBR:
+									if (pt >= 273.15f)
+										s = 0;
+									break;
+								case PT_TUNG:
 									// TUNG does its own melting in its update function, so HighTemperatureTransition is not LAVA so it won't be handled by the code for HighTemperatureTransition==PT_LAVA below
 									// However, the threshold is stored in HighTemperature to allow it to be changed from Lua
-									if (pt>=elements[parts[i].ctype].HighTemperature)
+									if (pt>=elements[ct].HighTemperature)
 										s = 0;
-								}
-								else if (parts[i].ctype == PT_CRMC)
-								{
-									float pres = std::max((pv[y/CELL][x/CELL]+pv[(y-2)/CELL][x/CELL]+pv[(y+2)/CELL][x/CELL]+pv[y/CELL][(x-2)/CELL]+pv[y/CELL][(x+2)/CELL])*2.0f, 0.0f);
-									if (ctemph >= pres+elements[PT_CRMC].HighTemperature)
+									break;
+								case PT_CRMC:
+									{
+										float pres = std::max((pv[y/CELL][x/CELL]+pv[(y-2)/CELL][x/CELL]+pv[(y+2)/CELL][x/CELL]+pv[y/CELL][(x-2)/CELL]+pv[y/CELL][(x+2)/CELL])*2.0f, 0.0f);
+										if (ctemph >= pres+elements[PT_CRMC].HighTemperature)
+											s = 0;
+									}
+									break;
+								default:
+									if (elements[ct].HighTemperatureTransition != PT_LAVA)
+									{
+										if (pt >= 973.0f)
+											s = 0;
+										break;
+									}
+								case PT_HEAC:
+									if (pt >= elements[ct].HighTemperature)
 										s = 0;
+									break;
 								}
-								else if (elements[parts[i].ctype].HighTemperatureTransition == PT_LAVA || parts[i].ctype == PT_HEAC)
-								{
-									if (pt >= elements[parts[i].ctype].HighTemperature)
-										s = 0;
-								}
-								else if (pt>=973.0f)
-									s = 0; // freezing point for lava with any other (not listed in ptransitions as turning into lava) ctype
 								if (s)
 								{
-									t = parts[i].ctype;
+									t = ct;
 									parts[i].ctype = PT_NONE;
-									if (t == PT_THRM)
-									{
-										parts[i].tmp = 0;
-										t = PT_BMTL;
-									}
 									if (t == PT_PLUT)
 									{
 										parts[i].tmp = 0;
