@@ -57,26 +57,28 @@ int Element_CLST::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_WATR)
+				int rt = TYP(r);
+				if (rt==PT_WATR)
 				{
 					if (!(rand()%1500))
 					{
 						sim->create_part(i, x, y, PT_PSTS);
-						sim->kill_part(r>>8);
+						sim->kill_part(part_ID(r));
 					}
 				}
-				else if ((r&0xFF)==PT_NITR)
+				else if (rt==PT_NITR)
 				{
 					sim->create_part(i, x, y, PT_BANG);
-					sim->create_part(r>>8, x+rx, y+ry, PT_BANG);
+					sim->create_part(part_ID(r), x+rx, y+ry, PT_BANG);
 				}
-				else if ((r&0xFF)==PT_CLST)
+				else if (rt==PT_CLST)
 				{
-					if(parts[i].temp <195)
+					float temp = parts[i].temp;
+					if (temp < 195)
 						cxy = 0.05;
-					else if(parts[i].temp <295)
+					else if (temp < 295)
 						cxy = 0.015;
-					else if(parts[i].temp <350)
+					else if (temp < 350)
 						cxy = 0.01;
 					else
 						cxy = 0.005;

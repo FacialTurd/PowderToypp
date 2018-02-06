@@ -94,64 +94,72 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rlife = parts[r>>8].life;
+				int rt = TYP(r);
+				r >>= PMAPBITS;
 
-				//spread "being cured" state
-				if (parts[r>>8].pavg[0] && ((r&0xFF) == PT_VIRS || (r&0xFF) == PT_VRSS || (r&0xFF) == PT_VRSG))
+				switch (rt)
 				{
-					parts[i].pavg[0] = parts[r>>8].pavg[0] + ((rndstore & 0x3) ? 2:1);
-					return 0;
-				}
-				//soap cures virus
-				else if ((r&0xFF) == PT_SOAP)
-				{
+				case PT_VIRS:
+				case PT_VRSS:
+				case PT_VRSG:
+					// spread "being cured" state
+					if (parts[r].pavg[0])
+					{
+						parts[i].pavg[0] = parts[r].pavg[0] + ((rndstore & 0x3) ? 2:1);
+						return 0;
+					}
+					break;
+				case PT_SOAP:
+					// soap cures virus
 					parts[i].pavg[0] += 10;
 					if (!(rndstore & 0x3))
-						sim->kill_part(r>>8);
+						sim->kill_part(r);
 					return 0;
-				}
-				else if ((r&0xFF) == PT_PLSM)
-				{
+				case PT_PLSM:
+					// plasma burns virus
 					if (surround_space && 10 + (int)(sim->pv[(y+ry)/CELL][(x+rx)/CELL]) > (rand()%100))
 					{
 						sim->create_part(i, x, y, PT_PLSM);
 						return 1;
 					}
-				}
+					goto skip_find_photons;
+				case ELEM_MULTIPP:
+					rlife = parts[r].life;
+					if (rlife != 8 && rlife != 9 && (rlife != 16 || parts[r].ctype != 4))
+						goto infecting_virus;
+					break;
+				case PT_SPRK:
+					rt = parts[r].ctype;
+				default:
+				infecting_virus:
 				//transforms things into virus here
-				else if ((r&0xFF) != PT_VIRS && (r&0xFF) != PT_VRSS && (r&0xFF) != PT_VRSG && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT)
-					&& ((r&0xFF) != PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT))
-					&& ((r&0xFF) != ELEM_MULTIPP || (rlife&~0x1) != 0x8 && (rlife != 16 || parts[r>>8].ctype != 4)))
-				{
-					if (!(rndstore & 0x7))
+					if (!(sim->elements[rt].Properties2 & PROP_NODESTRUCT))
 					{
-						// parts[r>>8].tmp4 = parts[r>>8].tmp2;
+						if (!(rndstore & 0x7))
 						{
-							int rt = r&0xFF;
-							// if (rt == ELEM_MULTIPP)
-							//	parts[r>>8].tmp4 = 0x10000 | parts[r>>8].life;
-							// else
-							parts[r>>8].tmp4 = (r&0xFF);
+							parts[r].tmp4 = rt;
+
+							parts[r].pavg[0] = 0;
+							if (parts[i].pavg[1])
+								parts[r].pavg[1] = parts[i].pavg[1] + 1;
+							else
+								parts[r].pavg[1] = 0;
+							if (parts[r].temp < 305.0f)
+								sim->part_change_type(r, x+rx, y+ry, PT_VRSS);
+							else if (parts[r].temp > 673.0f)
+								sim->part_change_type(r, x+rx, y+ry, PT_VRSG);
+							else
+								sim->part_change_type(r, x+rx, y+ry, PT_VIRS);
 						}
-						parts[r>>8].pavg[0] = 0;
-						if (parts[i].pavg[1])
-							parts[r>>8].pavg[1] = parts[i].pavg[1] + 1;
-						else
-							parts[r>>8].pavg[1] = 0;
-						if (parts[r>>8].temp < 305.0f)
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_VRSS);
-						else if (parts[r>>8].temp > 673.0f)
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_VRSG);
-						else
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_VIRS);
+						rndstore >>= 3;
 					}
-					rndstore >>= 3;
+					goto skip_find_photons;
 				}
-				//protons make VIRS last forever
-				else if ((sim->photons[y+ry][x+rx]&0xFF) == PT_PROT)
+				if (TYP(sim->photons[y+ry][x+rx]) == PT_PROT)
 				{
 					parts[i].pavg[1] = 0;
 				}
+			skip_find_photons:;
 			}
 			//reset rndstore only once, halfway through
 			else if (!rx && !ry)

@@ -49,7 +49,7 @@ Element_WARP::Element_WARP()
 //#TPT-Directive ElementHeader Element_WARP static int update(UPDATE_FUNC_ARGS)
 int Element_WARP::update(UPDATE_FUNC_ARGS)
 {
-	int trade, r, rx, ry;
+	int trade, r, rx, ry, rt;
 	if (parts[i].tmp2>2000)
 	{
 		parts[i].temp = (MAX_TEMP + 1); // 10000;
@@ -66,18 +66,19 @@ int Element_WARP::update(UPDATE_FUNC_ARGS)
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
-			if ((r&0xFF)!=PT_WARP&&(r&0xFF)!=PT_STKM&&(r&0xFF)!=PT_STKM2&&!(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
-				&& ((r&0xFF)!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
+			rt = TYP(r);
+			if (rt!=PT_WARP&&rt!=PT_STKM&&rt!=PT_STKM2&&!(sim->elements[rt].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
+				&& (rt!=PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)))
 			{
-				parts[i].x = parts[r>>8].x;
-				parts[i].y = parts[r>>8].y;
-				parts[r>>8].x = x;
-				parts[r>>8].y = y;
-				parts[r>>8].vx = (rand()%4)-1.5;
-				parts[r>>8].vy = (rand()%4)-2;
+				parts[i].x = partsi(r).x;
+				parts[i].y = partsi(r).y;
+				partsi(r).x = x;
+				partsi(r).y = y;
+				partsi(r).vx = (rand()%4)-1.5;
+				partsi(r).vy = (rand()%4)-2;
 				parts[i].life += 4;
 				pmap[y][x] = r;
-				pmap[y+ry][x+rx] = (i<<8)|parts[i].type;
+				pmap[y+ry][x+rx] = PMAP(i, parts[i].type);
 				trade = 5;
 			}
 		}

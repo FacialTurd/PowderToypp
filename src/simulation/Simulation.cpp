@@ -4475,6 +4475,7 @@ void Simulation::UpdateParticles(int start, int end)
 								default:
 									if (elements[ct].HighTemperatureTransition != PT_LAVA)
 									{
+										// freezing point for lava with any other (not listed in ptransitions as turning into lava) ctype
 										if (pt >= 973.0f)
 											s = 0;
 										break;
@@ -5754,7 +5755,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 				else
 				{
 					pmapp1 = pmapp2 = &(pmap[y][x]);
-					if ((*pmapp1 & 0xFF) == PT_PINVIS) // if pmap [y][x] value is PINV
+					if (TYP(*pmapp1) == PT_PINVIS) // if pmap [y][x] value is PINV
 						pmapp2 = &(partsi(*pmapp1).tmp4);
 
 					// Particles are sometimes allowed to go inside INVS and FILT
@@ -5776,8 +5777,8 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 							parts[i].tmp4 = tt;
 						pmap[y][x] = PMAP(i, t);
 					}
-					else if ((tt & 0xFF) == PT_PINVIS)
-						parts[tt>>8].tmp4 = PMAP(i, t);
+					else if (TYP(tt) == PT_PINVIS)
+						partsi(tt).tmp4 = PMAP(i, t);
 #endif
 
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
