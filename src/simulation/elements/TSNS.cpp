@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_TSNS PT_TSNS 164
+#define ID(r) part_ID(r)
 Element_TSNS::Element_TSNS()
 {
 	Identifier = "DEFAULT_PT_TSNS";
@@ -61,15 +62,15 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 					int r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					int rt = r&0xFF;
-					int pavg = sim->parts_avg(i, r>>8, PT_INSL);
+					int rt = TYP(r);
+					int pavg = sim->parts_avg(i, ID(r), PT_INSL);
 					if (pavg != PT_INSL && pavg != PT_INDI)
 					{
-						if ((sim->elements[rt].Properties & (PROP_CONDUCTS | PROP_INSULATED)) == PROP_CONDUCTS && parts[r>>8].life == 0)
+						if ((sim->elements[rt].Properties & (PROP_CONDUCTS | PROP_INSULATED)) == PROP_CONDUCTS && partsi(r).life == 0)
 						{
-							parts[r>>8].life = 4;
-							parts[r>>8].ctype = rt;
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_SPRK);
+							partsi(r).life = 4;
+							partsi(r).ctype = rt;
+							sim->part_change_type(ID(r), x+rx, y+ry, PT_SPRK);
 						}
 					}
 				}
@@ -80,17 +81,18 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 		for (int ry = -rd; ry <= rd; ry++)
 			if (x + rx >= 0 && y + ry >= 0 && x + rx < XRES && y + ry < YRES && (rx || ry))
 			{
-				int r = pmap[y+ry][x+rx];
+				int r = pmap[y+ry][x+rx], rt;
 				if (!r)
 					r = sim->photons[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF) != PT_TSNS && (r&0xFF) != PT_METL && !(parts[i].tmp3 & 1) == (parts[r>>8].temp > parts[i].temp))
+				rt = TYP(r);
+				if (TYP(r) != PT_TSNS && rt != PT_METL && !(parts[i].tmp3 & 1) == (partsi(r).temp > parts[i].temp))
 					parts[i].life = 1;
-				if (parts[i].tmp == 1 && (r&0xFF) != PT_TSNS && (r&0xFF) != PT_FILT)
+				if (parts[i].tmp == 1 && rt != PT_TSNS && rt != PT_FILT)
 				{
 					setFilt = true;
-					photonWl = parts[r>>8].temp;
+					photonWl = partsi(r).temp;
 				}
 			}
 	if (setFilt)
@@ -105,9 +107,9 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 						continue;
 					nx = x + rx;
 					ny = y + ry;
-					while ((r & 0xFF) == PT_FILT)
+					while (TYP(r) == PT_FILT)
 					{
-						parts[r>>8].ctype = 0x10000000 + photonWl;
+						partsi(r).ctype = 0x10000000 + photonWl;
 						nx += rx;
 						ny += ry;
 						if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)

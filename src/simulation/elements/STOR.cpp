@@ -59,33 +59,29 @@ int Element_STOR::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				if ((r>>8)>=NPART || !r)
+				if (part_ID(r) >= NPART || !r)
 					continue;
-				if (!parts[i].tmp && !parts[i].life && (r&0xFF)!=PT_STOR && !(sim->elements[(r&0xFF)].Properties&TYPE_SOLID) && (!parts[i].ctype || (r&0xFF)==parts[i].ctype))
+				int rt = TYP(r);
+				r >>= PMAPBITS;
+				if (!parts[i].tmp && !parts[i].life && rt!=PT_STOR && !(sim->elements[rt].Properties&TYPE_SOLID) && (!parts[i].ctype || rt == parts[i].ctype))
 				{
-					if ((r&0xFF) == PT_SOAP)
-						Element_SOAP::detach(sim, r>>8);
-					parts[i].tmp = parts[r>>8].type;
-					parts[i].temp = parts[r>>8].temp;
-					parts[i].tmp2 = parts[r>>8].life;
-					/* original code:
-					parts[i].pavg[0] = parts[r>>8].tmp;
-					parts[i].pavg[1] = parts[r>>8].ctype;
-					parts[i].tmp3 = parts[r>>8].tmp2;
-					parts[i].tmp4 = parts[r>>8].tmp3;
-					*/
-					parts[i].tmp3 = parts[r>>8].tmp;
-					parts[i].tmp4 = parts[r>>8].ctype;
-					parts[i].pavg[0] = parts[r>>8].tmp2;
-					parts[i].pavg[1] = parts[r>>8].tmp3;
-					parts[i].cdcolour = parts[r>>8].dcolour;
-					sim->kill_part(r>>8);
+					if (rt == PT_SOAP)
+						Element_SOAP::detach(sim, r);
+					parts[i].tmp = parts[r].type;
+					parts[i].temp = parts[r].temp;
+					parts[i].tmp2 = parts[r].life;
+					parts[i].tmp3 = parts[r].tmp;
+					parts[i].tmp4 = parts[r].ctype;
+					parts[i].pavg[0] = parts[r].tmp2;
+					parts[i].pavg[1] = parts[r].tmp3;
+					parts[i].cdcolour = parts[r].dcolour;
+					sim->kill_part(r);
 				}
-				if(parts[i].tmp && (r&0xFF)==PT_SPRK && parts[r>>8].ctype==PT_PSCN && parts[r>>8].life>0 && parts[r>>8].life<4)
+				if (parts[i].tmp && rt == PT_SPRK && parts[r].ctype==PT_PSCN && parts[r].life>0 && parts[r].life<4)
 				{
 					for(ry1 = 1; ry1 >= -1; ry1--){
 						for(rx1 = 0; rx1 >= -1 && rx1 <= 1; rx1 = -rx1-rx1+1){ // Oscillate the X starting at 0, 1, -1, 3, -5, etc (Though stop at -1)
-							np = sim->create_part(-1,x+rx1,y+ry1,parts[i].tmp&0xFF);
+							np = sim->create_part(-1, x+rx1, y+ry1, TYP(parts[i].tmp));
 							if (np!=-1)
 							{
 								parts[np].temp = parts[i].temp;

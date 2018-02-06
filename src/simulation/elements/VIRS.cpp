@@ -60,14 +60,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 		if (!parts[i].pavg[0])
 		{
 			int rt = parts[i].tmp4;
-			// if ((rt >> 16) == 1)
-			// {
-			//	sim->part_change_type(i,x,y,ELEM_MULTIPP);
-			//	parts[i].life = rt & 0xFFFF;
-			// }
-			// else
-				sim->part_change_type(i,x,y,rt);
-			// parts[i].tmp2 = parts[i].tmp4;
+			sim->part_change_type(i,x,y,rt);
 			parts[i].tmp4 = 0;
 			parts[i].pavg[0] = 0;
 			parts[i].pavg[1] = 0;
@@ -122,7 +115,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 						sim->create_part(i, x, y, PT_PLSM);
 						return 1;
 					}
-					goto skip_find_photons;
+					continue;
 				case ELEM_MULTIPP:
 					rlife = parts[r].life;
 					if (rlife != 8 && rlife != 9 && (rlife != 16 || parts[r].ctype != 4))
@@ -152,14 +145,18 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 								sim->part_change_type(r, x+rx, y+ry, PT_VIRS);
 						}
 						rndstore >>= 3;
+						continue;
 					}
-					goto skip_find_photons;
 				}
-				if (TYP(sim->photons[y+ry][x+rx]) == PT_PROT)
+				r = sim->photons[y+ry][x+rx];
+				if (TYP(r) == PT_PROT)
 				{
 					parts[i].pavg[1] = 0;
 				}
-			skip_find_photons:;
+				else if (TYP(r) == PT_E186 && partsi(r).ctype >= 0 && partsi(r).ctype <= PMAPMASK)
+				{
+					parts[i].tmp4 = 0;
+				}
 			}
 			//reset rndstore only once, halfway through
 			else if (!rx && !ry)

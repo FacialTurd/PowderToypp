@@ -297,11 +297,6 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
 				parts[i].ctype = 0;
 				break;
-			case PT_VIRS:
-			case PT_VRSS:
-			case PT_VRSG:
-				partsi(r).tmp4 = PT_NONE;
-				break;
 			case PT_URAN:
 				if (u2pu)
 				{
