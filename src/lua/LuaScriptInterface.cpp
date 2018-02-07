@@ -3711,7 +3711,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 			if (dtype == LUA_TNUMBER)
 			{
 				tt = lua_tonumber(l, 3);
-				if (tt >= 0 || tt < PT_NUM)
+				if (tt >= 0 && tt < PT_NUM)
 				{
 					pp = luaL_optinteger(l, 4, 50);
 					(pp <= 0) ? (pp = 0) : (pp > 1000) && (pp = 1000);
