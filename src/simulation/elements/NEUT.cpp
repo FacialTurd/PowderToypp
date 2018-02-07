@@ -1,6 +1,8 @@
 #include "simulation/Elements.h"
-
 #define ID part_ID
+#define SETTRANS(t, e1, e2, m, p) (\
+	t[2*e1] = PMAP(m, e2), \
+	t[2*e1+1] = p * (RAND_MAX / 1000.0))
 
 //#TPT-Directive ElementClass Element_NEUT PT_NEUT 18
 Element_NEUT::Element_NEUT()
@@ -47,12 +49,37 @@ Element_NEUT::Element_NEUT()
 
 	Update = &Element_NEUT::update;
 	Graphics = &Element_NEUT::graphics;
+	
+	if (Element_NEUT::TransitionTable == NULL)
+	{
+		int * tt = (int*)calloc(2 * PT_NUM, sizeof(int));
+		Element_NEUT::TransitionTable = tt;
+		if (tt != NULL)
+		{
+			// old type, new type, method, probability
+			SETTRANS(tt, PT_GUNP, PT_DUST, 1,   15);
+			SETTRANS(tt, PT_DYST, PT_YEST, 1,   15);
+			SETTRANS(tt, PT_YEST, PT_DYST, 1, 1000);
+			SETTRANS(tt, PT_PLEX, PT_GOO , 1,   15);
+			SETTRANS(tt, PT_NITR, PT_DESL, 1,   15);
+			SETTRANS(tt, PT_PLNT, PT_WOOD, 2,   50);
+			SETTRANS(tt, PT_DESL, PT_GAS , 1,   15);
+			SETTRANS(tt, PT_OIL , PT_GAS , 1,   15);
+			SETTRANS(tt, PT_COAL, PT_WOOD, 2,   50);
+			SETTRANS(tt, PT_BCOL, PT_SAWD, 2,   50);
+			SETTRANS(tt, PT_DUST, PT_FWRK, 1,   50);
+			SETTRANS(tt, PT_ACID, PT_ISOZ, 2,   50);
+		}
+	}
 }
+
+//#TPT-Directive ElementHeader Element_NEUT static int * TransitionTable
+int * Element_NEUT::TransitionTable = NULL;
 
 //#TPT-Directive ElementHeader Element_NEUT static int update(UPDATE_FUNC_ARGS)
 int Element_NEUT::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, target_r = -1;
+	int r, rx, ry, rt, target_r = -1;
 	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	for (rx=-1; rx<2; rx++)
@@ -60,7 +87,8 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK)
 			{
 				r = pmap[y+ry][x+rx];
-				switch (TYP(r))
+				rt = TYP(r);
+				switch (rt)
 				{
 				case PT_WATR:
 					if (3>(rand()%20))
@@ -114,53 +142,9 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 #endif
-				case PT_GUNP:
-					if (3>(rand()%200))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_DUST);
-					break;
-				case PT_DYST:
-					if (3>(rand()%200))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_YEST);
-					break;
-				case PT_YEST:
-					sim->part_change_type(ID(r),x+rx,y+ry,PT_DYST);
-					break;
-				case PT_PLEX:
-					if (3>(rand()%200))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_GOO);
-					break;
-				case PT_NITR:
-					if (3>(rand()%200))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_DESL);
-					break;
-				case PT_PLNT:
-					if (!(rand()%20))
-						sim->create_part(ID(r), x+rx, y+ry, PT_WOOD);
-					break;
-				case PT_DESL:
-				case PT_OIL:
-					if (3>(rand()%200))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_GAS);
-					break;
-				case PT_COAL:
-					if (!(rand()%20))
-						sim->create_part(ID(r), x+rx, y+ry, PT_WOOD);
-					break;
-				case PT_BCOL:
-					if (!(rand()%20))
-						sim->create_part(ID(r), x+rx, y+ry, PT_SAWD);
-					break;
-				case PT_DUST:
-					if (!(rand()%20))
-						sim->part_change_type(ID(r), x+rx, y+ry, PT_FWRK);
-					break;
 				case PT_FWRK:
 					if (!(rand()%20))
 						partsi(r).ctype = PT_DUST;
-					break;
-				case PT_ACID:
-					if (!(rand()%20))
-						sim->create_part(ID(r), x+rx, y+ry, PT_ISOZ);
 					break;
 				case PT_TTAN:
 					if (!(rand()%20))
@@ -265,6 +249,19 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 				case PT_NONE:
 					break;
 				default:
+					if (TransitionTable != NULL)
+					{
+						int t = TransitionTable[2 * rt];
+						int m = ID(t);
+						if (m <= 0)
+							break;
+						t = TYP(t);
+						if (rand() <= TransitionTable[2 * rt + 1])
+							if (m == 1)
+								sim->part_change_type(ID(r), x+rx, y+ry, t);
+							else
+								sim->create_part(ID(r), x+rx, y+ry, t);
+					}
 					break;
 				}
 			}

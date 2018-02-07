@@ -3705,6 +3705,28 @@ int LuaScriptInterface::elements_property(lua_State * l)
 			}
 			luacon_ren->graphicscache[id].isready = 0;
 		}
+		else if(propertyName == "NeutronsTransition")
+		{
+			int dtype = lua_type(l, 3), tt = 0, pp = 0;
+			if (dtype == LUA_TNUMBER)
+			{
+				tt = lua_tonumber(l, 3);
+				if (tt >= 0 || tt < PT_NUM)
+				{
+					pp = luaL_optinteger(l, 4, 50);
+					(pp <= 0) ? (pp = 0) : (pp > 1000) && (pp = 1000);
+					if (pp)
+						pp = pp * (RAND_MAX / 1000.0),
+						tt = PMAP(luaL_optinteger(l, 5, 1), tt);
+				}
+			}
+			else if (dtype != LUA_TNIL)
+				return luaL_error(l, "Invalid element property");
+			if (Element_NEUT::TransitionTable == NULL)
+				return 0;
+			Element_NEUT::TransitionTable[2*id] = tt;
+			Element_NEUT::TransitionTable[2*id+1] = pp;
+		}
 		else if(id == PT_PHOT && propertyName == "CanIgnite" && lua_type(l, 3) == LUA_TBOOLEAN)
 		{
 			Element_PHOT::ignite_flammable = lua_toboolean(l, 3);
@@ -3770,6 +3792,20 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			lua_pushstring(l, luacon_sim->elements[id].Identifier);
 			return 1;
+		}
+		else if(propertyName == "NeutronsTransition")
+		{
+			if (Element_NEUT::TransitionTable == NULL)
+				return lua_pushnil(l), 1;
+			int t = Element_NEUT::TransitionTable[2*id];
+			if (ID(t))
+			{
+				lua_pushinteger(l, TYP(t));
+				lua_pushinteger(l, (int)(Element_NEUT::TransitionTable[2*id+1] * (1000.0 / RAND_MAX) + 0.5));
+				lua_pushinteger(l, ID(t));
+				return 3;
+			}
+			return lua_pushnil(l), 1;
 		}
 		else if(id == PT_PHOT && propertyName == "CanIgnite")
 		{
