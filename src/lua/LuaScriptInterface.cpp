@@ -3719,6 +3719,8 @@ int LuaScriptInterface::elements_property(lua_State * l)
 						pp = pp * (RAND_MAX / 1000.0),
 						tt = PMAP(luaL_optinteger(l, 5, 1), tt);
 				}
+				else
+					tt = 0;
 			}
 			else if (dtype != LUA_TNIL)
 				return luaL_error(l, "Invalid element property");
