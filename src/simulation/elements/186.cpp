@@ -233,6 +233,8 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				case PT_LIGH:
 					parts[s].tmp = rand()%360;
 					break;
+				case PT_BRAY:
+					parts[s].ctype = 0x1F << (parts[i].tmp - 1);
 				}
 			}
 		}
@@ -251,7 +253,27 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				break;
 			case PT_FILT:
 				if (isbray)
+				{
 					partsi(r).life = 4;
+					int filtmode = partsi(r).tmp;
+					if (filtmode == 9) // random wavelength
+					{
+						parts[i].tmp = rand() % 26 + 1;
+					}
+					else if (filtmode != 6) // if filter mode isn't no operation
+					{
+						int shift = (int)((partsi(r).temp - 273.0f) * 0.025f);
+						shift < 0 ? (shift = 0) : shift > 25 && (shift = 25);
+						int wl = parts[i].tmp;
+						if (filtmode == 4)
+							wl && (wl += shift, wl > 26 && (wl = 26));
+						else if (filtmode == 5)
+							wl && (wl -= shift, wl <  1 && (wl =  1));
+						else
+							wl = shift + 1;
+						parts[i].tmp = wl;
+					}
+				}
 				else
 					sim->part_change_type(i, x, y, PT_PHOT),
 					parts[i].ctype = 0x3FFFFFFF;

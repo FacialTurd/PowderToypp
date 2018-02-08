@@ -4250,7 +4250,7 @@ void Simulation::UpdateParticles(int start, int end)
 						rt = TYP(r);
 						if (rt&&elements[rt].HeatConduct&&(rt!=PT_HSWC||parts[ID(r)].life==10)
 						        &&(t!=PT_FILT||(rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
-						        &&(rt!=PT_FILT||(t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_BIZR&&t!=PT_BIZRG))
+						        &&(rt!=PT_FILT||(t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_E186&&t!=PT_BIZR&&t!=PT_BIZRG))
 						        &&(t!=PT_ELEC||rt!=PT_DEUT)
 						        &&(t!=PT_DEUT||rt!=PT_ELEC))
 						{

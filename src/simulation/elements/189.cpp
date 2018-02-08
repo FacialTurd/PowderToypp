@@ -241,8 +241,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				setFilter(sim, x, y, rtmp2 - 2, part_phot->ctype);
 				break;
 			case 10: case 11:
-				setFilter(sim, x, y, 2 * rtmp2 - 20, part_phot->ctype);
-				setFilter(sim, x, y, 2 * rtmp2 - 16, part_phot->ctype);
+				setFilter(sim, x, y, 2 * rtmp2 - 19, part_phot->ctype);
+				setFilter(sim, x, y, 2 * rtmp2 - 15, part_phot->ctype);
 				break;
 			}
 			break;
