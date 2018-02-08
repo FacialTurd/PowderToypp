@@ -164,8 +164,8 @@ VideoBuffer * Element_MULTIPP::iconGen(int toolID, int width, int height)
 	return newTexture;
 }
 
-//#TPT-Directive ElementHeader Element_MULTIPP static void setFilter(Simulation* sim, int x, int y, int a)
-void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int a)
+//#TPT-Directive ElementHeader Element_MULTIPP static void setFilter(Simulation* sim, int x, int y, int a, int w)
+void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int a, int w)
 {
 	int r, ix, iy;
 	ix = sim->portal_rx[a];
@@ -175,7 +175,7 @@ void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int a)
 	{
 		r = sim->pmap[y][x];
 		if (TYP(r) != PT_FILT) break;
-		sim->partsi(r).ctype = part_phot->ctype;
+		sim->partsi(r).ctype = w;
 	}
 }
 
@@ -230,19 +230,19 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 					sim->kill_part(i);
 					int a = (int)(floor(angle * (4.0f / M_PI) + 3.5f));
 					if (rtmp2 & 1)
-						setFilter(sim, x, y, (a + 2) & 7),
-						setFilter(sim, x, y, (a + 6) & 7);
+						setFilter(sim, x, y, (a + 2) & 7, part_phot->ctype),
+						setFilter(sim, x, y, (a + 6) & 7, part_phot->ctype);
 					else
-						setFilter(sim, x, y, a & 7);
+						setFilter(sim, x, y, a & 7, part_phot->ctype);
 				}
 				break;
 			case 2: case 3: case 4: case 5:
 			case 6: case 7: case 8: case 9:
-				setFilter(sim, x, y, rtmp2 - 2);
+				setFilter(sim, x, y, rtmp2 - 2, part_phot->ctype);
 				break;
 			case 10: case 11:
-				setFilter(sim, x, y, 2 * rtmp2 - 20);
-				setFilter(sim, x, y, 2 * rtmp2 - 16);
+				setFilter(sim, x, y, 2 * rtmp2 - 20, part_phot->ctype);
+				setFilter(sim, x, y, 2 * rtmp2 - 16, part_phot->ctype);
 				break;
 			}
 			break;
