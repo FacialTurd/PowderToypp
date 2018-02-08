@@ -164,6 +164,21 @@ VideoBuffer * Element_MULTIPP::iconGen(int toolID, int width, int height)
 	return newTexture;
 }
 
+//#TPT-Directive ElementHeader Element_MULTIPP static void setFilter(Simulation* sim, int x, int y, int a)
+void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int a)
+{
+	int r, ix, iy;
+	ix = sim->portal_rx[a];
+	iy = sim->portal_ry[a];
+
+	while (x += ix, y += iy, sim->InBounds(x, y))
+	{
+		r = sim->pmap[y][x];
+		if (TYP(r) != PT_FILT) break;
+		sim->partsi(r).ctype = part_phot->ctype;
+	}
+}
+
 //#TPT-Directive ElementHeader Element_MULTIPP static void interactDir(Simulation* sim, int i, int x, int y, int ri, Particle* part_phot, Particle* part_other)
 void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, Particle* part_phot, Particle* part_other) // photons direction/type changer
 {
@@ -205,28 +220,30 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			part_phot->vy = rdif * sinf(rvx2);
 			break;
 		case 5: // FILT wavelength changer (check 8 directions)
+			x = (int)(part_other->x+0.5f);
+			y = (int)(part_other->y+0.5f);
+			switch (rtmp2)
 			{
-				x = (int)(part_other->x+0.5f);
-				y = (int)(part_other->y+0.5f);
-				int r, ix, iy, a;
-				if (rtmp2 <= 0 || rtmp2 > 8)
+			case 0: case 1:
 				{
 					float angle = atan2f(part_phot->vy, part_phot->vx);
 					sim->kill_part(i);
-					a = (int)(floor(angle * (4.0f / M_PI) + 3.5f)) & 7;
+					int a = (int)(floor(angle * (4.0f / M_PI) + 3.5f));
+					if (rtmp2 & 1)
+						setFilter(sim, x, y, (a + 2) & 7),
+						setFilter(sim, x, y, (a + 6) & 7);
+					else
+						setFilter(sim, x, y, a & 7);
 				}
-				else
-					a = rtmp2 - 1;
-
-				ix = sim->portal_rx[a];
-				iy = sim->portal_ry[a];
-
-				while (x += ix, y += iy, sim->InBounds(x, y))
-				{
-					r = sim->pmap[y][x];
-					if (TYP(r) != PT_FILT) break;
-					sim->partsi(r).ctype = part_phot->ctype;
-				}
+				break;
+			case 2: case 3: case 4: case 5:
+			case 6: case 7: case 8: case 9:
+				setFilter(sim, x, y, rtmp2 - 2);
+				break;
+			case 10: case 11:
+				setFilter(sim, x, y, 2 * rtmp2 - 20);
+				setFilter(sim, x, y, 2 * rtmp2 - 16);
+				break;
 			}
 			break;
 		case 6:
