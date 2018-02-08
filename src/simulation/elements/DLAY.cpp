@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_DLAY PT_DLAY 79
+#define ID part_ID
 Element_DLAY::Element_DLAY()
 {
 	Identifier = "DEFAULT_PT_DLAY";
@@ -59,32 +60,32 @@ int Element_DLAY::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				pavg = sim->parts_avg(r>>8, i,PT_INSL);
-				if (!r || pavg==PT_INSL || pavg==PT_INDI)
+				pavg = PAVG_INSL(r);
+				if (!r || CHECK_EL_INSL(pavg))
 					continue;
-				if ((r&0xFF)==PT_SPRK && parts[i].life==0 && parts[r>>8].life>0 && parts[r>>8].life<4 && parts[r>>8].ctype==PT_PSCN)
+				if (TYP(r)==PT_SPRK && parts[i].life==0 && parts[ID(r)].life>0 && parts[ID(r)].life<4 && parts[ID(r)].ctype==PT_PSCN)
 				{
 					parts[i].life = (int)(parts[i].temp-273.15f+0.5f);
 				}
-				else if ((r&0xFF)==PT_DLAY)
+				else if (TYP(r)==PT_DLAY)
 				{
 					if (!parts[i].life)
 					{
-						if (parts[r>>8].life)
+						if (partsi(r).life)
 						{
-							parts[i].life = parts[r>>8].life;
-							if((r>>8)>i) //If the other particle hasn't been life updated
+							parts[i].life = parts[ID(r)].life;
+							if(ID(r)>i) //If the other particle hasn't been life updated
 								parts[i].life--;
 						}
 					}
-					else if (!parts[r>>8].life)
+					else if (!partsi(r).life)
 					{
-						parts[r>>8].life = parts[i].life;
-						if((r>>8)>i) //If the other particle hasn't been life updated
-							parts[r>>8].life++;
+						parts[ID(r)].life = parts[i].life;
+						if(ID(r)>i) //If the other particle hasn't been life updated
+							parts[ID(r)].life++;
 					}
 				}
-				else if((r&0xFF)==PT_NSCN && oldl==1)
+				else if(TYP(r)==PT_NSCN && oldl==1)
 				{
 					sim->create_part(-1, x+rx, y+ry, PT_SPRK);
 				}

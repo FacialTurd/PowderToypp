@@ -57,7 +57,7 @@ int Element_BTRY::update(UPDATE_FUNC_ARGS)
 					continue;
 				rt = TYP(r);
 				pavg = PAVG_INSL(r);
-				if (CHECK_EL_INSL(pavg))
+				if (!CHECK_EL_INSL(pavg))
 				{
 					if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */ && partsi(r).life==0)
 					{

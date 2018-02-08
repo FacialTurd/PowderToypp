@@ -675,7 +675,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 							}
 							else if (noturn >= 2)
 							{
-								if (rt == PT_INSL || rt == PT_INDI)
+								if (CHECK_EL_INSL(rt))
 									break;
 								if (spc_conduct > 0)
 								{
