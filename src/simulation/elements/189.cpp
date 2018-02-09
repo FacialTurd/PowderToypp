@@ -513,7 +513,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
-void createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
+void Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
 {
 	Particle * parts = sim->parts;
 	Particle * newphot = &(parts[np]);
@@ -555,9 +555,9 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 	int nlife = part_other->tmp2;
 	int nctype = part_other->ctype ? part_phot->ctype : part_other->ctype;
 	
-	createPhotonsWithVelocity(sim, i, np1, x, y, part_phot, nlife, nctype, rvx, rvy);
+	createPhotonsWithVelocity(sim, i, np1, x, y, nlife, nctype, rvx, rvy);
 	if (rtmp & 0x20000)
-		createPhotonsWithVelocity(sim, i, np2, x, y, part_phot, nlife, nctype, -rvx, -rvy);
+		createPhotonsWithVelocity(sim, i, np2, x, y, nlife, nctype, -rvx, -rvy);
 	if (rtmp & 0x10000)
 	{
 		sim->parts[np1].flags |= FLAG_PHOTDECO,
