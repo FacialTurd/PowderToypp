@@ -512,34 +512,59 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 	}
 }
 
+//#TPT-Directive ElementHeader Element_MULTIPP static void createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
+void createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
+{
+	Particle * parts = sim->parts;
+	Particle * newphot = &(parts[np]);
+
+	newphot->type = parts[i].type;
+	newphot->life = life;
+	newphot->ctype = ctype;
+	newphot->x = (float)x;
+	newphot->y = (float)y;
+	newphot->vx = vx;
+	newphot->vy = vy;
+	newphot->temp = parts[i].temp;
+	newphot->tmp = parts[i].tmp;
+	newphot->tmp2 = 0;
+	newphot->tmp3 = 0;
+	newphot->tmp4 = 0;
+	newphot->flags = (np > i) ? FLAG_SKIPMOVE : 0;
+	newphot->pavg[0] = sim->parts[np].pavg[1] = 0.0f;
+	newphot->dcolour = 0;
+	// cdcolour is ignored
+	
+	sim->photons[y][x] = PMAP(i, PT_PHOT);
+}
+
 //#TPT-Directive ElementHeader Element_MULTIPP static void duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 {
-	int rtmp = part_other->tmp, ri;
-	if (!rtmp)
-		return;
-	float rvx = (float)(((rtmp ^ 0x08) & 0x0F) - 0x08);
-	float rvy = (float)((((rtmp >> 4) ^ 0x08) & 0x0F) - 0x08);
-	float rdif = (float)((((rtmp >> 8) ^ 0x80) & 0xFF) - 0x80);
+	int rtmp = part_other->tmp, np1 = sim->pfree, np2;
+	if (!(rtmp & 0xFFFF) || np1 < 0)
+		return; // fail
 	
-	ri = sim->create_part(-3, x, y, PT_PHOT);
-	if (ri < 0)
-		return;
-	if (ri > i)
-		sim->parts[ri].flags |= FLAG_SKIPMOVE;
-	sim->parts[ri].vx = rvx * rdif / 16.0f;
-	sim->parts[ri].vy = rvy * rdif / 16.0f;
-	sim->parts[ri].temp = part_phot->temp;
-	sim->parts[ri].tmp  = part_phot->tmp;
-	sim->parts[ri].life = part_other->tmp2;
-	if (part_other->ctype)
-		sim->parts[ri].ctype = part_other->ctype;
-	else
-		sim->parts[ri].ctype = part_phot->ctype;
+	if ((rtmp & 0x20000) && (np2 = sim->parts[np1].life) < 0)
+		return; // fail
+
+	float rdif = (float)((((rtmp >> 8) ^ 0x80) & 0xFF) - 0x80) / 16.0f;
+	float rvx = (float)(((rtmp ^ 0x08) & 0x0F) - 0x08) * rdif;
+	float rvy = (float)((((rtmp >> 4) ^ 0x08) & 0x0F) - 0x08) * rdif;
+	
+	int nlife = part_other->tmp2;
+	int nctype = part_other->ctype ? part_phot->ctype : part_other->ctype;
+	
+	createPhotonsWithVelocity(sim, i, np1, x, y, part_phot, nlife, nctype, rvx, rvy);
+	if (rtmp & 0x20000)
+		createPhotonsWithVelocity(sim, i, np2, x, y, part_phot, nlife, nctype, -rvx, -rvy);
 	if (rtmp & 0x10000)
 	{
-		sim->parts[ri].flags |= FLAG_PHOTDECO;
-		sim->parts[ri].dcolour = part_phot->dcolour;
+		sim->parts[np1].flags |= FLAG_PHOTDECO,
+		sim->parts[np1].dcolour = part_phot->dcolour;
+		if (rtmp & 0x20000)
+			sim->parts[np2].flags |= FLAG_PHOTDECO,
+			sim->parts[np2].dcolour = part_phot->dcolour;
 	}
 }
 

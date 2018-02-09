@@ -256,22 +256,30 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				{
 					partsi(r).life = 4;
 					int filtmode = partsi(r).tmp;
-					if (filtmode == 9) // random wavelength
+					switch (filtmode)
 					{
+					case 6: break; // no operation
+					case 9: // random wavelength
 						parts[i].tmp = rand() % 26 + 1;
-					}
-					else if (filtmode != 6) // if filter mode isn't no operation
-					{
-						int shift = (int)((partsi(r).temp - 273.0f) * 0.025f);
-						shift < 0 ? (shift = 0) : shift > 25 && (shift = 25);
-						int wl = parts[i].tmp;
-						if (filtmode == 4)
-							wl && (wl += shift, wl > 26 && (wl = 26));
-						else if (filtmode == 5)
-							wl && (wl -= shift, wl <  1 && (wl =  1));
-						else
-							wl = shift + 1;
-						parts[i].tmp = wl;
+						break;
+					case 13:
+						parts[i].tmp && (parts[i].tmp = 27 - parts[i].tmp);
+						break;
+					default:
+						{
+							int shift = (int)((partsi(r).temp - 273.0f) * 0.025f);
+							shift < 0 ? (shift = 0) : shift > 25 && (shift = 25);
+							int wl = parts[i].tmp;
+							if (filtmode == 4 || filtmode == 5)
+								shift == 0 && (shift = 1);
+							if (filtmode == 4)
+								wl && (wl += shift, wl > 26 && (wl = 26));
+							else if (filtmode == 5)
+								wl && (wl -= shift, wl <  1 && (wl =  1));
+							else
+								wl = shift + 1;
+							parts[i].tmp = wl;
+						}
 					}
 				}
 				else
