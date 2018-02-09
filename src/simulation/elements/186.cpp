@@ -271,13 +271,17 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 							shift < 0 ? (shift = 0) : shift > 25 && (shift = 25);
 							int wl = parts[i].tmp;
 							if (filtmode == 4 || filtmode == 5)
+							{
 								shift == 0 && (shift = 1);
-							if (filtmode == 4)
-								wl && (wl += shift, wl > 26 && (wl = 26));
-							else if (filtmode == 5)
-								wl && (wl -= shift, wl <  1 && (wl =  1));
-							else
+								if (filtmode == 4)
+									wl && (wl += shift, wl > 26 && (wl = 26));
+								else
+									wl && (wl -= shift, wl <  1 && (wl =  1));
+							}
+							else if (partsi(r).ctype != 0x3FFFFFFF)
 								wl = shift + 1;
+							else
+								wl = 0;
 							parts[i].tmp = wl;
 						}
 					}

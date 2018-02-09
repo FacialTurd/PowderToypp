@@ -517,8 +517,10 @@ void Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int np, 
 {
 	Particle * parts = sim->parts;
 	Particle * newphot = &(parts[np]);
+	
+	int t = parts[i].type;
 
-	newphot->type = parts[i].type;
+	newphot->type = t;
 	newphot->life = life;
 	newphot->ctype = ctype;
 	newphot->x = (float)x;
@@ -535,17 +537,21 @@ void Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int np, 
 	newphot->dcolour = 0;
 	// cdcolour is ignored
 	
-	sim->photons[y][x] = PMAP(i, PT_PHOT);
+	sim->photons[y][x] = PMAP(np, t);
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
 {
-	int rtmp = part_other->tmp, np1 = sim->pfree, np2;
+	int rtmp = part_other->tmp, np1 = sim->pfree, np2, max_np;
+
 	if (!(rtmp & 0xFFFF) || np1 < 0)
 		return; // fail
-	
-	if ((rtmp & 0x20000) && (np2 = sim->parts[np1].life) < 0)
+
+	bool split2 = (rtmp & 0x20000);
+	np2 = sim->parts[np1].life;
+
+	if (split2 && np2 < 0)
 		return; // fail
 
 	float rdif = (float)((((rtmp >> 8) ^ 0x80) & 0xFF) - 0x80) / 16.0f;
@@ -553,8 +559,14 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 	float rvy = (float)((((rtmp >> 4) ^ 0x08) & 0x0F) - 0x08) * rdif;
 	
 	int nlife = part_other->tmp2;
-	int nctype = part_other->ctype ? part_phot->ctype : part_other->ctype;
+	int nctype = part_other->ctype ? part_other->ctype : part_phot->ctype;
+
+	max_np = (split2 && (np2 > np1)) ? np2 : np1;
+	if (max_np > sim->parts_lastActiveIndex)
+		sim->parts_lastActiveIndex = max_np;
 	
+	sim->pfree = sim->parts[split2?np2:np1].life;
+
 	createPhotonsWithVelocity(sim, i, np1, x, y, nlife, nctype, rvx, rvy);
 	if (rtmp & 0x20000)
 		createPhotonsWithVelocity(sim, i, np2, x, y, nlife, nctype, -rvx, -rvy);
