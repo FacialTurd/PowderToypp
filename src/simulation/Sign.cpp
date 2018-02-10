@@ -145,12 +145,17 @@ std::string sign::getText(Simulation *sim)
 						offsetof(Particle, tmp2),
 						offsetof(Particle, tmp3),
 						offsetof(Particle, tmp4)
-					}
-					char c = matched1[3]; c || (c = '1');
-					if (c >= '1' && c <= ('0' + sizeof(__offsets) / sizeof(size_t)))
-						num = *((int*)(((unsigned char*)&sim->parts[ii]) + __offset[c - '1']));
-					else
+					};
+					int strtermp = 3, oo = 0;
+					char c = matched1[strtermp];
+					while (c >= '0' && c <= '9')
+						oo = oo * 10 + (c - '0'), c = matched1[++strtermp];
+					oo --;
+					if (c != '\0' || (oo < 0) || (oo >= sizeof(__offsets) / sizeof(size_t)))
 						isparsed = false;
+					else
+						(strtermp == 3) && (oo = 1),
+						num1 = *((int*)(((unsigned char*)&sim->parts[ii]) + __offsets[oo]));
 				}
 				/*
 				else if (!strcmp(matched1, "vrad"))
