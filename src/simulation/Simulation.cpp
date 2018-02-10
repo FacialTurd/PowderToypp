@@ -6230,14 +6230,10 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 
 void Simulation::AfterSim()
 {
-	if (emp_trigger_count)
+	if (emp_trigger_count || emp2_trigger_count)
 	{
-		Element_EMP::Trigger(this, emp_trigger_count);
+		Element_EMP::Trigger(this, emp_trigger_count, emp2_trigger_count);
 		emp_trigger_count = 0;
-	}
-	if (emp2_trigger_count)
-	{
-		Element_MULTIPP::EMPTrigger(this, emp2_trigger_count);
 		emp2_trigger_count = 0;
 	}
 	if (SimExtraFunc)

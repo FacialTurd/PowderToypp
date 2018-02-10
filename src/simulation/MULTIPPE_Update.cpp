@@ -1113,25 +1113,32 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						}
 					}
 			break;
-		case 14:
-		case 15:
-			if (parts[i].tmp2)
-			{
-				rdif = (parts[i].tmp == PT_PSCN) ? 100.0f : -100.0f;
-				for (rx = -2; rx <= 2; rx++)
-					for (ry = -2; ry <= 2; ry++)
-						if (BOUNDS_CHECK && (rx || ry))
+		case 14: // fast laser?
+			rx = tron_rx[rtmp & 3];
+			ry = tron_ry[rtmp & 3];
+			ri = sim->create_part(-1, x + rx, y + ry, PT_E186);
+			parts[ri].ctype = PMAP(1, 5);
+			rtmp >>= 2;
+			parts[ri].vx = rx * rtmp;
+			parts[ri].vy = ry * rtmp;
+			if (ri > i) ELEMPROPW(ri, |=);
+			break;
+		case 15: // capacitor
+			rii = parts[i].tmp2;
+			rii && (parts[i].tmp2--);
+			for (rx=-2; rx<3; rx++)
+				for (ry=-2; ry<3; ry++)
+					if (BOUNDS_CHECK && (rx || ry))
+					{
+						r = pmap[y+ry][x+rx];
+						if (CHECK_EL_SPRKL3T(r, PT_PSCN))
 						{
-							r = pmap[y+ry][x+rx];
-							if (rctype == 14 ? TYP(r) == PT_WIFI : CHECK_EXTEL(r, 33))
-							{
-								partsi(r).temp = restrict_flt(partsi(r).temp + rdif, MIN_TEMP, MAX_TEMP);
-							}
+							parts[i].tmp2 = parts[i].tmp;
 						}
-				parts[i].tmp = 0; // PT_NONE ( or clear .tmp )
-				parts[i].tmp2 = 0;
-			}
-			goto continue1a;
+						else if (rii && (TYP(r) == PT_NSCN))
+							conductTo (sim, r, x+rx, y+ry, parts);
+					}
+			break;
 		case 16:
 			if (parts[i].tmp2)
 			{
@@ -2025,32 +2032,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
 			}
-			break;
-		case 31: // fast laser?
-			rx = tron_rx[rtmp & 3];
-			ry = tron_ry[rtmp & 3];
-			ri = sim->create_part(-1, x + rx, y + ry, PT_E186);
-			parts[ri].ctype = PMAP(1, 5);
-			rtmp >>= 2;
-			parts[ri].vx = rx * rtmp;
-			parts[ri].vy = ry * rtmp;
-			if (ri > i) ELEMPROPW(ri, |=);
-			break;
-		case 32: // capacitor
-			rii = parts[i].tmp2;
-			rii && (parts[i].tmp2--);
-			for (rx=-2; rx<3; rx++)
-				for (ry=-2; ry<3; ry++)
-					if (BOUNDS_CHECK && (rx || ry))
-					{
-						r = pmap[y+ry][x+rx];
-						if (CHECK_EL_SPRKL3T(r, PT_PSCN))
-						{
-							parts[i].tmp2 = parts[i].tmp;
-						}
-						else if (rii && (TYP(r) == PT_NSCN))
-							conductTo (sim, r, x+rx, y+ry, parts);
-					}
 			break;
 		}
 		break;

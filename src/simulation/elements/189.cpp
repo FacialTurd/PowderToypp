@@ -303,7 +303,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				}
 				break;
 			case 5: // random "energy" particle
-				part_phot->ctype = 0x101;
+				part_phot->ctype = PMAP(1, 1);
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			killing:
@@ -325,31 +325,31 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->tmp = rct;
 				sim->part_change_type(i, x, y, PT_GRVT);
 				break;
-			case 11: // PHOT (tmp: 0 -> 1)
-				part_phot->tmp |= 0x1;
+			case 11: // PHOT (tmp: a -> b)
+				r1 = 1 << (rct >> 1);
+				if (rct)
+					part_phot->tmp &= ~r1;
+				else
+					part_phot->tmp |=  r1;
 				break;
-			case 12: // PHOT (tmp: 1 -> 0)
-				part_phot->tmp &= ~0x1;
+			case 12: // set PHOT's temp
+				part_phot->temp = part_other->temp;
 				break;
 			case 13: // set PHOT life
 				part_phot->life = rct;
 				break;
-			case 14: // PHOT life extender (positive)
+			case 14: // PHOT life extender
 				if (part_phot->life > 0)
 				{
 					part_phot->life += rct;
-					if (part_phot->life < 0)
-						part_phot->life = 0;
-				}
-				break;
-			case 15: // PHOT life extender (negative)
-				if (part_phot->life > 0)
-				{
-					part_phot->life -= rct;
 					if (part_phot->life <= 0)
-						sim->kill_part(i);
+						if (rct < 0)
+							goto killing;
+						else
+							part_phot->life = 0;
 				}
 				break;
+			// case 15: reserved code
 			case 16: // velocity to wavelength converter
 				rvx = part_phot->vx;
 				rvy = part_phot->vy;
@@ -384,7 +384,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				break;
 			case 18: // photons diode output
 				part_phot->tmp2 = part_phot->ctype;
-				part_phot->ctype = 0x100;
+				part_phot->ctype = PMAP(1, 0);
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			case 19: // beam splitter (switch)
@@ -462,14 +462,14 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				// part_phot->flags |= FLAG_SKIPMOVE;
 				part_phot->tmp <<= 30;
 				part_phot->tmp |= part_phot->ctype;
-				part_phot->ctype = 0x102;
+				part_phot->ctype = PMAP(1, 2);
 				part_phot->tmp2 = rct;
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			case 22:
 				part_phot->tmp = part_phot->ctype;
 				part_phot->tmp2 = rct;
-				part_phot->ctype = 0x103;
+				part_phot->ctype = PMAP(1, 3);
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			case 23:
@@ -479,11 +479,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 					part_phot->tmp = * (int*) &(part_phot->temp);
 				else
 					part_phot->tmp = part_other->tmp3;
-				part_phot->ctype = 0x104;
+				part_phot->ctype = PMAP(1, 4);
 				sim->part_change_type(i, x, y, PT_E186);
-				break;
-			case 24: // set PHOT's temp
-				part_phot->temp = part_other->temp;
 				break;
 			case 26:
 				{
@@ -495,7 +492,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				break;
 			case 27: // PHOT duplicator/splitter
 			{
-				int np = sim->create_part(-1, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), PT_PHOT);
+				int np = sim->create_part(-1, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), part_phot->type);
 				if (np < 0)
 					goto killing;
 				float tvx = part_phot->vx, tvy = part_phot->vy;
@@ -578,236 +575,6 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 			sim->parts[np2].flags |= FLAG_PHOTDECO,
 			sim->parts[np2].dcolour = part_phot->dcolour;
 	}
-}
-
-//#TPT-Directive ElementHeader Element_MULTIPP static int EMPTrigger(Simulation *sim, int triggerCount)
-int Element_MULTIPP::EMPTrigger(Simulation *sim, int triggerCount)
-{
-#ifndef NO_SPC_ELEM_EXPLODE
-	int t, ct, rx, ry, r1;
-	Particle *parts = sim->parts;
-	
-	float prob_breakPInsulator = Probability::binomial_gte1(triggerCount, 1.0f/200);
-	float prob_breakTRONPortal = Probability::binomial_gte1(triggerCount, 1.0f/160);
-	float prob_randLaser = Probability::binomial_gte1(triggerCount, 1.0f/40);
-	float prob_breakLaser = Probability::binomial_gte1(triggerCount, 1.0f/120);
-	float prob_breakDChanger = Probability::binomial_gte1(triggerCount, 1.0f/160);
-	float prob_breakHeater = Probability::binomial_gte1(triggerCount, 1.0f/100);
-	float prob_breakElectronics = Probability::binomial_gte1(triggerCount, 1.0f/300);
-
-	for (int r = 0; r <=sim->parts_lastActiveIndex; r++)
-	{
-		t = parts[r].type;
-		if (sim->elements[t].Properties2 & PROP_NODESTRUCT)
-			continue; // particle's type is PT_DMND and PT_INDI are indestructible.
-		rx = parts[r].x;
-		ry = parts[r].y;
-
-		switch ( t )
-		{
-		case PT_DMND:
-		case PT_INDI:
-		case PT_INDC:
-			break;
-		case PT_METL:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BMTL);
-			break;
-		case PT_COAL:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BCOL);
-			break;
-		case PT_BMTL:
-		case PT_PIPE:
-		case PT_PPIP:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BRMT);
-			break;
-		case PT_GLAS:
-		case PT_LCRY:
-		case PT_FILT:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BGLA);
-			break;
-		case PT_QRTZ:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_PQRT);
-			break;
-		case PT_TTAN:
-		case PT_GOLD:
-			if (Probability::randFloat() < prob_breakElectronics)
-			{
-				sim->create_part(r, rx, ry, ELEM_MULTIPP, 8);
-				parts[r].tmp = 21000;
-			}
-			break;
-		case PT_VOID:
-		case PT_PVOD:
-		case PT_CONV:
-			if (Probability::randFloat() < prob_breakElectronics)
-			{
-				sim->create_part(r, rx, ry, PT_WARP);
-				parts[r].tmp2 = 6000;
-			}
-			break;
-		case PT_CRMC:
-			if (Probability::randFloat() < prob_breakElectronics)
-			{
-				if (rand() & 1)
-					sim->part_change_type(r, rx, ry, PT_CLST);
-				else
-					sim->part_change_type(r, rx, ry, PT_PQRT);
-			}
-			break;
-		case PT_BRCK:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_STNE);
-			break;
-		case PT_DLAY:
-			if (Probability::randFloat() < prob_breakElectronics)
-				parts[r].temp = (rand()%512) + 274.15f; // Randomize delay
-			break;
-		case PT_EMP:
-			if (triggerCount > rand() % 1000)
-				sim->part_change_type(r, rx, ry, PT_BREC);
-			break;
-		case PT_HEAC:
-			if (triggerCount > rand() % 200)
-			{
-				parts[r].temp = MAX_TEMP;
-				parts[r].ctype = PT_HEAC;
-				sim->part_change_type(r, rx, ry, PT_LAVA);
-			}
-			break;
-		case PT_PSCN: case PT_NSCN:
-		case PT_PTCT: case PT_NTCT:
-		case PT_SWCH: case PT_DTEC:
-		case PT_PSNS: case PT_TSNS: case PT_LSNS:
-		case PT_FRME: case PT_PSTN:
-		case PT_CRAY: case PT_DRAY:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BREC);
-			break;
-		case PT_WIFI:
-		case PT_PRTI: case PT_PRTO:
-			if (Probability::randFloat() < prob_breakElectronics)
-			{
-				// Randomize channel
-				parts[r].temp = rand()%MAX_TEMP;
-			}
-			else if (prob_breakTRONPortal)
-			{
-				sim->part_change_type(r, rx, ry, PT_WARP);
-			}
-			break;
-		case PT_SPRK:
-			if (!(sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT) &&
-			    (Probability::randFloat() < prob_breakElectronics))
-				sim->part_change_type(r, rx, ry, PT_BREC);
-			break;
-		case PT_CLNE:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_BCLN);
-			break;
-		case PT_PCLN:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_PBCN);
-			break;
-		case PT_BCLN:
-			if (triggerCount > rand() % 1000)
-				parts[r].life = rand()%40+80;
-			break;
-		case PT_PBCN:
-			if (triggerCount > rand() % 1000)
-				parts[r].tmp2 = rand()%40+80;
-			break;
-		case PT_SPNG:
-		case PT_BTRY:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->create_part(r, rx, ry, PT_PLSM);
-			break;
-		case PT_BVBR:
-			if (Probability::randFloat() < prob_breakElectronics * 0.1)
-				sim->part_change_type(r, rx, ry, PT_VIBR);
-		case PT_VIBR:
-			parts[r].life = 1000;
-			if (parts[r].tmp < 100000000)
-				parts[r].tmp += triggerCount << 9;
-			parts[r].tmp2 = 0;
-			break;
-		case PT_URAN:
-			if (Probability::randFloat() < prob_breakElectronics)
-				sim->part_change_type(r, rx, ry, PT_PLUT);
-			break;
-		case PT_C5:
-		case PT_ANAR:
-			if (!(rand()%200))
-			{
-				sim->part_change_type(r, rx, ry, PT_CFLM);
-				parts[r].life = rand()%150+100;
-				parts[r].temp = MAX_TEMP;
-			}
-			break;
-		case ELEM_MULTIPP:
-			switch (parts[r].life)
-			{
-			case 0:
-			case 1:
-				if (Probability::randFloat() < prob_breakPInsulator)
-				{
-					parts[r].life = 8;
-					parts[r].tmp = 21000;
-				}
-				break;
-			case 12:
-			case 16:
-				if (Probability::randFloat() < prob_breakElectronics)
-				{
-					sim->part_change_type(r, rx, ry, PT_BREC);
-				}
-				break;
-			case 2:
-			case 3:
-				if (Probability::randFloat() < prob_breakTRONPortal)
-				{
-					sim->create_part(r, rx, ry, PT_PLSM);
-				}
-				break;
-			case 4:
-			case 7:
-			case 11:
-				if (Probability::randFloat() < prob_randLaser)
-				{
-					parts[r].ctype += (rand() << 15) + rand();
-					parts[r].tmp = (parts[r].tmp + rand()) & 0x0000FFFF;
-				}
-				if (Probability::randFloat() < prob_breakLaser)
-				{
-					sim->create_part(r, rx, ry, PT_BRMT);
-				}
-				break;
-			case 5:
-				if (Probability::randFloat() < prob_breakDChanger)
-				{
-					sim->create_part(r, rx, ry, PT_BGLA);
-				}
-				break;
-			case 6:
-				if (Probability::randFloat() < prob_breakHeater)
-				{
-					sim->create_part(r, rx, ry, PT_PLSM);
-				}
-			case 33:
-				if (Probability::randFloat() < prob_breakElectronics)
-				{
-					sim->part_change_type(r, rx, ry, PT_WIFI);
-					parts[r].ctype = 0;
-				}
-			}
-			break;
-		}
-	}
-#endif /* NO_SPC_ELEM_EXPLODE */
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void FloodButton(Simulation *sim, int i, int x, int y)

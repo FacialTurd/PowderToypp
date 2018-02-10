@@ -153,9 +153,19 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 22:
-			if (parts[underI].tmp>>3 == 2)
+			if ((parts[underI].tmp>>3) == 2)
 				goto no_temp_change;
 			break;
+		case 33:
+			{
+				const float dtable[7] = {0.0f, 100.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, (MAX_TEMP-MIN_TEMP)};
+				float change;
+				int temp = (int)(parts[i].temp - 323.15f) / 50;
+				bool sign1 = (temp < 0); sign1 && (temp = -temp); temp > 6 && (temp = 6);
+				change = dtable[temp] * (sign1 ? -1 : 1);
+				parts[underI].temp = restrict_flt(parts[underI].temp + change, MIN_TEMP, MAX_TEMP);
+			}
+			goto no_temp_change;
 		}
 		break;
 	case PT_NONE:

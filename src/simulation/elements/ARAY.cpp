@@ -82,7 +82,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 						int spc_conduct = 0, ray_less = 0;
 						int colored = 0, noturn = 0, rt, b;
 						static int tmp[4];
-						int max_turn = parts[i].tmp, tmpz = 1, tmpz2 = 0;
+						int max_turn = parts[i].tmp, tmpz = 1, spacetmp = 0;
 						int r_incr = 1, pass_wall = 1;
 						if (max_turn <= 0)
 							max_turn = 256;
@@ -222,16 +222,16 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								case 13:
 									if (parts[r].tmp2 == 3)
 									{
-										tmp[0] = parts[r].ctype;
-										tmp[1] = parts[r].tmp;
-										for (nyy+=(1+tmpz2)*nyi, nxx+=(1+tmpz2)*nxi; tmp[1]--; nyy+=nyi, nxx+=nxi)
+										unsigned int deco = parts[r].ctype;
+										int deco_length = parts[r].tmp;
+										for (nyy+=(1+spacetmp)*nyi, nxx+=(1+spacetmp)*nxi; deco_length--; nyy+=nyi, nxx+=nxi)
 										{
 											if (!sim->InBounds(x+nxx, y+nyy))
 												break;
 											r = pmap[y+nyy][x+nxx];
 											if (!r)
 												continue;
-											partsi(r).dcolour = tmp[0];
+											partsi(r).dcolour = deco;
 										}
 										goto break1a;
 									}
@@ -509,7 +509,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											goto break1a;
 										break;
 									case 4:
-										tmpz2 = tmp[0];
+										spacetmp = tmp[0];
 										break;
 									case 5:
 										pass_wall = !pass_wall;
@@ -536,10 +536,10 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 												flt1  = partsi(front1).temp;
 												break;
 											case PT_FRAY:
-												tmpz2 += partsi(front1).tmp;
+												spacetmp += partsi(front1).tmp;
 												break;
 											case PT_INVIS:
-												tmpz2 += (int)(sim->sim_max_pressure + 0.5f);
+												spacetmp += (int)(sim->sim_max_pressure + 0.5f);
 												break;
 											case ELEM_MULTIPP:
 												while (BOUNDS_CHECK && CHECK_EXTEL(front1, 5))

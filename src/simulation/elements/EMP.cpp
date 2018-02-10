@@ -71,8 +71,8 @@ public:
 	}
 };
 
-//#TPT-Directive ElementHeader Element_EMP static int Trigger(Simulation *sim, int triggerCount)
-int Element_EMP::Trigger(Simulation *sim, int triggerCount)
+//#TPT-Directive ElementHeader Element_EMP static int Trigger(Simulation *sim, int triggerCount, int triggerCount2 = 0)
+int Element_EMP::Trigger(Simulation *sim, int triggerCount, int triggerCount2)
 {
 	/* Known differences from original one-particle-at-a-time version:
 	 * - SPRK that disappears during a frame (such as SPRK with life==0 on that frame) will not cause destruction around it.
@@ -80,6 +80,8 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount)
 	 * - The chance of a METL particle near sparked semiconductor turning into BRMT within 1 frame is different if triggerCount>2. See comment for prob_breakMETLMore.
 	 * - Probability of centre isElec particle breaking is slightly different (1/48 instead of 1-(1-1/80)*(1-1/120) = just under 1/48).
 	 */
+
+	triggerCount += triggerCount2;
 
 	Particle *parts = sim->parts;
 
@@ -135,8 +137,8 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount)
 						int n = sim->pmap[ry+ny][rx+nx];
 						if (!n)
 							continue;
-						int ntype = n&0xFF;
-						n = n >> 8;
+						int ntype = TYP(n);
+						n = part_ID(n);
 						//Some elements should only be affected by wire/swch, or by a spark on inst/semiconductor
 						//So not affected by spark on metl, watr etc
 						if (is_elec)
@@ -163,6 +165,11 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount)
 									parts[n].temp = restrict_flt(parts[n].temp+1000.0f, MIN_TEMP, MAX_TEMP);
 								}
 								break;
+							case ELEM_MULTIPP:
+								if (parts[n].life != 33)
+									break;
+								if (Probability::randFloat() < prob_randWIFI)
+									parts[n].ctype ^= rand();
 							case PT_WIFI:
 								if (Probability::randFloat() < prob_randWIFI)
 								{
@@ -206,6 +213,46 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount)
 					}
 		}
 	}
+	
+#ifndef NO_SPC_ELEM_EXPLODE
+	if (triggerCount2)
+		for (int r = 0; r <=sim->parts_lastActiveIndex; r++)
+		{
+			int t = parts[r].type;
+			int ct = parts[r].ctype;
+			int actelem = (t == PT_SPRK) ? ct : t;
+			int rx = (int)(parts[r].x + 0.5f);
+			int ry = (int)(parts[r].y + 0.5f);
+			if (sim->elements[actelem].Properties2 & PROP_NODESTRUCT)
+				continue;
+
+			Element_DMG::BreakingElement(sim, parts, r, rx, ry, t);
+			if (sim->elements[t].Flammable || sim->elements[t].Explosive || t == PT_BANG || t == PT_BTRY)
+				sim->create_part(r, rx, ry, PT_PLSM);
+			else if ((t == PT_BCLN || t == PT_PBCN) && !parts[r].life)
+				parts[r].life = rand() % 120 + 50;
+			else if (t == PT_VIBR || t == PT_BVBR)
+			{
+				if (!parts[r].life)
+					parts[r].life = rand() % 120 + 50;
+				parts[r].tmp = 9999;
+				parts[r].tmp2 = 0;
+			}
+			else if (t == PT_EMP || t == PT_PSNS || t == PT_TSNS || t == PT_LSNS || t == PT_DTEC || t == PT_CLNE || t == PT_PCLN)
+				sim->create_part(r, rx, ry, PT_SING),
+				parts[r].life = 0, parts[r].tmp = 9999;
+			else if (t == PT_SPRK)
+				parts[r].ctype = PT_BREC;
+			else if (t == PT_INST || t == PT_CRAY || t == PT_DRAY || t == PT_FRAY)
+				sim->part_change_type(r, rx, ry, PT_BREC);
+
+			if (sim->elements[t].HeatConduct > 0 && (t != PT_HSWC || parts[r].life))
+				parts[r].temp = MAX_TEMP;
+			if (rx >= 0 && ry >= 0 && rx < XRES && ry < YRES)
+				sim->pv[ry/CELL][rx/CELL] += 50.0f;
+		}
+#endif
+
 	return 0;
 }
 

@@ -74,6 +74,24 @@ Element_DMG::Element_DMG()
 	}
 }
 
+//#TPT-Directive ElementHeader Element_DMG static void BreakingElement(Simulation * sim, Particle * parts, int i, int x, int y, int t)
+void Element_DMG::BreakingElement(Simulation * sim, Particle * parts, int i, int x, int y, int t)
+{
+	if (sim->elements[t].HighPressureTransition>-1 && sim->elements[t].HighPressureTransition<PT_NUM)
+		sim->part_change_type(i, x, y, sim->elements[t].HighPressureTransition);
+	else
+	{
+		int hashv = DMGBreaksHash[t % PT_DMG_HASH_SIZE];
+		int *pairs = DMGBreaksPairs[hashv];
+		if (hashv >= 0 && pairs[0] == t)
+		{
+			sim->part_change_type(i, x, y, pairs[1]);
+			if (t == PT_TUNG)
+				parts[i].ctype = PT_TUNG;
+		}
+	}
+}
+
 //#TPT-Directive ElementHeader Element_DMG static int update(UPDATE_FUNC_ARGS)
 int Element_DMG::update(UPDATE_FUNC_ARGS)
 {
@@ -88,7 +106,7 @@ int Element_DMG::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)!=PT_DMG && (r&0xFF)!=PT_EMBR && !(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)))
+				if (TYP(r)!=PT_DMG && TYP(r)!=PT_EMBR && !(sim->elements[TYP(r)].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)))
 				{
 					sim->kill_part(i);
 					for (nxj=-rad; nxj<=rad; nxj++)
@@ -104,28 +122,14 @@ int Element_DMG::update(UPDATE_FUNC_ARGS)
 										angle = atan2((float)nxj, nxi);
 										fx = cos(angle) * 7.0f;
 										fy = sin(angle) * 7.0f;
-										parts[rr>>8].vx += fx;
-										parts[rr>>8].vy += fy;
+										partsi(rr).vx += fx;
+										partsi(rr).vy += fy;
 										sim->vx[(y+nxj)/CELL][(x+nxi)/CELL] += fx;
 										sim->vy[(y+nxj)/CELL][(x+nxi)/CELL] += fy;
 										sim->pv[(y+nxj)/CELL][(x+nxi)/CELL] += 1.0f;
-										t = rr&0xFF;
+										t = TYP(rr);
 										if (t)
-										{
-											if (sim->elements[t].HighPressureTransition>-1 && sim->elements[t].HighPressureTransition<PT_NUM)
-												sim->part_change_type(rr>>8, x+nxi, y+nxj, sim->elements[t].HighPressureTransition);
-											else
-											{
-												int hashv = DMGBreaksHash[t % PT_DMG_HASH_SIZE];
-												int *pairs = DMGBreaksPairs[hashv];
-												if (hashv >= 0 && pairs[0] == t)
-												{
-													sim->part_change_type(rr>>8, x+nxi, y+nxj, pairs[1]);
-													if (t == PT_TUNG)
-														parts[rr>>8].ctype = PT_TUNG;
-												}
-											}
-										}
+											Element_DMG::BreakingElement(sim, parts, part_ID(rr), x+nxi, y+nxj, t);
 									}
 								}
 							}
