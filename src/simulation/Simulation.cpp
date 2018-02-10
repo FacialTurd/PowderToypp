@@ -2657,13 +2657,13 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				parts[i].ctype = Element_FILT::interactWavelengths(&parts[ID(r)], parts[i].ctype);
 				return 1;
 			case ELEM_MULTIPP:
-				switch (parts[r>>8].life)
+				switch (partsi(r).life)
 				{
 				case 5:
-					Element_MULTIPP::interactDir(this, i, x, y, r>>8, &parts[i], &parts[r>>8]);
+					Element_MULTIPP::interactDir(this, i, x, y, ID(r), &parts[i], &partsi(r));
 					break;
 				case 7:
-					Element_MULTIPP::duplicatePhotons(this, i, nx, ny, &parts[i], &parts[r>>8]); // already check by FLAG_SKIPMOVE
+					Element_MULTIPP::duplicatePhotons(this, i, nx, ny, &parts[i], &partsi(r)); // already check by FLAG_SKIPMOVE
 					break;
 				}
 				return 1;

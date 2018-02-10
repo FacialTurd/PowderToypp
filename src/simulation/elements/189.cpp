@@ -306,8 +306,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->ctype = PMAP(1, 1);
 				sim->part_change_type(i, x, y, PT_E186);
 				break;
-			killing:
 			case 6: // photons absorber
+				if (rct > 1)
+					part_other->ctype --;
+				else if (rct == 1)
+					sim->kill_part(ri);
+			killing:
 				sim->kill_part(i);
 				break;
 			case 7: // PHOT->NEUT
