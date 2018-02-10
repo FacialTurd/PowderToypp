@@ -58,7 +58,7 @@ int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 		*pixel_mode = PMODE_NONE;
 		*pixel_mode |= FIRE_BLEND;
 		break;
-	case 13:
+	case ELEM_MDECOR:
 		switch (cpart->tmp2)
 		{
 		case 0:

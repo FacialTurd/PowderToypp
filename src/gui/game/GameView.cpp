@@ -2467,7 +2467,7 @@ void GameView::OnDraw()
 					{
 						wavelengthGfx = (ctype&0x3FFFFFFF);
 					}
-					else if (partlife == 13)
+					else if (partlife == ELEM_MDECOR)
 					{
 						if (sample_particle->tmp2 == 0x1)
 							wavelengthGfx = (ctype&0x3FFFFFFF);
@@ -2848,7 +2848,7 @@ void GameView::OnDraw()
 					tempValue = ren->sim->breakable_wall_count;
 					if (tempValue)
 						sampleInfo << "breakable_wall_count: " << tempValue << ", ";
-					sampleInfo << "sim_max_pressure: " << std::fixed << c->sim_max_pressure_resolve();
+					sampleInfo << "sim_max_pressure (break): " << std::fixed << c->sim_max_pressure_resolve();
 					break;
 				case 1:
 					sampleInfo << "Air velocity X: " << std::fixed << sample.AirVelocityX << ", ";

@@ -158,15 +158,16 @@ void Renderer::RenderBegin()
 					{
 						int r = sim->pmap[y][x];
 						int deco = 0xFF000000 | (PIXR(pixeldata) << 16) | (PIXG(pixeldata) << 8) | PIXB(pixeldata);
+						int rt = TYP(r);
 						if (!r)
 						{
-							int i = sim->create_part(-1, x, y, ELEM_MULTIPP, 13);
+							int i = sim->create_part(-1, x, y, ELEM_MULTIPP, ELEM_MDECOR);
 							if (i >= 0) sim->parts[i].ctype = deco;
 						}
-						else if ((r&0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 13)
-							sim->parts[r>>8].ctype = deco;
+						else if (rt == ELEM_MULTIPP && sim->partsi(r).life == ELEM_MDECOR)
+							sim->partsi(r).ctype = deco;
 						else
-							sim->parts[r>>8].dcolour = deco;
+							sim->partsi(r).dcolour = deco;
 					}
 				}
 			}

@@ -70,10 +70,11 @@ newseg_0:
 		x += ix; y += iy;
 		if (!sim->InBounds(x, y)) break;
 		r = sim->pmap[y][x];
-		if ((r&0xFF) != ELEM_MULTIPP) break;
-		if (sim->parts[r>>8].life == 10)
+		if (TYP(r) != ELEM_MULTIPP) break;
+		int ri = part_ID(r);
+		if (sim->parts[ri].life == 10)
 		{
-			v = sim->parts[r>>8].ctype;
+			v = sim->parts[ri].ctype;
 			intptr_t fin;
 			if (f & 2)
 				fin = (intptr_t)(buffer_ptr1 + 4*rept);
@@ -86,9 +87,9 @@ newseg_0:
 			buffer_ptr1 = (uint8_t*)fin;
 			rept = 1;
 		}
-		else if (sim->parts[r>>8].life == 16)
+		else if (sim->parts[ri].life == 16)
 		{
-			v = ~sim->parts[r>>8].ctype;
+			v = ~sim->parts[ri].ctype;
 			switch (v)
 			{
 			case 0:
@@ -99,7 +100,7 @@ newseg_0:
 			default:
 				goto brkloop_0;
 			case 1:
-				rept = sim->parts[r>>8].tmp;
+				rept = sim->parts[ri].tmp;
 				break;
 			}
 		}
@@ -139,8 +140,8 @@ brkloop_0:
 		x += ix; y += iy;
 		if (!sim->InBounds(x, y)) return;
 		r = sim->pmap[y][x];
-		if ((r&0xFF) != ELEM_MULTIPP || sim->parts[r>>8].life != 10) return;
-		i = r >> 8;
+		if (TYP(r) != ELEM_MULTIPP || sim->partsi(r).life != 10) return;
+		i = part_ID(r);
 		goto newseg_0;
 	}
 	return;

@@ -78,6 +78,8 @@
 #define FLAG_DIRCH_MARK_TVOID_K	0xC8
 #define FLAG_DIRCH_MARK			0xF8
 
+#define ELEM_MDECOR	13
+
 
 #define PMAPBITS 8
 

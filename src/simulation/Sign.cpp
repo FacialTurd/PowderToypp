@@ -1,6 +1,7 @@
 #include "Sign.h"
 #include "graphics/Graphics.h"
 #include "simulation/Simulation.h"
+#define ID part_ID
 
 sign::sign(std::string text_, int x_, int y_, Justification justification_):
 	x(x_),
@@ -35,7 +36,7 @@ std::string sign::getText(Simulation *sim)
 		else if (!strcmp(signText,"{t}"))
 		{
 			if (x>=0 && x<XRES && y>=0 && y<YRES && sim->pmap[y][x])
-				sprintf(buff, "Temp: %4.2f", sim->parts[sim->pmap[y][x]>>8].temp-273.15);  //...temperature
+				sprintf(buff, "Temp: %4.2f", sim->parts[ID(sim->pmap[y][x])].temp-273.15);  //...temperature
 			else
 				sprintf(buff, "Temp: 0.00");  //...temperature
 		}
@@ -108,47 +109,54 @@ std::string sign::getText(Simulation *sim)
 			}
 			if (r)
 			{
-				bool sparked = false;
+				int tt = TYP(r), ii = ID(r);
+				bool sparked = false, isparsed = true;
 				if (!strcmp(matched1, "i"))
-					num1 = r >> 8;
+					num1 = ii;
 				else if (!strcmp(matched1, "type"))
 				{
 					structtype = 2;
-					num1 = r & 0xFF;
-					int ctype = sim->parts[r>>8].ctype;
+					num1 = tt;
+					int ctype = sim->parts[ii].ctype;
 					if (num1 == PT_SPRK && ctype)
 					{
 						sparked = true;
 						num1 = ctype;
 					}
 					else if (num1 == PT_LIFE)
-						num1 |= (ctype << 8);
+						num1 |= PMAPID(ctype);
 				}
 				else if (!strcmp(matched1, "life"))
-					num1 = sim->parts[r>>8].life;
+					num1 = sim->parts[ii].life;
 				else if (!strcmp(matched1, "ctype"))
 				{
 					structtype = 2;
-					num1 = sim->parts[r>>8].ctype;
+					num1 = sim->parts[ii].ctype;
 				}
 				else if (!strcmp(matched1, "temp"))
 				{
 					structtype = 1;
-					num1 = * (int*) & (sim->parts[r>>8].temp);
+					num1 = * (int*) & (sim->parts[ii].temp);
 				}
-				else if (!strcmp(matched1, "tmp"))
-					num1 = sim->parts[r>>8].tmp;
-				else if (!strcmp(matched1, "tmp2"))
-					num1 = sim->parts[r>>8].tmp2;
-				else if (!strcmp(matched1, "tmp3"))
-					num1 = sim->parts[r>>8].tmp3;
-				else if (!strcmp(matched1, "tmp4"))
-					num1 = sim->parts[r>>8].tmp4;
+				else if (!strncmp(matched1, "tmp", 3))
+				{
+					static size_t __offsets[] = {
+						offsetof(Particle, tmp),
+						offsetof(Particle, tmp2),
+						offsetof(Particle, tmp3),
+						offsetof(Particle, tmp4)
+					}
+					char c = matched1[3]; c || (c = '1');
+					if (c >= '1' && c <= ('0' + sizeof(__offsets) / sizeof(size_t)))
+						num = *((int*)(((unsigned char*)&sim->parts[ii]) + __offset[c - '1']));
+					else
+						isparsed = false;
+				}
 				/*
 				else if (!strcmp(matched1, "vrad"))
 				{
-					float veloc_x = sim->parts[r>>8].vx;
-					float veloc_y = sim->parts[r>>8].vy;
+					float veloc_x = sim->parts[ii].vx;
+					float veloc_y = sim->parts[ii].vy;
 					float velocity = hypotf(veloc_x, veloc_y);
 					num1 = * (int*) & velocity;
 				}
@@ -156,29 +164,28 @@ std::string sign::getText(Simulation *sim)
 				else if (!strcmp(matched1, "vx"))
 				{
 					structtype = 1;
-					num1 = * (int*) & (sim->parts[r>>8].vx);
+					num1 = * (int*) & (sim->parts[ii].vx);
 				}
 				else if (!strcmp(matched1, "vy"))
 				{
 					structtype = 1;
-					num1 = * (int*) & (sim->parts[r>>8].vy);
+					num1 = * (int*) & (sim->parts[ii].vy);
 				}
 				else if (!strcmp(matched1, "dcolor") || !strcmp(matched1, "dcolour"))
 				{
 					structtype = 4;
-					num1 = sim->parts[r>>8].dcolour;
+					num1 = sim->parts[ii].dcolour;
 				}
-				else if (!strcmp(matched1, "pavg0"))
+				else if (!strncmp(matched1, "pavg", 4) && (matched1[4] == '0' || matched1[4] == '1') && matched1[5] == '\0')
 				{
+					int v = matched1[4] - '0';
 					structtype = 1;
-					num1 = * (int*) & (sim->parts[r>>8].pavg[0]);
-				}
-				else if (!strcmp(matched1, "pavg1"))
-				{
-					structtype = 1;
-					num1 = * (int*) & (sim->parts[r>>8].pavg[1]);
+					num1 = * (int*) & (sim->parts[ii].pavg[v]);
 				}
 				else
+					isparsed = false;
+
+				if (!isparsed)
 				{
 					strcpy(buff, signText);
 					return std::string(buff);
