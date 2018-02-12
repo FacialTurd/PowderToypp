@@ -47,7 +47,7 @@ Element_SING::Element_SING()
 //#TPT-Directive ElementHeader Element_SING static int update(UPDATE_FUNC_ARGS)
 int Element_SING::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, cry, crx, nb, spawncount;
+	int r, rx, ry, cry, crx, nb, spawncount, rt, rt2;
 	int singularity = -parts[i].life;
 	float angle, v;
 
@@ -111,9 +111,9 @@ int Element_SING::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				int rt = TYP(r);
-				if (!(sim->elements[rt].Properties2 & PROP_NODESTRUCT) && 
-					(rt != PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)) && !(rand()%3))
+				rt = TYP(r);
+				rt2 = (rt == PT_SPRK) ? partsi(r).ctype : rt;
+				if (!(sim->elements[rt2].Properties2 & PROP_NODESTRUCT) && !(rand()%3))
 				{
 					if (rt==PT_SING && partsi(r).life >10)
 					{

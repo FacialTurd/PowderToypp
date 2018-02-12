@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_POLC PT_POLC 188
+#define ID part_ID
 
 bool Element_POLC_Init = false;
 
@@ -65,7 +66,7 @@ int Element_POLC::strengthlist[20];
 //#TPT-Directive ElementHeader Element_POLC static int update(UPDATE_FUNC_ARGS)
 int Element_POLC::update(UPDATE_FUNC_ARGS)
 {
-	int r, s, rx, ry, rr, sctype, actype, stmp;
+	int r, s, rx, ry, rt, rr, sctype, actype, stmp;
 	const int cooldown = 15;
 	float tempTemp, tempPress;
 	rr = sim->photons[y][x];
@@ -76,13 +77,14 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 
 	if (stmp < LIMIT && !parts[i].life)
 	{
-		sctype = parts[i].ctype & 0xFF; // don't create SPC_AIR
-		b1 = rr && (
-			(rr & 0xFF) == PT_ELEC || (rr & 0xFF) == PT_E186
-		);
+		sctype = TYP(parts[i].ctype); // don't create SPC_AIR
+		int rrt = TYP(rr);
+
+		b1 = rrt && (rrt == PT_ELEC || rrt == PT_E186);
 		
 		if (b1 ? (rand() < strengthlist[std::max(stmp, 0)]) : (!stmp && !(rand() % 8192)))
 		{
+			rr >>= PMAPBITS;
 			if (!sctype || sim->elements[sctype].Properties & TYPE_ENERGY)
 			{
 				actype = sctype ? sctype : PT_ELEC;
@@ -111,9 +113,9 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 				if (b1) // scatter process?
 				{
 					rndstore = rand();
-					parts[s].vx = parts[rr>>8].vx + ((rndstore & 0x7F) - 0x3F) * 0.0005f;
+					parts[s].vx = parts[rr].vx + ((rndstore & 0x7F) - 0x3F) * 0.0005f;
 					rndstore >>= 7;
-					parts[s].vy = parts[rr>>8].vy + ((rndstore & 0x7F) - 0x3F) * 0.0005f;
+					parts[s].vy = parts[rr].vy + ((rndstore & 0x7F) - 0x3F) * 0.0005f;
 				}
 			}
 		}
@@ -127,14 +129,15 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 				{
 					r = pmap[y+ry][x+rx];
 					if (!r) continue;
-					switch (r & 0xFF)
+					rt = TYP(r), r = ID(r);
+					switch (rt)
 					{
 					case PT_PLUT:
-						if (parts[r>>8].tmp2 >= 10)
+						if (parts[r].tmp2 >= 10)
 						{
-							parts[r>>8].tmp = 0;
-							parts[r>>8].tmp2 = 0;
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_POLO);
+							parts[r].tmp = 0;
+							parts[r].tmp2 = 0;
+							sim->part_change_type(r, x+rx, y+ry, PT_POLO);
 						}
 						break;
 					case PT_POLO:
@@ -145,7 +148,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 						parts[i].temp *= 0.98;
 						if (!(rndstore&7))
 						{
-							parts[r>>8].tmp3 = 20;
+							parts[r].tmp3 = 20;
 						}
 						rndstore >>= 3;
 						break;

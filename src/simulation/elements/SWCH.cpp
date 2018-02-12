@@ -64,7 +64,7 @@ int Element_SWCH::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int pavg = PAVG_INSL(r);
-				if (pavg != PT_INSL && pavg != PT_INDI)
+				if (!CHECK_EL_INSL(pavg))
 				{
 					rt = TYP(r);
 					if (rt==PT_SWCH)

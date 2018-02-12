@@ -263,7 +263,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 	else
 	{
 		const int mask = 0x3FFFFFFF;
-		const static int rot[10] = {1,1,0,-1,-1,-1,0,1,1,1};
+		const static int rot[10] = {0,1,1,1,0,-1,-1,-1,0,1};
 		switch (rtmp2)
 		{
 			case 1: // beam splitter (50% turn left)
@@ -393,17 +393,24 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				break;
 			case 19: // beam splitter (switch)
 				{
-					int b = rct & 0x7, newrct = rct & ~0x7F;
-					r1 = rct >> 7, r2 = rct & 0x40;
-					if (~rct & 0x48)
-						part_phot->vx =  r1 * rot[b],
-						part_phot->vy = -r1 * rot[b+2];
+					int b = rct & 0x7, newrct;
+					r1 = rct >> 7, r2 = 1 << ((rct & 0x7F) >> 3);
+
+					if (0x05FF & r2)
+						part_phot->vx = r1 * rot[b+2],
+						part_phot->vy = r1 * rot[b];
+
+					if (!(rct & 0x40))
+						newrct = (rct & ~0x7F) | (b << 3) | ((rct >> 3) & 7);
 					else
-						sim->kill_part(i); 
-					if (r2)
-						newrct = rct ^ 0x8; 
-					else
-						newrct |= (b << 3) | ((rct >> 3) & 7);
+					{
+						newrct = rct;
+						if (0x0300 & r2)
+							newrct ^= 0x8;
+						if (0x0600 & r2)
+							sim->kill_part(i);
+					}
+
 					part_other->ctype = newrct;
 				}
 				break;
@@ -458,8 +465,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 						sim->parts[ri].flags = f | omsk;
 					}
 				}
-				else if (rot[(rct  )&7] * part_phot->vx +
-					     rot[(rct+6)&7] * part_phot->vy <= 0)
+				else if (rot[(rct+2)&7] * part_phot->vx +
+					     rot[rct&7] * part_phot->vy <= 0)
 					goto killing;
 				break;
 			case 21: // skip movement for N frame

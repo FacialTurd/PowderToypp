@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_WATR PT_WATR 2
+#define ID(r) part_ID(r)
 Element_WATR::Element_WATR()
 {
 	Identifier = "DEFAULT_PT_WATR";
@@ -47,7 +48,7 @@ Element_WATR::Element_WATR()
 //#TPT-Directive ElementHeader Element_WATR static int update(UPDATE_FUNC_ARGS)
 int Element_WATR::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, rt;
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -55,35 +56,52 @@ int Element_WATR::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_SALT && !(rand()%50))
+				rt = TYP(r);
+				switch (rt)
 				{
-					sim->part_change_type(i,x,y,PT_SLTW);
-					// on average, convert 3 WATR to SLTW before SALT turns into SLTW
-					if (!(rand()%3))
-						sim->part_change_type(r>>8,x+rx,y+ry,PT_SLTW);
-				}
-				else if (((r&0xFF)==PT_RBDM||(r&0xFF)==PT_LRBD) && (sim->legacy_enable||parts[i].temp>(273.15f+12.0f)) && !(rand()%100))
-				{
-					sim->part_change_type(i,x,y,PT_FIRE);
-					parts[i].life = 4;
-					parts[i].ctype = PT_WATR;
-				}
-				else if ((r&0xFF)==PT_FIRE && parts[r>>8].ctype!=PT_WATR){
-					sim->kill_part(r>>8);
-					if(!(rand()%30)){
-						sim->kill_part(i);
-						return 1;
+				case PT_SALT:
+					if (!(rand()%50))
+					{
+						sim->part_change_type(i,x,y,PT_SLTW);
+						// on average, convert 3 WATR to SLTW before SALT turns into SLTW
+						if (!(rand()%3))
+							sim->part_change_type(ID(r),x+rx,y+ry,PT_SLTW);
 					}
+					break;
+				case PT_RBDM:
+				case PT_LRBD:
+					if ((sim->legacy_enable||parts[i].temp>(273.15f+12.0f)) && !(rand()%100))
+					{
+						sim->part_change_type(i,x,y,PT_FIRE);
+						parts[i].life = 4;
+						parts[i].ctype = PT_WATR;
+					}
+					break;
+				case PT_FIRE:
+					if (parts[ID(r)].ctype!=PT_WATR){
+						sim->kill_part(ID(r));
+						if(!(rand()%30)){
+							sim->kill_part(i);
+							return 1;
+						}
+					}
+					break;
+				case PT_SLTW:
+					if (!(rand()%2000))
+					{
+						sim->part_change_type(i,x,y,PT_SLTW);
+					}
+					break;
+				/*
+				case PT_CNCT:	// Concrete+Water to paste, not very popular
+					if (!(rand()%100))
+					{
+						part_change_type(i,x,y,PT_PSTE);
+						sim.kill_part(ID(r));
+					}
+					break;
+				*/
 				}
-				else if ((r&0xFF)==PT_SLTW && !(rand()%2000))
-				{
-					sim->part_change_type(i,x,y,PT_SLTW);
-				}
-				/*if ((r&0xFF)==PT_CNCT && !(rand()%100))	Concrete+Water to paste, not very popular
-				 {
-				 part_change_type(i,x,y,PT_PSTE);
-				 sim.kill_part(r>>8);
-				 }*/
 			}
 	return 0;
 }

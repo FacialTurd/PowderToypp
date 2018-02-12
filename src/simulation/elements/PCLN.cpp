@@ -59,21 +59,22 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_SPRK)
+				rt = TYP(r);
+				if (rt == PT_SPRK)
 				{
-					if (parts[r>>8].life>0 && parts[r>>8].life<4)
+					if (partsi(r).life>0 && partsi(r).life<4)
 					{
-						if (parts[r>>8].ctype==PT_PSCN)
+						if (partsi(r).ctype==PT_PSCN)
 							parts[i].life = 10;
-						else if (parts[r>>8].ctype==PT_NSCN)
+						else if (partsi(r).ctype==PT_NSCN)
 							parts[i].life = 9;
 					}
 				}
-				else if ((r&0xFF)==PT_PCLN)
+				else if (rt == PT_PCLN)
 				{
-					if (parts[i].life==10&&parts[r>>8].life<10&&parts[r>>8].life>0)
+					if (parts[i].life==10&&partsi(r).life<10&&partsi(r).life>0)
 						parts[i].life = 9;
-					else if (parts[i].life==0&&parts[r>>8].life==10)
+					else if (parts[i].life==0&&partsi(r).life==10)
 						parts[i].life = 10;
 				}
 			}
@@ -87,14 +88,14 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = r&0xFF;
+					rt = TYP(r);
 					if (!(sim->elements[rt].Properties2 & PROP_CLONE) &&
 					    rt!=PT_SPRK && rt!=PT_NSCN && rt!=PT_PSCN &&
 					    rt!=PT_STKM && rt!=PT_STKM2 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
 						if (rt==PT_LIFE || rt==PT_LAVA)
-							parts[i].tmp = parts[r>>8].ctype;
+							parts[i].tmp = partsi(r).ctype;
 					}
 				}
 	if (parts[i].ctype>0 && parts[i].ctype<PT_NUM && sim->elements[parts[i].ctype].Enabled && parts[i].life==10)
@@ -124,7 +125,7 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 
 		else if (parts[i].ctype!=PT_LIGH || (rand()%30)==0)
 		{
-			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, parts[i].ctype&0xFF);
+			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
 			if (np>=0)
 			{
 				if (parts[i].ctype==PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)

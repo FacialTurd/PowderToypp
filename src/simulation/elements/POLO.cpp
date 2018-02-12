@@ -54,7 +54,8 @@ Element_POLO::Element_POLO()
 int Element_POLO::update(UPDATE_FUNC_ARGS)
 {
 	int r = sim->photons[y][x];
-	if (parts[i].tmp < LIMIT && !(parts[i].life || sim->isFromMyMod && (r & 0xFF) == PT_ELEC))
+	int ri = part_ID(r);
+	if (parts[i].tmp < LIMIT && !(parts[i].life || sim->isFromMyMod && TYP(r) == PT_ELEC))
 	{
 		if (!(rand()%10000) && !parts[i].tmp)
 		{
@@ -74,15 +75,15 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 			int s = sim->create_part(-3, x, y, PT_NEUT);
 			if (s >= 0)
 			{
-				parts[i].temp = ((parts[i].temp + parts[r>>8].temp + parts[r>>8].temp) + 600.0f) / 3.0f;
+				parts[i].temp = ((parts[i].temp + parts[ri].temp + parts[ri].temp) + 600.0f) / 3.0f;
 				parts[i].life = COOLDOWN;
 				parts[i].tmp++;
 
-				parts[r>>8].temp = parts[i].temp;
+				parts[ri].temp = parts[i].temp;
 
 				parts[s].temp = parts[i].temp;
-				parts[s].vx = parts[r>>8].vx;
-				parts[s].vy = parts[r>>8].vy;
+				parts[s].vx = parts[ri].vx;
+				parts[s].vy = parts[ri].vy;
 			}
 		}
 	}
@@ -105,15 +106,15 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 		ry = rndstore%5-2;
 		rx = (rndstore>>6)%5-2;
 		rr = sim->pmap[y+ry][x+rx];
-		if ((rr & 0xFF) == PT_POLO || (rr & 0xFF) == PT_POLC)
-			parts[rr>>8].tmp = 0;
+		if (TYP(rr) == PT_POLO || TYP(rr) == PT_POLC)
+			partsi(rr).tmp = 0;
 		parts[i].tmp2 = 0;
 		parts[i].tmp3--;
 	}
-	if (parts[r>>8].type == PT_PROT)
+	if (parts[ri].type == PT_PROT)
 	{
 		parts[i].tmp2++;
-		sim->kill_part(r>>8);
+		sim->kill_part(ri);
 	}
 	return 0;
 }

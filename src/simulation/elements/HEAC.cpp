@@ -2,6 +2,7 @@
 #include <functional>
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
+#define ID(r) part_ID(r)
 //#TPT-Directive ElementClass Element_HEAC PT_HEAC 180
 Element_HEAC::Element_HEAC()
 {
@@ -52,7 +53,7 @@ Element_HEAC::Element_HEAC()
 struct Element_HEAC::IsInsulator : public std::binary_function<Simulation*,int,bool> {
   bool operator() (Simulation* a, int b)
   {
-	  return b && (a->elements[b&0xFF].HeatConduct == 0 ? !((b&0xFF) == ELEM_MULTIPP && a->parts[b>>8].life == 6) : ((b&0xFF) == PT_HSWC && a->parts[b>>8].life != 10));
+	  return b && (a->elements[TYP(b)].HeatConduct == 0 ? !(TYP(b) == ELEM_MULTIPP && a->parts[ID(b)].life == 6) : (TYP(b) == PT_HSWC && a->parts[ID(b)].life != 10));
   }
 };
 //#TPT-Directive ElementHeader Element_HEAC static IsInsulator isInsulator
@@ -128,7 +129,7 @@ bool Element_HEAC::CheckLine(Simulation* sim, int x1, int y1, int x2, int y2, Bi
 int Element_HEAC::update(UPDATE_FUNC_ARGS)
 {
 	const int rad = 4;
-	int rry, rrx, r, count = 0;
+	int rry, rrx, r, rt, ri, count = 0;
 	float tempAgg = 0;
 	for (int rx = -1; rx <= 1; rx++)
 	{
@@ -141,22 +142,24 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+rry][x+rrx];
 				if (r)
   				{
-					if (sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
+					rt = TYP(r);
+					ri = ID(r);
+					if (sim->elements[rt].HeatConduct > 0 && (rt != PT_HSWC || parts[ri].life == 10))
 					{
 						count++;
-						tempAgg += parts[r>>8].temp;
+						tempAgg += parts[ri].temp;
 					}
-					else if ((r&0xFF) == ELEM_MULTIPP && parts[r>>8].life == 6)
+					else if (rt == ELEM_MULTIPP && parts[ri].life == 6)
 					{
-						parts[i].temp = parts[r>>8].temp;
+						parts[i].temp = parts[ri].temp;
 						goto conductFromHeater;
 					}
   				}
 				r = sim->photons[y+rry][x+rrx];
-				if (r && sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
+				if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
 				{
 					count++;
-					tempAgg += parts[r>>8].temp;
+					tempAgg += parts[ID(r)].temp;
 				}
 			}
 		}
@@ -176,14 +179,14 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 				if (x+rrx >= 0 && x+rrx < XRES && y+rry >= 0 && y+rry < YRES && !Element_HEAC::CheckLine<Element_HEAC::IsInsulator>(sim, x, y, x+rrx, y+rry, isInsulator))
 				{
 					r = pmap[y+rry][x+rrx];
-					if (r && sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
+					if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
 					{
-						parts[r>>8].temp = parts[i].temp;
+						parts[ID(r)].temp = parts[i].temp;
 					}
 					r = sim->photons[y+rry][x+rrx];
-					if (r && sim->elements[r&0xFF].HeatConduct > 0 && ((r&0xFF) != PT_HSWC || parts[r>>8].life == 10))
+					if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
 					{
-						parts[r>>8].temp = parts[i].temp;
+						parts[ID(r)].temp = parts[i].temp;
 					}
 				}
 			}

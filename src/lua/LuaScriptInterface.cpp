@@ -3846,6 +3846,7 @@ int LuaScriptInterface::elements_free(lua_State * l)
 		return luaL_error(l, "Cannot free default elements");
 
 	luacon_sim->elements[id].Enabled = false;
+	Element_NEUT::TransitionTable[2*id] = 0;
 
 	lua_getglobal(l, "elements");
 	lua_pushnil(l);

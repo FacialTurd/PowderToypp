@@ -1,5 +1,7 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_CONV PT_CONV 85
+#define ID part_ID
+
 Element_CONV::Element_CONV()
 {
 	Identifier = "DEFAULT_PT_CONV";
@@ -48,8 +50,11 @@ Element_CONV::Element_CONV()
 //#TPT-Directive ElementHeader Element_CONV static int update(UPDATE_FUNC_ARGS)
 int Element_CONV::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
-	int ctype = parts[i].ctype&0xFF, ctypeExtra = parts[i].ctype>>8;
+	int r, rx, ry, rt;
+	int ctype = parts[i].ctype, ctypeExtra;
+	ctypeExtra = ID(ctype);
+	ctype = TYP(ctype);
+
 	if (ctype<=0 || ctype>=PT_NUM || !sim->elements[ctype].Enabled || ctype==PT_CONV || (ctype==PT_LIFE && (ctypeExtra<0 || ctypeExtra>=NGOL)))
 	{
 		for (rx=-1; rx<2; rx++)
@@ -61,13 +66,13 @@ int Element_CONV::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (!(sim->elements[r&0xFF].Properties2 & PROP_CLONE) &&
-					    (r&0xFF)!=PT_STKM && (r&0xFF)!=PT_STKM2 &&
-					    (r&0xFF)!=PT_CONV && (r&0xFF)<PT_NUM)
+					rt = TYP(r);
+					if (!(sim->elements[rt].Properties2 & PROP_CLONE) &&
+					    rt!=PT_STKM && rt!=PT_STKM2 && rt!=PT_CONV && rt<PT_NUM)
 					{
-						parts[i].ctype = r&0xFF;
-						if ((r&0xFF)==PT_LIFE)
-							parts[i].ctype |= (parts[r>>8].ctype << 8);
+						parts[i].ctype = rt;
+						if (rt == PT_LIFE)
+							parts[i].ctype |= PMAPID(parts[ID(r)].ctype);
 					}
 				}
 	}
@@ -79,14 +84,15 @@ int Element_CONV::update(UPDATE_FUNC_ARGS)
 				if (x+rx>=0 && y+ry>=0 && x+rx<XRES && y+ry<YRES)
 				{
 					r = sim->photons[y+ry][x+rx];
-					if (!r || (restrictElement && (r&0xFF)!=restrictElement))
+					if (!r || (restrictElement && TYP(r)!=restrictElement))
 						r = pmap[y+ry][x+rx];
-					if (!r || (restrictElement && (r&0xFF)!=restrictElement))
+					if (!r || (restrictElement && TYP(r)!=restrictElement))
 						continue;
-					if((r&0xFF)!=PT_CONV && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT) && (r&0xFF)!=ctype
-						& ((r&0xFF)!=PT_SPRK || !(sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)))
+					rt = TYP(r);
+					if (rt!=PT_CONV && !(sim->elements[rt].Properties2 & PROP_NODESTRUCT) && rt!=ctype
+						&& (rt!=PT_SPRK || !(sim->elements[parts[rt].ctype].Properties2 & PROP_NODESTRUCT)))
 					{
-						sim->create_part(r>>8, x+rx, y+ry, parts[i].ctype&0xFF, parts[i].ctype>>8);
+						sim->create_part(ID(r), x+rx, y+ry, ctype, ctypeExtra);
 					}
 				}
 	}
