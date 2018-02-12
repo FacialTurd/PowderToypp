@@ -5750,7 +5750,6 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 			y = (int)(parts[i].y+0.5f);
 			if (x>=0 && y>=0 && x<XRES && y<YRES)
 			{
-				
 				if (elements[t].Properties & TYPE_ENERGY)
 					photons[y][x] = PMAP(i, t);
 				else
@@ -5770,18 +5769,6 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 					{
 						*pmapp2 = PMAP(i, t);
 					}
-
-#if 0
-					if (!tt || ( TYP(tt) != PT_PINVIS && !(elements[t].Properties2 & PROP_INVISIBLE) ))
-					{
-						if (t == PT_PINVIS)
-							parts[i].tmp4 = tt;
-						pmap[y][x] = PMAP(i, t);
-					}
-					else if (TYP(tt) == PT_PINVIS)
-						partsi(tt).tmp4 = PMAP(i, t);
-#endif
-
 					// (there are a few exceptions, including energy particles - currently no limit on stacking those)
 
 					if (!(elements[t].Properties2 & PROP_UNLIMSTACKING)) // (t!=PT_THDR && t!=PT_EMBR && t!=PT_FIGH && t!=PT_PLSM)
@@ -5871,13 +5858,13 @@ void Simulation::CheckStacking()
 						// Allow more stacking in E-hole
 						if (pmap_count[y][x]>1500)
 						{
-							pmap_count[y][x] = pmap_count[y][x] + NPART;
+							pmap_count[y][x] = pmap_count[y][x] + (NPART + 1);
 							excessive_stacking_found = 1;
 						}
 					}
 					else if (pmap_count[y][x]>1500 || (rand()%1600)<=(pmap_count[y][x]+100))
 					{
-						pmap_count[y][x] = pmap_count[y][x] + NPART;
+						pmap_count[y][x] = pmap_count[y][x] + (NPART + 1);
 						excessive_stacking_found = true;
 					}
 				}
@@ -5892,17 +5879,32 @@ void Simulation::CheckStacking()
 					int t = parts[i].type;
 					int x = (int)(parts[i].x+0.5f);
 					int y = (int)(parts[i].y+0.5f);
-					if (x>=0 && y>=0 && x<XRES && y<YRES && !(elements[t].Properties& (TYPE_ENERGY | PROP_NO_NBHL_GEN) ))
+					if (x>=0 && y>=0 && x<XRES && y<YRES && !(elements[t].Properties & ( TYPE_ENERGY ) ))
 					{
-						if (pmap_count[y][x]>=NPART)
+						if (pmap_count[y][x] >= NPART)
 						{
-							if (pmap_count[y][x]>NPART)
+							if (isFromMyMod)
+							{
+								int prop = elements[t].Properties2;
+								if (prop & PROP_NO_NBHL_GEN)
+									continue;
+								else if ((prop & PROP_NODESTRUCT) && pmap_count[y][x] > NPART)
+								{
+									if (pmap_count[y][x] == (NPART + 1) && ID(pmap[y][x]) != i)
+										kill_part(ID(pmap[y][x])),
+										pmap[y][x] = PMAP(i, t);
+									pmap_count[y][x] = NPART;
+									continue;
+								}
+							}
+								
+							if (pmap_count[y][x] > (NPART + 1))
 							{
 								create_part(i, x, y, PT_NBHL);
 								parts[i].temp = MAX_TEMP;
-								parts[i].tmp = pmap_count[y][x]-NPART;//strength of grav field
+								parts[i].tmp = pmap_count[y][x] - (NPART + 1);//strength of grav field
 								if (parts[i].tmp>51200) parts[i].tmp = 51200;
-								pmap_count[y][x] = NPART;
+								pmap_count[y][x] = NPART + 1;
 							}
 							else
 							{

@@ -30,8 +30,8 @@ Element_PINVIS::Element_PINVIS()
 	HeatConduct = 0;
 	Description = "Powered invisible, invisible to particles while activated.";
 
-	Properties = TYPE_SOLID /* | PROP_NEUTPASS */ | PROP_SPARKSETTLE | PROP_NOSLOWDOWN | PROP_TRANSPARENT | PROP_NO_NBHL_GEN;
-	Properties2 = PROP_NODESTRUCT | PROP_UNLIMSTACKING /* | PROP_INVISIBLE */;
+	Properties = TYPE_SOLID /* | PROP_NEUTPASS */ | PROP_SPARKSETTLE | PROP_NOSLOWDOWN | PROP_TRANSPARENT;
+	Properties2 = PROP_NODESTRUCT | PROP_UNLIMSTACKING | PROP_NO_NBHL_GEN /* | PROP_INVISIBLE */;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

@@ -394,25 +394,27 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			case 19: // beam splitter (switch)
 				{
 					int b = rct & 0x7, newrct;
-					r1 = rct >> 7, r2 = 1 << ((rct & 0x7F) >> 3);
+					r1 = rct >> 7, r2 = ((rct & 0x7F) >> 3);
 
-					if (0x05FF & r2)
+					if ((r2 >= 0 && r2 <= 8) || r2 == 10)
 						part_phot->vx = r1 * rot[b+2],
 						part_phot->vy = r1 * rot[b];
 
-					if (!(rct & 0x40))
-						newrct = (rct & ~0x7F) | (b << 3) | ((rct >> 3) & 7);
+					if (!(r2 & 0x8))
+						newrct = (rct & ~0x7F) | (b << 3) | (r2 & 7);
 					else
 					{
 						newrct = rct;
-						if (0x0300 & r2)
-							newrct ^= 0x8;
-						if (0x0600 & r2)
-							sim->kill_part(i);
+						switch (r2)
+						{
+						case 8: rct += 8; break;
+						case 9: rct -= 8; sim->kill_part(i); break;
+						case 10: sim->kill_part(ri); goto killed_19;
+						}
 					}
-
 					part_other->ctype = newrct;
 				}
+			killed_19:
 				break;
 			case 20: // conditional photon absorber
 				if (rct >= 0x8 && rct <= 0x17)

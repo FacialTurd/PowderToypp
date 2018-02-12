@@ -37,7 +37,6 @@
 #define PROP_TRANSPARENT	0x04000000   // 2^26 Photons (PHOT) pass through
 #define PROP_INSULATED		0x08000000   // 2^27 Insulated wires
 #define PROP_CONDUCTS_SPEC	0x10000000   // 2^28 Special conducts (like INST)
-#define PROP_NO_NBHL_GEN	0x20000000   // 2^29 
 
 // second properties flag:
 #define PROP_DEBUG_USE_TMP2		0x00000001	//   1 Use .tmp2 show it in the debug HUD
@@ -59,6 +58,7 @@
 // #define PROP_NOSLOWDOWN		0x02000000
 #define PROP_INVISIBLE			0x04000000  // 2^26 Invisible to particles like INVS and FILT
 #define PROP_UNLIMSTACKING		0x08000000  // 2^27 Currently no limit on stacking
+#define PROP_NO_NBHL_GEN		0x10000000  // 2^28
 
 #define FLAG_STAGNANT	0x1
 #define FLAG_SKIPMOVE   0x2  // skip movement for one frame, only implemented for PHOT
