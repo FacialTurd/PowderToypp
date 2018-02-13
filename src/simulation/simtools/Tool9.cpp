@@ -1,6 +1,6 @@
 #include "ToolClasses.h"
 #include "simulation/Simulation.h"
-//#TPT-Directive ToolClass Tool_Tool9 TOOL_TOOL9 9
+//#TPT-Directive ToolClass Tool_Tool9 TOOL_TOOL9 10
 Tool_Tool9::Tool_Tool9()
 {
 	Identifier = "DEFAULT_TOOL_TOOL9";
@@ -9,7 +9,7 @@ Tool_Tool9::Tool_Tool9()
 	Description = "Mandelbrot set (image) generator.";
 }
 
-int Tool_Tool9::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
+int Tool_Tool9::Perform(Simulation * sim, Particle * cpart, int x, int y, int brushX, int brushY, float strength)
 {
 	double multiplier = 25.0 / 4096.0 * (376.0 / (YRES - CELL * 2));
 	double cx = -0.764407332533302 + (x - (XRES / 2)) * multiplier;

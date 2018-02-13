@@ -1,6 +1,6 @@
 #include "ToolClasses.h"
 #include "simulation/Simulation.h"
-//#TPT-Directive ToolClass Tool_Tool12 TOOL_TOOL12 12
+//#TPT-Directive ToolClass Tool_Tool12 TOOL_TOOL12 13
 Tool_Tool12::Tool_Tool12()
 {
 	Identifier = "DEFAULT_TOOL_TOOL12";
@@ -9,7 +9,7 @@ Tool_Tool12::Tool_Tool12()
 	Description = "Second NSCN, can deactivate powered materials.";
 }
 
-int Tool_Tool12::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
+int Tool_Tool12::Perform(Simulation * sim, Particle * cpart, int x, int y, int brushX, int brushY, float strength)
 {
 	int id = sim->create_part(-1, x, y, PT_NSCN);
 	if (id >= 0)

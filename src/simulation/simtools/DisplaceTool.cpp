@@ -1,6 +1,6 @@
 #include "ToolClasses.h"
 #include "simulation/Simulation.h"
-//#TPT-Directive ToolClass Tool_Displace TOOL_DISPLACE 7
+//#TPT-Directive ToolClass Tool_Displace TOOL_DISPLACE 8
 Tool_Displace::Tool_Displace()
 {
 	Identifier = "DEFAULT_TOOL_DISPLACE";
@@ -9,7 +9,7 @@ Tool_Displace::Tool_Displace()
 	Description = "Displace tool.";
 }
 
-int Tool_Displace::Perform(Simulation * sim, Particle * cpart, int x, int y, float strength)
+int Tool_Displace::Perform(Simulation * sim, Particle * cpart, int x, int y, int brushX, int brushY, float strength)
 {
 	int thisPart = sim->pmap[y][x];
 	if(!thisPart)

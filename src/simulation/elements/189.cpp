@@ -393,7 +393,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				break;
 			case 19: // beam splitter (switch)
 				{
-					int b = rct & 0x7, newrct;
+					int b = rct & 0x7, newrct, np;
 					r1 = rct >> 7, r2 = ((rct & 0x7F) >> 3);
 
 					if ((r2 >= 0 && r2 <= 8) || r2 == 10)
@@ -407,8 +407,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 						newrct = rct;
 						switch (r2)
 						{
-						case 8: rct += 8; break;
-						case 9: rct -= 8; sim->kill_part(i); break;
+						case 8: newrct += 8; break;
+						case 9: newrct -= 8; sim->kill_part(i); break;
 						case 10: sim->kill_part(ri); goto killed_19;
 						}
 					}

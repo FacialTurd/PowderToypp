@@ -906,6 +906,7 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, TOOL_PGRV);
 	SETCONST(l, TOOL_NGRV);
 	SETCONST(l, TOOL_MIX);
+	SETCONST(l, TOOL_CYCL);
 	SETCONST(l, TOOL_DISPLACE);
 	lua_pushinteger(l, luacon_sim->tools.size()); lua_setfield(l, -2, "TOOL_WIND");
 	SETCONST(l, DECO_DRAW);
@@ -1677,15 +1678,18 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 	int y = lua_tointeger(l, 2);
 	int f = lua_tointeger(l, 3);
 	int np = -1, ri;
-	unsigned char d = 0, dd;
+	unsigned char d, dd = 0;
 	float vx, vy, avx[2], avy[2];
 	if (argCount >= 4 && lua_isnumber(l, 4))
 	{
 		ri = lua_tointeger(l, 4);
 		if (argCount == 5)
-			d = dd = lua_tointeger(l, 5) & 0x1F;
+			d = lua_tointeger(l, 5) & 0x1F;
 		else
-			d = dd = ri & 0x1F, ri >>= 5; // don't replace &0xFF and >>8/<<8 in this line
+			d = ri & 0x1F, ri >>= 5; // don't replace &0xFF and >>8/<<8 in this line
+
+		dd = d;
+
 		if (ri >= 0 && ri < NPART)
 		{
 			Particle * pt = &(luacon_sim->parts[ri]);
@@ -1704,22 +1708,30 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 	if (x >= 0 && y >= 0 && x < XRES && y < YRES)
 	{
 		unsigned int r = luacon_sim->pmap[y][x];
-		// TODO: replace &0xFF and >>8/<<8 with macro
 		int rt = TYP(r);
 		int ri = rt ? ID(r) : -3;
 		if (ri < 0 || !(luacon_sim->elements[luacon_sim->parts[ri].type].Properties2 & PROP_INDESTRUCTIBLE))
 		{
-			if (f < 0)
-				luacon_sim->kill_part(ri);
+			if (f < 0 && f != -2)
+				(ri >= 0 && ri < NPART) && (luacon_sim->kill_part(ri), 0);
 			else
 				np = luacon_sim->create_part(ri, x, y, ELEM_MULTIPP, 5);
 			if (np >= 0)
 			{
-				luacon_sim->parts[np].tmp  = 7;
-				luacon_sim->parts[np].tmp2 = f;
-				if (dd & 0x10)
-					luacon_sim->parts[np].vx = avx[1],
-					luacon_sim->parts[np].vy = avy[1];
+				if (f == -2)
+				{
+					luacon_sim->parts[np].tmp   = 0;
+					luacon_sim->parts[np].tmp2  = 20;
+					luacon_sim->parts[np].ctype = 0xD0 | (int)(atan2f(avy[1], avx[1]) * (4.0 / M_PI) + 8.5f) & 7;
+				}
+				else
+				{
+					luacon_sim->parts[np].tmp  = 7;
+					luacon_sim->parts[np].tmp2 = f;
+					if (dd & 0x10)
+						luacon_sim->parts[np].vx = avx[1],
+						luacon_sim->parts[np].vy = avy[1];
+				}
 			}
 		}
 	}
