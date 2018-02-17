@@ -210,7 +210,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		}
 		else if (isbray || !(rand()%60))
 		{
-			int rt = TYP(r);
+			int rt = TYP(r), itmp;
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
 			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT))
@@ -234,7 +234,9 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[s].tmp = rand()%360;
 					break;
 				case PT_BRAY:
-					parts[s].ctype = 0x1F << (parts[i].tmp - 1);
+					itmp = parts[i].tmp;
+					if (itmp >= 1 && itmp <= 26)
+						parts[s].ctype = 0x1F << (itmp - 1);
 				}
 			}
 		}

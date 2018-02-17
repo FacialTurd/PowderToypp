@@ -250,6 +250,8 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			part_phot->ctype = TYP(rtmp2);
 			if (part_phot->ctype == PT_PROT)
 				part_phot->flags |= FLAG_SKIPCREATE;
+			else if (part_phot->ctype == PT_BRAY)
+				part_phot->tmp = 0;
 			sim->part_change_type(i, x, y, PT_E186);
 			break;
 #ifdef LUACONSOLE
@@ -266,41 +268,20 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 		const static int rot[10] = {0,1,1,1,0,-1,-1,-1,0,1};
 		switch (rtmp2)
 		{
-			case 1: // beam splitter (50% turn left)
-				if (rand() & 1)
-				{
-					rdif = part_phot->vx;
-					part_phot->vx = part_phot->vy;
-					part_phot->vy = -rdif;
-				}
-				break;
-			case 2: // beam splitter (50% turn right)
-				if (rand() & 1)
-				{
-					rdif = part_phot->vx;
-					part_phot->vx = -part_phot->vy;
-					part_phot->vy = rdif;
-				}
-				break;
-			case 3:
-				// 50% turn left, 50% turn right
-				// or 50% go straight, 50% go backward
+			case 1: // beam splitter (random)
 				rvx = part_phot->vx;
 				rvy = part_phot->vy;
-				(rct & 1) || (rdif = rvx, rvx = rvy, rvy = -rdif);
-				rdif = (rand() & 1) ? 1.0 : -1.0;
-				part_phot->vx = rdif * rvx;
-				part_phot->vy = rdif * rvy;
+				(rct != 1) && (rdif = rvx, rvx = rvy, rvy = -rdif);
+				r1 = rand() % ((rct == 4) ? 3 : 2);
+				rdif = (r1 & 1) ? 1.0 : -1.0;
+				if (r1 != 2 && (r1 + 2) != rct)
+					part_phot->vx = rdif * rvx,
+					part_phot->vy = rdif * rvy;
 				break;
-			case 4: // turn left + go straight + turn right = 100%
-				r1 = rand() % 3;
-				if (r1)
-				{
-					rvx = part_phot->vx;
-					rvy = (r1 & 1) ? 1.0 : -1.0;
-					part_phot->vx =  rvy * part_phot->vy;
-					part_phot->vy = -rvy * rvx;
-				}
+			case 2: // photons diode output
+				part_phot->tmp2 = part_phot->ctype;
+				part_phot->ctype = PMAP(1, 0);
+				sim->part_change_type(i, x, y, PT_E186);
 				break;
 			case 5: // random "energy" particle
 				part_phot->ctype = PMAP(1, 1);
@@ -386,14 +367,9 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 						part_phot->life = 0;
 				}
 				break;
-			case 18: // photons diode output
-				part_phot->tmp2 = part_phot->ctype;
-				part_phot->ctype = PMAP(1, 0);
-				sim->part_change_type(i, x, y, PT_E186);
-				break;
 			case 19: // beam splitter (switch)
 				{
-					int b = rct & 0x7, newrct, np;
+					int a, b = rct & 0x7, newrct, np;
 					r1 = rct >> 7, r2 = ((rct & 0x7F) >> 3);
 
 					if ((r2 >= 0 && r2 <= 8) || r2 == 10)
@@ -410,6 +386,12 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 						case 8: newrct += 8; break;
 						case 9: newrct -= 8; sim->kill_part(i); break;
 						case 10: sim->kill_part(ri); goto killed_19;
+						case 11:
+							a = floor( ( atan2f(rot[b], rot[b+2]) - atan2f(part_phot->vy, part_phot->vx) ) * (4.0 / M_PI) );
+							if ((a + 3) & 2)
+								break;
+							createPhotonsWithVelocity(sim, i, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), r1 * rot[b+2], r1 * rot[b]);
+							break;
 						}
 					}
 					part_other->ctype = newrct;
@@ -505,25 +487,32 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				break;
 			case 27: // PHOT duplicator/splitter
 			{
-				int np = sim->create_part(-1, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), part_phot->type);
+				float tvx = part_phot->vx, tvy = part_phot->vy;
+				int np = createPhotonsWithVelocity(sim, i, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), -tvy, tvx);
 				if (np < 0)
 					goto killing;
-				float tvx = part_phot->vx, tvy = part_phot->vy;
-				part_phot->vx =  tvy; sim->parts[np].vx = -tvy;
-				part_phot->vy = -tvx; sim->parts[np].vy =  tvx;
-				sim->parts[np].life = part_phot->life;
-				sim->parts[np].ctype = part_phot->ctype;
-				sim->parts[np].temp = part_phot->temp;
-				sim->parts[np].flags = part_phot->flags | (np > i ? FLAG_SKIPMOVE : 0);
-				sim->parts[np].tmp = part_phot->tmp;
+				part_phot->vx = tvy;
+				part_phot->vy = -tvx;
 				break;
 			}
 		}
 	}
 }
 
-//#TPT-Directive ElementHeader Element_MULTIPP static void createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
-void Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
+//#TPT-Directive ElementHeader Element_MULTIPP static int createPhotonsWithVelocity(Simulation* sim, int i, int x, int y, float vx, float vy)
+int Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int x, int y, float vx, float vy)
+{
+	int &np = sim->pfree;
+	if (np < 0)
+		return -1;
+	int nf = sim->parts[np].life;
+	if (nf > sim->parts_lastActiveIndex)
+		sim->parts_lastActiveIndex = nf;
+	return createPhotonsWithVelocity2(sim, i, np, x, y, sim->parts[i].life, sim->parts[i].ctype, vx, vy), np;
+}
+
+//#TPT-Directive ElementHeader Element_MULTIPP static void createPhotonsWithVelocity2(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
+void Element_MULTIPP::createPhotonsWithVelocity2(Simulation* sim, int i, int np, int x, int y, int life, int ctype, float vx, float vy)
 {
 	Particle * parts = sim->parts;
 	Particle * newphot = &(parts[np]);
@@ -548,6 +537,8 @@ void Element_MULTIPP::createPhotonsWithVelocity(Simulation* sim, int i, int np, 
 	// cdcolour is ignored
 	
 	sim->photons[y][x] = PMAP(np, t);
+	
+	return;
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static void duplicatePhotons(Simulation* sim, int i, int x, int y, Particle* part_phot, Particle* part_other)
@@ -577,9 +568,9 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 	
 	sim->pfree = sim->parts[split2?np2:np1].life;
 
-	createPhotonsWithVelocity(sim, i, np1, x, y, nlife, nctype, rvx, rvy);
+	createPhotonsWithVelocity2(sim, i, np1, x, y, nlife, nctype, rvx, rvy);
 	if (rtmp & 0x20000)
-		createPhotonsWithVelocity(sim, i, np2, x, y, nlife, nctype, -rvx, -rvy);
+		createPhotonsWithVelocity2(sim, i, np2, x, y, nlife, nctype, -rvx, -rvy);
 	if (rtmp & 0x10000)
 	{
 		sim->parts[np1].flags |= FLAG_PHOTDECO,

@@ -6,7 +6,7 @@ Tool_Cycl::Tool_Cycl()
 	Identifier = "DEFAULT_TOOL_CYCL";
 	Name = "CYCL";
 	Colour = PIXPACK(0x132f5b);
-	Description = "Cyclone. Produces swirling air currents";
+	Description = "Cyclone, produces swirling air currents";
 }
 
 int Tool_Cycl::Perform(Simulation * sim, Particle * cpart, int x, int y, int brushX, int brushY, float strength)

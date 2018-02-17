@@ -147,6 +147,8 @@ public:
 	static int check_neut_cooldown;
 	static int rndseed;
 	
+	static int bltable[][2];
+	
 	int  DIRCHInteractCount;
 	int  DIRCHInteractSize;
 	int* DIRCHInteractTable;

@@ -281,7 +281,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_NEUT static void ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
 void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
 {
-	if (under->tmp2 == 18)
+	if (under->tmp2 == 2)
 	{
 		neut->ctype = 0x100;
 		neut->tmp2 = 0x3FFFFFFF;

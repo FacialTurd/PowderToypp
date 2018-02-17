@@ -2192,7 +2192,7 @@ void Simulation::clear_sim(void)
 	DIRCHInteractTable = NULL;
 }
 
-static int bltable[][2] = { // blocked, allowcondition
+int Simulation::bltable[][2] = { // blocked, allowcondition
 // blocked = 0: pass through
 // blocked = 1: blocking all
 // blocked = 2: absorbs all
@@ -2567,7 +2567,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 	{
 		if (IsWallBlocking(nx, ny, pt))
 			return 0;
-		if (bmap[ny/CELL][nx/CELL]==WL_EHOLE && !emap[ny/CELL][nx/CELL] && !(elements[pt].Properties&TYPE_SOLID) && !(elements[r&0xFF].Properties&TYPE_SOLID))
+		if (bmap[ny/CELL][nx/CELL]==WL_EHOLE && !emap[ny/CELL][nx/CELL] && !(elements[pt].Properties&TYPE_SOLID) && !(elements[TYP(r)].Properties&TYPE_SOLID))
 			return 2;
 	}
 	return result;
@@ -2612,8 +2612,8 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		else if ((parts[i].type==PT_NEUT || parts[i].type==PT_ELEC) && (rt==PT_CLNE || rt==PT_PCLN || rt==PT_BCLN || rt==PT_PBCN))
 		{
-			if (!parts[r>>8].ctype)
-				parts[r>>8].ctype = parts[i].type;
+			if (!parts[ID(r)].ctype)
+				parts[ID(r)].ctype = parts[i].type;
 		}
 		if (rt==PT_PRTI && (elements[parts[i].type].Properties & TYPE_ENERGY))
 		{
@@ -2859,7 +2859,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		else if (partsi(r).life == 8)
 		{
 			int elec_temp = (int)(parts[i].temp + 0.5f);
-			int *vibr_tmp = & parts[r>>8].tmp;
+			int *vibr_tmp = & parts[ID(r)].tmp;
 			if (elec_temp * 4 + *vibr_tmp <= 20000)
 			{
 				*vibr_tmp += elec_temp * 4;
@@ -4305,7 +4305,7 @@ void Simulation::UpdateParticles(int start, int end)
 					s = 1;
 
 					//A fix for ice with ctype = 0
-					if ((t==PT_ICEI || t==PT_SNOW) && (!parts[i].ctype || !IsValidElement(parts[i].ctype) || parts[i].ctype==PT_ICEI || parts[i].ctype==PT_SNOW))
+					if ((t==PT_ICEI || t==PT_SNOW) && (!parts[i].ctype || !IsValidElement(parts[i].ctype) || parts[i].ctype==PT_ICEI || parts[i].ctype==PT_SNOW || parts[i].ctype==ELEM_MULTIPP))
 						parts[i].ctype = PT_WATR;
 
 					if (elements[t].HighTemperatureTransition>-1 && ctemph>=elements[t].HighTemperature)
@@ -4771,7 +4771,7 @@ killed:
 				fin_y = (int)(fin_yf+0.5f);
 				bool closedEholeStart = this->InBounds(fin_x, fin_y) && (bmap[fin_y/CELL][fin_x/CELL] == WL_EHOLE && !emap[fin_y/CELL][fin_x/CELL]);
 				tempFlag0 = elements[t].Properties2;
-				while (1)
+				while (true)
 				{
 					mv -= ISTP;
 					fin_xf += dx;
@@ -5633,9 +5633,9 @@ void Simulation::SimulateLLoops()
 				gol[ny][nx] = 0;
 				continue;
 			}
-			if ((r&0xFF)==PT_LIFE)
+			if (TYP(r)==PT_LIFE)
 			{
-				int golnum = parts[r>>8].ctype + 1;
+				int golnum = parts[ID(r)].ctype + 1;
 				if (golnum<=0 || golnum>=9)
 				{
 					kill_part(ID(r));
@@ -5668,7 +5668,7 @@ void Simulation::SimulateLLoops()
 		for (int nx = CELL; nx < XRES-CELL; nx++)
 		{
 			int r = pmap[ny][nx];
-			if (r && (r&0xFF)!=PT_LIFE)
+			if (r && TYP(r)!=PT_LIFE)
 				continue;
 			int neighbors = gol2[ny][nx][0];
 			if (neighbors)
@@ -5862,7 +5862,7 @@ void Simulation::CheckStacking()
 						if (pmap_count[y][x]>1500)
 						{
 							pmap_count[y][x] = pmap_count[y][x] + (NPART + 1);
-							excessive_stacking_found = 1;
+							excessive_stacking_found = true;
 						}
 					}
 					else if (pmap_count[y][x]>1500 || (rand()%1600)<=(pmap_count[y][x]+100))
@@ -5894,8 +5894,8 @@ void Simulation::CheckStacking()
 								else if ((prop & PROP_NODESTRUCT) && pmap_count[y][x] > NPART)
 								{
 									if (pmap_count[y][x] == (NPART + 1) && ID(pmap[y][x]) != i)
-										kill_part(ID(pmap[y][x])),
-										pmap[y][x] = PMAP(i, t);
+										kill_part(ID(pmap[y][x]));
+									pmap[y][x] = PMAP(i, t);
 									pmap_count[y][x] = NPART;
 									continue;
 								}
