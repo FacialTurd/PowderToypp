@@ -102,14 +102,21 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 	}
 	else
 	{
-		int rndstore = rand(), rr, rx, ry;
+		int rndstore = rand(), rr, rx, ry, rrt;
 		ry = rndstore%5-2;
 		rx = (rndstore>>6)%5-2;
 		rr = sim->pmap[y+ry][x+rx];
-		if (TYP(rr) == PT_POLO || TYP(rr) == PT_POLC)
-			partsi(rr).tmp = 0;
+		rrt = TYP(rr); rr = part_ID(rr);
+		if (rrt == PT_POLO || rrt == PT_POLC)
+			parts[rr].tmp = 0;
 		parts[i].tmp2 = 0;
 		parts[i].tmp3--;
+		if (rrt == PT_POLO)
+		{
+			int l = parts[i].tmp3 + (rr > i ? 1 : 0); 
+			if (parts[rr].tmp3 < l)
+				parts[rr].tmp3 = l;
+		}
 	}
 	if (parts[ri].type == PT_PROT)
 	{

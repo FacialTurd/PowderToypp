@@ -57,7 +57,8 @@ int Element_BCLN::update(UPDATE_FUNC_ARGS)
 		parts[i].vx += ADVECTION*sim->vx[y/CELL][x/CELL];
 		parts[i].vy += ADVECTION*sim->vy[y/CELL][x/CELL];
 	}
-	if (parts[i].ctype<=0 || parts[i].ctype>=PT_NUM || !sim->elements[parts[i].ctype].Enabled || (parts[i].ctype==PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
+	int ctype1 = parts[i].ctype;
+	if (ctype1 <= 0 || ctype1 >= PT_NUM || !sim->elements[ctype1].Enabled || (ctype1==PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
 	{
 		int r, rx, ry, rt;
 		for (rx=-1; rx<2; rx++)
@@ -69,27 +70,25 @@ int Element_BCLN::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = r&0xFF;
+					rt = TYP(r);
 					if (!(sim->elements[rt].Properties2 & PROP_CLONE)
 						&& rt!=PT_STKM && rt!=PT_STKM2 && rt!=PT_E186 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
 						if (rt==PT_LIFE || rt==PT_LAVA)
-							parts[i].tmp = parts[r>>8].ctype;
+							parts[i].tmp = partsi(r).ctype;
 					}
 				}
 	}
 	else {
-		if (parts[i].ctype==PT_LIFE) sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, PT_LIFE, parts[i].tmp);
-		else if (parts[i].ctype!=PT_LIGH || (rand()%30)==0)
+		if (ctype1 == PT_LIFE) sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, PT_LIFE, parts[i].tmp);
+		else if (ctype1 != PT_LIGH || (rand()%30)==0)
 		{
-			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, parts[i].ctype&0xFF);
+			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(ctype1));
 			if (np>=0)
 			{
-				if (parts[i].ctype==PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
+				if ((ctype1 == PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA) || ctype1 == PT_E186)
 					parts[np].ctype = parts[i].tmp;
-				// else if (parts[i].ctype==ELEM_MULTIPP) // failed
-				//	parts[np].life = parts[i].tmp;
 			}
 		}
 	}

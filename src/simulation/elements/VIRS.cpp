@@ -87,8 +87,9 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				int rt = TYP(r);
+				int rt = TYP(r), irt;
 				r >>= PMAPBITS;
+				irt = rt;
 
 				switch (rt)
 				{
@@ -122,11 +123,11 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 						goto infecting_virus;
 					break;
 				case PT_SPRK:
-					rt = parts[r].ctype;
+					irt = parts[r].ctype;
 				default:
 				infecting_virus:
 				//transforms things into virus here
-					if (!(sim->elements[rt].Properties2 & PROP_NODESTRUCT))
+					if (!(sim->elements[irt].Properties2 & PROP_NODESTRUCT))
 					{
 						if (!(rndstore & 0x7))
 						{

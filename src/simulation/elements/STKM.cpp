@@ -61,7 +61,8 @@ int Element_STKM::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
-
+#define PMAPBITSp1 (PMAPBITS + 1)
+#define ID part_ID
 
 //#TPT-Directive ElementHeader Element_STKM static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_STKM::graphics(GRAPHICS_FUNC_ARGS)
@@ -405,7 +406,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	        sim->bmap[(int)(playerp->legs[13]+0.5)/CELL][(int)(playerp->legs[12]+0.5)/CELL]==WL_DETECT)
 		sim->set_emap((int)(playerp->legs[12]+0.5)/CELL, (int)(playerp->legs[13]+0.5)/CELL);
 
-	int rndstore, randpool = 0, under_wall;
+	int rndstore, randpool = 0, under_wall, rt;
 	//Searching for particles near head
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
@@ -418,30 +419,32 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				if (!r && !sim->bmap[(y+ry)/CELL][(x+rx)/CELL])
 					continue;
 				
-				if (!(sim->Extra_FIGH_pause & 32 || (r&0xFF) == PT_E186 && (playerp->__flags & 1)))
+				rt = TYP(r); r = ID(r);
+				
+				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && (playerp->__flags & 1)))
 				{
-					STKM_set_element(sim, playerp, r&0xFF);
+					STKM_set_element(sim, playerp, rt);
 				}
 				if (!(sim->Extra_FIGH_pause & 16))
 				{
-					if ((r&0xFF) == PT_PLNT && parts[i].life<100) //Plant gives him 5 HP
+					if (rt == PT_PLNT && parts[i].life<100) //Plant gives him 5 HP
 					{
 						if (parts[i].life<=95)
 							parts[i].life += 5;
 						else
 							parts[i].life = 100;
-						sim->kill_part(r>>8);
+						sim->kill_part(r);
 					}
 
-					if ((r&0xFF) == PT_NEUT)
+					if (rt == PT_NEUT)
 					{
 						if (parts[i].life<=100) parts[i].life -= (102-parts[i].life)/2;
 						else parts[i].life *= 0.9f;
-						sim->kill_part(r>>8);
+						sim->kill_part(r);
 					}
 				}
 
-				if ((r&0xFF) == ELEM_MULTIPP)
+				if (rt == ELEM_MULTIPP)
 				{
 					if (!randpool)
 					{
@@ -450,15 +453,15 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					}
 					if (!(rndstore & 3)) // condition: rand % 4 == 0 (actually 25% chance)
 					{
-						STKM_set_life_1(sim, r>>8, i);
+						STKM_set_life_1(sim, r, i);
 					}
 					rndstore >>= 2; randpool--;
-					if (parts[r>>8].life == 27 && !(sim->Extra_FIGH_pause & 32))
+					if (parts[r].life == 27 && !(sim->Extra_FIGH_pause & 32))
 					{
-						ctype = parts[r>>8].ctype;
-						int xctype = ctype >> 9;
-						ctype &= 0x1FF;
-						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM || ctype == 0x102 || ctype == 0x103))
+						ctype = parts[r].ctype;
+						int xctype = ctype >> PMAPBITSp1;
+						ctype &= ((1 << PMAPBITSp1) - 1); 
+						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM || ctype == PMAP(1, 2) || ctype == PMAP(1, 3)))
 						{
 							STKM_set_element(sim, playerp, ctype);
 						}
@@ -482,7 +485,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					playerp->rocketBoots = true;
 					break;
 				}
-				if ((r&0xFF)==PT_PRTI)
+				if (rt == PT_PRTI)
 					Element_STKM::STKM_interact(sim, playerp, i, rx, ry);
 				if (!parts[i].type)//STKM_interact may kill STKM
 					return 1;
@@ -497,7 +500,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	{
 		ry -= grav_multiplier * (2*(rand()%2)+1);
 		r = pmap[ry][rx];
-		if ((sim->elements[r&0xFF].Properties&TYPE_SOLID) && (r&0xFF) != ELEM_MULTIPP)
+		if ((sim->elements[TYP(r)].Properties&TYPE_SOLID) && TYP(r) != ELEM_MULTIPP)
 		{
 			sim->create_part(-1, rx, ry, PT_SPRK);
 			playerp->frames = 0;
@@ -696,29 +699,33 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 //#TPT-Directive ElementHeader Element_STKM static void STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y)
 void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y)
 {
-	int r;
+	int r, rt;
 	if (x<0 || y<0 || x>=XRES || y>=YRES || !sim->parts[i].type)
 		return;
 	r = sim->pmap[y][x];
 	if (r)
 	{
-		if ((r&0xFF) == PT_PINVIS)
-			r = sim->parts[r>>8].tmp4;
+		if (TYP(r) == PT_PINVIS)
+			r = sim->parts[ID(r)].tmp4;
 		if (!(sim->Extra_FIGH_pause & 16))
 		{
-			if ((r&0xFF)==PT_SPRK && playerp->elem!=PT_LIGH) //If on charge
+			rt = TYP(r); r = ID(r);
+
+			if (rt == PT_SPRK && playerp->elem!=PT_LIGH) //If on charge
 			{
 				sim->parts[i].life -= (int)(rand()*20/RAND_MAX)+32;
 			}
 
-			if (sim->elements[r&0xFF].HeatConduct && ((r&0xFF)!=PT_HSWC||sim->parts[r>>8].life==10) && ((playerp->elem!=PT_LIGH && sim->parts[r>>8].temp>=323) || sim->parts[r>>8].temp<=243) && (!playerp->rocketBoots || (r&0xFF)!=PT_PLSM))
+			if (sim->elements[rt].HeatConduct && (rt!=PT_HSWC||sim->parts[r].life==10) &&
+				((playerp->elem!=PT_LIGH && sim->parts[r].temp>=323) || sim->parts[r].temp<=243) &&
+				(!playerp->rocketBoots || rt != PT_PLSM))
 			{
 				sim->parts[i].life -= 2;
 				playerp->accs[3] -= 1;
 			}
 				
-			if (sim->elements[r&0xFF].Properties&PROP_DEADLY)
-				switch (r&0xFF)
+			if (sim->elements[rt].Properties&PROP_DEADLY)
+				switch (rt)
 				{
 					case PT_ACID:
 						sim->parts[i].life -= 5;
@@ -728,14 +735,14 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 						break;
 				}
 
-			if (sim->elements[r&0xFF].Properties&PROP_RADIOACTIVE)
+			if (sim->elements[rt].Properties&PROP_RADIOACTIVE)
 				sim->parts[i].life -= 1;
 		}
 		
-		if ((r&0xFF) == ELEM_MULTIPP)
+		if (rt == ELEM_MULTIPP)
 		{
-			STKM_set_life_1(sim, r>>8, i);
-			if (sim->parts[r>>8].life == 23)
+			STKM_set_life_1(sim, r, i);
+			if (sim->parts[r].life == 23)
 			{
 				sim->parts[i].vy -= 3;
 				playerp->accs[3] -= 3;
@@ -743,33 +750,35 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 			}
 		}
 
-		if ((r&0xFF)==PT_PRTI && sim->parts[i].type)
+		if (rt == PT_PRTI && sim->parts[i].type)
 		{
 			int nnx, count=1;//gives rx=0, ry=1 in update_PRTO
-			sim->parts[r>>8].tmp = (int)((sim->parts[r>>8].temp-73.15f)/100+1);
-			if (sim->parts[r>>8].tmp>=CHANNELS) sim->parts[r>>8].tmp = CHANNELS-1;
-			else if (sim->parts[r>>8].tmp<0) sim->parts[r>>8].tmp = 0;
+			sim->parts[r].tmp = (int)((sim->parts[r].temp-73.15f)/100+1);
+			if (sim->parts[r].tmp>=CHANNELS) sim->parts[r].tmp = CHANNELS-1;
+			else if (sim->parts[r].tmp<0) sim->parts[r].tmp = 0;
 			for (nnx=0; nnx<80; nnx++)
-				if (!sim->portalp[sim->parts[r>>8].tmp][count][nnx].type)
+				if (!sim->portalp[sim->parts[r].tmp][count][nnx].type)
 				{
-					sim->portalp[sim->parts[r>>8].tmp][count][nnx] = sim->parts[i];
+					sim->portalp[sim->parts[r].tmp][count][nnx] = sim->parts[i];
 					sim->kill_part(i);
 					//stop new STKM/fighters being created to replace the ones in the portal:
 					playerp->spwn = 1;
-					if (sim->portalp[sim->parts[r>>8].tmp][count][nnx].type==PT_FIGH)
+					if (sim->portalp[sim->parts[r].tmp][count][nnx].type==PT_FIGH)
 						sim->fighcount++;
 					break;
 				}
 		}
-		if (((r&0xFF)==PT_BHOL || (r&0xFF)==PT_NBHL) && sim->parts[i].type)
+		if ((rt == PT_BHOL || rt == PT_NBHL) && sim->parts[i].type)
 		{
 			if (!sim->legacy_enable)
 			{
-				sim->parts[r>>8].temp = restrict_flt(sim->parts[r>>8].temp+sim->parts[i].temp/2, MIN_TEMP, MAX_TEMP);
+				sim->parts[r].temp = restrict_flt(sim->parts[r].temp+sim->parts[i].temp/2, MIN_TEMP, MAX_TEMP);
 			}
 			sim->kill_part(i);
 		}
-		if (((r&0xFF)==PT_VOID || ((r&0xFF)==PT_PVOD && sim->parts[r>>8].life==10)) && (!sim->parts[r>>8].ctype || (sim->parts[r>>8].ctype==sim->parts[i].type)!=(sim->parts[r>>8].tmp&1)) && sim->parts[i].type)
+		if ((rt == PT_VOID || (rt == PT_PVOD && sim->parts[r].life==10)) &&
+			(!sim->parts[r].ctype || (sim->parts[r].ctype == sim->parts[i].type) != (sim->parts[r].tmp&1)) &&
+			sim->parts[i].type)
 		{
 			sim->kill_part(i);
 		}
@@ -822,10 +831,10 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_element(Simulation *sim, playerst *playerp, int element)
 void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int element)
 {
-	if (element == 0x102 || element == 0x103)
+	if (element == PMAP(1, 2) || element == PMAP(1, 3))
 	{
 		playerp->__flags &= ~0x1;
-		playerp->__flags |= (element == 0x102) ? 1 : 0;
+		playerp->__flags |= (element == PMAP(1, 2)) ? 1 : 0;
 	}
 	else if (sim->elements[element].Falldown != 0
 	    || sim->elements[element].Properties&TYPE_GAS

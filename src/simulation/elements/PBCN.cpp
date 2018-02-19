@@ -51,7 +51,7 @@ Element_PBCN::Element_PBCN()
 //#TPT-Directive ElementHeader Element_PBCN static int update(UPDATE_FUNC_ARGS)
 int Element_PBCN::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, rt;
+	int r, rx, ry, rt, np, ctype1 = parts[i].ctype;
 	if (!parts[i].tmp2 && sim->pv[y/CELL][x/CELL]> sim->sim_max_pressure)
 		parts[i].tmp2 = rand()%40+80;
 	if (parts[i].tmp2)
@@ -64,7 +64,7 @@ int Element_PBCN::update(UPDATE_FUNC_ARGS)
 			return 1;
 		}
 	}
-	if (parts[i].ctype<=0 || parts[i].ctype>=PT_NUM || !sim->elements[parts[i].ctype].Enabled || (parts[i].ctype==PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
+	if (ctype1 <= 0 || ctype1>=PT_NUM || !sim->elements[ctype1].Enabled || (ctype1 == PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
 				if (BOUNDS_CHECK)
@@ -74,14 +74,14 @@ int Element_PBCN::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = r&0xFF;
+					rt = TYP(r);
 					if (!(sim->elements[rt].Properties2 & PROP_CLONE) &&
 					    rt!=PT_SPRK && rt!=PT_NSCN && rt!=PT_PSCN &&
 					    rt!=PT_STKM && rt!=PT_STKM2 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
-						if (rt==PT_LIFE || rt==PT_LAVA)
-							parts[i].tmp = parts[r>>8].ctype;
+						if (rt==PT_LIFE || rt==PT_LAVA || (rt == PT_E186 && partsi(r).ctype > 0 && partsi(r).ctype < PT_NUM))
+							parts[i].tmp = partsi(r).ctype;
 					}
 				}
 	if (parts[i].life!=10)
@@ -98,12 +98,12 @@ int Element_PBCN::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_PBCN)
+					if (TYP(r)==PT_PBCN)
 					{
-						if (parts[r>>8].life<10&&parts[r>>8].life>0)
+						if (partsi(r).life<10 && partsi(r).life>0)
 							parts[i].life = 9;
-						else if (parts[r>>8].life==0)
-							parts[r>>8].life = 10;
+						else if (partsi(r).life == 0)
+							partsi(r).life = 10;
 					}
 				}
 		if (parts[i].ctype>0 && parts[i].ctype<PT_NUM && sim->elements[parts[i].ctype].Enabled)
@@ -126,19 +126,26 @@ int Element_PBCN::update(UPDATE_FUNC_ARGS)
 							}
 						}
 			}
-			else if (parts[i].ctype==PT_LIFE)//create life a different way
+			else if (ctype1 == PT_LIFE)//create life a different way
 				for (rx=-1; rx<2; rx++)
 					for (ry=-1; ry<2; ry++)
 						sim->create_part(-1, x+rx, y+ry, PT_LIFE, parts[i].tmp);
 
-			else if (parts[i].ctype!=PT_LIGH || !(rand()%30))
+			else if (ctype1 == PT_E186) // not different way
 			{
-				int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, parts[i].ctype&0xFF);
+				np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
+				if (np>=0)
+					parts[np].ctype = TYP(parts[i].tmp);
+			}
+
+			else if (ctype1 != PT_LIGH || (rand()%30)==0)
+			{
+				np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
 				if (np>=0)
 				{
-					if (parts[i].ctype==PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
+					if (ctype1 == PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
 						parts[np].ctype = parts[i].tmp;
-					// else if (parts[i].ctype==ELEM_MULTIPP) // failed
+					// else if (ctype1 == ELEM_MULTIPP) // failed
 					//	parts[np].life = parts[i].tmp;
 				}
 			}

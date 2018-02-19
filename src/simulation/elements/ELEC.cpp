@@ -111,10 +111,11 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					parts[ID(r)].life = 1000;
 					break;
 				case PT_POLO:
-					if (sim->isFromMyMod && !(rand() & 0x1FF)) // 1 in 512
+					if (sim->isFromMyMod && !(rand() & 0x3FF))
 					{
-						int s = partsi(r).tmp;
-						if (s) partsi(r).tmp --;
+						int l = partsi(r).tmp3;
+						if (l <= 0)
+							partsi(r).tmp3 = 20;
 					}
 					break;
 				case PT_NONE: //seems to speed up ELEC even if it isn't used

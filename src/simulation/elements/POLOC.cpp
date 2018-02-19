@@ -146,7 +146,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 						else 
 							b--;
 						parts[i].temp *= 0.98;
-						if (!(rndstore&7))
+						if (!((rndstore & 7) || parts[r].tmp3 > 20))
 						{
 							parts[r].tmp3 = 20;
 						}

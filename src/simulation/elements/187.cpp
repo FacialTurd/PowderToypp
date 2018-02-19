@@ -136,17 +136,6 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_E187 static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_E187::graphics(GRAPHICS_FUNC_ARGS)
 {
-	switch(cpart->ctype) {
-	case 1:
-		*colr = 0xFF;
-		*colg = 0x80;
-		*colb = 0xBB;
-		break;
-	case 0:
-	default:
-		break;
-	}
-
 	return 0;
 }
 

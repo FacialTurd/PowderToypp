@@ -1,5 +1,7 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_EXOT PT_EXOT 145
+#define ID(r) part_ID(r)
+
 Element_EXOT::Element_EXOT()
 {
 	Identifier = "DEFAULT_PT_EXOT";
@@ -57,35 +59,35 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = r&0xFF;
+				rt = TYP(r); r = ID(r);
 				if (rt == PT_WARP)
 				{
-					if (parts[r>>8].tmp2>2000 && !(rand()%100))
+					if (parts[r].tmp2>2000 && !(rand()%100))
 					{
 						parts[i].tmp2 += 100;
 					}
 				}
 				else if (rt == PT_EXOT)
 				{
-					if (parts[r>>8].ctype == PT_PROT)
+					if (parts[r].ctype == PT_PROT)
 						parts[i].ctype = PT_PROT;
-					if (parts[r>>8].life == 1500 && !(rand()%1000))
+					if (parts[r].life == 1500 && !(rand()%1000))
 						parts[i].life = 1500;
 				}
 				else if (rt == PT_LAVA)
 				{
 					//turn molten TTAN or molten GOLD to molten VIBR
-					if (parts[r>>8].ctype == PT_TTAN || parts[r>>8].ctype == PT_GOLD)
+					if (parts[r].ctype == PT_TTAN || parts[r].ctype == PT_GOLD)
 					{
 						if (!(rand()%10))
 						{
-							parts[r>>8].ctype = PT_VIBR;
+							parts[r].ctype = PT_VIBR;
 							sim->kill_part(i);
 							return 1;
 						}
 					}
 					//molten VIBR will kill the leftover EXOT though, so the VIBR isn't killed later
-					else if (parts[r>>8].ctype == PT_VIBR)
+					else if (parts[r].ctype == PT_VIBR)
 					{
 						if (!(rand()%1000))
 						{
@@ -96,7 +98,7 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				}
 				if (parts[i].tmp > 245 && parts[i].life > 1337)
 					if (rt!=PT_EXOT && rt!=PT_BREC && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) && rt!=PT_PRTI && rt!=PT_PRTO && rt!=PT_VOID && rt!=PT_NBHL && rt!=PT_WARP &&
-						rt!=ELEM_MULTIPP /* && !(rt==PT_SPRK && (sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT)) */) // for default, EXOT doesn't conducts electricity
+						rt!=ELEM_MULTIPP /* && !(rt==PT_SPRK && (sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT)) */) // for default, EXOT doesn't conducts electricity
 					{
 						sim->create_part(i, x, y, rt);
 						return 1;
@@ -140,18 +142,18 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_EXOT && (parts[i].tmp2 > parts[r>>8].tmp2) && parts[r>>8].tmp2 >= 0) //diffusion
+				if (TYP(r)==PT_EXOT && (parts[i].tmp2 > parts[ID(r)].tmp2) && parts[ID(r)].tmp2 >= 0) //diffusion
 				{
-					tym = parts[i].tmp2 - parts[r>>8].tmp2;
+					tym = parts[i].tmp2 - parts[ID(r)].tmp2;
 					if (tym == 1)
 					{
-						parts[r>>8].tmp2++;
+						parts[ID(r)].tmp2++;
 						parts[i].tmp2--;
 						break;
 					}
 					if (tym > 0)
 					{
-						parts[r>>8].tmp2 += tym/2;
+						parts[ID(r)].tmp2 += tym/2;
 						parts[i].tmp2 -= tym/2;
 						break;
 					}

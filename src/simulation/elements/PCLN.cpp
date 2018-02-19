@@ -49,7 +49,7 @@ Element_PCLN::Element_PCLN()
 //#TPT-Directive ElementHeader Element_PCLN static int update(UPDATE_FUNC_ARGS)
 int Element_PCLN::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, rt;
+	int r, rx, ry, rt, np, ctype1 = parts[i].ctype;
 	if (parts[i].life>0 && parts[i].life!=10)
 		parts[i].life--;
 	for (rx=-2; rx<3; rx++)
@@ -78,7 +78,7 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 						parts[i].life = 10;
 				}
 			}
-	if (parts[i].ctype<=0 || parts[i].ctype>=PT_NUM || !sim->elements[parts[i].ctype].Enabled || (parts[i].ctype==PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
+	if (ctype1 <= 0 || ctype1>=PT_NUM || !sim->elements[ctype1].Enabled || (ctype1 == PT_LIFE && (parts[i].tmp<0 || parts[i].tmp>=NGOL)))
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
 				if (BOUNDS_CHECK)
@@ -94,13 +94,13 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 					    rt!=PT_STKM && rt!=PT_STKM2 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
-						if (rt==PT_LIFE || rt==PT_LAVA)
+						if (rt==PT_LIFE || rt==PT_LAVA || (rt == PT_E186 && partsi(r).ctype > 0 && partsi(r).ctype < PT_NUM))
 							parts[i].tmp = partsi(r).ctype;
 					}
 				}
-	if (parts[i].ctype>0 && parts[i].ctype<PT_NUM && sim->elements[parts[i].ctype].Enabled && parts[i].life==10)
+	if (ctype1 > 0 && ctype1 < PT_NUM && sim->elements[ctype1].Enabled && parts[i].life == 10)
 	{
-		if (parts[i].ctype==PT_PHOT) {//create photons a different way
+		if (ctype1 == PT_PHOT) {//create photons a different way
 			for (rx=-1; rx<2; rx++)
 				for (ry = -1; ry < 2; ry++)
 					if (rx || ry)
@@ -118,19 +118,26 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 						}
 					}
 		}
-		else if (parts[i].ctype==PT_LIFE)//create life a different way
+		else if (ctype1 == PT_LIFE)//create life a different way
 			for (rx=-1; rx<2; rx++)
 				for (ry=-1; ry<2; ry++)
 					sim->create_part(-1, x+rx, y+ry, PT_LIFE, parts[i].tmp);
 
-		else if (parts[i].ctype!=PT_LIGH || (rand()%30)==0)
+		else if (ctype1 == PT_E186) // not different way
 		{
-			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
+			np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
+			if (np>=0)
+				parts[np].ctype = TYP(parts[i].tmp);
+		}
+
+		else if (ctype1 != PT_LIGH || (rand()%30)==0)
+		{
+			np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
 			if (np>=0)
 			{
-				if (parts[i].ctype==PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
+				if (ctype1 == PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA)
 					parts[np].ctype = parts[i].tmp;
-				// else if (parts[i].ctype==ELEM_MULTIPP) // failed
+				// else if (ctype1 == ELEM_MULTIPP) // failed
 				//	parts[np].life = parts[i].tmp;
 			}
 		}

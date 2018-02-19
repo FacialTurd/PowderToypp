@@ -2856,32 +2856,18 @@ void LuaScriptInterface::initStickmanAPI()
 	
 	SETCONST(l, MAX_FIGHTERS);
 
-	lua_pushinteger(l, 0x00000001);
-	lua_setfield(l, -2, "FIGHTER_NO_CMD");
-	lua_pushinteger(l, 0x00000002);
-	lua_setfield(l, -2, "NO_SPIT");
-	lua_pushinteger(l, 0x00000004);
-	lua_setfield(l, -2, "SPIT_ALL");
+	const char *flags_str[] {
+		"FIGHTER_NO_CMD", "NO_SPIT", "SPIT_ALL", "SPIT_FIGH_ENABLE", "NO_SET_LIFE",
+		"NO_SET_ELEM", "USE_PARENT_CMD", "SEEK_PARENT", "VACUUM_KILL", "ANTI_GRAV",
+		"NO_EMIT_PLASMA", "ENABLE_VAC_WALL"
+	};
+	
+	for (int i = 0; i < sizeof(flags_str) / sizeof(char*); i++)
+		lua_pushinteger(l, 1 << i),
+		lua_setfield(l, -2, flags_str[i]);
+	
 	lua_pushinteger(l, 0x00000006);
 	lua_setfield(l, -2, "SPIT_FIGH_ONLY");
-	lua_pushinteger(l, 0x00000008);
-	lua_setfield(l, -2, "SPIT_FIGH_ENABLE");
-	lua_pushinteger(l, 0x00000010);
-	lua_setfield(l, -2, "NO_SET_LIFE");
-	lua_pushinteger(l, 0x00000020);
-	lua_setfield(l, -2, "NO_SET_ELEM");
-	lua_pushinteger(l, 0x00000040);
-	lua_setfield(l, -2, "USE_PARENT_CMD");
-	lua_pushinteger(l, 0x00000080);
-	lua_setfield(l, -2, "SEEK_PARENT");
-	lua_pushinteger(l, 0x00000100);
-	lua_setfield(l, -2, "VACUUM_KILL");
-	lua_pushinteger(l, 0x00000200);
-	lua_setfield(l, -2, "ANTI_GRAV");
-	lua_pushinteger(l, 0x00000400);
-	lua_setfield(l, -2, "NO_EMIT_PLASMA");
-	lua_pushinteger(l, 0x00000800);
-	lua_setfield(l, -2, "ENABLE_VAC_WALL");
 }
 
 playerst* LuaScriptInterface::get_stickman_ptr (int stickmanID)

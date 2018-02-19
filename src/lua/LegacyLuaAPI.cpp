@@ -2253,8 +2253,17 @@ int luatpt_record(lua_State* l)
 
 int luatpt_two_state_update(lua_State * l)
 {
-	int i = lua_tointeger(l, 1), x = lua_tointeger(l, 2), y = lua_tointeger(l, 3), t = lua_tointeger(l, 4), r, rx, ry;
+	int i = lua_tointeger(l, 1), x, y, t = lua_tointeger(l, 2), r, rx, ry, rt;
 	Particle * parts = luacon_sim->parts;
+	
+	if (i < 0 || i >= NPART || parts[i].type <= 0 || parts[i].type > PT_NUM)
+		return lua_pushnil(l), 1;
+	
+	x = (parts[i].x + 0.5f);
+	y = (parts[i].y + 0.5f);
+
+	if (x < CELL || y < CELL || x >= XRES - CELL || y >= YRES - CELL)
+		return lua_pushnil(l), 1;
 
 	if (parts[i].life>0 && parts[i].life!=10)
 		parts[i].life--;
@@ -2265,26 +2274,28 @@ int luatpt_two_state_update(lua_State * l)
 				r = luacon_sim->pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF) == t)
+				rt = TYP(r);
+				r >>= PMAPBITS;
+				if (rt == t)
 				{
-					if (parts[i].life==10&&parts[r>>8].life<10&&parts[r>>8].life>0)
+					if (parts[i].life==10&&parts[r].life<10&&parts[r].life>0)
 						parts[i].life = 9;
-					else if (parts[i].life==0&&parts[r>>8].life==10)
+					else if (parts[i].life==0&&parts[r].life==10)
 						parts[i].life = 10;
 				}
-				else if ((r&0xFF)==PT_SPRK)
+				else if (rt == PT_SPRK)
 				{
-					if (parts[r>>8].life>0 && parts[r>>8].life<4)
+					if (parts[r].life>0 && parts[r].life<4)
 					{
-						if (parts[r>>8].ctype==PT_PSCN)
+						if (parts[r].ctype==PT_PSCN)
 							parts[i].life = 10;
-						else if (parts[r>>8].ctype==PT_NSCN)
+						else if (parts[r].ctype==PT_NSCN)
 							parts[i].life = 9;
 					}
 				}
 			}
 
-	return 0;
+	return lua_pushboolean(l, parts[i].life >= 10), 1;
 }
 
 #endif
