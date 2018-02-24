@@ -134,6 +134,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_pmap_move_to(lua_State * l);
 	static int simulation_isDestructible(lua_State * l);
 	static int simulation_makeCyclone(lua_State * l);
+	static int simulation_changeToBeamSwitch(lua_State * l);
 
 	//Stickman attributes
 	void initStickmanAPI();

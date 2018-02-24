@@ -372,7 +372,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 					int a, b = rct & 0x7, newrct, np;
 					r1 = rct >> 7, r2 = ((rct & 0x7F) >> 3);
 
-					if ((r2 >= 0 && r2 <= 8) || r2 == 10)
+					if ((r2 >= 0 && r2 <= 8) || r2 == 10 || r2 == 12)
 						part_phot->vx = r1 * rot[b+2],
 						part_phot->vy = r1 * rot[b];
 
@@ -392,6 +392,9 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 								break;
 							createPhotonsWithVelocity(sim, i, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), r1 * rot[b+2], r1 * rot[b]);
 							break;
+						case 13: sim->kill_part(i);
+						case 12:
+							newrct = 0; part_other->tmp = 7; part_other->tmp2 = 0; break;
 						}
 					}
 					part_other->ctype = newrct;

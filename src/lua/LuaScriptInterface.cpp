@@ -882,6 +882,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"pmap_moveTo", simulation_pmap_move_to},
 		{"isDestructible", &simulation_isDestructible},
 		{"makeCyclone", simulation_makeCyclone},
+		{"changeToBeamSwitch", simulation_changeToBeamSwitch},
 		{NULL, NULL}
 	};
 	luaL_register(l, "simulation", simulationAPIMethods);
@@ -1670,6 +1671,23 @@ int LuaScriptInterface::simulation_blockair(lua_State* l)
 	return 0;
 }
 
+int LuaScriptInterface::simulation_changeToBeamSwitch(lua_State * l)
+{
+	int i = lua_tointeger(l, 1), f = lua_tointeger(l, 2) << 3;
+	if (i < 0 || i >= NPART || !luacon_sim->parts[i].type)
+		return 0;
+	if (luacon_sim->parts[i].type != ELEM_MULTIPP)
+		luacon_sim->part_change_type(i, luacon_sim->parts[i].x+0.5f, luacon_sim->parts[i].y+0.5f, ELEM_MULTIPP);
+
+	f |= (int)(atan2f(lua_tonumber(l, 4), lua_tonumber(l, 3)) * (4.0 / M_PI) + 8.5f) & 7;
+
+	luacon_sim->parts[i].life = 5;
+	luacon_sim->parts[i].ctype = f;
+	luacon_sim->parts[i].tmp = 0;
+	luacon_sim->parts[i].tmp2 = 19;
+	return 0;
+}
+
 int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 {
 	const static int rot[4] = {1,0,-1,0};
@@ -1712,17 +1730,17 @@ int LuaScriptInterface::simulation_createDirChanger7(lua_State * l)
 		int ri = rt ? ID(r) : -3;
 		if (ri < 0 || !(luacon_sim->elements[luacon_sim->parts[ri].type].Properties2 & PROP_INDESTRUCTIBLE))
 		{
-			if (f < 0 && f != -2)
+			if (f < -7 || f == -1)
 				(ri >= 0 && ri < NPART) && (luacon_sim->kill_part(ri), 0);
 			else
 				np = luacon_sim->create_part(ri, x, y, ELEM_MULTIPP, 5);
 			if (np >= 0)
 			{
-				if (f == -2)
+				if (f < 0)
 				{
 					luacon_sim->parts[np].tmp   = 0;
-					luacon_sim->parts[np].tmp2  = 20;
-					luacon_sim->parts[np].ctype = 0xD0 | (int)(atan2f(avy[1], avx[1]) * (4.0 / M_PI) + 8.5f) & 7;
+					luacon_sim->parts[np].tmp2  = 19;
+					luacon_sim->parts[np].ctype = (0xB0 - (f << 3)) | (int)(atan2f(avy[1], avx[1]) * (4.0 / M_PI) + 8.5f) & 7;
 				}
 				else
 				{

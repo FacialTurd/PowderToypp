@@ -154,7 +154,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_EXOT:
-					if (!(rand()%20))
+					if (partsi(r).ctype != PT_E186 && !(rand()%20))
 						partsi(r).life = 1500;
 					break;
 				case PT_RFRG:

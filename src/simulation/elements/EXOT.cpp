@@ -1,6 +1,8 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_EXOT PT_EXOT 145
 #define ID(r) part_ID(r)
+#define NOWARPCOND(i) (parts[i].life >= 1001 || parts[i].tmp2 <= 6000)
+#define WARPCOND(i) (!NOWARPCOND(i))
 
 Element_EXOT::Element_EXOT()
 {
@@ -52,6 +54,8 @@ Element_EXOT::Element_EXOT()
 int Element_EXOT::update(UPDATE_FUNC_ARGS)
 {
 	int r, rt, rx, ry, trade, tym;
+	int _ctype = parts[i].ctype;
+
 	for (rx=-2; rx<=2; rx++)
 		for (ry=-2; ry<=2; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -60,22 +64,32 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = TYP(r); r = ID(r);
-				if (rt == PT_WARP)
+				switch (rt)
 				{
-					if (parts[r].tmp2>2000 && !(rand()%100))
+				case PT_WARP:
+					if (_ctype != PT_E186 && parts[r].tmp2>2000 && !(rand()%100))
 					{
 						parts[i].tmp2 += 100;
 					}
-				}
-				else if (rt == PT_EXOT)
-				{
-					if (parts[r].ctype == PT_PROT)
-						parts[i].ctype = PT_PROT;
-					if (parts[r].life == 1500 && !(rand()%1000))
-						parts[i].life = 1500;
-				}
-				else if (rt == PT_LAVA)
-				{
+					break;
+				case PT_EXOT:
+					if (_ctype != PT_E186)
+					{
+						if (parts[r].ctype == PT_E186 && NOWARPCOND(r))
+						{
+							_ctype = PT_E186;
+							parts[i].life = 1500;
+							parts[i].tmp2 = parts[r].tmp2;
+							if (r < i)
+								parts[i].tmp2 ++;
+						}
+						if (parts[r].ctype == PT_PROT)
+							_ctype = PT_PROT;
+						if (parts[r].life == 1500 && !(rand()%1000))
+							parts[i].life = 1500;
+					}
+					break;
+				case PT_LAVA:
 					//turn molten TTAN or molten GOLD to molten VIBR
 					if (parts[r].ctype == PT_TTAN || parts[r].ctype == PT_GOLD)
 					{
@@ -95,8 +109,9 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 							return 1;
 						}
 					}
+					break;
 				}
-				if (parts[i].tmp > 245 && parts[i].life > 1337)
+				if (parts[i].tmp > 245 && parts[i].life > 1337 && parts[i].ctype != PT_E186)
 					if (rt!=PT_EXOT && rt!=PT_BREC && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) && rt!=PT_PRTI && rt!=PT_PRTO && rt!=PT_VOID && rt!=PT_NBHL && rt!=PT_WARP &&
 						rt!=ELEM_MULTIPP /* && !(rt==PT_SPRK && (sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT)) */) // for default, EXOT doesn't conducts electricity
 					{
@@ -105,6 +120,8 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 					}
 			}
 
+	bool isE186 = (_ctype == PT_E186);
+
 	parts[i].tmp--;
 	parts[i].tmp2--;
 	//reset tmp every 250 frames, gives EXOT it's slow flashing effect
@@ -112,8 +129,14 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 		parts[i].tmp = 250;
 
 	if (parts[i].tmp2 < 1)
-		parts[i].tmp2 = 1;
-	else if (parts[i].tmp2 > 6000)
+	{
+		if (isE186)
+			parts[i].life = 1000,
+			parts[i].tmp2 = 10000;
+		else
+			parts[i].tmp2 = 1;
+	}
+	else if ((!isE186 || parts[i].life < 1001) && parts[i].tmp2 > 6000)
 	{
 		parts[i].tmp2 = 10000;
 		if (parts[i].life < 1001)
@@ -131,7 +154,8 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 		sim->part_change_type(i, x, y, PT_WARP);
 		return 1;
 	}
-	if (parts[i].tmp2 > 100)
+
+	if (parts[i].tmp2 > 100 && (!isE186 || NOWARPCOND(i)))
 	{
 		for (trade = 0; trade < 9; trade++)
 		{
@@ -142,18 +166,23 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if (TYP(r)==PT_EXOT && (parts[i].tmp2 > parts[ID(r)].tmp2) && parts[ID(r)].tmp2 >= 0) //diffusion
+				rt = TYP(r), r = ID(r);
+				if (rt == PT_EXOT && (parts[i].tmp2 > parts[r].tmp2) && parts[r].tmp2 >= 0) //diffusion
 				{
-					tym = parts[i].tmp2 - parts[ID(r)].tmp2;
+					bool thatE186 = (parts[r].ctype == PT_E186);
+					if (isE186 != thatE186)
+						continue;
+						
+					tym = parts[i].tmp2 - parts[r].tmp2;
 					if (tym == 1)
 					{
-						parts[ID(r)].tmp2++;
+						parts[r].tmp2++;
 						parts[i].tmp2--;
 						break;
 					}
 					if (tym > 0)
 					{
-						parts[ID(r)].tmp2 += tym/2;
+						parts[r].tmp2 += tym/2;
 						parts[i].tmp2 -= tym/2;
 						break;
 					}
@@ -161,7 +190,8 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	}
-	if (parts[i].ctype == PT_PROT)
+
+	if (_ctype == PT_PROT)
 	{
 		if (parts[i].temp < 50.0f)
 		{
@@ -178,6 +208,9 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 		sim->pv[y/CELL][x/CELL] -= 0.01;
 		parts[i].tmp--;
 	}
+
+	parts[i].ctype = _ctype;
+
 	return 0;
 
 }
@@ -188,7 +221,21 @@ int Element_EXOT::graphics(GRAPHICS_FUNC_ARGS)
 	int q = cpart->temp;
 	int b = cpart->tmp;
 	int c = cpart->tmp2;
-	if (cpart->life < 1001)
+	int d = cpart->ctype;
+
+	if (d == PT_E186)
+	{
+		int s = atan(c * (M_PI / 127.5)) * (510 / M_PI) + 0.5;
+		if (cpart->life < 1001 && c > 6001)
+			s = 0;
+
+		*firea = 100;
+		*colr = *colg = *colb = s;
+		*firer = *fireg = *fireb = s;
+
+		*pixel_mode |= (FIRE_ADD | PMODE_BLUR);
+	}
+	else if (cpart->life < 1001)
 	{
 		if ((cpart->tmp2 - 1)>rand()%1000)
 		{

@@ -303,7 +303,7 @@ bool Simulation::TypeInCtype(int el)
 	        el == PT_STOR || el == PT_CONV || el == PT_STKM || el == PT_STKM2 ||
 	        el == PT_FIGH || el == PT_LAVA || el == PT_SPRK || el == PT_PSTN ||
 	        el == PT_CRAY || el == PT_DTEC || el == PT_DRAY || el == PT_PIPE ||
-	        el == PT_PPIP || el == PT_E186;
+	        el == PT_PPIP || el == PT_E186 || el == PT_EXOT;
 }
 
 bool Simulation::TypeInTmp(int el)
@@ -3353,7 +3353,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 //tv = Type (PMAPBITS bits) + Var (32-PMAPBITS bits), var is usually 0
 int Simulation::create_part(int p, int x, int y, int t, int v)
 {
-	int i, retcode, E189ID, drawOn;
+	int i, retcode, drawOn, drawOnID;
 
 	if (x<0 || y<0 || x>=XRES || y>=YRES)
 		return -1;
@@ -3404,8 +3404,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 				}
 				else if (parts[index].life == 35)
 				{
-					E189ID = retcode = index;
-					goto drawOnE189Ctype;
+					drawOnID = retcode = index;
+					goto drawOnRenameRay;
 				}
 			}
 			else if ((elements[type].Properties & PROP_DRAWONCTYPE) || type == PT_CRAY)
@@ -3459,32 +3459,30 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		if (pmap[y][x])
 		{
-			/* int */ drawOn = TYP(pmap[y][x]);
+			/* int */ drawOn = TYP(pmap[y][x]), drawOnID = ID(pmap[y][x]);
 			if (drawOn == ELEM_MULTIPP)
 			{
-				E189ID = ID(pmap[y][x]);
-				if (parts[E189ID].life == 26 && !parts[E189ID].tmp)
+				if (parts[drawOnID].life == 26 && !parts[drawOnID].tmp)
 				{
-					Element_MULTIPP::FloodButton(this, E189ID, x, y);
+					Element_MULTIPP::FloodButton(this, drawOnID, x, y);
 					return -1;
 				}
-				else if (parts[E189ID].life == 35)
+				else if (parts[drawOnID].life == 35)
 				{
 					retcode = -1;
-				drawOnE189Ctype:
-					parts[E189ID].ctype = t;
+				drawOnRenameRay:
+					parts[drawOnID].ctype = t;
 					if ((t == PT_LIFE && v >= 0 && v < NGOL) || t == ELEM_MULTIPP)
-						parts[E189ID].ctype |= PMAPID(v);
+						parts[drawOnID].ctype |= PMAPID(v);
 					return retcode;
 				}
-				else if (parts[E189ID].life == 10 && t == PT_BIZR)
+				else if (parts[drawOnID].life == 10 && t == PT_BIZR)
 				{
 					SimExtraFunc |= 0x400;
 					return -1;
 				}
 			}
 			// If an element has the PROP_DRAWONCTYPE property, and the element being drawn to it does not have PROP_NOCTYPEDRAW (Also some special cases), set the element's ctype
-			int drawOn = TYP(pmap[y][x]);
 			if (drawOn == t)
 				return -1;
 			if (((elements[drawOn].Properties & PROP_DRAWONCTYPE) ||
@@ -3493,34 +3491,38 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 				 (drawOn == PT_PBCN && t != PT_PSCN && t != PT_NSCN))
 				&& (!(elements[t].Properties & PROP_NOCTYPEDRAW)))
 			{
-				parts[ID(pmap[y][x])].ctype = t;
+				int oldct = parts[drawOnID].ctype;
+				parts[drawOnID].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL)
 				{
 					if (drawOn == PT_CONV)
-						parts[ID(pmap[y][x])].ctype |= PMAPID(v);
+						parts[drawOnID].ctype |= PMAPID(v);
 					else if (drawOn != PT_STOR)
-						parts[ID(pmap[y][x])].tmp = v;
+						parts[drawOnID].tmp = v;
 				}
+				else if (t == PT_E186 && oldct != PT_E186 &&
+					(drawOn == PT_CLNE || drawOn == PT_PCLN || drawOn == PT_BCLN || drawOn == PT_PBCN))
+					parts[drawOnID].tmp = 0;
 			}
 			else if (drawOn == PT_DTEC || (drawOn == PT_PSTN && t != PT_FRME) || drawOn == PT_DRAY)
 			{
-				parts[ID(pmap[y][x])].ctype = t;
+				parts[drawOnID].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL)
 				{
 					if (drawOn == PT_DTEC)
-						parts[ID(pmap[y][x])].tmp = v;
+						parts[drawOnID].tmp = v;
 					else if (drawOn == PT_DRAY)
-						parts[ID(pmap[y][x])].ctype |= PMAPID(v);
+						parts[drawOnID].ctype |= PMAPID(v);
 				}
 			}
 			else if (drawOn == PT_CRAY)
 			{
-				parts[ID(pmap[y][x])].ctype = t;
+				parts[drawOnID].ctype = t;
 				if (t == PT_LIFE && v >= 0 && v < NGOL || t == ELEM_MULTIPP)
-					parts[ID(pmap[y][x])].ctype |= PMAPID(v);
+					parts[drawOnID].ctype |= PMAPID(v);
 				if (t == PT_LIGH)
-					parts[ID(pmap[y][x])].ctype |= PMAPID(30);
-				parts[ID(pmap[y][x])].temp = elements[t].Temperature;
+					parts[drawOnID].ctype |= PMAPID(30);
+				parts[drawOnID].temp = elements[t].Temperature;
 			}
 			return -1;
 		}

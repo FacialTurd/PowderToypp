@@ -293,12 +293,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[i].ctype = 0x3FFFFFFF;
 				break;
 			case PT_EXOT:
-				if (!(rand()%3))
+				if (partsi(r).ctype != parts[i].type && !(rand()%3))
 				{
-					sim->part_change_type(ID(r), x, y, PT_WARP);
-					partsi(r).life = 1000;
-					partsi(r).tmp2 = 10000;
-					partsi(r).temp = parts[i].temp = MAX_TEMP;
+					partsi(r).ctype = parts[i].type;
+					partsi(r).tmp2 = rand()%50 + 120;
 				}
 				break;
 			case PT_ISOZ:
@@ -331,7 +329,8 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[i].ctype = PT_NEUT;
 				break;
 			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
-				parts[i].ctype = 0;
+				if (!isbray)
+					parts[i].ctype = 0;
 				break;
 			case PT_URAN:
 				if (u2pu)

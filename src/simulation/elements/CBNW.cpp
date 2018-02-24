@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_CBNW PT_CBNW 82
+#define ID(r) part_ID(r)
 Element_CBNW::Element_CBNW()
 {
 	Identifier = "DEFAULT_PT_CBNW";
@@ -49,7 +50,7 @@ Element_CBNW::Element_CBNW()
 //#TPT-Directive ElementHeader Element_CBNW static int update(UPDATE_FUNC_ARGS)
 int Element_CBNW::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, rt;
 	if (sim->pv[y/CELL][x/CELL]<=3)
 	{
 		if (sim->pv[y/CELL][x/CELL] <= -0.5 || !(rand()%4000))
@@ -85,36 +86,37 @@ int Element_CBNW::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((sim->elements[r&0xFF].Properties&TYPE_PART) && parts[i].tmp == 0 && !(rand()%83))
+				rt = TYP(r);
+				if ((sim->elements[rt].Properties&TYPE_PART) && parts[i].tmp == 0 && !(rand()%83))
 				{
 					//Start explode
 					parts[i].tmp = rand()%25;//(rand()%100)+50;
 				}
-				else if((sim->elements[r&0xFF].Properties&TYPE_SOLID) && !(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT) && (r&0xFF)!=PT_GLAS && parts[i].tmp == 0 && (2-sim->pv[y/CELL][x/CELL])>(rand()%6667))
+				else if((sim->elements[rt].Properties&TYPE_SOLID) && !(sim->elements[rt].Properties2 & PROP_NODESTRUCT) && rt != PT_GLAS && parts[i].tmp == 0 && (2-sim->pv[y/CELL][x/CELL])>(rand()%6667))
 				{
 					sim->part_change_type(i,x,y,PT_CO2);
 					parts[i].ctype = 5;
 					sim->pv[y/CELL][x/CELL] += 0.2f;
 				}
-				if ((r&0xFF)==PT_CBNW)
+				if (rt == PT_CBNW)
 				{
 					if(!parts[i].tmp)
 					{
-						if (parts[r>>8].tmp)
+						if (parts[ID(r)].tmp)
 						{
-							parts[i].tmp = parts[r>>8].tmp;
-							if((r>>8)>i) //If the other particle hasn't been life updated
+							parts[i].tmp = parts[ID(r)].tmp;
+							if(ID(r)>i) //If the other particle hasn't been life updated
 								parts[i].tmp--;
 						}
 					}
-					else if(!parts[r>>8].tmp)
+					else if(!parts[ID(r)].tmp)
 					{
-						parts[r>>8].tmp = parts[i].tmp;
-						if((r>>8)>i) //If the other particle hasn't been life updated
-							parts[r>>8].tmp++;
+						parts[ID(r)].tmp = parts[i].tmp;
+						if(ID(r)>i) //If the other particle hasn't been life updated
+							parts[ID(r)].tmp++;
 					}
 				}
-				else if ((r&0xFF)==PT_RBDM||(r&0xFF)==PT_LRBD)
+				else if (rt==PT_RBDM || rt==PT_LRBD)
 				{
 					if ((sim->legacy_enable||parts[i].temp>(273.15f+12.0f)) && !(rand()%166))
 					{
@@ -123,8 +125,8 @@ int Element_CBNW::update(UPDATE_FUNC_ARGS)
 						parts[i].ctype = PT_WATR;
 					}
 				}
-				else if ((r&0xFF)==PT_FIRE && parts[r>>8].ctype!=PT_WATR){
-					sim->kill_part(r>>8);
+				else if (rt==PT_FIRE && parts[ID(r)].ctype!=PT_WATR){
+					sim->kill_part(ID(r));
 					if(!(rand()%50)){
 						sim->kill_part(i);
 						return 1;

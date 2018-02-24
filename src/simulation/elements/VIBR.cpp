@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_VIBR PT_VIBR 165
+#define ID part_ID
 Element_VIBR::Element_VIBR()
 {
 	Identifier = "DEFAULT_PT_VIBR";
@@ -48,7 +49,7 @@ Element_VIBR::Element_VIBR()
 
 //#TPT-Directive ElementHeader Element_VIBR static int update(UPDATE_FUNC_ARGS)
 int Element_VIBR::update(UPDATE_FUNC_ARGS) {
-	int r, rx, ry, rndstore;
+	int r, rx, ry, rt, rndstore;
 	int trade, transfer;
 	if (!parts[i].life) //if not exploding
 	{
@@ -88,11 +89,12 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 			ry = (rndstore>>2)%3-1;
 			rndstore = rndstore >> 4;
 			r = pmap[y+ry][x+rx];
-			if ((r&0xFF) && (r&0xFF) != PT_BREC && (sim->elements[r&0xFF].Properties&PROP_CONDUCTS) && !parts[r>>8].life)
+			rt = TYP(r);
+			if (rt && rt != PT_BREC && (sim->elements[rt].Properties&PROP_CONDUCTS) && !partsi(r).life)
 			{
-				parts[r>>8].life = 4;
-				parts[r>>8].ctype = r&0xFF;
-				sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
+				partsi(r).life = 4;
+				partsi(r).ctype = rt;
+				sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
 			}
 		}
 		//Release all heat
@@ -103,9 +105,10 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 			if(BOUNDS_CHECK)
 			{
 				r = pmap[y+ry][x+rx];
-				if ((r&0xFF) && (r&0xFF)!=PT_VIBR  && (r&0xFF)!=PT_BVBR && sim->elements[r&0xFF].HeatConduct && ((r&0xFF)!=PT_HSWC||parts[r>>8].life==10))
+				rt = TYP(r);
+				if (rt && rt!=PT_VIBR && rt!=PT_BVBR && sim->elements[rt].HeatConduct && (rt!=PT_HSWC||partsi(r).life==10))
 				{
-					parts[r>>8].temp += parts[i].tmp*3;
+					partsi(r).temp += parts[i].tmp*3;
 					parts[i].tmp = 0;
 				}
 			}
@@ -129,7 +132,7 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 					parts[index].temp = 7000;
 				sim->create_part(i, x, y, PT_EXOT);
 				parts[i].tmp2 = (rndstore>>2)%1000;
-				parts[i].temp=9000;
+				parts[i].temp = 9000;
 				sim->pv[y/CELL][x/CELL] += 50;
 
 				return 1;
@@ -150,20 +153,21 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
+				rt = TYP(r);
 				if (parts[i].life)
 				{
 					//Makes EXOT around it get tmp to start exploding too
-					if (((r&0xFF)==PT_VIBR  || (r&0xFF)==PT_BVBR))
+					if ((rt==PT_VIBR || rt==PT_BVBR))
 					{
-						if (!parts[r>>8].life)
-							parts[r>>8].tmp += 45;
+						if (!partsi(r).life)
+							partsi(r).tmp += 45;
 						else if (parts[i].tmp2 && parts[i].life > 75 && rand()%2)
 						{
-							parts[r>>8].tmp2 = 1;
+							partsi(r).tmp2 = 1;
 							parts[i].tmp = 0;
 						}
 					}
-					else if ((r&0xFF)==PT_CFLM)
+					else if (rt == PT_CFLM)
 					{
 						parts[i].tmp2 = 1;
 						parts[i].tmp = 0;
@@ -172,14 +176,20 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 				else
 				{
 					//Melts into EXOT
-					if ((r&0xFF) == PT_EXOT && !(rand()%25))
+					if (rt == PT_EXOT && !(rand()%25))
 					{
 						sim->part_change_type(i, x, y, PT_EXOT);
+						if (partsi(r).ctype == PT_E186)
+							parts[i].ctype = PT_E186,
+							parts[i].life = 1500,
+							parts[i].tmp2 = partsi(r).tmp2 + (ID(r) > i ? -1 : 0);
+						else if (parts[i].ctype == PT_E186)
+							parts[i].ctype = 0;
 						return 1;
 					}
 				}
 				//VIBR+ANAR=BVBR
-				if (parts[i].type != PT_BVBR && (r&0xFF) == PT_ANAR)
+				if (parts[i].type != PT_BVBR && rt == PT_ANAR)
 				{
 					sim->part_change_type(i,x,y,PT_BVBR);
 					sim->pv[y/CELL][x/CELL] -= 1;
@@ -196,12 +206,13 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 		if (BOUNDS_CHECK && (rx || ry))
 		{
 			r = pmap[y+ry][x+rx];
-			if ((r&0xFF) != PT_VIBR && (r&0xFF) != PT_BVBR)
+			rt = TYP(r);
+			if (rt != PT_VIBR && rt != PT_BVBR)
 				continue;
-			if (parts[i].tmp > parts[r>>8].tmp)
+			if (parts[i].tmp > partsi(r).tmp)
 			{
-				transfer = parts[i].tmp - parts[r>>8].tmp;
-				parts[r>>8].tmp += transfer/2;
+				transfer = parts[i].tmp - partsi(r).tmp;
+				partsi(r).tmp += transfer/2;
 				parts[i].tmp -= transfer/2;
 				break;
 			}

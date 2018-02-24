@@ -64,6 +64,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		int sparked = parts[underI].ctype;
 		if (sparked > 0 && sparked < PT_NUM && sim->elements[sparked].Enabled)
 		{
+			if (sparked == ELEM_MULTIPP) // never appearing SPRK (ELEM_MULTIPP)
+				sparked = PT_METL;
 			sim->part_change_type(underI, x, y, sparked);
 			parts[underI].life = 44 + parts[underI].life;
 			parts[underI].ctype = 0;
@@ -87,7 +89,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case PT_EXOT:
-		parts[underI].ctype = PT_PROT;
+		if (parts[underI].ctype != PT_E186)
+			parts[underI].ctype = PT_PROT;
 		break;
 	case PT_WIFI:
 		float change;
