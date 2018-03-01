@@ -63,7 +63,7 @@ int Element_EMBR::update(UPDATE_FUNC_ARGS) {
 					if (!r) continue;
 				}
 				*/
-				if ((sim->elements[r&0xFF].Properties & (TYPE_SOLID | TYPE_PART | TYPE_LIQUID)) && !(sim->elements[r&0xFF].Properties & PROP_SPARKSETTLE))
+				if ((sim->elements[TYP(r)].Properties & (TYPE_SOLID | TYPE_PART | TYPE_LIQUID)) && !(sim->elements[TYP(r)].Properties & PROP_SPARKSETTLE))
 				{
 					sim->kill_part(i);
 					return 1;

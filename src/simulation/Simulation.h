@@ -185,15 +185,15 @@ public:
 		// NB: all arguments are assumed to be within bounds
 		if (elements[t].Properties & TYPE_ENERGY)
 			photons[y][x] = PMAP(i, t);
-		else if ((!pmap[y][x] || elements[t].Properties2 & PROP_INVISIBLE))
+		else if ((!pmap[y][x] || !(elements[t].Properties2 & PROP_INVISIBLE))) // fixed
 			pmap[y][x] = PMAP(i, t);
 	}
 	inline void pmap_remove(unsigned int i, int x, int y)
 	{
 		// NB: all arguments are assumed to be within bounds
-		if (part_ID(pmap[y][x])==i)
+		if (pmap[y][x] && part_ID(pmap[y][x])==i)
 			pmap[y][x] = 0;
-		else if (part_ID(pmap[y][x])==PT_PINVIS && part_ID((unsigned int)(partsi(pmap[y][x]).tmp4))==i)
+		else if (TYP(pmap[y][x])==PT_PINVIS && part_ID((unsigned int)(partsi(pmap[y][x]).tmp4))==i)
 			partsi(pmap[y][x]).tmp4 = 0;
 		else if (part_ID(photons[y][x])==i)
 			photons[y][x] = 0;

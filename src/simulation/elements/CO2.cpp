@@ -47,7 +47,7 @@ Element_CO2::Element_CO2()
 //#TPT-Directive ElementHeader Element_CO2 static int update(UPDATE_FUNC_ARGS)
 int Element_CO2::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, rt;
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -62,16 +62,17 @@ int Element_CO2::update(UPDATE_FUNC_ARGS)
 					}
 					continue;
 				}
-				if ((r&0xFF)==PT_FIRE){
-					sim->kill_part(r>>8);
+				rt = TYP(r);
+				if (rt==PT_FIRE){
+					sim->kill_part(part_ID(r));
 					if(!(rand()%30)){
 						sim->kill_part(i);
 						return 1;
 					}
 				}
-				else if (((r&0xFF)==PT_WATR || (r&0xFF)==PT_DSTW) && !(rand()%50))
+				else if ((rt==PT_WATR || rt==PT_DSTW) && !(rand()%50))
 				{
-					sim->part_change_type(r>>8, x+rx, y+ry, PT_CBNW);
+					sim->part_change_type(part_ID(r), x+rx, y+ry, PT_CBNW);
 					if (parts[i].ctype==5) //conserve number of water particles - ctype=5 means this CO2 hasn't released the water particle from BUBW yet
 					{
 						sim->create_part(i, x, y, PT_WATR);

@@ -106,10 +106,19 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 			{
 				r = pmap[y+ry][x+rx];
 				rt = TYP(r);
-				if (rt && rt!=PT_VIBR && rt!=PT_BVBR && sim->elements[rt].HeatConduct && (rt!=PT_HSWC||partsi(r).life==10))
+				if (rt)
 				{
-					partsi(r).temp += parts[i].tmp*3;
-					parts[i].tmp = 0;
+					/*
+					if (rt==PT_???)
+					{
+						transfer = parts[i].tmp;
+					}
+					*/
+					if (rt!=PT_VIBR && rt!=PT_BVBR && sim->elements[rt].HeatConduct && (rt!=PT_HSWC||partsi(r).life==10))
+					{
+						partsi(r).temp += parts[i].tmp*3;
+						parts[i].tmp = 0;
+					}
 				}
 			}
 		}
@@ -119,6 +128,7 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 			if (!parts[i].tmp2)
 			{
 				rndstore = rand();
+
 				int index = sim->create_part(-3,x+((rndstore>>4)&3)-1,y+((rndstore>>6)&3)-1,PT_ELEC);
 				if (index != -1)
 					parts[index].temp = 7000;

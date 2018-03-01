@@ -1,6 +1,6 @@
 #include <algorithm>
 #include "simulation/Elements.h"
-
+#define ID part_ID
 //#TPT-Directive ElementClass Element_ETRD PT_ETRD 50
 Element_ETRD::Element_ETRD()
 {
@@ -120,10 +120,10 @@ int Element_ETRD::nearestSparkablePart(Simulation *sim, int targetId)
 				if (sim->InBounds(checkPos.X, checkPos.Y) && checkDistance <= foundDistance)
 				{
 					int r = sim->pmap[checkPos.Y][checkPos.X];
-					if (r && (r&0xFF) == PT_ETRD && !parts[r>>8].life && r>>8 != targetId && checkDistance < foundDistance)
+					if (r && TYP(r) == PT_ETRD && !partsi(r).life && ID(r) != targetId && checkDistance < foundDistance)
 					{
 						foundDistance = checkDistance;
-						foundI = r>>8;
+						foundI = ID(r);
 					}
 				}
 			}

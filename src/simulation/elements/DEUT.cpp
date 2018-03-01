@@ -48,7 +48,7 @@ Element_DEUT::Element_DEUT()
 //#TPT-Directive ElementHeader Element_DEUT static int update(UPDATE_FUNC_ARGS)
 int Element_DEUT::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, trade, np;
+	int r, rx, ry, rt, trade, np;
 	float gravtot = fabs(sim->gravy[(y/CELL)*(XRES/CELL)+(x/CELL)])+fabs(sim->gravx[(y/CELL)*(XRES/CELL)+(x/CELL)]);
 	int maxlife = ((10000/(parts[i].temp + 1))-1);
 	if ((10000%((int)parts[i].temp + 1))>rand()%((int)parts[i].temp + 1))
@@ -65,14 +65,15 @@ int Element_DEUT::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r || (parts[i].life >=maxlife))
 						continue;
-					if ((r&0xFF)==PT_DEUT&& !(rand()%3))
+					rt = TYP(r);
+					if (rt==PT_DEUT&& !(rand()%3))
 					{
 						// If neighbour life+1 fits in the free capacity for this particle, absorb neighbour
 						// Condition is written in this way so that large neighbour life values don't cause integer overflow
-						if (parts[r>>8].life <= maxlife - parts[i].life - 1)
+						if (partsi(r).life <= maxlife - parts[i].life - 1)
 						{
-							parts[i].life += parts[r>>8].life + 1;
-							sim->kill_part(r>>8);
+							parts[i].life += partsi(r).life + 1;
+							sim->kill_part(part_ID(r));
 						}
 					}
 				}
@@ -105,17 +106,17 @@ trade:
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
-			if ((r&0xFF)==PT_DEUT&&(parts[i].life>parts[r>>8].life)&&parts[i].life>0)//diffusion
+			if (TYP(r)==PT_DEUT&&(parts[i].life>partsi(r).life)&&parts[i].life>0)//diffusion
 			{
-				int temp = parts[i].life - parts[r>>8].life;
+				int temp = parts[i].life - partsi(r).life;
 				if (temp ==1)
 				{
-					parts[r>>8].life ++;
+					partsi(r).life ++;
 					parts[i].life --;
 				}
 				else if (temp>0)
 				{
-					parts[r>>8].life += temp/2;
+					partsi(r).life += temp/2;
 					parts[i].life -= temp/2;
 				}
 			}

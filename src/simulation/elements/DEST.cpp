@@ -51,8 +51,10 @@ int Element_DEST::update(UPDATE_FUNC_ARGS)
 	int rx = rand()%5-2;
 	int ry = rand()%5-2;
 	int r = pmap[y+ry][x+rx];
-	if (!r || !BOUNDS_CHECK || (r&0xFF)==PT_DEST || (sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
-		|| ( (r&0xFF)==PT_SPRK && (sim->elements[parts[r>>8].ctype].Properties2 & PROP_NODESTRUCT) ))
+	int rt = TYP(r);
+	r = part_ID(r);
+	if (!r || !BOUNDS_CHECK || rt==PT_DEST || (sim->elements[rt].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
+		|| ( rt==PT_SPRK && (sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT) ))
 		return 0;
 
 	if (parts[i].life<=0 || parts[i].life>37)
@@ -60,38 +62,38 @@ int Element_DEST::update(UPDATE_FUNC_ARGS)
 		parts[i].life=30+rand()%20;
 		sim->pv[y/CELL][x/CELL]+=60.0f;
 	}
-	if ((r&0xFF)==PT_PLUT || (r&0xFF)==PT_DEUT)
+	if (rt==PT_PLUT || rt==PT_DEUT)
 	{
 		sim->pv[y/CELL][x/CELL]+=20.0f;
 		if (rand()%2)
 		{
-			sim->create_part(r>>8, x+rx, y+ry, PT_NEUT);
-			parts[r>>8].temp = MAX_TEMP;
+			sim->create_part(r, x+rx, y+ry, PT_NEUT);
+			parts[r].temp = MAX_TEMP;
 			sim->pv[y/CELL][x/CELL] += 10.0f;
 			parts[i].life-=4;
 		}
 	}
-	else if ((r&0xFF)==PT_INSL)
+	else if (rt==PT_INSL)
 	{
-		sim->create_part(r>>8, x+rx, y+ry, PT_PLSM);
+		sim->create_part(r, x+rx, y+ry, PT_PLSM);
 	}
 #ifndef NO_SPC_ELEM_EXPLODE
-	else if ((r&0xFF)==ELEM_MULTIPP && (parts[r>>8].life&~1) == 8)
+	else if (rt==ELEM_MULTIPP && (parts[r].life&~1) == 8)
 	{
-		parts[r>>8].tmp = 21000;
+		parts[r].tmp = 21000;
 		sim->kill_part(i);
 		return 1;
 	}
 #endif
 	else if (!(rand()%3))
 	{
-		sim->kill_part(r>>8);
-		parts[i].life -= 4*((sim->elements[r&0xFF].Properties&TYPE_SOLID)?3:1);
+		sim->kill_part(r);
+		parts[i].life -= 4*((sim->elements[rt].Properties&TYPE_SOLID)?3:1);
 		if (parts[i].life<=0)
 			parts[i].life=1;
 	}
-	else if (sim->elements[r&0xFF].HeatConduct) 
-		parts[r>>8].temp = MAX_TEMP;
+	else if (sim->elements[rt].HeatConduct) 
+		parts[r].temp = MAX_TEMP;
 	parts[i].temp=MAX_TEMP;
 	sim->pv[y/CELL][x/CELL]+=80.0f;
 	return 0;

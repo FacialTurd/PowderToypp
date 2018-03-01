@@ -216,7 +216,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		break;
 #ifndef NO_SPC_ELEM_EXPLODE
 	case 8: // acts like VIBR [振金]
-		rr = parts[i].tmp2;
+		{
+		bool transferdir = (parts[i].tmp2 & 1);
 		if (parts[i].tmp > 20000)
 		{
 			sim->emp_trigger_count += 2;
@@ -279,7 +280,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						continue;
 					if (not_self)
 					{
-						if (rr & 1)
+						if (transferdir)
 						{ // VIBR2 <- VIBR
 							parts[i].tmp += partsi(r).tmp;
 							partsi(r).tmp = 0;
@@ -304,6 +305,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		if (parts[i].tmp < 0)
 			parts[i].tmp = 0; // only preventing because negative tmp doesn't save
+		}
 		break;
 	case 9: // VIBR-like explosion
 		if (parts[i].temp > (MAX_TEMP - 12))
@@ -1337,25 +1339,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											}
 											docontinue = 2;
 											break;
-										case PT_VIBR:
-										case PT_BVBR:
-											rii = 0;
-										continue1d:
-											// do {
-											rii += (partsi(r).tmp + (int)partsi(r).temp / 3 - 81) * 2;
-											partsi(r).temp = 273.15f;
-											partsi(r).tmp = 0;
-											ny += ry; nx += rx;
-											// if (!BOUNDS_CHECK) goto break1d;
-											r = pmap[ny][nx];
-											// } while ...
-											if (TYP(r) == PT_VIBR || TYP(r) == PT_BVBR)
-												goto continue1d;
-											else if (TYP(r) == PT_PSTN && partsi(r).life)
-												r = pmap[ny += ry][nx += rx];
-											if (CHECK_EXTEL(r, 12) && partsi(r).tmp == 2)
-												partsi(r).tmp2 += rii;
-											goto break1d;
 										case PT_FRAY:
 											rii = partsi(r).tmp;
 											rrt++;

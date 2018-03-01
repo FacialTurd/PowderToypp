@@ -112,7 +112,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if ((r&0xFF) == PT_BRCK)
+						if (TYP(r) == PT_BRCK)
 						{
 							if (parts[i].tmp & PPIP_TMPFLAG_PAUSED)
 								parts[ID(r)].tmp = 0;
@@ -156,8 +156,13 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 						if (!r)
 							continue;
 						if (TYP(r) != PT_PIPE && TYP(r) != PT_PPIP)
+						{
+							count++;
 							continue;
-						unsigned int nextColor = (((((parts[i].tmp&PFLAG_COLORS)>>18)+1)%3)+1)<<18;
+						}
+						unsigned int currColor = ((parts[i].tmp & PFLAG_COLORS)>>18);
+						unsigned int nextColor = (((currColor+1)%3)+1)<<18;
+						unsigned int prevColor = ((currColor%3)+1)<<18;
 						if (parts[ID(r)].tmp&PFLAG_INITIALIZING)
 						{
 							parts[ID(r)].tmp |= nextColor;
@@ -173,7 +178,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 							neighborcount ++;
 							lastneighbor = ID(r);
 						}
-						else if ((parts[ID(r)].tmp&PFLAG_COLORS) != nextColor)
+						else if ((parts[ID(r)].tmp&PFLAG_COLORS) != prevColor)
 						{
 							neighborcount ++;
 							lastneighbor = ID(r);

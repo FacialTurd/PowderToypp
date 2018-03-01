@@ -60,6 +60,8 @@ extern "C"
 
 #define IN_BOUNDS(x, y) ((x)>=0 && (y)>=0 && (x)<XRES && (y)<YRES)
 
+#define ID part_ID
+
 // #include "gui/game/Notification.h" // already in GameModel.h
 
 GameModel * luacon_model;
@@ -955,8 +957,6 @@ void LuaScriptInterface::initSimulationAPI()
 	lua_setfield(l, -2, "delete");
 	lua_setfield(l, -2, "signs");
 }
-
-#define ID part_ID
 
 int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
 {
@@ -2511,9 +2511,9 @@ int LuaScriptInterface::simulation_pmap(lua_State * l)
 	if (x < 0 || x >= XRES || y < 0 || y >= YRES)
 		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
 	int r = luacon_sim->pmap[y][x];
-	if (!(r&0xFF))
+	if (!TYP(r))
 		return 0;
-	lua_pushnumber(l, r>>8);
+	lua_pushnumber(l, ID(r));
 	return 1;
 }
 
@@ -2529,7 +2529,7 @@ int LuaScriptInterface::simulation_isDestructible(lua_State * l) // input argume
 		{
 			r = luacon_sim->pmap[t][i];
 			if (!r) goto ret_true;
-			i = r>>8;
+			i = ID(r);
 		}
 		else
 			return luaL_error(l, "coordinates out of range (%d, %d)", i, t);
@@ -2550,9 +2550,9 @@ int LuaScriptInterface::simulation_photons(lua_State * l)
 	if (x < 0 || x >= XRES || y < 0 || y >= YRES)
 		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
 	int r = luacon_sim->photons[y][x];
-	if (!(r&0xFF))
+	if (!TYP(r))
 		return 0;
-	lua_pushnumber(l, r>>8);
+	lua_pushnumber(l, ID(r));
 	return 1;
 }
 
@@ -2582,12 +2582,12 @@ int NeighboursClosure(lua_State * l)
 		i=luacon_sim->pmap[y+sy][x+sx];
 		if(!i)
 			i=luacon_sim->photons[y+sy][x+sx];
-	} while(!(i&0xFF));
+	} while(!TYP(i));
 	lua_pushnumber(l, x);
 	lua_replace(l, lua_upvalueindex(5));
 	lua_pushnumber(l, y);
 	lua_replace(l, lua_upvalueindex(6));
-	lua_pushnumber(l, i>>8);
+	lua_pushnumber(l, ID(r));
 	lua_pushnumber(l, x+sx);
 	lua_pushnumber(l, y+sy);
 	return 3;

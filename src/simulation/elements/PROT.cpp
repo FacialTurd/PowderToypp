@@ -51,11 +51,13 @@ Element_PROT::Element_PROT()
 int Element_PROT::update(UPDATE_FUNC_ARGS)
 {
 	sim->pv[y/CELL][x/CELL] -= .003f;
-	int under = pmap[y][x];
+	int under = pmap[y][x], ahead;
 	if (TYP(under) == PT_PINVIS)
 		under = partsi(under).tmp4;
-	int utype = TYP(under);
-	int underI = ID(under);
+	int utype = TYP(under), aheadT;
+	int underI = ID(under), aheadI;
+	bool find_E186_only = false;
+
 	switch (utype)
 	{
 	case PT_SPRK:
@@ -134,15 +136,49 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		case 12:
 			if (parts[underI].tmp == 2)
 			{
-				if (parts[underI].tmp2 < (int)(parts[underI].temp - (273.15f - 0.5f)))
+				bool vibr_found = false;
+				int velSqThreshold = (int)(parts[underI].temp - (273.15f - 0.5f));
+				if (velSqThreshold < 0)
+					velSqThreshold = 0;
+				int r, rx, ry, trade;
+
+				for (trade = 0; trade < 5; trade++)
+				{
+					rx = rand()%5-2;
+					ry = rand()%5-2;
+					if (BOUNDS_CHECK && (rx || ry))
+					{
+						r = pmap[y+ry][x+rx];
+						switch (TYP(r))
+						{
+						case PT_URAN:
+							if (parts[underI].tmp2 < 100)
+								break;
+							sim->part_change_type(ID(r), x+rx, y+ry, PT_PLUT);
+							parts[underI].tmp2 -= 100;
+							break;
+						case PT_VIBR:
+							parts[underI].tmp2 += partsi(r).tmp;
+							partsi(r).tmp = 0;
+							break;
+						}
+					}
+				}
+
+				if (vibr_found && sim->pv[y/CELL][x/CELL] > 0.0f)
+				{
+					parts[underI].tmp2 += sim->pv[y/CELL][x/CELL] * 7.0f,
+					sim->pv[y/CELL][x/CELL] = 0.0f;
+				}
+				if (parts[underI].tmp2 < velSqThreshold)
 				{
 					parts[underI].tmp2 += parts[i].tmp + (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
 					sim->kill_part(i);
 					return 1;
 				}
-				parts[i].tmp += parts[underI].tmp2;
-				parts[underI].tmp2 = 0;
-				return 0;
+				parts[i].tmp += velSqThreshold;
+				parts[underI].tmp2 -= velSqThreshold;
+				goto finding_E186;
 			}
 			break;
 		case 16:
@@ -202,14 +238,17 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	//if this proton has collided with another last frame, change it into a heavier element
 	no_temp_change:
 
-	int ahead = sim->photons[y][x];
-	int aheadI = ID(ahead);
-	int aheadT = TYP(ahead);
-
-	if (aheadT == PT_E186 && parts[aheadI].ctype < PMAPID(1))
+	ahead = sim->photons[y][x];
+	aheadI = ID(ahead);
+	aheadT = TYP(ahead);
+	
+	if (parts[aheadI].ctype < PMAPID(1) && aheadT == PT_E186)
 	{
 		parts[i].tmp2 |= 2;
 	}
+	
+	if (find_E186_only)
+		return 0;
 
 	if (parts[i].tmp)
 	{
@@ -250,8 +289,9 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		sim->kill_part(i);
 		return 1;
 	}
+	
 	//collide with other protons to make heavier materials
-	if (aheadT != i && aheadI == PT_PROT)
+	if (aheadI != i && aheadT == PT_PROT)
 	{
 		float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
 		float velocity2 = powf(parts[aheadI].vx, 2.0f)+powf(parts[aheadI].vy, 2.0f);
@@ -268,6 +308,10 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 	}
 	return 0;
+	
+finding_E186:
+	find_E186_only = true;
+	goto no_temp_change;
 }
 
 //#TPT-Directive ElementHeader Element_PROT static int DeutImplosion(Simulation * sim, int n, int x, int y, float temp, int t)
