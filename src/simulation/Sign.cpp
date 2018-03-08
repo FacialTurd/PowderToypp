@@ -1,3 +1,5 @@
+#include <iomanip>
+#include <sstream>
 #include "Sign.h"
 #include "graphics/Graphics.h"
 #include "simulation/Simulation.h"
@@ -13,257 +15,85 @@ sign::sign(std::string text_, int x_, int y_, Justification justification_):
 
 std::string sign::getText(Simulation *sim)
 {
-	char buff[256];
-	char signText[256];
-	sprintf(signText, "%s", text.substr(0, 255).c_str());
-
-	if(signText[0] && signText[0] == '{')
+	std::stringstream signTextNew;
+	if (text[0] && text[0] == '{')
 	{
-		if (!strcmp(signText,"{p}"))
+		if (text == "{p}")
 		{
 			float pressure = 0.0f;
-			if (x>=0 && x<XRES && y>=0 && y<YRES)
+			if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 				pressure = sim->pv[y/CELL][x/CELL];
-			sprintf(buff, "Pressure: %3.2f", pressure);  //...pressure
+			signTextNew << std::fixed << std::showpoint << std::setprecision(2) << "Pressure: " << pressure;
 		}
-		else if (!strcmp(signText,"{aheat}"))
+		else if (text == "{aheat}")
 		{
 			float aheat = 0.0f;
-			if (x>=0 && x<XRES && y>=0 && y<YRES)
+			if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 				aheat = sim->hv[y/CELL][x/CELL];
-			sprintf(buff, "%3.2f", aheat-273.15);
+			signTextNew << std::fixed << std::showpoint << std::setprecision(2) << aheat-273.15f;
 		}
-		else if (!strcmp(signText,"{t}"))
+		else if (text == "{t}")
 		{
-			if (x>=0 && x<XRES && y>=0 && y<YRES && sim->pmap[y][x])
-				sprintf(buff, "Temp: %4.2f", sim->parts[ID(sim->pmap[y][x])].temp-273.15);  //...temperature
+			if (x >= 0 && x < XRES && y >= 0 && y < YRES && sim->pmap[y][x])
+				signTextNew << std::fixed << std::showpoint << std::setprecision(2) << "Temp: " << sim->parts[ID(sim->pmap[y][x])].temp-273.15f;
 			else
-				sprintf(buff, "Temp: 0.00");  //...temperature
-		}
-		else if (signText[1] == 'v') // air velocity
-		{
-			if (signText[3] == '}' && !signText[4])
-			{
-				float velocity = 0.0f;
-				if (signText[2] == 'x')
-				{
-					velocity = sim->vx[y/CELL][x/CELL];
-					sprintf(buff, "%3.2f", velocity);
-				}
-				else if (signText[2] == 'y')
-				{
-					velocity = sim->vy[y/CELL][x/CELL];
-					sprintf(buff, "%3.2f", velocity);
-				}
-				else
-				{
-					strcpy(buff, signText);
-				}
-			}
-			else
-				strcpy(buff, signText);
-		}
-		else if (signText[1] == '.') // element
-		{
-			int r = 0, num1, ptr1 = 2, ptr2 = 0, ptr3 = 0;
-			char cchar;
-			char dchar = 0;
-			char structtype = 0;
-			// structtype = 0: int
-			// structtype = 1: float
-			// structtype = 2/3: particle type
-			// structtype = 4/5: hexadecimal
-			char matched1 [256];
-			const char* matched1ptr = matched1;
-			
-			for (;;) // infinite loop
-			{
-				cchar = signText[ptr1++];
-				if (!cchar) // found end of string
-				{
-					strcpy(buff, signText);
-					return std::string(buff);
-				}
-				if (cchar == '}') // found "}"
-				{
-					if (signText[ptr1]) // if isn't end of string
-					{
-						strcpy(buff, signText);
-						return std::string(buff);
-					}
-					matched1[ptr2++] = '\0';
-					break;
-				}
-				if (cchar == ':' && !ptr3) // found ":"
-				{
-					ptr3 = ptr2 + 1;
-					cchar = '\0';
-				}
-				matched1[ptr2++] = cchar;
-			}
-			if (x>=0 && x<XRES && y>=0 && y<YRES)
-			{
-				r = sim->photons[y][x];
-				if (!r)
-					r = sim->pmap[y][x];
-			}
-			if (r)
-			{
-				int tt = TYP(r), ii = ID(r);
-				bool sparked = false, isparsed = true;
-				if (!strcmp(matched1, "i"))
-					num1 = ii;
-				else if (!strcmp(matched1, "type"))
-				{
-					structtype = 2;
-					num1 = tt;
-					int ctype = sim->parts[ii].ctype;
-					if (num1 == PT_SPRK && ctype)
-					{
-						sparked = true;
-						num1 = ctype;
-					}
-					else if (num1 == PT_LIFE)
-						num1 |= PMAPID(ctype);
-				}
-				else if (!strcmp(matched1, "life"))
-					num1 = sim->parts[ii].life;
-				else if (!strcmp(matched1, "ctype"))
-				{
-					structtype = 2;
-					num1 = sim->parts[ii].ctype;
-				}
-				else if (!strcmp(matched1, "temp"))
-				{
-					structtype = 1;
-					num1 = * (int*) & (sim->parts[ii].temp);
-				}
-				else if (!strncmp(matched1, "tmp", 3))
-				{
-					static size_t __offsets[] = {
-						offsetof(Particle, tmp),
-						offsetof(Particle, tmp2),
-						offsetof(Particle, tmp3),
-						offsetof(Particle, tmp4)
-					};
-					int strtermp = 3, oo = 0;
-					char c = matched1[strtermp];
-					while (c >= '0' && c <= '9')
-						oo = oo * 10 + (c - '0'), c = matched1[++strtermp];
-					oo --;
-					if (c != '\0' || (oo < 0) || (oo >= sizeof(__offsets) / sizeof(size_t)))
-						isparsed = false;
-					else
-						(strtermp == 3) && (oo = 1),
-						num1 = *((int*)(((unsigned char*)&sim->parts[ii]) + __offsets[oo]));
-				}
-				/*
-				else if (!strcmp(matched1, "vrad"))
-				{
-					float veloc_x = sim->parts[ii].vx;
-					float veloc_y = sim->parts[ii].vy;
-					float velocity = hypotf(veloc_x, veloc_y);
-					num1 = * (int*) & velocity;
-				}
-				*/
-				else if (!strcmp(matched1, "vx"))
-				{
-					structtype = 1;
-					num1 = * (int*) & (sim->parts[ii].vx);
-				}
-				else if (!strcmp(matched1, "vy"))
-				{
-					structtype = 1;
-					num1 = * (int*) & (sim->parts[ii].vy);
-				}
-				else if (!strcmp(matched1, "dcolor") || !strcmp(matched1, "dcolour"))
-				{
-					structtype = 4;
-					num1 = sim->parts[ii].dcolour;
-				}
-				else if (!strncmp(matched1, "pavg", 4) && (matched1[4] == '0' || matched1[4] == '1') && matched1[5] == '\0')
-				{
-					int v = matched1[4] - '0';
-					structtype = 1;
-					num1 = * (int*) & (sim->parts[ii].pavg[v]);
-				}
-				else
-					isparsed = false;
-
-				if (!isparsed)
-				{
-					strcpy(buff, signText);
-					return std::string(buff);
-				}
-
-				if (ptr3)
-				{
-					matched1ptr += ptr3;
-					if (!strcmp(matched1ptr, "f"))
-						structtype = 1;
-					else if (!strcmp(matched1ptr, "t") || !strcmp(matched1ptr, "xt"))
-					{
-						structtype = (*matched1ptr == 'x') ? 3 : 2;
-					}
-					else if (!strcmp(matched1ptr, "x"))
-						structtype = 4;
-					else if (!strcmp(matched1ptr, "X"))
-						structtype = 5;
-					else
-						structtype = 0;
-				}
-				
-				switch (structtype)
-				{
-					case 0: sprintf(buff, "%d", num1); break;
-					case 1: sprintf(buff, "%3.2f", * (float*) & num1); break;
-					case 2:
-					case 3:
-					{
-						bool overridden1 = false;
-						if ( structtype == 3 )
-						{
-							int num1h = (num1 >> 8); // .ctype?
-							if ( (num1 & 0xFF) == PT_LIFE && num1h >= 0 && num1h < NGOL )
-							{
-								sprintf(buff, "%s", sim->gmenu[num1h].name);
-								overridden1 = true;
-							}
-						}
-						if (!overridden1)
-						{
-							if (sparked)
-								sprintf(buff, "sparked %s", sim->elements[num1&0xFF].Name);
-							else
-								sprintf(buff, "%s", sim->elements[num1&0xFF].Name);
-						}
-					}
-					break;
-					case 4: sprintf(buff, "0x%08x", num1); break;
-					case 5: sprintf(buff, "0x%08X", num1); break;
-				}
-			}
-			else
-				strcpy(buff, "");
+				signTextNew << "Temp: 0.00";
 		}
 		else
 		{
-			int pos = splitsign(signText);
-			if (pos)
+			int pos, r = 0;
+			bool extraArgFound = true, propFound = false;
+
+			if (text[1] == '.' && text[text.length() - 1] == '}')
 			{
-				strcpy(buff, signText+pos+1);
-				buff[strlen(signText)-pos-2]=0;
+				pos = text.find(':', 2);
+				if (pos == std::string::npos)
+					pos = text.length() - 1, extraArgFound = false;
+				std::string subtext = text.substr(2, pos-2);
+
+				if (x >= 0 && x < XRES && y >= 0 && y < YRES)
+					r = sim->pmap[y][x];
+				
+				StructProperty prop;
+				std::vector<StructProperty> props = Particle::GetProperties();
+				
+				for(std::vector<StructProperty>::iterator iter = props.begin(), end = props.end(); iter != end; ++iter)
+				{
+					if((*iter).Name == subtext)
+					{
+						prop = *iter;
+						propFound = true;
+						break;
+					}
+				}
+
+				if (subtext == "i")
+				{
+					if (r)
+						signTextNew << ID(r);
+					propFound = true;
+				}
+				else if (propFound && TYP(r))
+				{
+					signTextNew << *((int*)(((unsigned char*)&sim->parts[ID(r)])+(prop.Offset)));
+				}
 			}
-			else
-				strcpy(buff, signText);
+			if (!propFound)
+			{
+				pos = splitsign(text);
+				if (pos)
+					signTextNew << text.substr(pos+1, text.length()-pos-2);
+				else
+					signTextNew << text;
+			}
 		}
 	}
 	else
 	{
-		strcpy(buff, signText);
+		signTextNew << text;
 	}
-
-	return std::string(buff);
+// lastres:
+	return signTextNew.str();
 }
 
 void sign::pos(std::string signText, int & x0, int & y0, int & w, int & h)
@@ -275,46 +105,43 @@ void sign::pos(std::string signText, int & x0, int & y0, int & w, int & h)
 	y0 = (y > 18) ? y - 18 : y + 4;
 }
 
-int sign::splitsign(const char* str, char * type)
+int sign::splitsign(std::string str, char * type)
 {
-	if (str[0]=='{' && (str[1]=='c' || str[1]=='t' || str[1]=='b' || str[1]=='s'))
+	if (str[0] == '{' && (str[1] == 'c' || str[1] == 't' || str[1] == 'b' || str[1] == 's'))
 	{
-		const char* p = str+2;
-		// signs with text arguments
+		size_t strIndex = 2;
+		// Signs with text arguments
 		if (str[1] == 's')
 		{
-			if (str[2]==':')
+			if (str[2] == ':')
 			{
-				p = str+4;
-				while (*p && *p!='|')
-					p++;
+				strIndex = 3;
+				while (strIndex < str.length() && str[strIndex] != '|')
+					strIndex++;
 			}
 			else
 				return 0;
 		}
-		// signs with number arguments
+		// Signs with number arguments
 		if (str[1] == 'c' || str[1] == 't')
 		{
-			if (str[2]==':' && str[3]>='0' && str[3]<='9')
+			if (str[2] == ':' && str[3] >= '0' && str[3] <= '9')
 			{
-				p = str+4;
-				while (*p>='0' && *p<='9')
-					p++;
+				strIndex = 4;
+				while (str[strIndex] >= '0' && str[strIndex] <= '9')
+					strIndex++;
 			}
 			else
 				return 0;
 		}
 
-		if (*p=='|')
+		if (str[strIndex] == '|')
 		{
-			int r = p-str;
-			while (*p)
-				p++;
-			if (p[-1] == '}')
+			if (str[str.length() - 1] == '}')
 			{
 				if (type)
 					*type = str[1];
-				return r;
+				return strIndex;
 			}
 		}
 	}

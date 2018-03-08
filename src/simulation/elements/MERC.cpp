@@ -71,12 +71,13 @@ int Element_MERC::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r || (parts[i].tmp >=maxtmp))
 						continue;
-					if ((r&0xFF)==PT_MERC&& !(rand()%3))
+					if (TYP(r) == PT_MERC && !(rand()%3))
 					{
-						if ((parts[i].tmp + parts[r>>8].tmp + 1) <= maxtmp)
+						r >>= PMAPBITS;
+						if ((parts[i].tmp + parts[r].tmp + 1) <= maxtmp)
 						{
-							parts[i].tmp += parts[r>>8].tmp + 1;
-							sim->kill_part(r>>8);
+							parts[i].tmp += parts[r].tmp + 1;
+							sim->kill_part(r);
 						}
 					}
 				}
@@ -108,29 +109,20 @@ int Element_MERC::update(UPDATE_FUNC_ARGS)
 			r = pmap[y+ry][x+rx];
 			if (!r)
 				continue;
-			if ((r&0xFF)==PT_MERC&&(parts[i].tmp>parts[r>>8].tmp)&&parts[i].tmp>0)//diffusion
+			if (TYP(r)==PT_MERC && (parts[i].tmp>partsi(r).tmp)&&parts[i].tmp>0)//diffusion
 			{
-				int temp = parts[i].tmp - parts[r>>8].tmp;
+				int temp = parts[i].tmp - partsi(r).tmp;
 				if (temp ==1)
 				{
-					parts[r>>8].tmp ++;
+					partsi(r).tmp ++;
 					parts[i].tmp --;
 				}
 				else if (temp>0)
 				{
-					parts[r>>8].tmp += temp/2;
+					partsi(r).tmp += temp/2;
 					parts[i].tmp -= temp/2;
 				}
 			}
-/*
-			else if ((r&0xFF)==PT_E187 && parts[i].life>0 && sim->pv[y/CELL][x/CELL] > 100.0f && !parts[r>>8].ctype && !(rand()%100))
-			{
-				sim->part_change_type(i, x, y, PT_E187);
-				parts[i].ctype = 0;
-				parts[i].tmp = 0;
-				return 1;
-			}
-*/
 		}
 	}
 	return 0;

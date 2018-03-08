@@ -51,7 +51,7 @@ int Element_FWRK::update(UPDATE_FUNC_ARGS)
 {
 	 if (parts[i].life == 0 && ((surround_space && parts[i].temp>400 && (9+parts[i].temp/40)>rand()%100000) || parts[i].ctype == PT_DUST))
 	{
-		float gx, gy, multiplier, gmax;
+		float gx, gy, multiplier, gmax, gswap;
 		int randTmp;
 		sim->GetGravityField(x, y, sim->elements[PT_FWRK].Gravity, 1.0f, gx, gy);
 		if (gx*gx+gy*gy < 0.001f)
@@ -71,8 +71,9 @@ int Element_FWRK::update(UPDATE_FUNC_ARGS)
 			gy += gy*randTmp*0.002f;
 			//and a bit more variation in speed perpendicular to gravity direction
 			randTmp = (rand()%200)-100;
+			gswap = gx;
 			gx += -gy*randTmp*0.005f;
-			gy += gx*randTmp*0.005f;
+			gy += gswap*randTmp*0.005f;
 
 			parts[i].life=rand()%10+18;
 			parts[i].ctype=0;

@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_PSNS PT_PSNS 172
+#define ID(r) part_ID(r)
 Element_PSNS::Element_PSNS()
 {
 	Identifier = "DEFAULT_PT_PSNS";
@@ -48,6 +49,8 @@ Element_PSNS::Element_PSNS()
 int Element_PSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt;
+	float photonWl = 0.0f;
+	bool setFilt = false;
 	if (!(parts[i].tmp3 & 1) == (sim->pv[y/CELL][x/CELL] > parts[i].temp-273.15f))
 	{
 		parts[i].life = 0;
@@ -58,18 +61,47 @@ int Element_PSNS::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = r&0xFF;
-					int pavg = sim->parts_avg(i,r>>8,PT_INSL);
-					if (pavg != PT_INSL && pavg != PT_INDI)
+					rt = TYP(r);
+					int pavg = sim->parts_avg(i,ID(r),PT_INSL);
+					if (!CHECK_EL_INSL(pavg))
 					{
-						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */  && parts[r>>8].life==0)
+						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS && parts[ID(r)].life==0)
 						{
-							parts[r>>8].life = 4;
-							parts[r>>8].ctype = rt;
-							sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
+							parts[ID(r)].life = 4;
+							parts[ID(r)].ctype = rt;
+							sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
 						}
 					}
 				}
+	}
+	if (parts[i].tmp == 1) 
+	{
+		parts[i].life = 0;
+		setFilt = true;
+		photonWl = sim->pv[y / CELL][x / CELL];
+		if (setFilt)
+		{
+			int nx, ny;
+			for (rx = -1; rx < 2; rx++)
+				for (ry = -1; ry < 2; ry++)
+					if (BOUNDS_CHECK && (rx || ry))
+					{
+						r = pmap[y + ry][x + rx];
+						if (!r)
+							continue;
+						nx = x + rx;
+						ny = y + ry;
+						while (TYP(r) == PT_FILT)
+						{
+							parts[ID(r)].ctype = 0x10000000 + roundl(photonWl) + 256;
+							nx += rx;
+							ny += ry;
+							if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
+								break;
+							r = pmap[ny][nx];
+						}
+					}
+		}
 	}
 	return 0;
 }

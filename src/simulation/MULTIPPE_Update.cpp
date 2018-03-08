@@ -61,96 +61,6 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 		}
 		break;
-	case 2: // TRON input ["智能粒子" 的传送门入口]
-		if (rtmp & 0x04)
-			rtmp &= ~0x04;
-		else if (rtmp & 0x01)
-		{
-			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			int direction = (rr + (rtmp >> 17)) & 0x3;
-			rx = x + tron_rx[direction];
-			ry = y + tron_ry[direction];
-		jump1a:
-			r = pmap[ry][rx];
-			rii = partsi(r).life;
-			rrx = rii >> 1;
-			if (TYP(r) == ELEM_MULTIPP && (rrx == 1 || rrx == 15))
-			{
-				ri = ID(r);
-				if (rii == 31) // delay
-				{
-					if (parts[ri].tmp3)
-						goto break1c;
-					else
-						parts[ri].tmp3 = parts[ri].ctype;
-				}
-				parts[ri].tmp &= (rii == 30 ? 0x700000 : 0) | 0xE0000;
-				parts[ri].tmp |= (rtmp & 0x1FF9F) | (direction << 5);
-				if (ri > i)
-					sim->parts[ri].tmp |= 0x04;
-				parts[ri].tmp2 = parts[i].tmp2;
-			}
-			else if (TYP(r) == PT_METL || TYP(r) == PT_PSCN || TYP(r) == PT_NSCN || TYP(r) == PT_INDC)
-			{
-				conductTo (sim, r, rx, ry, parts);
-			}
-			else if (TYP(r) == PT_ETRD)
-			{
-				rr = partsi(r).tmp; (rr <= 0) && (rr = 1);
-				rx += rr * tron_rx[direction];
-				ry += rr * tron_ry[direction];
-				if (sim->InBounds(rx, ry))
-					goto jump1a;
-			}
-		break1c:
-			rtmp &= 0xE0000;
-		}
-		parts[i].tmp = rtmp;
-		break;
-	case 3: // TRON output ["智能粒子" 的传送门出口]
-		if (rtmp & 0x04)
-			rtmp &= ~0x04;
-		else if (rtmp & 0x01)
-		{
-			int direction = (rtmp >> 5) & 0x3;
-			ry = y + tron_ry[direction];
-			rx = x + tron_rx[direction];
-			r = pmap[ry][rx];
-			if (r)
-			{
-				direction = (direction + (rand()%2) * 2 + 1) % 4;
-				ry = y + tron_ry[direction];
-				rx = x + tron_rx[direction];
-				r = pmap[ry][rx];
-				if (r)
-				{
-					direction = direction ^ 0x2; // bitwise xor
-					ry = y + tron_ry[direction];
-					rx = x + tron_rx[direction];
-					r = pmap[ry][rx];
-				}
-				if (r)
-				{
-					parts[i].tmp = 0;
-					break;
-				}
-			}
-			if (!r)
-			{
-				ri = sim->create_part(-1, rx, ry, PT_TRON);
-				if (ri >= 0)
-				{
-					parts[ri].life = 5;
-					parts[ri].tmp  = rtmp & 0x1FF9F | (direction << 5);
-					if (ri > i)
-						parts[ri].tmp |= 0x04;
-					parts[ri].tmp2 = parts[i].tmp2;
-				}
-			}
-			rtmp = 0;
-		}
-		parts[i].tmp = rtmp;
-		break;
 	case 4: // photon laser [激光器]
 		if (!rtmp)
 			break;
@@ -174,6 +84,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		parts[ri].tmp = rtmp & 3;
 		
 		break;
+	case 2: // reserved for TRON
+	case 3: // reserved
 	case 5: // reserved for Simulation.cpp
 	case 7: // reserved for Simulation.cpp
 #ifdef NO_SPC_ELEM_EXPLODE
@@ -2162,13 +2074,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							rr >>= PMAPBITS;
 							if (rt == ELEM_MULTIPP && parts[rr].life == 30)
 							{
-								if ((parts[rr].tmp >> 20) == 3)
-								{
-									parts[rr].ctype &= ~0x1F;
-									parts[rr].ctype |= (partsi(r).tmp >> 11) & 0x1F;
-								}
-								else
-									parts[rr].ctype = (partsi(r).tmp >> 7) & 0x1FF;
+								parts[rr].ctype &= ~0x1F;
+								parts[rr].ctype |= (partsi(r).tmp >> 11) & 0x1F;
 							}
 						}
 						else
@@ -2418,49 +2325,34 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		else if (rtmp & 0x01)
 		{
 			rt = rtmp >> 20;
-			rrx = parts[i].ctype;
-			if (rt == 4) // TRON splitter
+			int phshift = parts[i].ctype;
+			int direction = Element_TRON::convertToAbsDirection(rtmp);
+			nx = x + tron_rx[direction];
+			ny = y + tron_ry[direction];
+			r = pmap[ny][nx];
+			if (!r)
 			{
-				for (rr = 0; rr < 4; rr++)
-				{
-					r = pmap[y + tron_ry[rr]][x + tron_rx[rr]];
-					if (CHECK_EXTEL(r, 3))
-					{
-						ri = ID(r);
-						parts[ri].tmp &= 0xE0000;
-						parts[ri].tmp |= (rtmp & 0x1FF9F) | (rr << 5);
-						if (ri > i)
-							sim->parts[ri].tmp |= 0x04;
-						parts[ri].tmp2 = parts[i].tmp2;
-					}
-				}
-				parts[i].tmp = rtmp & 0x7E0000;
-				break;
-			}
-			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			int direction = (rr + (rtmp >> 17)) & 0x3;
-			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
-			if (CHECK_EXTEL(r, 3))
-			{
-				ri = ID(r);
-				parts[ri].tmp &= 0xE0000;
-				rctype = (rtmp >> 7) & 0x1FF;
+				int hue = (rtmp >> 11) & 0x1F;
 				switch (rt & 7)
 				{
-					case 0: rctype  = rrx; break; // set colour
-					case 1: rctype += rrx; break; // hue shift (add)
-					case 2: rctype -= rrx; break; // hue shift (subtract)
+					case 0: hue  = phshift; break; // set colour
+					case 1: hue += phshift; break; // hue shift (add)
+					case 2: hue -= phshift; break; // hue shift (subtract)
 					case 3: // if color is / isn't ... then pass through
-						if ((((rctype >> 4) & 0x1F) == rrx) == ((rrx >> 5) & 1)) // rightmost 5 bits xnor 6th bit
+						if (((hue & 0x1F) == phshift) == ((phshift >> 5) & 1)) // rightmost 5 bits xnor 6th bit
 							rtmp = 0;
 					break;
 				}
-				parts[ri].tmp |= (rtmp & 0x1009F) | (((rctype % 368 + 368) % 368) << 7) | (direction << 5); // colour modulo 368, rather than 360
-				if (ri > i)
-					sim->parts[ri].tmp |= 0x04;
-				parts[ri].tmp2 = parts[i].tmp2;
+				if (rtmp & 1)
+				{
+					hue %= 23, (hue < 0) && (hue += 23);
+					int np = Element_TRON::new_tronhead(sim, nx, ny, i, direction);
+					if (np >= 0)
+						parts[np].tmp &= ~0x0FF80,
+						parts[np].tmp |= hue << 11;
+				}
 			}
-			rtmp &= 0x7E0000;
+			rtmp &= ~0x1FFFF;
 		}
 		parts[i].tmp = rtmp;
 		break;
@@ -2471,18 +2363,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp3--;
 		else if (rtmp & 0x01)
 		{
-			rr = (rtmp >> 5) & ((rtmp >> 19 & 1) - 1);
-			int direction = (rr + (rtmp >> 17)) & 0x3;
-			r = pmap[y + tron_ry[direction]][x + tron_rx[direction]];
-			rii = partsi(r).life;
-			if (TYP(r) == ELEM_MULTIPP && (rii & ~0x1) == 2)
-			{
-				ri = ID(r);
-				parts[ri].tmp |= (rtmp & 0x1FF9F) | (direction << 5);
-				if (ri > i)
-					sim->parts[ri].tmp |= 0x04;
-				parts[ri].tmp2 = parts[i].tmp2;
-			}
+			int direction = Element_TRON::convertToAbsDirection(rtmp);
+			nx = x + tron_rx[direction];
+			ny = y + tron_ry[direction];
+			r = pmap[ny][nx];
+			if (!r)
+				Element_TRON::new_tronhead(sim, nx, ny, i, direction);
 			rtmp &= 0xE0000;
 		}
 		parts[i].tmp = rtmp;
@@ -2697,7 +2583,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					switch (TYP(r))
 					{
 					case ELEM_MULTIPP:
-						if (partsi(r).life==38)
+						if (partsi(r).life == 38)
 						{
 							rii = PMAP(rctypeExtra, rctype);
 							if (!TYP(partsi(r).ctype) && rctype)

@@ -6416,6 +6416,7 @@ Simulation::~Simulation()
 	delete air;
 	for (size_t i = 0; i < tools.size(); i++)
 		delete tools[i];
+	free(DIRCHInteractTable);
 }
 
 Simulation::Simulation():

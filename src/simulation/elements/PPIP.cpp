@@ -128,7 +128,7 @@ void Element_PPIP::flood_trigger(Simulation * sim, int x, int y, int sparkedBy)
 		// Don't need to check x bounds here, because already limited to [CELL, XRES-CELL]
 		if (y>=CELL+1)
 			for (x=x1-1; x<=x2+1; x++)
-			if (TYP(pmap[y-1][x])==PT_PPIP && !(parti(pmap[y-1][x]).tmp & prop))
+			if (TYP(pmap[y-1][x])==PT_PPIP && !(partsi(pmap[y-1][x]).tmp & prop))
 			{
 				coord_stack[coord_stack_size][0] = x;
 				coord_stack[coord_stack_size][1] = y-1;

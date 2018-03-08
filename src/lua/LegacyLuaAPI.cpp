@@ -2078,7 +2078,9 @@ int luatpt_cmode_set(lua_State* l)
 	int cmode = luaL_optint(l, 1, 3)+1;
 	if (cmode == 11)
 		cmode = 0;
-	if (cmode >= 0 && cmode <= 10)
+	else if (cmode == 12)
+		cmode = 11;
+	if (cmode >= 0 && cmode <= 11)
 		luacon_controller->LoadRenderPreset(cmode);
 	else
 		return luaL_error(l, "Invalid display mode");

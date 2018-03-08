@@ -134,12 +134,14 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 12:
-			if (parts[underI].tmp == 2)
+			if ((parts[underI].tmp & 7) == 2)
 			{
 				bool vibr_found = false;
 				int velSqThreshold = (int)(parts[underI].temp - (273.15f - 0.5f));
 				if (velSqThreshold < 0)
 					velSqThreshold = 0;
+				else if (parts[underI].tmp == 10)
+					velSqThreshold *= 100;
 				int r, rx, ry, trade;
 
 				for (trade = 0; trade < 5; trade++)
@@ -151,12 +153,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						switch (TYP(r))
 						{
-						case PT_URAN:
-							if (parts[underI].tmp2 < 100)
-								break;
-							sim->part_change_type(ID(r), x+rx, y+ry, PT_PLUT);
-							parts[underI].tmp2 -= 100;
-							break;
+						case PT_BVBR:
 						case PT_VIBR:
 							parts[underI].tmp2 += partsi(r).tmp;
 							partsi(r).tmp = 0;

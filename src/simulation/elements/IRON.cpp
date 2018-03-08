@@ -49,6 +49,7 @@ Element_IRON::Element_IRON()
 int Element_IRON::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry;
+	bool rusting = false;
 	if (parts[i].life)
 		return 0;
 	for (rx=-1; rx<2; rx++)
@@ -60,22 +61,27 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 				{
 				case PT_SALT:
 					if (!(rand()%47))
-						goto succ;
+						rusting = true;
 					break;
 				case PT_SLTW:
 					if (!(rand()%67))
-						goto succ;
+						rusting = true;
 					break;
 				case PT_WATR:
 					if (!(rand()%1200))
-						goto succ;
+						rusting = true;
 					break;
 				case PT_O2:
 					if (!(rand()%250))
-						goto succ;
+						rusting = true;
 					break;
 				case PT_LO2:
-					goto succ;
+					rusting = true;
+					break;
+				case ELEM_MULTIPP:
+					if (partsi(r).life == 2 && !(~partsi(r).tmp & 0x9))
+						return 0; // anti-rusting stuff
+					break;
 #if 0
 				case PT_CHRM: // iron + chromium = stainless steel
 					return 0;
@@ -84,10 +90,11 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 					break;
 				}
 			}
-	return 0;
-succ:
-	sim->part_change_type(i,x,y,PT_BMTL);
-	parts[i].tmp=(rand()%10)+20;				
+	if (rusting)
+	{
+		sim->part_change_type(i,x,y,PT_BMTL);
+		parts[i].tmp=(rand()%10)+20;
+	}
 	return 0;
 }
 

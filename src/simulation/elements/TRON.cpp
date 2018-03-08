@@ -1,5 +1,7 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_TRON PT_TRON 143
+#define ID(r) part_ID(r)
+
 Element_TRON::Element_TRON()
 {
 	Identifier = "DEFAULT_PT_TRON";
@@ -60,10 +62,12 @@ Element_TRON::Element_TRON()
  *  - +<----+---->+ - -
  *  - - - - H - - - - -
  * Where H is the head with tail length 4, it checks the + area to see if it can hit any of the edges, then it is called safe, or picks the biggest area if none safe.
- * .tmp bit values: 1st head, 2nd no tail growth, 3rd wait flag, 4th Nodie, 5th Dying, 6th & 7th is direction, 8th - 16th hue, 17th Norandom
+ * .tmp bit values: 1st head, 2nd no tail growth, 3rd wait flag, 4th Nodie, 5th Dying, 6th & 7th is direction, 8th - 16th hue, 17th Norandom, 18th inside gate, 19th splitting flag
  * .tmp2 is tail length (gets longer every few hundred frames)
  * .life is the timer that kills the end of the tail (the head uses life for how often it grows longer)
  * .ctype Contains the colour, lost on save, regenerated using hue tmp (bits 7 - 16)
+ *
+ * For tron gate element, .tmp bit values: 1st & 2nd is direction, 3rd splitting flag, 4th crossing flag
  */
 
 #define TRON_HEAD 1
@@ -72,6 +76,9 @@ Element_TRON::Element_TRON()
 #define TRON_NODIE 8
 #define TRON_DEATH 16 //Crashed, now dying
 #define TRON_NORANDOM 65536
+#define TRON_INGATE		(1<<17)
+#define TRON_SPLITTING	(1<<18)
+
 int tron_rx[4] = {-1, 0, 1, 0};
 int tron_ry[4] = { 0,-1, 0, 1};
 unsigned int tron_colours[32];
@@ -98,9 +105,11 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 	}
 	if (parts[i].tmp&TRON_HEAD)
 	{
-		int firstdircheck = 0,seconddir,seconddircheck = 0,lastdir,lastdircheck = 0;
-		bool firstTRONInput_, secondTRONInput_, lastTRONInput_;
-		int secondTRONInput_dir, lastTRONInput_dir;
+		int firstdircheck = 0, seconddircheck = 0, lastdircheck = 0,
+			firstTRONInput_, seconddir, lastdir;
+
+		bool iscrossing = false;
+
 		int direction = (parts[i].tmp>>5 & 0x3);
 		int originaldir = direction;
 
@@ -115,29 +124,43 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 			direction = (direction + random)%4;
 		}
 
-		//check in front
-		//do sight check
-		firstTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,originaldir);
-		secondTRONInput_dir = (originaldir + ((rand()%2)*2)+1) % 4;
-		secondTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,secondTRONInput_dir);
-		lastTRONInput_dir = (secondTRONInput_dir + 2) % 4;
-		lastTRONInput_ = Element_TRON::checkTRONInput_(sim,x,y,lastTRONInput_dir);
-		if (firstTRONInput_)
+		// checking inside gate
+		firstTRONInput_ = Element_TRON::checkTRONInput_(sim, i, x, y, originaldir);
+
+		if ((parts[i].tmp & TRON_INGATE) || firstTRONInput_ > 0)
 		{
 			direction = originaldir;
+			if (firstTRONInput_ == 2)
+				iscrossing = true;
 			goto TRONInput_checked;
 		}
-		else if (secondTRONInput_)
+		else
 		{
-			direction = secondTRONInput_dir;
-			goto TRONInput_checked;
+			int direction_l = (originaldir + ((rand()%2)*2)+1) % 4;
+			int direction_l_inp = Element_TRON::checkTRONInput_(sim, i, x, y, direction_l);
+			int direction_r = direction_l ^ 2; // XOR proof
+			int direction_r_inp = Element_TRON::checkTRONInput_(sim, i, x, y, direction_r);
+
+			if (direction_l_inp > 0)
+			{
+				direction = direction_l;
+				goto TRONInput_checked;
+			}
+			else if (direction_r_inp > 0)
+			{
+				direction = direction_r;
+				goto TRONInput_checked;
+			}
+			
+			if (direction_l_inp < 0)
+				direction = direction_r;
+			else if (direction_r_inp < 0)
+				direction = direction_l;
 		}
-		else if (lastTRONInput_)
-		{
-			direction = lastTRONInput_dir;
-			goto TRONInput_checked;
-		}
-		
+
+		//check in front
+		//do sight check
+
 		firstdircheck = Element_TRON::trymovetron(sim,x,y,direction,i,parts[i].tmp2);
 		if (firstdircheck < parts[i].tmp2)
 		{
@@ -166,17 +189,58 @@ int Element_TRON::update(UPDATE_FUNC_ARGS)
 			direction = lastdir;
 
 		TRONInput_checked:
-		//now try making new head, even if it fails
-		if (Element_TRON::new_tronhead(sim,x + tron_rx[direction],y + tron_ry[direction],i,direction) == -1)
 		{
-			//ohgod crash
-			parts[i].tmp |= TRON_DEATH;
-			//trigger tail death for TRON_NODIE, or is that mode even needed? just set a high tail length(but it still won't start dying when it crashes)
-		}
+			bool crashed = false;
+			int nx, ny, np, nd = (parts[i].tmp & TRON_SPLITTING) ? 6 : 0, nm = iscrossing ? 2 : 1;
 
-		//set own life and clear .tmp (it dies if it can't move anyway)
-		parts[i].life = parts[i].tmp2;
-		parts[i].tmp &= parts[i].tmp&0xF818;
+			if (!iscrossing)
+			{
+				do
+				{
+					nd >>= 1;
+					int dir2 = (direction + nd) % 4;
+					//now try making new head, even if it fails
+					nx = x + tron_rx[dir2], ny = y + tron_ry[dir2];
+					np = Element_TRON::new_tronhead(sim, nx, ny, i, dir2);
+					if (np == -1)
+						crashed = true;
+				}
+				while (nd);
+			}
+			else
+			{
+				nx = x + 2 * tron_rx[direction], ny = y + 2 * tron_ry[direction];
+				if (nx >= 0 && ny >= 0 && nx < XRES && ny < YRES)
+				{
+					int r = pmap[ny][nx];
+					if (!r || CHECK_EXTEL(r, 2))
+						Element_TRON::new_tronhead(sim, nx, ny, i, direction);
+				}
+			}
+
+			if (parts[i].tmp & TRON_INGATE)
+			{
+				sim->part_change_type(i, x, y, ELEM_MULTIPP);
+				parts[i].life = 2;
+				parts[i].tmp = originaldir | ((parts[i].tmp >> (18 - 2)) & 4);
+				
+				if (crashed)
+					sim->create_part(-1, nx, ny, PT_SPRK);
+			}
+			else
+			{
+				if (crashed)
+				{
+					//ohgod crash
+					parts[i].tmp |= TRON_DEATH;
+					//trigger tail death for TRON_NODIE, or is that mode even needed? just set a high tail length(but it still won't start dying when it crashes)
+				}
+
+				//set own life and clear .tmp (it dies if it can't move anyway)
+				parts[i].life = parts[i].tmp2;
+				parts[i].tmp &= parts[i].tmp&0xF818;
+			}
+		}
 	}
 	else // fade tail deco, or prevent tail from dying
 	{
@@ -215,31 +279,74 @@ int Element_TRON::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
+#define FUNC_TRON_GATE		2
+#define FUNC_TRON_FILTER	30
+#define FUNC_TRON_DELAY		31
+
+//#TPT-Directive ElementHeader Element_TRON static int convertToAbsDirection(int flags)
+int Element_TRON::convertToAbsDirection(int flags)
+{
+	int base = (flags >> 5);
+	if (flags & (1 << 19))
+		base = 0;
+	return (base + (flags >> 17)) & 3;
+}
+
 //#TPT-Directive ElementHeader Element_TRON static int new_tronhead(Simulation * sim, int x, int y, int i, int direction)
 int Element_TRON::new_tronhead(Simulation * sim, int x, int y, int i, int direction)
 {
-	int r = sim->pmap[y][x];
-	if ((r & 0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 2)
-	{
-		int ri = r >> 8;
-		sim->parts[ri].tmp &= 0xE0000;
-		sim->parts[ri].tmp |= 1 | direction<<5 | (sim->parts[i].tmp & 0x1F80A);
-		if (ri > i)
-			sim->parts[ri].tmp |= TRON_WAIT;
-		sim->parts[ri].tmp2 = sim->parts[i].tmp2;
+	if (x < 0 || y < 0 || x >= XRES || y >= YRES)
 		return -1;
+		
+	int r = sim->pmap[y][x], ni = -1, extraFlags = 0, funcCode, z;
+	int tmp = sim->parts[i].tmp;
+	int type = sim->parts[i].type;
+
+	if (TYP(r) == ELEM_MULTIPP)
+	{
+		int ri = ID(r), tmp;
+		funcCode = sim->parts[ri].life;
+		switch (funcCode)
+		{
+		case FUNC_TRON_GATE:
+			z = sim->parts[ri].tmp;
+			extraFlags |= TRON_INGATE | ((z & 4) << (18 - 2));
+			direction = z & 3;
+			break;
+		case FUNC_TRON_DELAY:
+			if (sim->parts[ri].tmp3)
+				return -1;
+			sim->parts[ri].tmp3 = sim->parts[ri].ctype;
+		case FUNC_TRON_FILTER:
+			sim->parts[ri].tmp &= (funcCode == FUNC_TRON_FILTER) ? 0x7E0000 : 0xE0000;
+			sim->parts[ri].tmp |= (tmp & 0x1FF9F) | (direction << 5) | ((ri > i) ? TRON_WAIT : 0);
+			sim->parts[ri].tmp2 = sim->parts[i].tmp2;
+			return -1;
+		}
 	}
-	int np = sim->create_part(-1, x , y ,PT_TRON);
+	else if (TYP(r) == PT_TRON && (sim->partsi(r).tmp & TRON_INGATE))
+	{
+		z = sim->partsi(r).tmp;
+		extraFlags |= TRON_INGATE | (z & TRON_SPLITTING);
+		direction = (z >> 5) & 3;
+	}
+	
+	if (extraFlags)
+		ni = ID(r);
+
+	int np = sim->create_part(ni, x, y, PT_TRON);
 	if (np==-1)
 		return -1;
-	if (sim->parts[i].life >= 100) // increase tail length
+
+	if (type != PT_TRON || sim->parts[i].life >= 100) // increase tail length
 	{
-		if (!(sim->parts[i].tmp&TRON_NOGROW))
+		if (type != PT_TRON || !(tmp & TRON_NOGROW))
 			sim->parts[i].tmp2++;
 		sim->parts[i].life = 5;
 	}
+
 	//give new head our properties
-	sim->parts[np].tmp = 1 | direction<<5 | (sim->parts[i].tmp&(TRON_NOGROW|TRON_NODIE|TRON_NORANDOM)) | (sim->parts[i].tmp&0xF800);
+	sim->parts[np].tmp = 1 | direction<<5 | (tmp & (TRON_NOGROW|TRON_NODIE|TRON_NORANDOM)) | (tmp & 0xF800) | extraFlags;
 	if (np > i)
 		sim->parts[np].tmp |= TRON_WAIT;
 
@@ -298,26 +405,41 @@ int Element_TRON::trymovetron(Simulation * sim, int x, int y, int dir, int i, in
 //#TPT-Directive ElementHeader Element_TRON static bool canmovetron(Simulation * sim, int r, int len)
 bool Element_TRON::canmovetron(Simulation * sim, int r, int len)
 {
-	if ((r&0xFF) == PT_PINVIS && sim->parts[r>>8].life >= 10)
-		r = sim->parts[r>>8].tmp4;
-	if (!r || ( (r&0xFF) == PT_SWCH && sim->parts[r>>8].life >= 10) || ((r&0xFF) == PT_INVIS && sim->parts[r>>8].tmp2 == 1))
+	int prop, l;
+	if (TYP(r) == PT_PINVIS && sim->partsi(r).life >= 10)
+		r = sim->partsi(r).tmp4;
+	l = sim->partsi(r).life;
+	if (!r || ( TYP(r) == PT_SWCH && l >= 10) || (TYP(r) == PT_INVIS && sim->partsi(r).tmp2 == 1))
 		return true;
-	if ((((sim->elements[r&0xFF].Properties & PROP_LIFE_KILL_DEC) && sim->parts[r>>8].life > 0)|| ((sim->elements[r&0xFF].Properties & PROP_LIFE_KILL) && (sim->elements[r&0xFF].Properties & PROP_LIFE_DEC))) && sim->parts[r>>8].life < len)
+	prop = sim->elements[TYP(r)].Properties;
+	if ((((prop & PROP_LIFE_KILL_DEC) && l > 0) || ((prop & PROP_LIFE_KILL) && (prop & PROP_LIFE_DEC))) && l < len)
 		return true;
 	return false;
 }
 
-//#TPT-Directive ElementHeader Element_TRON static bool checkTRONInput_(Simulation * sim, int x, int y, int dir)
-bool Element_TRON::checkTRONInput_(Simulation * sim, int x, int y, int dir)
+//#TPT-Directive ElementHeader Element_TRON static int checkTRONInput_(Simulation * sim, int i, int x, int y, int dir)
+int Element_TRON::checkTRONInput_(Simulation * sim, int i, int x, int y, int dir)
 {
 	int rx = x + tron_rx[dir];
 	int ry = y + tron_ry[dir];
-	int r = sim->pmap[ry][rx];
-	if ((r&0xFF) == ELEM_MULTIPP && sim->parts[r>>8].life == 2)
+	int r = sim->pmap[ry][rx], d, l, tmp;
+
+	if (TYP(r) == ELEM_MULTIPP)
 	{
-		return true;
+		l = sim->partsi(r).life;
+		if (l == FUNC_TRON_GATE)
+		{
+			tmp = sim->partsi(r).tmp;
+			return (tmp & 0x8) == 8 ? 2 : (dir ^ 2) == (tmp & 3) ? -1 : 1;
+		}
+		else if (l == FUNC_TRON_DELAY || l == FUNC_TRON_FILTER)
+		{
+			return (dir ^ 2) == convertToAbsDirection((sim->partsi(r).tmp & ~0x60) | (dir << 5)) ? -1 : 1;
+		}
 	}
-	return false;
+	else if (TYP(r) == PT_TRON && (sim->partsi(r).tmp & TRON_INGATE))
+		return ((dir ^ 2) == (sim->partsi(r).tmp >> 5) & 3) ? -1 : 1;
+	return 0;
 }
 
 Element_TRON::~Element_TRON() {}

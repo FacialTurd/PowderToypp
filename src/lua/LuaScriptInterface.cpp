@@ -2587,7 +2587,7 @@ int NeighboursClosure(lua_State * l)
 	lua_replace(l, lua_upvalueindex(5));
 	lua_pushnumber(l, y);
 	lua_replace(l, lua_upvalueindex(6));
-	lua_pushnumber(l, ID(r));
+	lua_pushnumber(l, ID(i));
 	lua_pushnumber(l, x+sx);
 	lua_pushnumber(l, y+sy);
 	return 3;

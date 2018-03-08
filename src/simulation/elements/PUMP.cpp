@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_PUMP PT_PUMP 97
+#define ID(r) part_ID(r)
 Element_PUMP::Element_PUMP()
 {
 	Identifier = "DEFAULT_PT_PUMP";
@@ -63,7 +64,7 @@ int Element_PUMP::update(UPDATE_FUNC_ARGS)
 
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
-				if (!(rx && ry))
+				if (parts[i].tmp != 1 && (!(rx && ry)))
 				{
 					sim->pv[(y/CELL)+ry][(x/CELL)+rx] += 0.1f*((parts[i].temp-273.15)-sim->pv[(y/CELL)+ry][(x/CELL)+rx]);
 				}
@@ -74,12 +75,28 @@ int Element_PUMP::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if ((r&0xFF)==PT_PUMP)
+					if (TYP(r)==PT_PUMP)
 					{
-						if (parts[r>>8].life<10&&parts[r>>8].life>0)
+						if (parts[ID(r)].life<10&&parts[ID(r)].life>0)
 							parts[i].life = 9;
-						else if (parts[r>>8].life==0)
-							parts[r>>8].life = 10;
+						else if (parts[ID(r)].life==0)
+							parts[ID(r)].life = 10;
+					}
+					if (parts[i].tmp == 1 && (TYP(r) == PT_FILT || TYP(r) == PT_PHOT || TYP(r) == PT_BRAY))
+					{
+						int xx = (x / CELL) + rx, yy = (y / CELL) + ry;
+
+						if (xx < 0 || xx >= (XRES / CELL) || yy < 0 || yy >= (YRES / CELL))
+							continue;
+
+						if (parts[ID(r)].ctype >= 0x10000000 && parts[ID(r)].ctype <= 0x10000000 + 512)
+						{
+							sim->pv[yy][xx] = (parts[ID(r)].ctype - 0x10000000) - 256;
+						}
+						else
+						{
+							sim->pv[yy][xx] = 0.0f;
+						}
 					}
 				}
 	}

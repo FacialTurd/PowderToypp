@@ -42,7 +42,7 @@ Element_MULTIPP::Element_MULTIPP()
 	Flammable = 0;
 	Explosive = 0;
 	Meltable = 0;
-	Hardness = 0;
+	Hardness = 0; // Because ACID always not affects that!
 
 	Weight = 100;
 
