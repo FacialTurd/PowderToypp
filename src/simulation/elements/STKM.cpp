@@ -864,7 +864,7 @@ void Element_STKM::STKM_set_life_1(Simulation *sim, int s, int i)
 		{
 			sur_part_tmp--; // is temporary variable, not global
 			int inc_life = (sur_part_tmp & 1) ? 1 : -1;
-			bool inc_life_cond;
+			bool inc_life_cond = false;
 			switch (sur_part_tmp >> 1)
 			{
 				case 0:

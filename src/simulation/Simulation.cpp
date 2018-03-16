@@ -3260,26 +3260,26 @@ void Simulation::kill_part(int i)//kills particle number i
 	pfree = i;
 }
 
-void Simulation::part_change_type(int i, int x, int y, int t)//changes the type of particle number i, to t.  This also changes pmap at the same time.
+// Changes the type of particle number i, to t.  This also changes pmap at the same time
+// Returns true if the particle was killed
+bool Simulation::part_change_type(int i, int x, int y, int t)
 {
 	if (x<0 || y<0 || x>=XRES || y>=YRES || i>=NPART || t<0 || t>=PT_NUM || !parts[i].type)
-		return;
-	if (!elements[t].Enabled)
-		t = PT_NONE;
-	if (t == PT_NONE)
+		return false;
+	if (!elements[t].Enabled || t == PT_NONE)
 	{
 		kill_part(i);
-		return;
+		return true;
 	}
 	else if ((t == PT_STKM || t == PT_STKM2 || t == PT_SPAWN || t == PT_SPAWN2) && elementCount[t])
 	{
 		kill_part(i);
-		return;
+		return true;
 	}
 	else if ((t == PT_STKM && player.spwn) || (t == PT_STKM2 && player2.spwn))
 	{
 		kill_part(i);
-		return;
+		return true;
 	}
 
 	switch (parts[i].type)
@@ -3347,6 +3347,7 @@ void Simulation::part_change_type(int i, int x, int y, int t)//changes the type 
 	parts[i].type = t;
 	pmap_remove(i, x, y);
 	pmap_add(i, x, y, t);
+	return false;
 }
 
 //the function for creating a particle, use p=-1 for creating a new particle, -2 is from a brush, or a particle number to replace a particle.
@@ -4254,11 +4255,13 @@ void Simulation::UpdateParticles(int start, int end)
 						if (!r)
 							continue;
 						rt = TYP(r);
-						if (rt&&elements[rt].HeatConduct&&(rt!=PT_HSWC||parts[ID(r)].life==10)
-						        &&(t!=PT_FILT||(rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
-						        &&(rt!=PT_FILT||(t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_E186&&t!=PT_BIZR&&t!=PT_BIZRG))
-						        &&(t!=PT_ELEC||rt!=PT_DEUT)
-						        &&(t!=PT_DEUT||rt!=PT_ELEC))
+						if (rt && elements[rt].HeatConduct && (rt!=PT_HSWC || parts[ID(r)].life==10)
+						        && (t!=PT_FILT || (rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
+						        && (rt!=PT_FILT || (t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_E186&&t!=PT_BIZR&&t!=PT_BIZRG))
+						        && (t!=PT_ELEC || rt!=PT_DEUT)
+						        && (t!=PT_DEUT || rt!=PT_ELEC)
+								&& (t!=PT_HSWC || rt!=PT_FILT || parts[i].tmp != 1)
+						        && (t!=PT_FILT || rt!=PT_HSWC || parts[ID(r)].tmp != 1))
 						{
 							surround_hconduct[j] = ID(r);
 #ifdef REALISTIC
@@ -4542,12 +4545,10 @@ void Simulation::UpdateParticles(int start, int end)
 							kill_part(i);
 							goto killed;
 						}
-						else
-							part_change_type(i,x,y,t);
 						// part_change_type could refuse to change the type and kill the particle
 						// for example, changing type to STKM but one already exists
 						// we need to account for that to not cause simulation corruption issues
-						if (parts[i].type == PT_NONE)
+						if (part_change_type(i,x,y,t))
 							goto killed;
 
 						if (t==PT_FIRE || t==PT_PLSM || t==PT_CFLM)
@@ -4676,20 +4677,19 @@ void Simulation::UpdateParticles(int start, int end)
 			// particle type change occurred
 			if (s)
 			{
-				parts[i].life = 0;
-				part_change_type(i,x,y,t);
-				// part_change_type could refuse to change the type and kill the particle
-				// for example, changing type to STKM but one already exists
-				// we need to account for that to not cause simulation corruption issues
-				if (parts[i].type == PT_NONE)
-					goto killed;
-				if (t==PT_FIRE)
-					parts[i].life = rand()%50+120;
-				if (t==PT_NONE)
+				if (t == PT_NONE)
 				{
 					kill_part(i);
 					goto killed;
 				}
+				parts[i].life = 0;
+				// part_change_type could refuse to change the type and kill the particle
+				// for example, changing type to STKM but one already exists
+				// we need to account for that to not cause simulation corruption issues
+				if (part_change_type(i,x,y,t))
+					goto killed;
+				if (t == PT_FIRE)
+					parts[i].life = rand()%50+120;
 				transitionOccurred = true;
 			}
 
@@ -5956,12 +5956,14 @@ void Simulation::BeforeSim()
 		etrd_life0_count = 0;
 
 		currentTick++;
-#ifdef TPT_NEED_DLL_PLUGIN
-		dllexceptionflag <<= 1;
-#endif
 		elementRecount |= !(currentTick%180);
 		if (elementRecount)
 			std::fill(elementCount, elementCount+PT_NUM, 0);
+		
+#ifdef TPT_NEED_DLL_PLUGIN
+		dllexceptionflag <<= 1;
+#endif
+
 		// E189's .life value isn't lifetime, just is secondary type.
 		elements[ELEM_MULTIPP].Properties &= ~(PROP_CONDUCTS | PROP_LIFE_DEC | PROP_LIFE_KILL);
 		ineutcount = 0;

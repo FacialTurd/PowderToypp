@@ -98,5 +98,18 @@ int Element_IRON::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
+//#TPT-Directive ElementHeader Element_IRON static void makeAlloy(Simulation * sim, int i, int rt, int r)
+void Element_IRON::makeAlloy (Simulation * sim, int i, int rt, int r)
+{
+	if (((rt==PT_COAL) || (rt==PT_BCOL)) && !(rand()%500))
+	{
+		sim->parts[i].ctype = PT_METL;
+		sim->kill_part(r);
+	}
+	else 
+	{
+		// TODO: other IRON-based alloy here
+	}
+}
 
 Element_IRON::~Element_IRON() {}

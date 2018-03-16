@@ -64,14 +64,15 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	{
 		//remove active sparks
 		int sparked = parts[underI].ctype;
-		if (sparked > 0 && sparked < PT_NUM && sim->elements[sparked].Enabled)
+		if (sparked == ELEM_MULTIPP) // never appearing SPRK (ELEM_MULTIPP)
+			sparked = 0;
+		if (!sim->part_change_type(underI, x, y, sparked))
 		{
-			if (sparked == ELEM_MULTIPP) // never appearing SPRK (ELEM_MULTIPP)
-				sparked = PT_METL;
-			sim->part_change_type(underI, x, y, sparked);
 			parts[underI].life = 44 + parts[underI].life;
 			parts[underI].ctype = 0;
 		}
+		else
+			utype = 0;
 		break;
 	}
 	case PT_DEUT:

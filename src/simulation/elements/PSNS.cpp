@@ -49,22 +49,20 @@ Element_PSNS::Element_PSNS()
 int Element_PSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt;
-	float photonWl = 0.0f;
-	bool setFilt = false;
 	if (!(parts[i].tmp3 & 1) == (sim->pv[y/CELL][x/CELL] > parts[i].temp-273.15f))
 	{
 		parts[i].life = 0;
-		for (rx=-2; rx<3; rx++)
-			for (ry=-2; ry<3; ry++)
+		for (rx = -2; rx <= 2; rx++)
+			for (ry = -2; ry <= 2; ry++)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = TYP(r);
 					int pavg = sim->parts_avg(i,ID(r),PT_INSL);
 					if (!CHECK_EL_INSL(pavg))
 					{
+						rt = TYP(r);
 						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS && parts[ID(r)].life==0)
 						{
 							parts[ID(r)].life = 4;
@@ -77,13 +75,13 @@ int Element_PSNS::update(UPDATE_FUNC_ARGS)
 	if (parts[i].tmp == 1) 
 	{
 		parts[i].life = 0;
-		setFilt = true;
-		photonWl = sim->pv[y / CELL][x / CELL];
+		bool setFilt = true;
+		float photonWl = sim->pv[y / CELL][x / CELL];
 		if (setFilt)
 		{
 			int nx, ny;
-			for (rx = -1; rx < 2; rx++)
-				for (ry = -1; ry < 2; ry++)
+			for (rx = -1; rx <= 1; rx++)
+				for (ry = -1; ry <= 1; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y + ry][x + rx];

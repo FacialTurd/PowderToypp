@@ -49,7 +49,7 @@ Element_BMTL::Element_BMTL()
 int Element_BMTL::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry;
-	if (parts[i].tmp>1)
+	if (parts[i].tmp > 1)
 	{
 		parts[i].tmp--;
 		for (rx=-1; rx<2; rx++)
@@ -59,14 +59,15 @@ int Element_BMTL::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (((r&0xFF)==PT_METL || (r&0xFF)==PT_IRON) && !(rand()%100))
+					if ((TYP(r) == PT_METL || TYP(r) == PT_IRON) && !(rand()%100))
 					{
-						sim->part_change_type(r>>8,x+rx,y+ry,PT_BMTL);
-						parts[r>>8].tmp=(parts[i].tmp<=7)?parts[i].tmp=1:parts[i].tmp-(rand()%5);//rand()/(RAND_MAX/300)+100;
+						r >>= PMAPBITS;
+						sim->part_change_type(r,x+rx,y+ry,PT_BMTL);
+						parts[r].tmp = (parts[i].tmp <= 7) ? (parts[i].tmp = 1) : parts[i].tmp - (rand() % 5); //rand()/(RAND_MAX/300)+100;
 					}
 				}
 	}
-	else if (parts[i].tmp==1 && !(rand()%1000))
+	else if (parts[i].tmp == 1 && !(rand()%1000))
 	{
 		parts[i].tmp = 0;
 		sim->part_change_type(i,x,y,PT_BRMT);

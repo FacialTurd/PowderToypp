@@ -213,10 +213,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 			int rt = TYP(r), itmp;
 			if (!sctype || sctype == PT_E186)
 				s = sim->create_part(-3, x, y, PT_ELEC);
-			else if (sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT))
+			else if (
+				(sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT)) &&
+				(sctype != PT_NEUT || rt != PT_GOLD))
 				s = sim->create_part(-1, x, y, sctype);
 			else
-				s = -1, u2pu = true;
+			{
+				s = -1;
+				if (sctype == PT_PROT)
+					u2pu = true;
+			}
 			if(s >= 0)
 			{
 				isbray || (parts[i].temp += 400.0f);

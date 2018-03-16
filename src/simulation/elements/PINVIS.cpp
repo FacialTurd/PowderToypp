@@ -51,7 +51,7 @@ int Element_PINVIS::update(UPDATE_FUNC_ARGS)
 {
 
 	int r, rx, ry;
-	if (parts[i].life!=10)
+	if (parts[i].life != 10)
 	{
 		if (parts[i].life>0)
 			parts[i].life--;

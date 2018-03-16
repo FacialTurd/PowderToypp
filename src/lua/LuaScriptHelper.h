@@ -59,6 +59,7 @@ extern "C" { __declspec(dllexport) void luacall_debug_trigger(int t, int i, int 
 #else
 void luacall_debug_trigger(int t, int i, int x, int y);
 #endif
+void luacall_debug_tfunc(lua_State* l, int c);
 
 int luatpt_error(lua_State* l);
 int luatpt_drawtext(lua_State* l);

@@ -123,45 +123,42 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 							partsi(r).life = 99;
 						}
 					}
-					else if (t==PT_LAVA)
-					{
-						if (parts[i].ctype == PT_IRON && !(rand()%500)) {
-							parts[i].ctype = PT_METL;
-							sim->kill_part(ID(r));
-						}
-					}
 				}
 
 				if (t == PT_LAVA)
 				{
+					int ri = ID(r);
 					switch (parts[i].ctype)
 					{
+					case PT_IRON:
+						Element_IRON::makeAlloy(sim, i, rt, ri);
+						break;
 					case PT_QRTZ: // LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
-						if (rt == PT_LAVA && partsi(r).ctype == PT_CLST)
+						if (rt == PT_LAVA && parts[ri].ctype == PT_CLST)
 						{
 							float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
 							if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
 							{
 								parts[i].ctype = PT_CRMC;
-								partsi(r).ctype = PT_CRMC;
+								parts[ri].ctype = PT_CRMC;
 							}
 						}
 						break;
 					case PT_HEAC:
 						if (rt == PT_HEAC)
 						{
-							if (partsi(r).temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+							if (parts[ri].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
 							{
-								sim->part_change_type(ID(r), x+rx, y+ry, PT_LAVA);
-								partsi(r).ctype = PT_HEAC;
+								sim->part_change_type(ri, x+rx, y+ry, PT_LAVA);
+								parts[ri].ctype = PT_HEAC;
 							}
 						}
 					case PT_POLO:
-						if (rt == PT_LAVA && partsi(r).ctype == PT_POLC)
+						if (rt == PT_LAVA && parts[ri].ctype == PT_POLC)
 						{
 							if (!sim->legacy_enable)
 							{
-								partsi(r).temp -= 0.3f;
+								parts[ri].temp -= 0.3f;
 								parts[i].temp -= 0.3f;
 							}
 						}
@@ -192,7 +189,7 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 #define ISPOLO(x) (x == PT_POLO || x == PT_POLC)
 #define PFLAG_MIXTURE_FOUND	0x10
 #define PFLAG_FREEZING		0x20
-
+						
 //#TPT-Directive ElementHeader Element_FIRE static int updateLegacy(UPDATE_FUNC_ARGS)
 int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt, lpv, t = parts[i].type;

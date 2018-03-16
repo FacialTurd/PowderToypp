@@ -1339,22 +1339,6 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 	UpdateDrawMode();
 }
 
-void GameView::ExitPrompt()
-{
-	class ExitConfirmation: public ConfirmDialogueCallback {
-	public:
-		ExitConfirmation() {}
-		virtual void ConfirmCallback(ConfirmPrompt::DialogueResult result) {
-			if (result == ConfirmPrompt::ResultOkay)
-			{
-				ui::Engine::Ref().Exit();
-			}
-		}
-		virtual ~ExitConfirmation() { }
-	};
-	new ConfirmPrompt("You are about to quit", "Are you sure you want to exit the game?", new ExitConfirmation());
-}
-
 void GameView::ToolTip(ui::Point senderPosition, std::string toolTip)
 {
 	// buttom button tooltips
@@ -1594,7 +1578,7 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 		case SDLK_ESCAPE:
 		case 'q':
 			// if (!(sdl_ignore_quit & 1))
-			ExitPrompt();
+			ui::Engine::Ref().ConfirmExit();
 			break;
 		case 'u':
 			c->ToggleAHeat();
@@ -2487,11 +2471,11 @@ void GameView::OnDraw()
 					}
 					else if (partlife == 27)
 					{
-						ctype &= 0x1FF;
+						ctype &= PMAP(1, PMAPMASK);
 					}
 					else if (partlife == 38 || partlife == 39)
 					{
-						ctype &= 0xFF;
+						ctype &= PMAPMASK;
 					}
 					if (wavelengthGfx)
 						partint = 1;
@@ -2576,7 +2560,7 @@ void GameView::OnDraw()
 						else
 						{
 							sampleInfo << c->ElementResolve(TYP(ctype), part_ID(ctype));
-							if ((ctype&0xFF) == PT_FILT && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= 11)
+							if (TYP(ctype) == PT_FILT && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= 11)
 							{
 								sampleInfo << " (" << filtModes[part_ID(ctype)] << ")";
 							}
@@ -2884,7 +2868,12 @@ void GameView::OnDraw()
 #endif
 
 		if (showDebug)
-			fpsInfo << " Parts: " << sample.NumParts;
+		{
+			if (ren->findingElement)
+				fpsInfo << " Parts: " << ren->foundElements << "/" << sample.NumParts;
+			else
+				fpsInfo << " Parts: " << sample.NumParts;
+		}
 		if (alternateState)
 			fpsInfo << " [ALT: " << alternateState << "]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)

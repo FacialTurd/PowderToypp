@@ -45,7 +45,7 @@ int update_start(char *data, unsigned int len)
 	p = temp + strlen(temp) - 4;
 	if (_stricmp(p, ".exe"))
 		p += 4;
-	strcpy(p, "_update.exe");
+	strcpy(p, "_upd.exe");
 
 	if (!MoveFile(self, temp))
 		goto fail;
@@ -109,7 +109,7 @@ int update_finish(void)
 {
 #ifdef WIN
 	char *temp, *self = Platform::ExecutableName(), *p;
-	int timeout = 60, err;
+	int timeout = 5, err;
 
 #ifdef DEBUG
 	printf("Update: Current EXE name: %s\n", self);
@@ -120,7 +120,7 @@ int update_finish(void)
 	p = temp + strlen(temp) - 4;
 	if (_stricmp(p, ".exe"))
 		p += 4;
-	strcpy(p, "_update.exe");
+	strcpy(p, "_upd.exe");
 
 #ifdef DEBUG
 	printf("Update: Temp EXE name: %s\n", temp);
@@ -132,9 +132,17 @@ int update_finish(void)
 		if (err == ERROR_FILE_NOT_FOUND)
 		{
 #ifdef DEBUG
-	printf("Update: Temp file deleted\n");
+			printf("Update: Temp file deleted\n");
 #endif
 			free(temp);
+			// Old versions of powder toy name their update files with _update.exe, delete that upgrade file here
+			temp = (char*)malloc(strlen(self)+12);
+			strcpy(temp, self);
+			p = temp + strlen(temp) - 4;
+			if (_stricmp(p, ".exe"))
+				p += 4;
+			strcpy(p, "_update.exe");
+			DeleteFile(temp);
 			return 0;
 		}
 		Sleep(500);

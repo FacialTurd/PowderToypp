@@ -850,11 +850,16 @@ void luacall_debug_trigger(int t, int i, int x, int y)
 	lua_pushinteger(luacon_ci->l, i);
 	lua_pushinteger(luacon_ci->l, x);
 	lua_pushinteger(luacon_ci->l, y);
-	int callret = lua_pcall(luacon_ci->l, 3, 0, 0);
+	luacall_debug_tfunc (luacon_ci->l, 3);
+}
+
+void luacall_debug_tfunc (lua_State* L, int c)
+{
+	int callret = lua_pcall(L, c, 0, 0);
 	if (callret)
 	{
 		luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
-		lua_pop(luacon_ci->l, 1);
+		lua_pop(L, 1);
 	}
 }
 
@@ -884,8 +889,10 @@ int luatpt_call_debug_trigger(lua_State* l)
 	int t = lua_tointeger(l, 1);
 	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && lua_trigger_fmode[t])
 	{
-		int i = lua_tointeger(l, 2), x = lua_tointeger(l, 3), y = lua_tointeger(l, 4);
-		luacall_debug_trigger(t, i, x, y);
+		lua_rawgeti (luacon_ci->l, LUA_REGISTRYINDEX, lua_trigger_func[t]);
+		lua_replace (l, 1);
+		int c = lua_gettop (l) - 1;
+		luacall_debug_tfunc(l, c);
 	}
 	return 0;
 }
