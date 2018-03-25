@@ -19,6 +19,7 @@ extern "C"
 }
 
 GameSave::GameSave(GameSave & save) :
+	majorVersion(save.majorVersion),
 	waterEEnabled(save.waterEEnabled),
 	legacyEnable(save.legacyEnable),
 	gravityEnable(save.gravityEnable),
@@ -29,6 +30,7 @@ GameSave::GameSave(GameSave & save) :
 	airMode(save.airMode),
 	edgeMode(save.edgeMode),
 	signs(save.signs),
+	stkm(save.stkm),
 	palette(save.palette),
 	pmapbits(save.pmapbits),
 	expanded(save.expanded),
@@ -164,6 +166,7 @@ void GameSave::InitData()
 
 void GameSave::InitVars()
 {
+	majorVersion = 0;
 	waterEEnabled = false;
 	legacyEnable = false;
 	gravityEnable = false;
@@ -580,6 +583,7 @@ void GameSave::readOPS(char * data, int dataLength)
 	unsigned partsCount = 0;
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
 	int savedVersion = inputData[4];
+	majorVersion = savedVersion;
 //#if defined(SNAPSHOT) || defined(DEBUG)
 	bool fakeNewerVersion = false; // used for development builds only
 //#endif
@@ -724,6 +728,49 @@ void GameSave::readOPS(char * data, int dataLength)
 							fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&subiter));
 						}
 					}
+				}
+			}
+			else
+			{
+				fprintf(stderr, "Wrong type for %s\n", bson_iterator_key(&iter));
+			}
+		}
+		else if (!strcmp(bson_iterator_key(&iter), "stkm"))
+		{
+			if (bson_iterator_type(&iter) == BSON_OBJECT)
+			{
+				bson_iterator stkmiter;
+				bson_iterator_subiterator(&iter, &stkmiter);
+				while (bson_iterator_next(&stkmiter))
+				{
+					CheckBsonFieldBool(stkmiter, "rocketBoots1", &stkm.rocketBoots1);
+					CheckBsonFieldBool(stkmiter, "rocketBoots2", &stkm.rocketBoots2);
+					CheckBsonFieldBool(stkmiter, "fan1", &stkm.fan1);
+					CheckBsonFieldBool(stkmiter, "fan2", &stkm.fan2);
+					CheckBsonFieldBool(stkmiter, "fanvac1", &stkm.fanvac1);
+					CheckBsonFieldBool(stkmiter, "fanvac2", &stkm.fanvac2);
+					if (!strcmp(bson_iterator_key(&stkmiter), "rocketBootsFigh") && bson_iterator_type(&stkmiter) == BSON_ARRAY)
+					{
+						bson_iterator fighiter;
+						bson_iterator_subiterator(&stkmiter, &fighiter);
+						while (bson_iterator_next(&fighiter))
+						{
+							if (bson_iterator_type(&fighiter) == BSON_INT)
+								stkm.rocketBootsFigh.push_back(bson_iterator_int(&fighiter));
+						}
+					}
+					else if (!strcmp(bson_iterator_key(&stkmiter), "fanFigh") && bson_iterator_type(&stkmiter) == BSON_ARRAY)
+					{
+						bson_iterator fighiter;
+						bson_iterator_subiterator(&stkmiter, &fighiter);
+						while (bson_iterator_next(&fighiter))
+						{
+							if (bson_iterator_type(&fighiter) == BSON_INT)
+								stkm.fanFigh.push_back(bson_iterator_int(&fighiter));
+						}
+					}
+					else
+						fprintf(stderr, "Unknown stkm property %s\n", bson_iterator_key(&stkmiter));
 				}
 			}
 			else
@@ -1270,12 +1317,6 @@ void GameSave::readOPS(char * data, int dataLength)
 						if (savedVersion < 91)
 							particles[newIndex].temp = 283.15;
 						break;
-					case PT_STKM:
-					case PT_STKM2:
-					case PT_FIGH:
-						if (savedVersion < 88 && particles[newIndex].ctype == OLD_SPC_AIR)
-							particles[newIndex].ctype = SPC_AIR;
-						break;
 					case PT_FILT:
 						if (savedVersion < 89)
 						{
@@ -1361,6 +1402,21 @@ void GameSave::readOPS(char * data, int dataLength)
 							particles[newIndex].tmp3 = particles[newIndex].pavg[0];
 							particles[newIndex].tmp4 = particles[newIndex].pavg[1];
 							particles[newIndex].pavg[0] = particles[newIndex].pavg[1] = 0;
+						}
+						break;
+					case PT_TSNS:
+					case PT_HSWC:
+					case PT_PSNS:
+					case PT_PUMP:
+						if (savedVersion < 93 && !fakeNewerVersion)
+						{
+							particles[newIndex].tmp = 0;
+						}
+						break;
+					case PT_EXOT:
+						if (!isFromMyMod && particles[newIndex].ctype != PT_PROT)
+						{
+							particles[newIndex].ctype = 0;
 						}
 						break;
 					case PT_VIRS:
@@ -1468,6 +1524,7 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 	if (saveData[4]>SAVE_VERSION)
 		throw ParseException(ParseException::WrongVersion, "Save from newer version");
 	ver = saveData[4];
+	majorVersion = saveData[4];
 
 	if (ver<34)
 	{
@@ -1568,33 +1625,13 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 					p++;
 					continue;
 				}
+
+				int _walltransmap[] = {0, WL_WALL, WL_DESTROYALL, WL_ALLOWLIQUID, WL_FAN, WL_STREAM, WL_DETECT,
+					WL_EWALL, WL_WALLELEC, WL_ALLOWAIR, WL_ALLOWPOWDER, WL_ALLOWALLELEC, WL_EHOLE, WL_ALLOWGAS};
+
 				blockMap[y][x] = data[p];
-				if (blockMap[y][x]==1)
-					blockMap[y][x]=WL_WALL;
-				else if (blockMap[y][x]==2)
-					blockMap[y][x]=WL_DESTROYALL;
-				else if (blockMap[y][x]==3)
-					blockMap[y][x]=WL_ALLOWLIQUID;
-				else if (blockMap[y][x]==4)
-					blockMap[y][x]=WL_FAN;
-				else if (blockMap[y][x]==5)
-					blockMap[y][x]=WL_STREAM;
-				else if (blockMap[y][x]==6)
-					blockMap[y][x]=WL_DETECT;
-				else if (blockMap[y][x]==7)
-					blockMap[y][x]=WL_EWALL;
-				else if (blockMap[y][x]==8)
-					blockMap[y][x]=WL_WALLELEC;
-				else if (blockMap[y][x]==9)
-					blockMap[y][x]=WL_ALLOWAIR;
-				else if (blockMap[y][x]==10)
-					blockMap[y][x]=WL_ALLOWPOWDER;
-				else if (blockMap[y][x]==11)
-					blockMap[y][x]=WL_ALLOWALLELEC;
-				else if (blockMap[y][x]==12)
-					blockMap[y][x]=WL_EHOLE;
-				else if (blockMap[y][x]==13)
-					blockMap[y][x]=WL_ALLOWGAS;
+				if (blockMap[y][x] >= 0 && blockMap[y][x] < 14)
+					blockMap[y][x] = _walltransmap[blockMap[y][x]];
 
 				if (ver>=44)
 				{
@@ -1669,8 +1706,7 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 			j=data[p++];
 			if (j >= PT_NUM) {
-				//TODO: Possibly some server side translation
-				j = PT_DUST;//throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
+				j = PT_DUST; //throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 			}
 			if (j)
 			{
@@ -1912,7 +1948,6 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 			else
 				p++;
 		}
-		//TODO: STKM_init_legs
 		// no more particle properties to load, so we can change type here without messing up loading
 		if (i && i<=NPART)
 		{
@@ -2007,9 +2042,6 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 					particles[i-1].ctype = (((firw_data[caddress]))<<16) | (((firw_data[caddress+1]))<<8) | ((firw_data[caddress+2]));
 				}
 			}
-			if (ver < 88) //fix air blowing stickmen
-				if ((particles[i-1].type == PT_STKM || particles[i-1].type == PT_STKM2 || particles[i-1].type == PT_FIGH) && particles[i-1].ctype == OLD_SPC_AIR)
-					particles[i-1].ctype = SPC_AIR;
 			if (ver < 89)
 			{
 				if (particles[i-1].type == PT_FILT)
@@ -2039,12 +2071,19 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 				}
 			}
 			// Version 93.0
-			if (particles[i-1].type == PT_PIPE || particles[i-1].type == PT_PPIP)
-			{
-				if (particles[i-1].ctype == 1)
-					particles[i-1].tmp |= 0x00020000; //PFLAG_INITIALIZING
-				particles[i-1].tmp |= (particles[i-1].ctype-1)<<18;
-				particles[i-1].ctype = particles[i-1].tmp&0xFF;
+			if (ver < 93)
+  			{
+				if (particles[i-1].type == PT_PIPE || particles[i-1].type == PT_PPIP)
+				{
+					if (particles[i-1].ctype == 1)
+						particles[i-1].tmp |= 0x00020000; //PFLAG_INITIALIZING
+					particles[i-1].tmp |= (particles[i-1].ctype-1)<<18;
+					particles[i-1].ctype = particles[i-1].tmp&0xFF;
+				}
+				else if (particles[i-1].type == PT_HSWC || particles[i-1].type == PT_PUMP)
+				{
+					particles[i-1].tmp = 0;
+				}
 			}
 		}
 	}
@@ -2470,7 +2509,6 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 					particles[i].type == PT_HSWC || particles[i].type == PT_PUMP) && particles[i].tmp == 1))
 				{
 					RESTRICTVERSION(93, 0);
-					fromNewerVersion = true; // TODO: remove on 93.0 release
 				}
 
 				//Get the pmap entry for the next particle in the same position
@@ -2562,6 +2600,39 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
 	bson_append_int(&b, "edgeMode", edgeMode);
+
+	if (stkm.hasData())
+	{
+		bson_append_start_object(&b, "stkm");
+		if (stkm.rocketBoots1)
+			bson_append_bool(&b, "rocketBoots1", stkm.rocketBoots1);
+		if (stkm.rocketBoots2)
+			bson_append_bool(&b, "rocketBoots2", stkm.rocketBoots2);
+		if (stkm.fan1)
+			bson_append_bool(&b, "fan1", stkm.fan1);
+		if (stkm.fan2)
+			bson_append_bool(&b, "fan2", stkm.fan2);
+		if (stkm.fanvac1)
+			bson_append_bool(&b, "fanvac1", stkm.fanvac1);
+		if (stkm.fanvac2)
+			bson_append_bool(&b, "fanvac2", stkm.fanvac2);
+		if (stkm.rocketBootsFigh.size())
+		{
+			bson_append_start_array(&b, "rocketBootsFigh");
+			for (unsigned int fighNum : stkm.rocketBootsFigh)
+				bson_append_int(&b, "num", fighNum);
+			bson_append_finish_array(&b);
+		}
+		if (stkm.fanFigh.size())
+		{
+			bson_append_start_array(&b, "fanFigh");
+			for (unsigned int fighNum : stkm.fanFigh)
+				bson_append_int(&b, "num", fighNum);
+			bson_append_finish_array(&b);
+		}
+		bson_append_finish_object(&b);
+	}
+
 	bson_append_int(&b, "pmapbits", pmapbits);
 	bson_append_int(&b, "phot_ignite", Element_PHOT::ignite_flammable);
 	bson_append_int(&b, "sim_max_pressure", * (int*) &sim_max_pressure);
@@ -2800,6 +2871,27 @@ void GameSave::Deallocate2DArray(T ***array, int blockHeight)
 		*array = NULL;
 	}
 }
+
+bool GameSave::TypeInCtype(int type, int ctype)
+{
+	return ctype >= 0 && ctype < PT_NUM &&
+	        (type == PT_CLNE || type == PT_PCLN || type == PT_BCLN || type == PT_PBCN ||
+	        type == PT_STOR || type == PT_CONV || type == PT_STKM || type == PT_STKM2 ||
+	        type == PT_FIGH || type == PT_LAVA || type == PT_SPRK || type == PT_PSTN ||
+	        type == PT_CRAY || type == PT_DTEC || type == PT_DRAY || type == PT_PIPE ||
+	        type == PT_PPIP || type == PT_E186 || type == PT_EXOT);
+}
+
+bool GameSave::TypeInTmp(int type)
+{
+	return type == PT_STOR;
+}
+
+bool GameSave::TypeInTmp4(int type, int tmp4)
+{
+	return (type == PT_VIRS || type == PT_VRSG || type == PT_VRSS) && (tmp4 >= 0 && tmp4 < PT_NUM);
+}
+
 
 void GameSave::dealloc()
 {

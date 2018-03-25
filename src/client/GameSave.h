@@ -37,12 +37,49 @@ public:
 	~BuildException() throw() {}
 };
 
+class StkmData
+{
+public:
+	bool rocketBoots1 = false;
+	bool rocketBoots2 = false;
+	bool fan1 = false;
+	bool fan2 = false;
+	bool fanvac1 = false;
+	bool fanvac2 = false;
+	std::vector<unsigned int> rocketBootsFigh = std::vector<unsigned int>();
+	std::vector<unsigned int> fanFigh = std::vector<unsigned int>();
+
+	StkmData() = default;
+
+	StkmData(const StkmData & stkmData):
+		rocketBoots1(stkmData.rocketBoots1),
+		rocketBoots2(stkmData.rocketBoots2),
+		fan1(stkmData.fan1),
+		fan2(stkmData.fan2),
+		fanvac1(stkmData.fan1),
+		fanvac2(stkmData.fan2),
+		rocketBootsFigh(stkmData.rocketBootsFigh),
+		fanFigh(stkmData.fanFigh)
+	{
+
+	}
+
+	bool hasData()
+	{
+		return rocketBoots1 || rocketBoots2 || fan1 || fan2
+		         || fanvac1 || fanvac2
+				 || rocketBootsFigh.size() || fanFigh.size();
+	}
+};
+
+ 
 class GameSave
 {
 public:
 	
 	int blockWidth, blockHeight;
 	bool fromNewerVersion;
+	int majorVersion;
 	bool hasPressure;
 	bool hasAmbientHeat;
 
@@ -70,10 +107,10 @@ public:
 	int airMode;
 	int edgeMode;
 	float sim_max_pressure;
-	// int PINV_wireless[128][2];
-	
+
 	//Signs
 	std::vector<sign> signs;
+	StkmData stkm;
 
 	//Element palette
 	typedef std::pair<std::string, int> PaletteItem;
@@ -101,7 +138,13 @@ public:
 	void Expand();
 	void Collapse();
 	bool Collapsed();
-	
+
+	static bool TypeInCtype(int type, int ctype);
+	static bool TypeInTmp(int type);
+	// static bool TypeInTmp2(int type, int tmp2);
+	// static bool TypeInTmp3(int type, int tmp3);
+	static bool TypeInTmp4(int type, int tmp4);
+
 	inline GameSave& operator << (Particle v)
 	{
 		if(particlesCount<NPART && v.type)

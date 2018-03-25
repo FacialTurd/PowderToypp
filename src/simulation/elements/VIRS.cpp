@@ -127,7 +127,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				default:
 				infecting_virus:
 				//transforms things into virus here
-					if (!(sim->elements[irt].Properties2 & PROP_NODESTRUCT))
+					if (!(sim->elements[irt].Properties2 & (PROP_NODESTRUCT | PROP_VIRS_PROOF)))
 					{
 						if (!(rndstore & 0x7))
 						{

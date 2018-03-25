@@ -57,6 +57,8 @@ char Element_STKM::phase = 0;
 int Element_STKM::update(UPDATE_FUNC_ARGS)
 
 {
+	if (sim->player.__flags & _STKM_FLAG_SUSPEND)
+		return 1;
 	run_stickman(&sim->player, UPDATE_FUNC_SUBCALL_ARGS);
 	return 0;
 }
@@ -89,9 +91,9 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	float rocketBootsFeetEffectV = 0.45f;
 	Particle *newpart = NULL;
 
-	if (playerp->__flags & 2)
-		playerp->__flags &= ~2;
-	else if (parts[i].ctype && (sim->IsValidElement(parts[i].ctype) || parts[i].ctype == SPC_AIR || parts[i].ctype == SPC_VACUUM))
+	if (playerp->__flags & _STKM_FLAG_OVR)
+		playerp->__flags &= ~_STKM_FLAG_OVR;
+	else if (!playerp->fan && parts[i].ctype && sim->IsValidElement(parts[i].ctype))
 		STKM_set_element(sim, playerp, parts[i].ctype);
 	playerp->frames++;
 		
@@ -107,7 +109,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	{
 		pressure = -pressure;
 	}
-	if (parts[i].life<1 || (pressure>=4.5f && !(sim->Extra_FIGH_pause & 16) && (playerp->elem != SPC_AIR && playerp->elem != SPC_VACUUM)) ) //If his HP is less than 0 or there is very big wind...
+	if (parts[i].life<1 || (pressure>=4.5f && !(sim->Extra_FIGH_pause & 16) && !playerp->fan) ) //If his HP is less than 0 or there is very big wind...
 	{
 		if (playerp->elem != PT_FIGH)
 		{
@@ -421,7 +423,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				
 				rt = TYP(r); r = ID(r);
 				
-				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && (playerp->__flags & 1)))
+				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && (playerp->__flags & _STKM_FLAG_EMT)))
 				{
 					STKM_set_element(sim, playerp, rt);
 				}
@@ -461,10 +463,9 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 						ctype = parts[r].ctype;
 						int xctype = ctype >> PMAPBITSp1;
 						ctype &= ((1 << PMAPBITSp1) - 1); 
-						if (ctype && (sim->IsValidElement(ctype) || ctype == SPC_AIR || ctype == SPC_VACUUM || ctype == PMAP(1, 2) || ctype == PMAP(1, 3)))
-						{
-							STKM_set_element(sim, playerp, ctype);
-						}
+
+						STKM_set_element_Ex(sim, playerp, ctype);
+
 						if (xctype == 1 || xctype == 2)
 						{
 							playerp->rocketBoots = xctype == 1 ? false : true;
@@ -476,7 +477,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				switch (under_wall)
 				{
 				case WL_FAN:
-					playerp->elem = (sim->Extra_FIGH_pause & 0x800) ? SPC_VACUUM : SPC_AIR;
+					STKM_set_element_Ex(sim, playerp, (sim->Extra_FIGH_pause & 0x800) ? 0x101 : 0x100);
 					break;
 				case WL_EHOLE:
 					playerp->rocketBoots = false;
@@ -507,13 +508,27 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		else
 		{
+			int flags = playerp->__flags;
 			int np = -1;
-			int nelem = (playerp->__flags & 1) ? PT_E186 : playerp->elem;
-			if (nelem == SPC_AIR || nelem == SPC_VACUUM)
+			int nelem = (flags & _STKM_FLAG_EMT) ? PT_E186 : playerp->elem;
+			if (playerp->fan)
 			{
-				for(int j = -4; j < 5; j++)
+				float air_dif = (flags & _STKM_FLAG_VAC) ? -0.03f : 0.03f;
+				for (int j = -4; j < 5; j++)
 					for (int k = -4; k < 5; k++)
-						sim->create_part(-1, rx + 3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01)+j, ry+k, nelem);
+					{
+						int airx = rx + 3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01)+j;
+						int airy = ry+k;
+						sim->pv[airy/CELL][airx/CELL] += air_dif;
+						if (airy + CELL < YRES)
+							sim->pv[airy/CELL+1][airx/CELL] += air_dif;
+						if (airx + CELL < XRES)
+						{
+							sim->pv[airy/CELL][airx/CELL+1] += air_dif;
+							if (airy + CELL < YRES)
+								sim->pv[airy/CELL+1][airx/CELL+1] += air_dif;
+						}
+					}
 			}
 			else if ((nelem == PT_LIGH || nelem == PT_FIGH) && playerp->frames<30)//limit lightning and fighter creation rate
 				np = -1;
@@ -560,7 +575,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					parts[np].temp=parts[np].life*power/2.5;
 					parts[np].tmp2=1;
 				}
-				else if (nelem != SPC_AIR && nelem != SPC_VACUUM)
+				else if (!playerp->fan)
 				{
 					parts[np].vx -= -gvy*(5*((((int)playerp->pcomm)&0x02) == 0x02) - 5*(((int)(playerp->pcomm)&0x01) == 0x01));
 					parts[np].vy -= gvx*(5*((((int)playerp->pcomm)&0x02) == 0x02) - 5*(((int)(playerp->pcomm)&0x01) == 0x01));
@@ -818,6 +833,7 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 	playerp->comm = 0;
 	playerp->pcomm = 0;
 	playerp->frames = 0;
+	playerp->fan = false;
 	playerp->__flags = 0;
 	playerp->parentStickman = -1;
 	playerp->firstChild = -1;
@@ -828,29 +844,59 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 	playerp->underp = 0;
 }
 
+//#TPT-Directive ElementHeader Element_STKM static void STKM_set_element_Ex(Simulation *sim, playerst *playerp, int element)
+void Element_STKM::STKM_set_element_Ex(Simulation *sim, playerst *playerp, int element)
+{
+	bool mask_ovr = element & PMAPID(2);
+	bool mask_ext = element & PMAPID(1);
+	element &= PMAPMASK;
+
+	if (mask_ext)
+	{
+		if (element < 2)
+			playerp->fan = true;
+		if (element < 5)
+		{
+			int exl[] = {_STKM_FLAG_VAC, _STKM_FLAG_VAC, _STKM_FLAG_EMT, _STKM_FLAG_EMT, _STKM_FLAG_SUSPEND};
+			int exf = exl[element];
+			if (element & 0x5)
+				playerp->__flags |= exf;
+			else
+				playerp->__flags &= ~exf;
+		}
+	}
+	else if ((element > 0) && (element < PT_NUM))
+		STKM_set_element(sim, playerp, element);
+
+	if (mask_ovr)
+		playerp->__flags |= _STKM_FLAG_OVR;
+}
+
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_element(Simulation *sim, playerst *playerp, int element)
 void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int element)
 {
-	if (element == PMAP(1, 2) || element == PMAP(1, 3))
-	{
-		playerp->__flags &= ~0x1;
-		playerp->__flags |= (element == PMAP(1, 2)) ? 1 : 0;
-	}
-	else if (sim->elements[element].Falldown != 0
+	if (sim->elements[element].Falldown != 0
 	    || sim->elements[element].Properties&TYPE_GAS
 	    || sim->elements[element].Properties&TYPE_LIQUID
 	    || sim->elements[element].Properties&TYPE_ENERGY
-	    || element == PT_LOLZ || element == PT_LOVE || element == SPC_AIR || element == SPC_VACUUM)
+	    || element == PT_LOLZ || element == PT_LOVE)
 	{
 		if (!playerp->rocketBoots || element != PT_PLSM)
+		{
 			playerp->elem = element;
+			playerp->fan = false;
+		}
 	}
 	if (element == PT_TESC || element == PT_LIGH)
+	{
 		playerp->elem = PT_LIGH;
+		playerp->fan = false;
+	}
 	if (playerp->elem != PT_FIGH && element == PT_FIGH && (sim->Extra_FIGH_pause & 8))
 	{
 		playerp->pelem = playerp->elem;
 		playerp->elem = PT_FIGH;
+		playerp->fan = false;
 	}
 }
 

@@ -5,6 +5,8 @@ Particle tpart_phot;
 
 #define TYPMAP(x,y) TYP(pmap[y][x])
 #define ID part_ID
+#define _PHOT_mov_rel_i(i,sx,sy,nt) transportPhotons(sim,i,x,y,(int)(x+(sx)),(int)(y+(sy)),(nt),&parts[i])
+#define _PHOT_mov_rel_f(i,sx,sy,nt) transportPhotons(sim,i,x,y,(float)(parts[i].x+(sx)),(float)(parts[i].y+(sy)),(nt),&parts[i])
 
 //#TPT-Directive ElementClass Element_E186 PT_E186 186
 Element_E186::Element_E186()
@@ -59,7 +61,7 @@ Element_E186::Element_E186()
 int Element_E186::update(UPDATE_FUNC_ARGS)
 {
 	int r, rr, s, sctype, rf;
-	int nx, ny;
+	int dx, dy;
 	float r2, r3;
 	Particle * under;
 	sctype = parts[i].ctype;
@@ -81,7 +83,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				{
 					parts[i].ctype = parts[i].tmp2;
 					parts[i].tmp2 = 0;
-					transportPhotons(sim, i, x, y, x+under->tmp, y+under->tmp2, PT_PHOT, &parts[i]);
+					_PHOT_mov_rel_i(i, under->tmp, under->tmp2, PT_PHOT);
 					return 1;
 				}
 				else if (under->life == 16 && under->ctype == 29)
@@ -91,18 +93,16 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					if (under->tmp2 > 0)
 						rr *= under->tmp2;
 					rf = under->tmp3;
-					if (rf & 1)
-						parts[i].y = ny = y + rr, nx = x;
-					else
-						parts[i].x = nx = x + rr, ny = y;
+					dx = 0, dy = 0;
+					(rf & 1) ? (dy = rr) : (dx = rr);
 					parts[i].ctype = (rf & 2) ? parts[i].tmp2 : 0x3FFFFFFF;
-					transportPhotons(sim, i, x, y, nx, ny, PT_PHOT, &parts[i]);
+					_PHOT_mov_rel_i(i, dx, dy, PT_PHOT);
 					return 1;
 				}
 			}
-			transportPhotons(sim, i, x, y, parts[i].x + parts[i].vx, parts[i].y + parts[i].vy, parts[i].type, &parts[i]);
+			_PHOT_mov_rel_f(i, parts[i].vx, parts[i].vy, parts[i].type);
 			x = (int)(parts[i].x + 0.5f); y = (int)(parts[i].y + 0.5f);
-			if (TYPMAP(x,y) != ELEM_MULTIPP)
+			if (TYPMAP(x, y) != ELEM_MULTIPP)
 			{
 				parts[i].ctype = parts[i].tmp2;
 				parts[i].tmp2 = 0;
@@ -168,12 +168,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					parts[i].ctype = k1;
 					parts[i].tmp = 0;
 					sim->part_change_type(i, x, y, PT_PHOT);
-					// parts[i].x += parts[i].vx;
-					// parts[i].y += parts[i].vy;
-					// parts[i].type = PT_PHOT;
-					// sim->photons[(int)(parts[i].y+0.5f)][(int)(parts[i].x+0.5f)] = PT_PHOT|(i<<8);
-					// if (ID(sim->photons[y][x]) == i)
-					// 	sim->photons[y][x] = 0;
+					// _PHOT_mov_rel_f(i, parts[i].vx, parts[i].vy, PT_PHOT);
 					return 1;
 				}
 			}
@@ -187,7 +182,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 				parts[i].flags &= ~FLAG_SKIPMOVE;
 				return 1;
 			}
-			transportPhotons(sim, i, x, y, parts[i].x + parts[i].vx, parts[i].y + parts[i].vy, parts[i].type, &parts[i]);
+			_PHOT_mov_rel_f(i, parts[i].vx, parts[i].vy, parts[i].type);
 			return 1;
 		}
 		return 0;

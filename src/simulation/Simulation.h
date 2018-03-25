@@ -191,11 +191,11 @@ public:
 	inline void pmap_remove(unsigned int i, int x, int y)
 	{
 		// NB: all arguments are assumed to be within bounds
-		if (pmap[y][x] && part_ID(pmap[y][x])==i)
+		if (pmap[y][x] && part_ID((unsigned int)(pmap[y][x]))==i)
 			pmap[y][x] = 0;
 		else if (TYP(pmap[y][x])==PT_PINVIS && part_ID((unsigned int)(partsi(pmap[y][x]).tmp4))==i)
 			partsi(pmap[y][x]).tmp4 = 0;
-		else if (part_ID(photons[y][x])==i)
+		else if (part_ID((unsigned int)(photons[y][x]))==i)
 			photons[y][x] = 0;
 	}
 	void restrict_can_move(/* bool oldstate, bool newstate */);
@@ -276,14 +276,6 @@ public:
 	{
 		return (x>=0 && y>=0 && x<XRES && y<YRES);
 	}
-	
-	// Element IDs can be stored in other properties
-	// These functions return true if an element stores a particle type in a property
-	static bool TypeInCtype(int el);
-	static bool TypeInTmp(int el);
-	// unused   TypeInTmp2;
-	// unused   TypeInTmp3;
-	static bool TypeInTmp4(int el);
 
 	// These don't really belong anywhere at the moment, so go here for loop edge mode
 	static int remainder_p(int x, int y)

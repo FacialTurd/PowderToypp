@@ -146,20 +146,18 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 		{
 			int lastneighbor = -1;
 			int neighborcount = 0;
-			int count = 0;
+			int count = -1;
 			// make automatic pipe pattern
 			for (rx=-1; rx<2; rx++)
 				for (ry=-1; ry<2; ry++)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
+						count++;
 						if (!r)
 							continue;
 						if (TYP(r) != PT_PIPE && TYP(r) != PT_PPIP)
-						{
-							count++;
 							continue;
-						}
 						unsigned int currColor = ((parts[i].tmp & PFLAG_COLORS)>>18);
 						unsigned int nextColor = (((currColor+1)%3)+1)<<18;
 						unsigned int prevColor = ((currColor%3)+1)<<18;
@@ -183,7 +181,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 							neighborcount ++;
 							lastneighbor = ID(r);
 						}
-						count++;
+						// count++;
 					}
 			if (neighborcount == 1)
 				parts[lastneighbor].tmp |= 0x100;

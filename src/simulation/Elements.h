@@ -54,8 +54,9 @@
 #define PROP_NODESTRUCT			0x00008000  // 2^15 Indestructible property
 #define PROP_CLONE				0x00010000  // 2^16 Makes elements clone things that touch it
 #define PROP_ALLOWS_WALL		0x00020000	// 2^17
-// #define PROP_EXOT_NOINTERACT
+#define PROP_VIRS_PROOF			0x00040000	// 2^18
 // #define PROP_DRAWONCTYPE		0x00080000
+// #define PROP_EXOT_NOINTERACT
 // #define PROP_NOSLOWDOWN		0x02000000
 #define PROP_INVISIBLE			0x04000000  // 2^26 Invisible to particles like INVS and FILT
 #define PROP_UNLIMSTACKING		0x08000000  // 2^27 Currently no limit on stacking

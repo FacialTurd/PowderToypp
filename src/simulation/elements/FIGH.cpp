@@ -57,6 +57,9 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 	playerst* figh = &sim->fighters[(unsigned char)parts[i].tmp];
 	playerst* parent_s = NULL;
 
+	if (figh->__flags & _STKM_FLAG_SUSPEND)
+		return 1;
+
 	int tarx, tary, __parent;
 
 	parts[i].tmp2 = 0;

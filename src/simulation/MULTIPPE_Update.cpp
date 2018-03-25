@@ -411,14 +411,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 											rii = PMAP(1, parts[ID(rrx)].ctype);
 									}
 								}
-								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 3)))
+								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 5)))
 									break;
 								if (rctype == PT_PSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element(sim, &sim->player, rii),
-									sim->player.__flags |= 2;
+									Element_STKM::STKM_set_element_Ex(sim, &sim->player, rii | PMAPID(2));
 								if (rctype == PT_NSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element(sim, &sim->player2, rii),
-									sim->player2.__flags |= 2;
+									Element_STKM::STKM_set_element_Ex(sim, &sim->player2, rii | PMAPID(2));
 							}
 							break;
 						case 15:

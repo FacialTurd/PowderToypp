@@ -469,7 +469,7 @@ if GetOption('debugging'):
 		env.Append(CPPDEFINES=['DEBUG'])
 elif GetOption('release'):
 	if msvc:
-		env.Append(CCFLAGS=['/O2', '/Oy-', '/fp:fast', '/GL'])
+		env.Append(CCFLAGS=['/O2', '/Oy-', '/fp:fast'])
 		if GetOption('static'):
 			env.Append(CCFLAGS=['/MT'])
 		else:

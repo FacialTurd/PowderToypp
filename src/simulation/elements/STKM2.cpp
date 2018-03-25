@@ -49,6 +49,8 @@ Element_STKM2::Element_STKM2()
 //#TPT-Directive ElementHeader Element_STKM2 static int update(UPDATE_FUNC_ARGS)
 int Element_STKM2::update(UPDATE_FUNC_ARGS)
 {
+	if (sim->player2.__flags & _STKM_FLAG_SUSPEND)
+		return 1;
 	Element_STKM::run_stickman(&sim->player2, UPDATE_FUNC_SUBCALL_ARGS);
 	return 0;
 }

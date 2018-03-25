@@ -1667,27 +1667,25 @@ void Renderer::render_parts()
 					}
 					else if (colour_mode != COLOUR_HEAT)
 					{
-						cplayer_elem = cplayer->elem;
-						if (cplayer_elem == PT_FIGH)
-							cplayer_elem = cplayer->pelem;
+						if (cplayer->fan)
+						{
+							if (cplayer->__flags & _STKM_FLAG_VAC)
+								colr = 0xFF, colg = 0xB0, colb = 0x80;
+							else
+								colr = 0x80, colg = 0x80, colb = 0xFF;
+						}
+						else
+						{
+							cplayer_elem = cplayer->elem;
+							if (cplayer_elem == PT_FIGH)
+								cplayer_elem = cplayer->pelem;
 
-						if (cplayer_elem == SPC_AIR)
-						{
-							colr = 0x80;
-							colg = 0x80;
-							colb = 0xFF;
-						}
-						else if (cplayer_elem == SPC_VACUUM)
-						{
-							colr = 0xFF;
-							colg = 0xB0;
-							colb = 0x80;
-						}
-						else if (cplayer_elem<PT_NUM && cplayer_elem > 0)
-						{
-							colr = PIXR(elements[cplayer_elem].Colour);
-							colg = PIXG(elements[cplayer_elem].Colour);
-							colb = PIXB(elements[cplayer_elem].Colour);
+							if (cplayer_elem<PT_NUM && cplayer_elem > 0)
+							{
+								colr = PIXR(elements[cplayer_elem].Colour);
+								colg = PIXG(elements[cplayer_elem].Colour);
+								colb = PIXB(elements[cplayer_elem].Colour);
+							}
 						}
 					}
 					

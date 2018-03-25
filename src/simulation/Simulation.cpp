@@ -1,5 +1,5 @@
 #include <cmath>
-#include <math.h>
+#include <set>
 #ifdef _MSC_VER
 #include <intrin.h>
 #else
@@ -31,7 +31,7 @@
 #include "lua/LuaScriptHelper.h"
 #endif
 
-#define ID part_ID
+#define ID(r) part_ID(r)
 
 int Simulation::Load(GameSave * save, bool includePressure)
 {
@@ -136,19 +136,20 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 				tempPart.ctype = partMap[tempPart.ctype];
 			break;
 		default:
-			if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM && TypeInCtype(tempPart.type))
+			if (GameSave::TypeInCtype(tempPart.type, tempPart.ctype))
 			{
 				tempPart.ctype = partMap[tempPart.ctype];
 			}
 		}
 
-		if (TypeInTmp(tempPType))
+		if (GameSave::TypeInTmp(tempPType))
 		{
 			int tmp = tempPart.tmp & pmapmask;
 			int extra = tempPart.tmp >> pmapbits;
+			tmp = partMap[TYP(tmp)];
 			tempPart.tmp = PMAP(extra, tmp);
 		}
-		if (TypeInTmp4(tempPType) && tempPart.tmp4 > 0 && tempPart.tmp4 < PT_NUM)
+		if (GameSave::TypeInTmp4(tempPType, tempPart.tmp4))
 		{
 			tempPart.tmp4 = partMap[tempPart.tmp4];
 		}
@@ -188,12 +189,36 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			player.spwn = 1;
 			player.elem = PT_DUST;
 			player.rocketBoots = false;
+			if ((save->majorVersion < 93 && parts[i].ctype == SPC_AIR) ||
+				(save->majorVersion < 88 && parts[i].ctype == OLD_SPC_AIR))
+			{
+				player.fan = true;
+				player.__flags &= ~_STKM_FLAG_VAC;
+			}
+			if (save->stkm.rocketBoots1)
+				player.rocketBoots = true;
+			if (save->stkm.fan1)
+				player.fan = true;
+			if (save->stkm.fanvac1)
+				player.__flags |= _STKM_FLAG_VAC;
 			break;
 		case PT_STKM2:
 			Element_STKM::STKM_init_legs(this, &player2, i);
 			player2.spwn = 1;
 			player2.elem = PT_DUST;
 			player2.rocketBoots = false;
+			if ((save->majorVersion < 93 && parts[i].ctype == SPC_AIR) ||
+				(save->majorVersion < 88 && parts[i].ctype == OLD_SPC_AIR))
+			{
+				player2.fan = true;
+				player2.__flags &= ~_STKM_FLAG_VAC;
+			}
+			if (save->stkm.rocketBoots2)
+				player2.rocketBoots = true;
+			if (save->stkm.fan2)
+				player2.fan = true;
+			if (save->stkm.fanvac2)
+				player2.__flags |= _STKM_FLAG_VAC;
 			break;
 		case PT_SPAWN:
 			player.spawnID = i;
@@ -204,14 +229,31 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		case PT_FIGH:
 			for (int fcount = 0; fcount < MAX_FIGHTERS; fcount++)
 			{
-				if(!fighters[fcount].spwn)
+				if (!fighters[fcount].spwn)
 				{
 					fighcount++;
-					//currentPart.tmp = fcount;
+					unsigned int oldtmp = parts[i].tmp;
 					parts[i].tmp = fcount;
 					Element_STKM::STKM_init_legs(this, &(fighters[fcount]), i);
 					fighters[fcount].spwn = 1;
 					fighters[fcount].elem = PT_DUST;
+					
+					if ((save->majorVersion < 93 && parts[i].ctype == SPC_AIR) ||
+						(save->majorVersion < 88 && parts[i].ctype == OLD_SPC_AIR))
+					{
+						parts[i].ctype = 0;
+						fighters[fcount].fan = true;
+					}
+					for (unsigned int fighNum : save->stkm.rocketBootsFigh)
+					{
+						if (fighNum == oldtmp)
+							fighters[fcount].rocketBoots = true;
+					}
+					for (unsigned int fighNum : save->stkm.fanFigh)
+					{
+						if (fighNum == oldtmp)
+							fighters[fcount].fan = true;
+					}
 					break;
 				}
 			}
@@ -297,25 +339,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	return 0;
 }
 
-bool Simulation::TypeInCtype(int el)
-{
-	return el == PT_CLNE || el == PT_PCLN || el == PT_BCLN || el == PT_PBCN ||
-	        el == PT_STOR || el == PT_CONV || el == PT_STKM || el == PT_STKM2 ||
-	        el == PT_FIGH || el == PT_LAVA || el == PT_SPRK || el == PT_PSTN ||
-	        el == PT_CRAY || el == PT_DTEC || el == PT_DRAY || el == PT_PIPE ||
-	        el == PT_PPIP || el == PT_E186 || el == PT_EXOT;
-}
-
-bool Simulation::TypeInTmp(int el)
-{
-	return el == PT_STOR;
-}
-
-bool Simulation::TypeInTmp4(int el)
-{
-	return el == PT_VIRS || el == PT_VRSG || el == PT_VRSS;
-}
-
 GameSave * Simulation::Save(bool includePressure)
 {
 	return Save(0, 0, XRES-1, YRES-1, includePressure);
@@ -356,6 +379,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 	std::fill(elementCount, elementCount+PT_NUM, 0);
 	// Map of soap particles loaded into this save, new ID -> old ID
 	std::map<unsigned int, unsigned int> soapList;
+	std::set<int> paletteSet;
 	for (int i = 0; i < NPART; i++)
 	{
 		int x, y;
@@ -373,19 +397,23 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 				*newSave << tempPart;
 				storedParts++;
 				elementCount[tempPart.type]++;
+				
+				paletteSet.insert(tempPart.type);
+				if (GameSave::TypeInCtype(tempPart.type, tempPart.ctype))
+					paletteSet.insert(tempPart.ctype);
+				if (GameSave::TypeInTmp(tempPart.type))
+					paletteSet.insert(TYP(tempPart.tmp));
+				if (GameSave::TypeInTmp4(tempPart.type, tempPart.tmp4))
+					paletteSet.insert(tempPart.tmp2);
 			}
 		}
 	}
 
 	if (storedParts)
 	{
-		for (int i = 0; i < PT_NUM; i++)
-		{
-			if (elements[i].Enabled && elementCount[i])
-			{
-				newSave->palette.push_back(GameSave::PaletteItem(elements[i].Identifier, i));
-			}
-		}
+		for (int ID : paletteSet)
+			newSave->palette.push_back(GameSave::PaletteItem(elements[ID].Identifier, ID));
+
 		// fix SOAP links using soapList, a map of new particle ID -> old particle ID
 		// loop through every new particle (saved into the save), and convert .tmp / .tmp2
 		for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
@@ -446,6 +474,23 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 				newSave->hasPressure = true;
 				newSave->hasAmbientHeat = true;
 			}
+		}
+	}
+
+	newSave->stkm.rocketBoots1 = player.rocketBoots;
+	newSave->stkm.rocketBoots2 = player2.rocketBoots;
+	newSave->stkm.fan1 = player.fan;
+	newSave->stkm.fan2 = player2.fan;
+	newSave->stkm.fanvac1 = player.__flags  & _STKM_FLAG_VAC;
+	newSave->stkm.fanvac2 = player2.__flags & _STKM_FLAG_VAC;
+	for (unsigned char i = 0; i < MAX_FIGHTERS; i++)
+	{
+		if (fighters[i].rocketBoots)
+			newSave->stkm.rocketBootsFigh.push_back(i);
+		if (fighters[i].fan)
+		{
+//			int vac = (fighters[i].__flags & _STKM_FLAG_VAC) ? (1 << 31) : 0;
+			newSave->stkm.fanFigh.push_back(i); // | vac
 		}
 	}
 
@@ -2165,9 +2210,11 @@ void Simulation::clear_sim(void)
 	player.spwn = 0;
 	player.spawnID = -1;
 	player.rocketBoots = false;
+	player.fan = false;
 	player2.spwn = 0;
 	player2.spawnID = -1;
 	player2.rocketBoots = false;
+	player2.fan = false;
 	for (int i = 0; i < 4; i++)
 		Element_STKM::lifeinc [i] = 0;
 
@@ -2490,7 +2537,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				// 16 values per dword
 				static unsigned int E186_ilist[] = {
 					0x88222800U,	//  0 - 15
-					0x02002006U,	// 16 - 31
+					0x02802006U,	// 16 - 31
 					0xAAAA001AU,	// 32 - 47
 				};
 				switch (rlife)
@@ -3361,26 +3408,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	if (t>=0 && t<PT_NUM && !elements[t].Enabled)
 		return -1;
 
-	if (t >= PT_NUM)
-	{
-		float air_dif = 0.0f;
-		if (t == SPC_AIR)
-			air_dif = 0.03f;
-		else if (t == SPC_VACUUM)
-			air_dif = -0.03f;
-			
-		pv[y/CELL][x/CELL] += air_dif;
-		if (y+CELL<YRES)
-			pv[y/CELL+1][x/CELL] += air_dif;
-		if (x+CELL<XRES)
-		{
-			pv[y/CELL][x/CELL+1] += air_dif;
-			if (y+CELL<YRES)
-				pv[y/CELL+1][x/CELL+1] += air_dif;
-		}
-		return -1;
-	}
-	else if (t==PT_SPRK)
+	if (t==PT_SPRK)
 	{
 		int type = TYP(pmap[y][x]);
 		int index = ID(pmap[y][x]);
