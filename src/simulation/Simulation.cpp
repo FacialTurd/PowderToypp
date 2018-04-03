@@ -377,8 +377,9 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 	int storedParts = 0;
 	int elementCount[PT_NUM];
 	std::fill(elementCount, elementCount+PT_NUM, 0);
-	// Map of soap particles loaded into this save, new ID -> old ID
-	std::map<unsigned int, unsigned int> soapList;
+	// Map of soap particles loaded into this save, old ID -> new ID
+	// Now stores all particles, not just SOAP (but still only used for soap)
+	std::map<unsigned int, unsigned int> particleMap;
 	std::set<int> paletteSet;
 	for (int i = 0; i < NPART; i++)
 	{
@@ -392,8 +393,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 			tempPart.y -= blockY*CELL;
 			if (elements[tempPart.type].Enabled)
 			{
-				if (tempPart.type == PT_SOAP)
-					soapList.insert(std::pair<unsigned int, unsigned int>(i, storedParts));
+				particleMap.insert(std::pair<unsigned int, unsigned int>(i, storedParts));
 				*newSave << tempPart;
 				storedParts++;
 				elementCount[tempPart.type]++;
@@ -409,19 +409,21 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 		}
 	}
 
-	if (storedParts)
-	{
-		for (int ID : paletteSet)
-			newSave->palette.push_back(GameSave::PaletteItem(elements[ID].Identifier, ID));
+	for (int ID : paletteSet)
+		newSave->palette.push_back(GameSave::PaletteItem(elements[ID].Identifier, ID));
 
-		// fix SOAP links using soapList, a map of new particle ID -> old particle ID
+	if (storedParts && elementCount[PT_SOAP])
+	{
+		// fix SOAP links using particleMap, a map of old particle ID -> new particle ID
 		// loop through every new particle (saved into the save), and convert .tmp / .tmp2
-		for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
+		for (std::map<unsigned int, unsigned int>::iterator iter = particleMap.begin(), end = particleMap.end(); iter != end; ++iter)
 		{
 			int i = (*iter).second;
+			if (newSave->particles[i].type != PT_SOAP)
+				continue;
 			if ((newSave->particles[i].ctype & 0x2) == 2)
 			{
-				std::map<unsigned int, unsigned int>::iterator n = soapList.find(newSave->particles[i].tmp);
+				std::map<unsigned int, unsigned int>::iterator n = particleMap.find(newSave->particles[i].tmp);
 				if (n != end)
 					newSave->particles[i].tmp = n->second;
 				else
@@ -432,7 +434,7 @@ GameSave * Simulation::Save(int fullX, int fullY, int fullX2, int fullY2, bool i
 			}
 			if ((newSave->particles[i].ctype & 0x4) == 4)
 			{
-				std::map<unsigned int, unsigned int>::iterator n = soapList.find(newSave->particles[i].tmp2);
+				std::map<unsigned int, unsigned int>::iterator n = particleMap.find(newSave->particles[i].tmp2);
 				if (n != end)
 					newSave->particles[i].tmp2 = n->second;
 				else
@@ -2207,14 +2209,8 @@ void Simulation::clear_sim(void)
 	std::fill(elementCount, elementCount+PT_NUM, 0);
 	elementRecount = true;
 	fighcount = 0;
-	player.spwn = 0;
-	player.spawnID = -1;
-	player.rocketBoots = false;
-	player.fan = false;
-	player2.spwn = 0;
-	player2.spawnID = -1;
-	player2.rocketBoots = false;
-	player2.fan = false;
+	Element_STKM::STKM_clear(this, &player);
+	Element_STKM::STKM_clear(this, &player2);
 	for (int i = 0; i < 4; i++)
 		Element_STKM::lifeinc [i] = 0;
 
@@ -2540,24 +2536,6 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					0x02802006U,	// 16 - 31
 					0xAAAA001AU,	// 32 - 47
 				};
-				switch (rlife)
-				{
-				case 16:
-					if (partsi(r).ctype == 5)
-					{
-						if ((tmp_flag & 1) && pt == PT_STKM)
-							return 2;
-						if ((tmp_flag & 2) && pt == PT_STKM2)
-							return 2;
-						if ((tmp_flag & 4) && pt == PT_FIGH)
-							return 2;
-					}
-					break;
-				case 27: 
-					if ((tmp_flag & 1) && (pt == PT_STKM || pt == PT_STKM2 || pt == PT_FIGH))
-						return 2;
-					break;
-				}
 				switch (pt)
 				{
 				case PT_E186:
@@ -2592,6 +2570,26 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					if (rlife == 22 && (tmp_flag & 4))
 						return 0;
 					return 2;
+				case PT_STKM:
+				case PT_STKM2:
+				case PT_FIGH:
+					if (rlife == 16)
+					{
+						if (partsi(r).ctype == 5)
+						{
+							if ((tmp_flag & 1) && pt == PT_STKM)
+								return 2;
+							if ((tmp_flag & 2) && pt == PT_STKM2)
+								return 2;
+							if ((tmp_flag & 4) && pt == PT_FIGH)
+								return 2;
+						}
+						else if (partsi(r).ctype == 31)
+							return 2;
+					}
+					else if (rlife == 27 && (tmp_flag & 1))
+						return 2;
+					break;
 				}
 			}
 			return 0; // otherwise. Note using "return", no "break".
@@ -3044,33 +3042,20 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 	return result;
 }
 
-int Simulation::pn_junction_sprk(int x, int y, int pt)
-{
-	int r = pmap[y][x];
-	if (TYP(r) != pt)
-		return 0;
-	r >>= 8;
-	if (parts[r].type != pt)
-		return 0;
-	if (parts[r].life != 0)
-		return 0;
-
-	parts[r].ctype = pt;
-	part_change_type(r,x,y,PT_SPRK);
-	parts[r].life = 4;
-	return 1;
-}
-
 void Simulation::photoelectric_effect(int nx, int ny)//create sparks from PHOT when hitting PSCN and NSCN
 {
 	unsigned r = pmap[ny][nx];
 
-	if (TYP(r) == PT_PSCN) {
-		if (TYP(pmap[ny][nx-1]) == PT_NSCN ||
-		        TYP(pmap[ny][nx+1]) == PT_NSCN ||
-		        TYP(pmap[ny-1][nx]) == PT_NSCN ||
-		        TYP(pmap[ny+1][nx]) == PT_NSCN)
-			pn_junction_sprk(nx, ny, PT_PSCN);
+	if (TYP(r) == PT_PSCN)
+	{
+		if (partsi(r).life == 0 && (
+			TYP(pmap[ny][nx-1]) == PT_NSCN || TYP(pmap[ny][nx+1]) == PT_NSCN ||
+			TYP(pmap[ny-1][nx]) == PT_NSCN || TYP(pmap[ny+1][nx]) == PT_NSCN))
+		{
+			parts[ID(r)].ctype = PT_PSCN;
+			part_change_type(ID(r), nx, ny, PT_SPRK);
+			parts[ID(r)].life = 4;
+		}
 	}
 }
 
@@ -3376,14 +3361,20 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 			player2.spawnID = i;
 		break;
 	case PT_STKM:
+		player.spwn = 1;
 		Element_STKM::STKM_init_legs(this, &player, i);
 		break;
 	case PT_STKM2:
+		player2.spwn = 1;
 		Element_STKM::STKM_init_legs(this, &player2, i);
 		break;
 	case PT_FIGH:
 		if (parts[i].tmp >= 0 && parts[i].tmp < MAX_FIGHTERS)
+		{
+			fighters[parts[i].tmp].spwn = 1;
 			Element_STKM::STKM_init_legs(this, &fighters[parts[i].tmp], i);
+		}
+		fighcount++;
 		break;
 	case PT_ETRD:
 		if (parts[i].life == 0)
@@ -4925,7 +4916,12 @@ killed:
 				{
 					if (stickman)
 					{
-						pmap[y][x] = stickman->underp;
+						int u_r = stickman->underp;
+						int uID = ID(u_r);
+						if (!u_r || uID < 0 || uID >= NPART || (int)(parts[uID].x+0.5f) != x || (int)(parts[uID].y+0.5f) != y)
+							pmap[y][x] = 0;
+						else
+							pmap[y][x] = PMAP(uID, parts[uID].type);
 						int part1 = pmap[ny][nx];
 						if (part1 == PT_PINVIS)
 							part1 = partsi(part1).tmp4;

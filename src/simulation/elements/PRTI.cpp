@@ -72,40 +72,43 @@ int Element_PRTI::update(UPDATE_FUNC_ARGS)
 		if (BOUNDS_CHECK && (rx || ry))
 		{
 			int r = pmap[y+ry][x+rx];
-			if (!r || (r&0xFF) == PT_STOR)
+			if (!r || TYP(r) == PT_STOR)
 				fe = 1;
-			if (!r || (!(sim->elements[r&0xFF].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)) && (r&0xFF)!=PT_SPRK && (r&0xFF)!=PT_STOR))
+			if (!r || (!(sim->elements[TYP(r)].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)) && TYP(r)!=PT_SPRK && TYP(r)!=PT_STOR))
 			{
 				r = sim->photons[y+ry][x+rx];
 				if (!r)
 					continue;
 			}
+			
+			int rt = TYP(r);
+			r >>= PMAPBITS;
 
-			if ((r&0xFF)==PT_STKM || (r&0xFF)==PT_STKM2 || (r&0xFF)==PT_FIGH)
+			if (rt==PT_STKM || rt==PT_STKM2 || rt==PT_FIGH)
 				continue;// Handling these is a bit more complicated, and is done in STKM_interact()
 
-			if ((r&0xFF) == PT_SOAP)
-				Element_SOAP::detach(sim, r>>8);
+			if (rt == PT_SOAP)
+				Element_SOAP::detach(sim, r);
 
 			for (int nnx=0; nnx<80; nnx++)
 				if (!sim->portalp[parts[i].tmp][count][nnx].type)
 				{
-					if ((r&0xFF) == PT_STOR)
+					if (rt == PT_STOR)
 					{
-						if (sim->IsValidElement(parts[r>>8].tmp) && (sim->elements[parts[r>>8].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
+						if (sim->IsValidElement(parts[r].tmp) && (sim->elements[parts[r].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
 						{
 							// STOR uses same format as PIPE, so we can use this function to do the transfer
-							Element_PIPE::transfer_pipe_to_part(sim, parts+(r>>8), &sim->portalp[parts[i].tmp][count][nnx], true);
+							Element_PIPE::transfer_pipe_to_part(sim, parts+r, &sim->portalp[parts[i].tmp][count][nnx], true);
 							break;
 						}
 					}
 					else
 					{
-						sim->portalp[parts[i].tmp][count][nnx] = parts[r>>8];
-						if ((r&0xFF) == PT_SPRK)
-							sim->part_change_type(r>>8,x+rx,y+ry,parts[r>>8].ctype);
+						sim->portalp[parts[i].tmp][count][nnx] = parts[r];
+						if (rt == PT_SPRK)
+							sim->part_change_type(r,x+rx,y+ry,parts[r].ctype);
 						else
-							sim->kill_part(r>>8);
+							sim->kill_part(r);
 						fe = 1;
 						break;
 					}

@@ -55,9 +55,13 @@ int luatpt_debug_trigger_add(lua_State* l);
 int luatpt_call_debug_trigger(lua_State* l);
 
 #ifdef TPT_NEED_DLL_PLUGIN
-extern "C" { __declspec(dllexport) void luacall_debug_trigger(int t, int i, int x, int y); }
-#else
-void luacall_debug_trigger(int t, int i, int x, int y);
+extern "C" {
+	__declspec(dllexport)
+#endif
+	void luacall_debug_trigger(int t, int i, int x, int y);
+#ifdef TPT_NEED_DLL_PLUGIN
+	void captureGPR_render0(int32_t* GPR) __asm__("._captureGPR_render0");
+}
 #endif
 void luacall_debug_tfunc(lua_State* l, int c);
 

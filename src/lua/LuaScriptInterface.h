@@ -138,10 +138,10 @@ class LuaScriptInterface: public CommandInterface
 
 	//Stickman attributes
 	void initStickmanAPI();
-	static playerst* get_stickman_ptr(int id);
 	static int stickman_parent(lua_State * l);
 	static int stickman_firstChild(lua_State * l);
 	static int stickman_lastChild(lua_State * l);
+	static int stickman_newChild(lua_State * l);
 	static int stickman_previousSibling(lua_State * l);
 	static int stickman_nextSibling(lua_State * l);
 	static int stickman_flags(lua_State * l);
@@ -208,6 +208,14 @@ class LuaScriptInterface: public CommandInterface
 	// static int platform_openMyTool(lua_State * l);
 	static int platform_clipboardCopy(lua_State * l);
 	static int platform_clipboardPaste(lua_State * l);
+
+	/*(
+	struct playerst_ex {
+		playerst player;
+		int life, ctype;
+		float x, y, vx, vy;
+	};
+	*/
 
 public:
 	int tpt_index(lua_State *l);

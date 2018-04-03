@@ -20,7 +20,33 @@ Renderer * MULTIPPE_Update::ren_;
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 // FLAG_SKIPMOVE: not only implemented for PHOT
-	
+
+void MULTIPPE_Update::do_breakpoint()
+{
+#ifdef X86
+#if defined(WIN) && !defined(__GNUC__)
+	// not tested yet
+#ifndef _WIN64
+	__asm {
+		pushfd
+		or dword ptr [esp], 0x100
+		popfd
+	}
+#else
+	// 64-bit MSVC doesn't support inline assembly yet
+#endif
+#else
+	__asm__ __volatile (
+#ifdef _64BIT
+		"pushf; or{q} {$0x100, (%%rsp)|QWORD PTR [rsp], 0x100}; popf"
+#else
+		"pushf; or{l} {$0x100, (%%esp)|DWORD PTR [esp], 0x100}; popf"
+#endif
+	:);	
+#endif
+#endif
+}
+
 int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
@@ -403,13 +429,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							{
 								if (!rii)
 								{
-									rrx = pmap[y-ry][x-rx];
-									if (TYP(rrx) == PT_CRAY)
+									int fr = pmap[y-ry][x-rx];
+									int frt = TYP(fr);
+									if (frt == PT_CRAY)
 									{
-										rii = TYP(parts[ID(rrx)].ctype);
+										rii = TYP(parts[ID(fr)].ctype);
 										if (rii == PT_LIFE)
-											rii = PMAP(1, parts[ID(rrx)].ctype);
+											rii = PMAP(1, parts[ID(fr)].ctype);
 									}
+									else if (frt == PT_FILT)
+										rii = PMAP(1, Element_FILT::getWavelengths(&parts[ID(fr)]));
 								}
 								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 5)))
 									break;
@@ -424,20 +453,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						case 1: case 2: case 4: case 5: case 23: case 24:
 							sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
 						case 25:
-							{
-#ifdef X86
-#if defined(WIN) && !defined(__GNUC__)
-							// not tested yet
-								__asm {
-									pushfd
-									or dword ptr [esp], 0x100
-									popfd
-								}
-#else
-								__asm__ __volatile ("pushf; orl $0x100, (%esp); popf");	
-#endif
-#endif
-							}
+							do_breakpoint();
 							return return_value;
 						}
 						if ((rtmp & 0x3FE) == 0x200 && (rx != ry))

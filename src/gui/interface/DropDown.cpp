@@ -5,6 +5,8 @@
 #include "DropDown.h"
 #include "gui/interface/Window.h"
 
+#define DROPDOWN_Y_BOUND(a, b) ((((a)+16*(b)) < (WINDOWH-3)) ? 0 : ((a)+16*(b)-(WINDOWH-3)))
+
 namespace ui {
 
 class ItemSelectedAction;
@@ -29,7 +31,7 @@ public:
 		}
 	};
 	DropDownWindow(DropDown * dropDown):
-		Window(ui::Point(dropDown->Position.X+dropDown->GetParentWindow()->Position.X-5, dropDown->Position.Y+dropDown->GetParentWindow()->Position.Y+5 - dropDown->options.size()*8), ui::Point(dropDown->Size.X+10, 1+dropDown->options.size()*16)),
+		Window(ui::Point(dropDown->Position.X+dropDown->GetParentWindow()->Position.X-5, dropDown->Position.Y+dropDown->GetParentWindow()->Position.Y-3 - DROPDOWN_Y_BOUND(dropDown->GetScreenPos().Y-3, dropDown->options.size())), ui::Point(dropDown->Size.X+10, 1+dropDown->options.size()*16)),
 		dropDown(dropDown),
 		appearance(dropDown->Appearance)
 	{
@@ -44,6 +46,7 @@ public:
 			AddComponent(tempButton);
 			currentY += 16;
 		}
+		// std::cout << "X: " << dropDown->GetScreenPos().X << ", Y: " << dropDown->GetScreenPos().Y << std::endl;
 	}
 	virtual void OnDraw()
 	{
@@ -119,7 +122,7 @@ void DropDown::Draw(const Point& screenPos)
 	if(optionIndex!=-1)
 		g->drawtext(Position.X+textPosition.X, Position.Y+textPosition.Y, options[optionIndex].first, textColour.Red, textColour.Green, textColour.Blue, textColour.Alpha);
 }
-	
+
 void DropDown::OnMouseEnter(int x, int y)
 {
 	isMouseInside = true;
@@ -129,6 +132,7 @@ void DropDown::OnMouseLeave(int x, int y)
 {
 	isMouseInside = false;
 }
+
 	std::pair<std::string, int> DropDown::GetOption()
 	{
 		if(optionIndex!=-1)

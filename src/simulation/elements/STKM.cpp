@@ -47,8 +47,8 @@ Element_STKM::Element_STKM()
 	Graphics = &Element_STKM::graphics;
 }
 
-//#TPT-Directive ElementHeader Element_STKM static int lifeinc[4]
-int Element_STKM::lifeinc[4] = {0,0,0,0};
+//#TPT-Directive ElementHeader Element_STKM static int lifeinc[5]
+int Element_STKM::lifeinc[5] = {0,0,0,0,100};
 
 //#TPT-Directive ElementHeader Element_STKM static char phase
 char Element_STKM::phase = 0;
@@ -75,6 +75,14 @@ int Element_STKM::graphics(GRAPHICS_FUNC_ARGS)
 }
 
 #define INBOND(x, y) ((x)>=0 && (y)>=0 && (x)<XRES && (y)<YRES)
+#define _IS_EMIT_FN(a, b)		((a & _STKM_FLAG_EPROP) == (b))
+
+#define _EMIT_SET_A(a, b)	(a = (a & ~_STKM_FLAG_EPROP) | (b))
+#define _EMIT_CLR_A(a)		(a &= ~_STKM_FLAG_EPROP)
+#define _EMIT_SET_T(a, b, c)	(_IS_EMIT_FN(a, b) && _EMIT_SET_A(a, c))
+#define _EMIT_CLR_T(a, b)		(_IS_EMIT_FN(a, b) && _EMIT_CLR_A(a))
+#define _EMIT_SET_F(a, b, c)	(_IS_EMIT_FN(a, b) || _EMIT_SET_A(a, c))
+#define _EMIT_CLR_F(a, b)		(_IS_EMIT_FN(a, b) || _EMIT_CLR_A(a))
 
 //#TPT-Directive ElementHeader Element_STKM static int run_stickman(playerst *playerp, UPDATE_FUNC_ARGS)
 int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
@@ -111,7 +119,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	}
 	if (parts[i].life<1 || (pressure>=4.5f && !(sim->Extra_FIGH_pause & 16) && !playerp->fan) ) //If his HP is less than 0 or there is very big wind...
 	{
-		if (playerp->elem != PT_FIGH)
+		if (!_IS_EMIT_FN(playerp->__flags, _STKM_FLAG_EFIGH))
 		{
 			for (r=-2; r<=1; r++)
 			{
@@ -161,6 +169,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	gvy += sim->gravy[((int)parts[i].y/CELL)*(XRES/CELL)+((int)parts[i].x/CELL)];
 	
 	bool antigrav = sim->Extra_FIGH_pause & 0x200;
+	bool prevent_spawn = false;
 	int grav_multiplier = antigrav ? -1 : 1;
 
 	if (antigrav) // anti-gravity ?
@@ -252,7 +261,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		bool moved = false;
 		if (dl>dr)
 		{
-			if (INBOND(playerp->legs[4], playerp->legs[5]) && !sim->eval_move(t, playerp->legs[4], playerp->legs[5], NULL))
+			if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
 			{
 				playerp->accs[2] = -3*gvy-3*gvx;
 				playerp->accs[3] = 3*gvx-3*gvy;
@@ -263,7 +272,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		else
 		{
-			if (INBOND(playerp->legs[12], playerp->legs[13]) && !sim->eval_move(t, playerp->legs[12], playerp->legs[13], NULL))
+			if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
 			{
 				playerp->accs[6] = -3*gvy-3*gvx;
 				playerp->accs[7] = 3*gvx-3*gvy;
@@ -305,7 +314,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		bool moved = false;
 		if (dl<dr)
 		{
-			if (INBOND(playerp->legs[4], playerp->legs[5]) && !sim->eval_move(t, playerp->legs[4], playerp->legs[5], NULL))
+			if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
 			{
 				playerp->accs[2] = 3*gvy-3*gvx;
 				playerp->accs[3] = -3*gvx-3*gvy;
@@ -316,7 +325,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		else
 		{
-			if (INBOND(playerp->legs[12], playerp->legs[13]) && !sim->eval_move(t, playerp->legs[12], playerp->legs[13], NULL))
+			if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
 			{
 				playerp->accs[6] = 3*gvy-3*gvx;
 				playerp->accs[7] = -3*gvx-3*gvy;
@@ -388,8 +397,8 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				}
 			}
 		}
-		else if ((INBOND(playerp->legs[4], playerp->legs[5]) && !sim->eval_move(t, playerp->legs[4], playerp->legs[5], NULL)) ||
-				 (INBOND(playerp->legs[12], playerp->legs[13]) && !sim->eval_move(t, playerp->legs[12], playerp->legs[13], NULL)))
+		else if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]) ||
+				 is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
 		{
 			parts[i].vx -= 4*gvx;
 			parts[i].vy -= 4*gvy;
@@ -423,18 +432,19 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				
 				rt = TYP(r); r = ID(r);
 				
-				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && (playerp->__flags & _STKM_FLAG_EMT)))
+				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && _IS_EMIT_FN(playerp->__flags, _STKM_FLAG_EMT)))
 				{
 					STKM_set_element(sim, playerp, rt);
 				}
 				if (!(sim->Extra_FIGH_pause & 16))
 				{
-					if (rt == PT_PLNT && parts[i].life<100) //Plant gives him 5 HP
+					int l_upper = lifeinc[4];
+					if (rt == PT_PLNT && parts[i].life < l_upper) //Plant gives him 5 HP
 					{
-						if (parts[i].life<=95)
+						if (parts[i].life <= (l_upper - 5))
 							parts[i].life += 5;
 						else
-							parts[i].life = 100;
+							parts[i].life = l_upper;
 						sim->kill_part(r);
 					}
 
@@ -471,13 +481,35 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 							playerp->rocketBoots = xctype == 1 ? false : true;
 						}
 					}
+					else if (parts[r].life == 16 && parts[r].ctype == 31 && !prevent_spawn)
+					{
+						prevent_spawn = true;
+						if (((int)(playerp->comm)&0x08) == 0x08)
+						{
+							int spawnID = -1;
+							if (t == PT_STKM)
+								spawnID = sim->player.spawnID;
+							else if (t == PT_STKM2)
+								spawnID = sim->player2.spawnID;
+							if (spawnID >= 0)
+							{
+								sim->part_change_type(spawnID, (int)(parts[spawnID].x+0.5f), (int)(parts[spawnID].y+0.5f), ELEM_MULTIPP);
+								parts[spawnID].life = 16;
+								parts[spawnID].ctype = 31;
+							}
+							if (t == PT_STKM)
+								sim->part_change_type(r, x+rx, y+ry, PT_SPAWN);
+							else if (t == PT_STKM2)
+								sim->part_change_type(r, x+rx, y+ry, PT_SPAWN2);
+						}
+					}
 				}
 
 				under_wall = sim->bmap[(ry+y)/CELL][(rx+x)/CELL];
 				switch (under_wall)
 				{
 				case WL_FAN:
-					STKM_set_element_Ex(sim, playerp, (sim->Extra_FIGH_pause & 0x800) ? 0x101 : 0x100);
+					STKM_set_element_Ex(sim, playerp, (sim->Extra_FIGH_pause & 0x800) ? PMAP(1, 1) : PMAPID(1));
 					break;
 				case WL_EHOLE:
 					playerp->rocketBoots = false;
@@ -487,7 +519,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					break;
 				}
 				if (rt == PT_PRTI)
-					Element_STKM::STKM_interact(sim, playerp, i, rx, ry);
+					Element_STKM::STKM_interact(sim, playerp, i, rx, ry, grav_multiplier);
 				if (!parts[i].type)//STKM_interact may kill STKM
 					return 1;
 			}
@@ -496,8 +528,16 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	rx = x + grav_multiplier * (3*((((int)playerp->pcomm)&0x02) == 0x02) - 3*((((int)playerp->pcomm)&0x01) == 0x01));
 	ry = y - grav_multiplier * (3*(playerp->pcomm == 0));
 
+	if (prevent_spawn)
+		playerp->commf |= _STKM_CMD_FLAG_NOSPAWN;
+	
 	//Spawn
-	if (((int)(playerp->comm)&0x08) == 0x08)
+	if (playerp->commf & _STKM_CMD_FLAG_NOSPAWN)
+	{
+		if (((int)(playerp->comm)&0x08) != 0x08)
+			playerp->commf &= ~_STKM_CMD_FLAG_NOSPAWN;
+	}
+	else if (((int)(playerp->comm)&0x08) == 0x08)
 	{
 		ry -= grav_multiplier * (2*(rand()%2)+1);
 		r = pmap[ry][rx];
@@ -508,9 +548,11 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		else
 		{
+			const int emt_ell[] = {0, PT_E186, PT_FIGH, 0};
 			int flags = playerp->__flags;
 			int np = -1;
-			int nelem = (flags & _STKM_FLAG_EMT) ? PT_E186 : playerp->elem;
+			int emt_el = emt_ell[(flags & _STKM_FLAG_EPROP) >> _STKM_FLAG_EPROPSH];
+			int nelem = (emt_el > 0) ? emt_el : playerp->elem;
 			if (playerp->fan)
 			{
 				float air_dif = (flags & _STKM_FLAG_VAC) ? -0.03f : 0.03f;
@@ -581,7 +623,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 					parts[np].vy -= gvx*(5*((((int)playerp->pcomm)&0x02) == 0x02) - 5*(((int)(playerp->pcomm)&0x01) == 0x01));
 					parts[i].vx -= (sim->elements[(int)nelem].Weight*parts[np].vx)/1000;
 					if (nelem == PT_FIGH)
-						createSTKMChild(sim, playerp, i, np);
+						createSTKMChild2(sim, playerp, i, parts[np].tmp);
 				}
 				playerp->frames = 0;
 			}
@@ -614,27 +656,27 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	playerp->legs[8] += (playerp->legs[8]-parts[i].x)*d;
 	playerp->legs[9] += (playerp->legs[9]-parts[i].y)*d;
 
-	if (INBOND(playerp->legs[4], playerp->legs[5]) && !sim->eval_move(t, playerp->legs[4], playerp->legs[5], NULL))
+	if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
 	{
 		playerp->legs[4] = playerp->legs[6];
 		playerp->legs[5] = playerp->legs[7];
 	}
 
-	if (INBOND(playerp->legs[12], playerp->legs[13]) && !sim->eval_move(t, playerp->legs[12], playerp->legs[13], NULL))
+	if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
 	{
 		playerp->legs[12] = playerp->legs[14];
 		playerp->legs[13] = playerp->legs[15];
 	}
 
 	//This makes stick man "pop" from obstacles
-	if (INBOND(playerp->legs[4], playerp->legs[5]) && !sim->eval_move(t, playerp->legs[4], playerp->legs[5], NULL))
+	if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
 	{
 		float t;
 		t = playerp->legs[4]; playerp->legs[4] = playerp->legs[6]; playerp->legs[6] = t;
 		t = playerp->legs[5]; playerp->legs[5] = playerp->legs[7]; playerp->legs[7] = t;
 	}
 
-	if (INBOND(playerp->legs[12], playerp->legs[13]) && !sim->eval_move(t, playerp->legs[12], playerp->legs[13], NULL))
+	if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
 	{
 		float t;
 		t = playerp->legs[12]; playerp->legs[12] = playerp->legs[14]; playerp->legs[14] = t;
@@ -675,15 +717,16 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	}
 
 	//If legs touch something
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)(playerp->legs[5]+0.5));
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)(playerp->legs[13]+0.5));
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)playerp->legs[5]);
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)playerp->legs[13]);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)(playerp->legs[5]+0.5), grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)(playerp->legs[13]+0.5), grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)playerp->legs[5], grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)playerp->legs[13], grav_multiplier);
 	if (!parts[i].type)
 		return 1;
 
-	if (playerp->elem == PT_FIGH && !(sim->Extra_FIGH_pause & 8))
-		playerp->elem = playerp->pelem;
+	if (!(sim->Extra_FIGH_pause & 8))
+		_EMIT_CLR_T(playerp->__flags, _STKM_FLAG_EFIGH);
+
 	parts[i].ctype = playerp->elem;
 	
 	if (newpart)
@@ -705,14 +748,14 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			newpart->vy *= 1.5f;
 		}
 		newpart->ctype = playerp->elem;
-		if (newpart->ctype >= 0x100)
-			newpart->ctype = 0;
+		// if (newpart->ctype > PMAPMASK)
+		//	newpart->ctype = 0;
 	}
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_STKM static void STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y)
-void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y)
+//#TPT-Directive ElementHeader Element_STKM static void STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y, int gmult)
+void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int y, int gmult)
 {
 	int r, rt;
 	if (x<0 || y<0 || x>=XRES || y>=YRES || !sim->parts[i].type)
@@ -722,10 +765,11 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 	{
 		if (TYP(r) == PT_PINVIS)
 			r = sim->parts[ID(r)].tmp4;
+
+		rt = TYP(r); r = ID(r);
+
 		if (!(sim->Extra_FIGH_pause & 16))
 		{
-			rt = TYP(r); r = ID(r);
-
 			if (rt == PT_SPRK && playerp->elem!=PT_LIGH) //If on charge
 			{
 				sim->parts[i].life -= (int)(rand()*20/RAND_MAX)+32;
@@ -736,7 +780,7 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 				(!playerp->rocketBoots || rt != PT_PLSM))
 			{
 				sim->parts[i].life -= 2;
-				playerp->accs[3] -= 1;
+				playerp->accs[3] -= gmult;
 			}
 				
 			if (sim->elements[rt].Properties&PROP_DEADLY)
@@ -760,8 +804,8 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 			if (sim->parts[r].life == 23)
 			{
 				sim->parts[i].vy -= 3;
-				playerp->accs[3] -= 3;
-				playerp->accs[7] -= 3;
+				playerp->accs[3] -= gmult * 3;
+				playerp->accs[7] -= gmult * 3;
 			}
 		}
 
@@ -800,33 +844,41 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 	}
 }
 
-//#TPT-Directive ElementHeader Element_STKM static void STKM_init_legs(Simulation * sim, playerst *playerp, int i)
-void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
+//#TPT-Directive ElementHeader Element_STKM static bool is_blocking(Simulation *sim, playerst *playerp, int t, float x, float y)
+bool Element_STKM::is_blocking(Simulation *sim, playerst *playerp, int t, float x, float y)
+{
+	if (INBOND(x, y))
+	{
+		return !sim->eval_move(t, x, y, NULL);
+	}
+	return false;
+}
+
+//#TPT-Directive ElementHeader Element_STKM static void STKM_clear(Simulation *sim, playerst *playerp)
+void Element_STKM::STKM_clear(Simulation * sim, playerst *playerp)
+{
+	playerp->spwn = 0;
+	playerp->spawnID = -1;
+	playerp->rocketBoots = false;
+	playerp->fan = false;
+}
+
+//#TPT-Directive ElementHeader Element_STKM static void STKM_init_legs(Simulation *sim, playerst *playerp, int i)
+void Element_STKM::STKM_init_legs(Simulation *sim, playerst *playerp, int i)
 {
 	int x, y;
 
 	x = (int)(sim->parts[i].x+0.5f);
 	y = (int)(sim->parts[i].y+0.5f);
+	
+	int gmult = (sim->Extra_FIGH_pause & 0x200) ? -1 : 1;
+	int _leg_v[] = {-1,6,-1,6,-3,12,-3,12,1,6,1,6,3,12,3,12};
 
-	playerp->legs[0] = x-1;
-	playerp->legs[1] = y+6;
-	playerp->legs[2] = x-1;
-	playerp->legs[3] = y+6;
-
-	playerp->legs[4] = x-3;
-	playerp->legs[5] = y+12;
-	playerp->legs[6] = x-3;
-	playerp->legs[7] = y+12;
-
-	playerp->legs[8] = x+1;
-	playerp->legs[9] = y+6;
-	playerp->legs[10] = x+1;
-	playerp->legs[11] = y+6;
-
-	playerp->legs[12] = x+3;
-	playerp->legs[13] = y+12;
-	playerp->legs[14] = x+3;
-	playerp->legs[15] = y+12;
+	for (int j = 0; j < 8; j++)
+	{
+		playerp->legs[2*j+0] = x + gmult*_leg_v[2*j+0];
+		playerp->legs[2*j+1] = y + gmult*_leg_v[2*j+1];
+	}
 
 	for (int j = 0; j < 8; j++)
 		playerp->accs[j] = 0;
@@ -844,6 +896,7 @@ void Element_STKM::STKM_init_legs(Simulation * sim, playerst *playerp, int i)
 	playerp->underp = 0;
 }
 
+
 //#TPT-Directive ElementHeader Element_STKM static void STKM_set_element_Ex(Simulation *sim, playerst *playerp, int element)
 void Element_STKM::STKM_set_element_Ex(Simulation *sim, playerst *playerp, int element)
 {
@@ -853,17 +906,19 @@ void Element_STKM::STKM_set_element_Ex(Simulation *sim, playerst *playerp, int e
 
 	if (mask_ext)
 	{
-		if (element < 2)
-			playerp->fan = true;
 		if (element < 5)
 		{
-			int exl[] = {_STKM_FLAG_VAC, _STKM_FLAG_VAC, _STKM_FLAG_EMT, _STKM_FLAG_EMT, _STKM_FLAG_SUSPEND};
-			int exf = exl[element];
-			if (element & 0x5)
-				playerp->__flags |= exf;
-			else
-				playerp->__flags &= ~exf;
+			if (element < 2)
+				playerp->fan = true;
+
+			int exl0[5] = {~_STKM_FLAG_VAC, ~0, ~_STKM_FLAG_EPROP, ~_STKM_FLAG_EPROP, ~0};
+			int exl1[5] = {0, _STKM_FLAG_VAC, _STKM_FLAG_EMT, 0, _STKM_FLAG_SUSPEND};
+
+			playerp->__flags &= exl0[element];
+			playerp->__flags |= exl1[element];
 		}
+		else if (element == 5)
+			playerp->fan = false;
 	}
 	else if ((element > 0) && (element < PT_NUM))
 		STKM_set_element(sim, playerp, element);
@@ -892,10 +947,9 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 		playerp->elem = PT_LIGH;
 		playerp->fan = false;
 	}
-	if (playerp->elem != PT_FIGH && element == PT_FIGH && (sim->Extra_FIGH_pause & 8))
+	if (element == PT_FIGH && (sim->Extra_FIGH_pause & 8))
 	{
-		playerp->pelem = playerp->elem;
-		playerp->elem = PT_FIGH;
+		_EMIT_SET_A(playerp->__flags, _STKM_FLAG_EFIGH);
 		playerp->fan = false;
 	}
 }
@@ -909,6 +963,7 @@ void Element_STKM::STKM_set_life_1(Simulation *sim, int s, int i)
 		if (sur_part_tmp > 0)
 		{
 			sur_part_tmp--; // is temporary variable, not global
+			int t = sim->parts[i].type;
 			int inc_life = (sur_part_tmp & 1) ? 1 : -1;
 			bool inc_life_cond = false;
 			switch (sur_part_tmp >> 1)
@@ -917,25 +972,28 @@ void Element_STKM::STKM_set_life_1(Simulation *sim, int s, int i)
 					inc_life_cond = true;
 				break;
 				case 1:
-					inc_life_cond = (sim->parts[i].type == PT_STKM);
+					inc_life_cond = (t == PT_STKM);
 				break;
 				case 2:
-					inc_life_cond = (sim->parts[i].type == PT_STKM2);
+					inc_life_cond = (t == PT_STKM2);
 				break;
 				case 3:
-				{
-					int part_i_type = sim->parts[i].type;
-					inc_life_cond = (part_i_type == PT_STKM || part_i_type == PT_STKM2);
-				}
+					inc_life_cond = (t == PT_STKM || t == PT_STKM2);
 				break;
 				case 4:
-					inc_life_cond = (sim->parts[i].type == PT_FIGH);
+					inc_life_cond = (t == PT_FIGH);
 				break;
 			}
 			if (inc_life_cond)
 			{
-				if (inc_life < 0 || sim->parts[i].life < 100)
-					sim->parts[i].life += inc_life;
+				int limit = lifeinc[4];
+
+				if (inc_life < 0 && -sim->parts[i].life > inc_life)
+					inc_life = -sim->parts[i].life;
+				else if (inc_life > 0 && limit - sim->parts[i].life < inc_life)
+					inc_life = limit - sim->parts[i].life;
+
+				sim->parts[i].life += inc_life;
 			}
 		}
 	}
@@ -952,12 +1010,24 @@ void Element_STKM::removeSTKMChilds(Simulation *sim, playerst* playerp)
 	}
 }
 
-//#TPT-Directive ElementHeader Element_STKM static void createSTKMChild(Simulation *sim, playerst* playerp, int i, int np)
-void Element_STKM::createSTKMChild(Simulation *sim, playerst* playerp, int i, int np)
+//#TPT-Directive ElementHeader Element_STKM static playerst* _get_playerst(Simulation *sim, int stickmanID)
+playerst* Element_STKM::_get_playerst(Simulation *sim, int stickmanID)
+{
+	if (stickmanID >= 0 && stickmanID < MAX_FIGHTERS)
+		return &sim->fighters[stickmanID];
+	else if (stickmanID == MAX_FIGHTERS)
+		return &sim->player;
+	else if (stickmanID == (MAX_FIGHTERS + 1))
+		return &sim->player2;
+	return NULL;
+}
+
+//#TPT-Directive ElementHeader Element_STKM static void createSTKMChild(Simulation *sim, playerst* playerp, int parentf, int nc)
+void Element_STKM::createSTKMChild(Simulation *sim, playerst* playerp, int parentf, int nc)
 {
 	int old_FIGH_id, new_FIGH_id;
 	old_FIGH_id = playerp->lastChild;
-	new_FIGH_id = sim->parts[np].tmp;
+	new_FIGH_id = nc;
 	playerp->lastChild = new_FIGH_id;
 	if (playerp->firstChild < 0)
 		playerp->firstChild = new_FIGH_id;
@@ -965,12 +1035,20 @@ void Element_STKM::createSTKMChild(Simulation *sim, playerst* playerp, int i, in
 		sim->fighters[new_FIGH_id].prevStickman = old_FIGH_id;
 		sim->fighters[old_FIGH_id].nextStickman = new_FIGH_id;
 	}
+	sim->fighters[new_FIGH_id].parentStickman = parentf;
+}
+
+//#TPT-Directive ElementHeader Element_STKM static void createSTKMChild2(Simulation *sim, playerst* playerp, int i, int nc)
+void Element_STKM::createSTKMChild2(Simulation *sim, playerst* playerp, int i, int nc)
+{
+	int parentf = -1;
 	if (sim->parts[i].type == PT_FIGH)
-		sim->fighters[new_FIGH_id].parentStickman = sim->parts[i].tmp;
+		parentf = sim->parts[i].tmp;
 	else if (sim->parts[i].type == PT_STKM)
-		sim->fighters[new_FIGH_id].parentStickman = MAX_FIGHTERS;
+		parentf = MAX_FIGHTERS;
 	else if (sim->parts[i].type == PT_STKM2)
-		sim->fighters[new_FIGH_id].parentStickman = MAX_FIGHTERS + 1;
+		parentf = MAX_FIGHTERS + 1;
+	createSTKMChild(sim, playerp, parentf, nc);
 }
 
 Element_STKM::~Element_STKM() {}

@@ -52,16 +52,40 @@ int Element_REPP::update(UPDATE_FUNC_ARGS)
 	if (parts[i].life < 1)
 	{
 		float tempTemp = parts[i].temp;
-		int rnd = rand();
+		int rnd = rand(), t = parts[i].type;
 		int rx = (rnd % 7) - 3;
 		rnd >>= 3;
 		int ry = (rnd % 7) - 3;
-		// if (!(rx || ry))
-		//	return 0;
-		int r = sim->create_part(-1, x + rx, y + ry, PT_REPP);
-		if (r >= 0)
+		float mv = std::max((float)abs(rx), (float)abs(ry));
+		bool b = false;
+		if (sim->InBounds(x+rx, y+ry) && mv > ISTP)
 		{
-			parts[r].temp = tempTemp;
+			// TODO: Simulation::CheckLine
+			float dx = (float)rx * ISTP / mv;
+			float dy = (float)ry * ISTP / mv;
+			float xf = x, yf = y;
+			for (;;)
+			{
+				xf += dx; yf += dy; mv -= ISTP;
+				if (mv <= 0.0f)
+					break;
+				int xx = (int)(xf+0.5f), yy = (int)(yf+0.5f);
+				int r = pmap[yy][xx];
+				if ((r && (sim->elements[TYP(r)].Properties & TYPE_SOLID)) ||
+					sim->IsWallBlocking(xx, yy, t) || sim->bmap[yy/CELL][xx/CELL] == WL_DESTROYALL)
+				{
+					b = true;
+					break;
+				}
+			}
+		}
+		if (!b)
+		{
+			int np = sim->create_part(-1, x + rx, y + ry, t);
+			if (np >= 0)
+			{
+				parts[np].temp = tempTemp;
+			}
 		}
 		parts[i].tmp--;
 		parts[i].life = 10;

@@ -626,8 +626,14 @@ int LuaScriptInterface::interface_addNotification(lua_State * l)
 
 		virtual void Action()
 		{
+			int idx = lua_gettop(ls0);
 			lua_rawgeti(ls0, LUA_REGISTRYINDEX, ref0);
-			lua_pcall(ls0, 0, 0, 0);
+			lua_pcall(ls0, 0, 1, 0);
+			bool cl = lua_toboolean(ls0, -1);
+			if (cl)
+				luacon_model->RemoveNotification(this);
+			// pop(1)
+			lua_settop(ls0, idx);
 		}
 	};
 	luaL_checktype(l, 1, LUA_TSTRING);
@@ -2865,6 +2871,7 @@ void LuaScriptInterface::initStickmanAPI()
 		{"parent", stickman_parent},
 		{"firstChild", stickman_firstChild},
 		{"lastChild", stickman_lastChild},
+		{"newChild", stickman_newChild},
 		{"previousSibling", stickman_previousSibling},
 		{"prevSibling", stickman_previousSibling},
 		{"nextSibling", stickman_nextSibling},
@@ -2878,15 +2885,32 @@ void LuaScriptInterface::initStickmanAPI()
 	
 	SETCONST(l, MAX_FIGHTERS);
 
-	const char *flags_str[] {
-		"FIGHTER_NO_CMD", "NO_SPIT", "SPIT_ALL", "SPIT_FIGH_ENABLE", "NO_SET_LIFE",
-		"NO_SET_ELEM", "USE_PARENT_CMD", "SEEK_PARENT", "VACUUM_KILL", "ANTI_GRAV",
-		"NO_EMIT_PLASMA", "ENABLE_VAC_WALL"
-	};
-	
-	for (unsigned int i = 0; i < sizeof(flags_str) / sizeof(char*); i++)
-		lua_pushinteger(l, 1 << i),
-		lua_setfield(l, -2, flags_str[i]);
+	{
+		const char *flags_str[] {
+			"FIGHTER_NO_CMD", "NO_SPIT", "SPIT_ALL", "SPIT_FIGH_ENABLE", "NO_SET_LIFE",
+			"NO_SET_ELEM", "USE_PARENT_CMD", "SEEK_PARENT", "VACUUM_KILL", "ANTI_GRAV",
+			"NO_EMIT_PLASMA", "ENABLE_VAC_WALL", "SHOOT_VAC", "SUSPENDED"
+		};
+
+		const int g_count = 12, l_count = 2;
+		int i;
+
+		lua_createtable(l, 0, g_count);
+		for (i = 0; i < g_count; i++)
+		{
+			lua_pushinteger(l, 1 << i);
+			lua_setfield(l, -2, flags_str[i]);
+		}
+		lua_setfield(l, -2, "g"); // g = "global" property
+		
+		lua_createtable(l, 0, l_count);
+		for (i = g_count; i < g_count + l_count; i++)
+		{
+			lua_pushinteger(l, 1 << (i - g_count + 3));
+			lua_setfield(l, -2, flags_str[i]);
+		}
+		lua_setfield(l, -2, "l"); // l = "local" property (not Lua keyword)
+	}
 	
 	lua_pushinteger(l, 0x00000006);
 	lua_setfield(l, -2, "SPIT_FIGH_ONLY");
@@ -2894,23 +2918,12 @@ void LuaScriptInterface::initStickmanAPI()
 	lua_setfield(l, -2, "GLOBAL");
 }
 
-playerst* LuaScriptInterface::get_stickman_ptr (int stickmanID)
-{
-	if (stickmanID >= 0 && stickmanID < MAX_FIGHTERS)
-		return &luacon_sim->fighters[stickmanID];
-	else if (stickmanID == MAX_FIGHTERS)
-		return &luacon_sim->player;
-	else if (stickmanID == (MAX_FIGHTERS + 1))
-		return &luacon_sim->player2;
-	return NULL;
-}
-
 int LuaScriptInterface::stickman_parent(lua_State * l)
 {
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL)
 		lua_pushinteger(l, -1);
 	else
@@ -2923,7 +2936,7 @@ int LuaScriptInterface::stickman_firstChild(lua_State * l)
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL)
 		lua_pushinteger(l, -1);
 	else
@@ -2936,7 +2949,7 @@ int LuaScriptInterface::stickman_lastChild(lua_State * l)
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL)
 		lua_pushinteger(l, -1);
 	else
@@ -2944,12 +2957,36 @@ int LuaScriptInterface::stickman_lastChild(lua_State * l)
 	return 1;
 }
 
+int LuaScriptInterface::stickman_newChild(lua_State * l)
+{
+	if (lua_gettop(l) < 2)
+		return luaL_error(l, "Invalid argument length");
+	int x = luaL_checkinteger(l, 1);
+	int y = luaL_checkinteger(l, 2);
+	int p = luaL_optinteger(l, 3, -1);
+	playerst * ps = Element_STKM::_get_playerst(luacon_sim, p);
+	int np = -1, c = -1;
+	if (ps != NULL && ps->spwn)
+	{
+		np = luacon_sim->create_part(-3, x, y, PT_FIGH);
+		if (np >= 0)
+		{
+			c = luacon_sim->parts[np].tmp;
+			// playerst * cs = Element_STKM::_get_playerst(luacon_sim, c);
+			Element_STKM::createSTKMChild(luacon_sim, ps, p, c);
+		}
+	}
+	lua_pushinteger(l, np);
+	lua_pushinteger(l, c);
+	return 2;
+}
+
 int LuaScriptInterface::stickman_previousSibling(lua_State * l)
 {
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL)
 		lua_pushinteger(l, -1);
 	else
@@ -2962,7 +2999,7 @@ int LuaScriptInterface::stickman_nextSibling(lua_State * l)
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL)
 		lua_pushinteger(l, -1);
 	else
@@ -2973,12 +3010,14 @@ int LuaScriptInterface::stickman_nextSibling(lua_State * l)
 int LuaScriptInterface::stickman_flags(lua_State * l)
 {
 	int stkid = luaL_optinteger(l, 1, _STKM_GLOBAL_P);
-	playerst* st = get_stickman_ptr(stkid);
+	playerst* st = Element_STKM::_get_playerst(luacon_sim, stkid);
 	int* prop = NULL;
 	if (st != NULL && st->spwn)
 		prop = &st->__flags;
 	else if (stkid == _STKM_GLOBAL_P)
 		prop = &luacon_sim->Extra_FIGH_pause;
+	else if (stkid == _STKM_GLOBAL_P + 1)
+		prop = &Element_STKM::lifeinc[4];
 	
 	if (lua_gettop(l) >= 2)
 	{
@@ -2998,7 +3037,7 @@ int LuaScriptInterface::stickman_toElementID(lua_State * l)
 	if (lua_gettop(l) < 1)
 		return luaL_error(l, "Invalid argument length");
 	int stickmanID = luaL_checkinteger(l, 1);
-	playerst* stickman = get_stickman_ptr(stickmanID);
+	playerst* stickman = Element_STKM::_get_playerst(luacon_sim, stickmanID);
 	if (stickman == NULL || !(stickman->spwn))
 		lua_pushinteger(l, -1);
 	else

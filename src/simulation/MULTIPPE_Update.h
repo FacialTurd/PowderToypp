@@ -17,6 +17,7 @@ public:
 	static Renderer * ren_;
 	static int update(UPDATE_FUNC_ARGS);
 	static int graphics(GRAPHICS_FUNC_ARGS);
+	static void do_breakpoint();
 	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);
 	// static int AddCharacter(Simulation *sim, int x, int y, int c, int rgb);
 	static void conductTo (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?

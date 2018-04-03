@@ -54,27 +54,22 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 		sim->kill_part(i);
 		return 1;
 	}
-	playerst* figh = &sim->fighters[(unsigned char)parts[i].tmp];
-	playerst* parent_s = NULL;
+
+	int figh_id = parts[i].tmp;
+	playerst* figh = &sim->fighters[figh_id];
 
 	if (figh->__flags & _STKM_FLAG_SUSPEND)
 		return 1;
 
 	int tarx, tary, __parent;
 
-	parts[i].tmp2 = 0;
-		// tmp2:
+	int _act = 0;
 		//   0 - stay in place
 		//   1 - seek a stick man
 		//   2 - from parent command
 	
 	__parent = figh->parentStickman;
-	if (__parent < MAX_FIGHTERS)
-		parent_s = &sim->fighters[__parent];
-	else if (__parent == MAX_FIGHTERS)
-		parent_s = &sim->player;
-	else if (__parent == MAX_FIGHTERS + 1)
-		parent_s = &sim->player2;
+	playerst* parent_s = Element_STKM::_get_playerst(sim, __parent);
 	
 	//Set target cords
 	if (__parent >= 0)
@@ -83,7 +78,7 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 		{
 		case 1:
 			// using parent's command
-			parts[i].tmp2 = 2;
+			_act = 2;
 			goto FIGH_break1;
 		case 2:
 			if (__parent >= MAX_FIGHTERS)
@@ -92,7 +87,7 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 			// seek parent stick man
 			tarx = (int)(parent_s->legs[2]);
 			tary = (int)(parent_s->legs[3]);
-			parts[i].tmp2 = 1;
+			_act = 1;
 			goto FIGH_break1;
 		}
 	}
@@ -111,18 +106,20 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 				tarx = (int)sim->player2.legs[2];
 				tary = (int)sim->player2.legs[3];
 			}
-			parts[i].tmp2 = 1;
+			_act = 1;
 		}
 		else if (sim->player.spwn)
 		{
 			tarx = (int)sim->player.legs[2];
 			tary = (int)sim->player.legs[3];
-			parts[i].tmp2 = 1;
+			_act = 1;
 		}
 	}
 	FIGH_break1:
+	
+	// figh->action = _act;
 
-	switch (parts[i].tmp2)
+	switch (_act)
 	{
 	case 1:
 		if ((pow(float(tarx-x), 2) + pow(float(tary-y), 2))<600)
@@ -132,7 +129,7 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 			    || sim->elements[figh->elem].Properties&(PROP_DEADLY|PROP_RADIOACTIVE)
 			    || sim->elements[figh->elem].Temperature>=323 || sim->elements[figh->elem].Temperature<=243))
 				figh->comm = (int)figh->comm | 0x08;
-			if (figh->elem == PT_FIGH && (sim->Extra_FIGH_pause & 0x0F) == 0x0E)
+			if (((figh->__flags & _STKM_FLAG_EPROP) == _STKM_FLAG_EFIGH) && (sim->Extra_FIGH_pause & 0x0F) == 0x0E)
 				figh->comm = (int)figh->comm | 0x08;
 		}
 		else if (tarx<x)
@@ -191,32 +188,23 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_FIGH static void removeFIGHNode(Simulation *sim, int i)
 void Element_FIGH::removeFIGHNode(Simulation *sim, int i)
 {
-	int prev_f, next_f, parent_f;
-	unsigned char tmp;
+	int prev_f, next_f, parent_f, tmp;
 
-	playerst* parent_s = NULL;
-
-	tmp = (unsigned char)(sim->parts[i].tmp);
+	tmp = sim->parts[i].tmp;
 	prev_f = sim->fighters[tmp].prevStickman;
 	next_f = sim->fighters[tmp].nextStickman;
 	parent_f = sim->fighters[tmp].parentStickman;
-	
-	if (parent_f >= 0 && parent_f < MAX_FIGHTERS)
-		parent_s = &sim->fighters[(unsigned char)parent_f];
-	else if (parent_f == MAX_FIGHTERS)
-		parent_s = &sim->player;
-	else if (parent_f == MAX_FIGHTERS + 1)
-		parent_s = &sim->player2;
+	playerst* parent_s = Element_STKM::_get_playerst(sim, parent_f);
 	
 	if (prev_f >= 0) // if previous (non-first) fighter is exist
-		sim->fighters[(unsigned char)prev_f].nextStickman = next_f;
+		sim->fighters[prev_f].nextStickman = next_f;
 	else if (parent_s != NULL)
 	{
 		parent_s->firstChild = next_f;
 	}
 
 	if (next_f >= 0) // if next (non-last) fighter is exist
-		sim->fighters[(unsigned char)next_f].prevStickman = prev_f;
+		sim->fighters[next_f].prevStickman = prev_f;
 	else if (parent_s != NULL)
 	{
 		parent_s->lastChild = prev_f;

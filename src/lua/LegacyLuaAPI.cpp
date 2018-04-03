@@ -749,53 +749,119 @@ int luatpt_element_func(lua_State *l)
 
 #if defined(TPT_NEED_DLL_PLUGIN)
 // TODO: 64-bit
-int temp_SEH_Part_L0;
-char catchedexception;
-__cdecl int DLLAPI1(Simulation*,int,int,int,void*,int,int*,int*);
 
-asm (
-	"__Z7DLLAPI1P10SimulationiiiPviPiS2_:"
-	"movl $0, _catchedexception;"
-	"movl %fs:0, %eax;"
-	"popl %ecx;"
-	"movl 24(%esp), %edx;"
-	"movl %eax, (%edx);"
-	"movl $myasm_DLLAPI1_L2, 4(%edx);"
-	"movl %esp, 8(%edx);"
-	"movl %ebx, 12(%edx);"
-	"movl %esi, 16(%edx);"
-	"movl %edi, 20(%edx);"
-	"movl %ebp, 24(%edx);"
-	"movl 20(%esp), %eax;"
-	"movl %ecx, 20(%esp);"
-	"movl %edx, %fs:0\n\t"
-	".p2align 3,,7\n\t"
-	"movl %edx, _temp_SEH_Part_L0;"
-	"call *%eax\n\t"
-	"myasm_DLLAPI1_L1:"
-	"movl _temp_SEH_Part_L0, %eax;"
-	"movl 8(%eax), %esp;"
-	"movl 28(%esp), %edi;"
-	"movl _catchedexception, %esi;"
-	"orl %esi, (%edi);"
-	"movl 12(%eax), %ebx;"
-	"movl 16(%eax), %esi;"
-	"movl 20(%eax), %edi;"
-	"movl 24(%eax), %ebp;"
-	"movl (%eax), %ecx;"
-	"pushl 20(%esp);"
-	"movl %ecx, %fs:0;"
+__asm__ (
+	".text\n\t"
+	".p2align 4,,15\n\t"
+	".call_dll_api_1:"
+	"push %ebp;"
+	"movl %esp, %ebp;"
+	"push %ebx;"
+	"push %esi;"
+	"push %edi;"
+	"pushl $.call_dll_exc;"
+	"pushl %fs:0;"
+	"movl %esp, %fs:0;"
+	"leal .captureGPR, %esi;"
+	"call *8(%ebp);"
+	"xorl %ebx, %ebx;"
+	".call_dll_exc_end:"
+	"movl %fs:0, %esp;"
+	"pop  %fs:0;"
+	"pop  %edi;"
+	"pop  %edi;"
+	"movl 28(%edi), %esi;"
+	"orl  %ebx, (%esi);"
+	"pop  %esi;"
+	"pop  %ebx;"
+	"pop  %ebp;"
 	"ret\n"
-	"myasm_DLLAPI1_L2:"
-	"orb $1, _catchedexception;"
-	"jmp myasm_DLLAPI1_L1\n\t"
+	".call_dll_exc:"
+	"movl 8(%esp), %ebx;"
+	"movl %ebx, %fs:0;"
+	"movl $1, %ebx;"
+	"jmp  .call_dll_exc_end\n\t"
+	".p2align 3,,7\n\t"
+	".captureGPR:"
+	"pushfl;"
+	"pushal;"
+	"mov %esp, %eax;"
+	"addl $8, 12(%eax);"
+	"push %eax;"
+	"call ._captureGPR_render0;"
+	"add $4, %esp;" // can replace with "pop"
+	"popal;"
+	"popfl;"
+	"ret\n\t"
 	".p2align 4,,15\n\t"
 );
+
+void captureGPR_render0 (int32_t* GPR)
+{
+	// EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX, EFLAGS, EIP
+	// char fstr[20];
+	// sprintf(fstr, "EAX=%08x", GPR[7]);
+	// luacon_g->drawtext(30,50,fstr,255,255,255,255);
+	
+	class GPR_window: public ui::Window
+	{
+	public:
+		int32_t* gprl;
+		int32_t gpra[30];
+		GPR_window(int32_t* gprl_):
+		ui::Window(ui::Point(-1, -1), ui::Point(330, 113)),
+		gprl(gprl_)
+		{
+			int i;
+			for (i = 0; i < 10; i++)
+				gpra[i] = gprl[i];
+			MakeActiveWindow();
+			int32_t* tmpstack = (int32_t*)gprl[3];
+			int32_t* tmpstackend;
+			std::cout << tmpstack << std::endl;
+			__asm__ __volatile__ ("mov %%fs:4, %0" : "+r"(tmpstackend));
+			for (i = 0; i < 20 && tmpstack < tmpstackend; i++)
+				gpra[i+10] = tmpstack[i];
+			for (; i < 20; i++)
+				gpra[i+10] = 0;
+		};
+		void OnDraw()
+		{
+			Graphics * g = GetGraphics();
+			
+			int x = Position.X, y = Position.Y, i;
+
+			g->clearrect(x-2, y-2, Size.X+3, Size.Y+3);
+			g->drawrect(x, y, Size.X, Size.Y, 200, 200, 200, 255);
+			const char* r[] = {"EAX","EBX","ECX","EDX","EBP","ESP","ESI","EDI","EIP","EFLAGS"};
+			const char rp[] = {7,4,6,5,2,3,1,0,9,8};
+			char gprs[20];
+			for (i = 0; i < 10; i++)
+			{
+				sprintf(gprs, "%s=%08X", r[i], gpra[(int)rp[i]]);
+				g->drawtext(x+8+80*(i%4), y+8+15*(i/4), gprs, 255, 255, 255, 255);
+			}
+			g->drawtext(x+8, y+53, "Stack:", 255, 255, 255, 255);
+			for (i = 0; i < 20; i++)
+			{
+				sprintf(gprs, "%08X", gpra[i+10]);
+				g->drawtext(x+42+55*(i%5), y+53+15*(i/5), gprs, 255, 255, 255, 255);
+			}
+		};
+		void OnTryExit(ExitMethod method)
+		{
+			CloseActiveWindow();
+			SelfDestruct();
+		}
+	};
+	
+	new GPR_window(GPR);
+}
 #endif
 
-void luacon_debug_trigger(int tid, int pid, int x, int y)
+void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 {
-	unsigned char fnmode = lua_trigger_fmode[tid];
+	unsigned char fnmode = lua_trigger_fmode[trigr_id];
 	/* fnmode:
 		0: no function / only DLL
 		1: replace
@@ -803,13 +869,15 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 		3: update before
 	*/
 #ifdef TPT_NEED_DLL_PLUGIN
-	const static void *(simdata[6]) = {
+	const static void *(simdata[8]) = {
+		luacon_sim,
 		luacon_sim->parts,		// particle data
 		luacon_sim->pmap,		// particle map
 		luacon_sim->photons,	// photons map
 		luacon_sim->bmap,		// block (wall) map
 		luacon_sim->pv,			// pressure map
 		&luacon_sim->pfree,		// last freed particle
+		&luacon_sim->dllexceptionflag
 	};
 	const static short loadorder[4] = {
 		// 0x00FF: function process ID
@@ -818,22 +886,29 @@ void luacon_debug_trigger(int tid, int pid, int x, int y)
 		0x0100,0x0300,0x0001,0x0200
 	};
 	int currload = loadorder[fnmode];
-	int callfunc;
+	intptr_t callfunc;
 	for (;;)
 	{
 		if (currload & 0x200)
 #else
 		if (fnmode)
 #endif
-			luacall_debug_trigger(tid, pid, x, y);
+			luacall_debug_trigger(trigr_id, i, x, y);
 #ifdef TPT_NEED_DLL_PLUGIN
-		else if (callfunc = (int)LuaScriptInterface::dll_trigger_func[tid])
+		else
 		{
-			int tmp[7];
+			callfunc = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
+			if (callfunc != (intptr_t)NULL)
+			{
 #if MAX_DLL_FUNCTIONS < 256
-			if (tid >= MAX_DLL_FUNCTIONS) return;
+				if (tid >= MAX_DLL_FUNCTIONS) return;
 #endif
-			DLLAPI1(luacon_sim, pid, x, y, simdata, callfunc, tmp, &luacon_sim->dllexceptionflag);
+				__asm__ __volatile__ (
+					"push %3; call .call_dll_api_1; pop %%eax"
+					:: "a"(i), "c"(x), "d"(y), "g"(callfunc), "D"(simdata)
+					: "esp", "cc"
+				);
+			}
 		}
 		if (currload & 0x100)
 			break;
