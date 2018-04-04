@@ -754,35 +754,40 @@ __asm__ (
 	".text\n\t"
 	".p2align 4,,15\n\t"
 	".call_dll_api_1:"
+	".byte 0xEB, 0; cld;" // 2-byte nop + cld
 	"push %ebp;"
 	"movl %esp, %ebp;"
 	"push %ebx;"
 	"push %esi;"
 	"push %edi;"
-	"pushl $.call_dll_exc;"
+	"movl 4(%esi), %edi;"
+	"pushl 28(%edi);"
+	"pushl (%esi);"
+	"movl $.Lcall_dll_excp, %esi;"
+	"pushl %esi;"
 	"pushl %fs:0;"
 	"movl %esp, %fs:0;"
-	"leal .captureGPR, %esi;"
-	"call *8(%ebp);"
+	"movl $.LcaptureGPR0, %esi;"
+	"call *-20(%ebp);"
 	"xorl %ebx, %ebx;"
-	".call_dll_exc_end:"
+	".Lcall_dll_exc_end:"
 	"movl %fs:0, %esp;"
 	"pop  %fs:0;"
+	"add  $8, %esp;"
 	"pop  %edi;"
+	"orl  %ebx, (%edi);"
 	"pop  %edi;"
-	"movl 28(%edi), %esi;"
-	"orl  %ebx, (%esi);"
 	"pop  %esi;"
 	"pop  %ebx;"
 	"pop  %ebp;"
 	"ret\n"
-	".call_dll_exc:"
+	".Lcall_dll_excp:"
 	"movl 8(%esp), %ebx;"
 	"movl %ebx, %fs:0;"
 	"movl $1, %ebx;"
-	"jmp  .call_dll_exc_end\n\t"
+	"jmp  .Lcall_dll_exc_end\n\t"
 	".p2align 3,,7\n\t"
-	".captureGPR:"
+	".LcaptureGPR0:"
 	"pushfl;"
 	"pushal;"
 	"mov %esp, %eax;"
@@ -886,7 +891,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		0x0100,0x0300,0x0001,0x0200
 	};
 	int currload = loadorder[fnmode];
-	intptr_t callfunc;
+	intptr_t callfunc[2];
 	for (;;)
 	{
 		if (currload & 0x200)
@@ -895,18 +900,19 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 #endif
 			luacall_debug_trigger(trigr_id, i, x, y);
 #ifdef TPT_NEED_DLL_PLUGIN
-		else
-		{
-			callfunc = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
-			if (callfunc != (intptr_t)NULL)
-			{
 #if MAX_DLL_FUNCTIONS < 256
-				if (tid >= MAX_DLL_FUNCTIONS) return;
+		else if (trigr_id < MAX_DLL_FUNCTIONS)
+#else
+		else
 #endif
+		{
+			callfunc[0] = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
+			callfunc[1] = (intptr_t)simdata;
+			if (callfunc[0] != (intptr_t)NULL)
+			{
 				__asm__ __volatile__ (
-					"push %3; call .call_dll_api_1; pop %%eax"
-					:: "a"(i), "c"(x), "d"(y), "g"(callfunc), "D"(simdata)
-					: "esp", "cc"
+					"call .call_dll_api_1;"
+					:: "a"(i), "c"(x), "d"(y), "S"(callfunc) : "cc"
 				);
 			}
 		}
