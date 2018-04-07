@@ -82,6 +82,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 	int r, rx, ry, rt, target_r = -1;
 	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
+	int DMG_count = 0;
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 			if (BOUNDS_CHECK)
@@ -137,8 +138,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						partsi(r).vy = 0.25f*partsi(r).vy + parts[i].vy;
 						partsi(r).life --;
 						partsi(r).temp = restrict_flt(partsi(r).temp + partsi(r).life*17.0f, MIN_TEMP, MAX_TEMP);
-						pv[y/CELL][x/CELL] += 6.0f * CFDS;
-
+						sim->pv[y/CELL][x/CELL] += 6.0f * CFDS;
 					}
 					break;
 #endif
@@ -166,6 +166,9 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 				case PT_POLC:
 					if (partsi(r).tmp && !(rand()%80))
 						partsi(r).tmp--;
+					break;
+				case PT_DMG:
+					DMG_count++;
 					break;
 				case ELEM_MULTIPP:
 					{
@@ -233,12 +236,12 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						if (j == 5)
 							iY = 0, iX = 0;
 					}
-					else if (partsi(r).life == 16 && partsi(r).ctype == 25)
+					else if (partsi(r).life == 16 && partsi(r).ctype == 25 && Element_MULTIPP::Arrow_keys != NULL)
 					{
 						int tmp2 = partsi(r).tmp2;
 						int multiplier = (tmp2 >> 4) + 1;
 						tmp2 &= 0x0F;
-						if (Element_MULTIPP::Arrow_keys & 0x10 && tmp2 >= 1 && tmp2 <= 8)
+						if (Element_MULTIPP::Arrow_keys[0] & 0x10 && tmp2 >= 1 && tmp2 <= 8)
 						{
 							iX += multiplier*sim->portal_rx[tmp2-1];
 							iY += multiplier*sim->portal_ry[tmp2-1];
@@ -265,6 +268,24 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					break;
 				}
 			}
+
+	if (DMG_count)
+	{
+		bool b = false;
+		for (int xx = -2; xx < 3; xx++)
+			for (int yy = -2; yy < 3; yy++)
+				if (x/CELL+xx >= 0 && x/CELL+xx < XRES/CELL &&
+					y/CELL+yy >= 0 && y/CELL+yy < YRES/CELL &&
+					sim->wtypes[ sim->bmap[y/CELL+yy][x/CELL+xx] ].PressureTransition >= 0)
+				{
+					sim->bmap_brk[y/CELL+yy][x/CELL+xx] |= 1;
+					sim->pv[y/CELL+yy][x/CELL+xx] += DMG_count*1.0f;
+					b = true;
+				}
+		if (b)
+			sim->pv[y/CELL][x/CELL] += DMG_count*10.0f;
+	}
+
 	if (target_r >= 0)
 	{
 		ChangeDirection(sim, i, x, y, &parts[i], &parts[target_r]);

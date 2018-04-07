@@ -44,10 +44,13 @@ Element_FUSE::Element_FUSE()
 	Update = &Element_FUSE::update;
 }
 
+#define PFLAG_FUSE_BURNING	0x10
+
 //#TPT-Directive ElementHeader Element_FUSE static int update(UPDATE_FUNC_ARGS)
 int Element_FUSE::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry;
+	int r, rx, ry, rt;
+	bool burning = (sim->legacy_enable && (parts[i].flags & PFLAG_FUSE_BURNING) ? !(rand()%6) : false);
 	if (parts[i].life<=0) {
 		r = sim->create_part(i, x, y, PT_PLSM);
 		if (r>-1)
@@ -70,7 +73,7 @@ int Element_FUSE::update(UPDATE_FUNC_ARGS)
 	}
 	else if (parts[i].tmp<40)
 		parts[i].tmp--;
-
+	
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -78,12 +81,19 @@ int Element_FUSE::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_SPRK || (parts[i].temp>=(273.15+700.0f) && !(rand()%20)))
+				rt = TYP(r);
+				if (rt==PT_SPRK)
+					burning = true;
+				if (sim->legacy_enable)
 				{
-					if (parts[i].life > 40)
-						parts[i].life = 39;
+					if (partsi(r).life < 5 || rt==PT_PLSM)
+						parts[i].flags |= PFLAG_FUSE_BURNING;
 				}
+				else if (parts[i].temp>=(273.15+700.0f) && !(rand()%20))
+					burning = true;
 			}
+	if (burning && parts[i].life > 40)
+		parts[i].life = 39;
 	return 0;
 }
 

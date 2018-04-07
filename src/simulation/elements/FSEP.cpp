@@ -44,6 +44,8 @@ Element_FSEP::Element_FSEP()
 	Update = &Element_FSEP::update;
 }
 
+#define PFLAG_FUSE_BURNING	0x10
+
 //#TPT-Directive ElementHeader Element_FSEP static int update(UPDATE_FUNC_ARGS)
 int Element_FSEP::update(UPDATE_FUNC_ARGS)
 {
@@ -70,7 +72,7 @@ int Element_FSEP::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (((r&0xFF)==PT_SPRK || (parts[i].temp>=(273.15+400.0f))) && parts[i].life>40 && !(rand()%15))
+					if ((TYP(r)==PT_SPRK || (parts[i].temp>=(273.15+400.0f))) && parts[i].life>40 && !(rand()%15))
 					{
 						parts[i].life = 39;						
 					}

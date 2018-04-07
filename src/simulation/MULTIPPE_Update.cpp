@@ -2,6 +2,7 @@
 #include "simulation/Air.h"
 //#include "simulation/Gravity.h"
 #include "simulation/MULTIPPE_Update.h" // link to Renderer
+#include "common/tpt-math.h"
 #include "simplugin.h"
 
 #ifdef LUACONSOLE
@@ -1092,7 +1093,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						{
 							nx = x + rx; ny = y + ry;
 							r = pmap[ny][nx];
-							int nrx, nry, brx, bry;
+							int nrx, nry, brx, bry, wrx, wry;
 							if (!r)
 								continue;
 							switch (TYP(r))
@@ -1351,10 +1352,18 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										break;
 									}
 								}
-								else if (partsi(r).life == 16 && partsi(r).ctype == 5 && partsi(r).tmp >= 0x40)
+								else if (partsi(r).life == 16)
 								{
-									rrt = partsi(r).tmp;
-									partsi(r).tmp = ((rrt - 0x40) ^ 0x40) + 0x40;
+									if (partsi(r).ctype == 5 && partsi(r).tmp >= 0x40)
+									{
+										rrt = partsi(r).tmp;
+										partsi(r).tmp = ((rrt - 0x40) ^ 0x40) + 0x40;
+									}
+									else if (partsi(r).ctype == 8)
+									{
+										for (int j = 1; j <= 2; j++)
+											BreakWallTest(sim, nx + j*rx, ny + j*ry, true);
+									}
 								}
 								break;
 							}
@@ -1792,36 +1801,41 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					}
 			return return_value;
 		case 25: // arrow key detector
-			rrx = Element_MULTIPP::Arrow_keys; // current state
-			rry = (parts[i].flags >> 16); // previous state
+			if (Element_MULTIPP::Arrow_keys == NULL)
+				return return_value; // for failure case
+			{
+			int cst = Element_MULTIPP::Arrow_keys[0]; // current state
+			int pst = Element_MULTIPP::Arrow_keys[1]; // previous state
+			int ast = 0;
 			if (rtmp & 0x10)
 			{
 				rtmp &= ~0x10;
-				rrx = (rrx & 0x10) ? 0xF : 0;
+				cst = (cst & 0x10) ? 0xF : 0;
+				pst = (pst & 0x10) ? 0xF : 0;
 			}
 			switch (rtmp)
 			{
-				case 0: break;
-				case 1: rry = rrx & ~rry; break; // start pressing key
-				case 2: rry &= ~rrx; break; // end pressing key
-				case 3: (rrx & (rrx-1) & 0xF) && (rrx = 0); break; // check single arrow key, maybe optimize to cmovcc?
-				case 4: rrx &= (rrx >> 2) & 3; rrx |= (rrx << 2); break;
+				case 0: ast = pst; break;
+				case 1: ast = cst & ~pst; break; // start pressing key
+				case 2: ast = pst & ~cst; break; // end pressing key
+				case 3: // check single arrow key
+					(pst & (pst-1) & 0xF) || (ast = pst);
+				break;
+				case 4: ast = pst & (pst >> 2) & 3; ast |= (ast << 2); break;
 				case 5: case 6:
-					rrx &= 0xF; rrx |= (rrx << 4); rrx &= (rrx >> (rtmp == 5 ? 1 : 3));
+					ast = pst & 0xF; ast |= (ast << 4); ast &= (ast >> (rtmp == 5 ? 1 : 3));
 				break;
 				default:
 					return return_value;
 			}
-			parts[i].flags &= 0x0000FFFF;
-			parts[i].flags |= (rrx << 16);
 			for (rii = 0; rii < 4; rii++) // do 4 times
 			{
-				if (rry & (1 << rii)) // check direction
+				if (ast & (1 << rii)) // check direction
 				{
 					rx = tron_ry[rii];
 					ry = tron_rx[rii];
 					r = pmap[y+ry][x+rx]; // checking distance = 1
-					if (!r)
+					if (!r || TYP(r) == PT_FILT || CHECK_EXTEL(r, ELEM_MDECOR))
 					{
 						rx *= 2; ry *= 2;
 						r = pmap[y+ry][x+rx]; // checking distance = 2
@@ -1831,6 +1845,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					if ((ELEMPROPT(r)&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
 						conductTo (sim, r, x+rx, y+ry, parts);
 				}
+			}
 			}
 			return return_value;
 		case 26: // SWCH toggler
@@ -2690,7 +2705,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 #if !defined(RENDERER) && defined(LUACONSOLE)
 	case 40:
 		{
-			int funcid = (parts[i].ctype & 0x1F) + 0x100;
+			int funcid = (parts[i].ctype & 0x3F) + 0x100;
 			if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
 		}
 		break;

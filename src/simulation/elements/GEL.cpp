@@ -62,7 +62,7 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = r&0xFF;
+				rt = TYP(r); r >>= PMAPBITS;
 				//Desaturation
 				switch (rt)
 				{
@@ -72,14 +72,14 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					if (parts[i].tmp<100 && 500>rand()%absorbChanceDenom)
 					{
 						parts[i].tmp++;
-						sim->kill_part(r>>8);
+						sim->kill_part(r);
 					}
 					break;
 				case PT_PSTE:
 					if (parts[i].tmp<100 && 20>rand()%absorbChanceDenom)
 					{
 						parts[i].tmp++;
-						sim->create_part(r>>8, x+rx, y+ry, PT_CLST);
+						sim->create_part(r, x+rx, y+ry, PT_CLST);
 					}
 					break;
 				case PT_SLTW:
@@ -87,49 +87,49 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					{
 						parts[i].tmp++;
 						if (rand()%4)
-							sim->kill_part(r>>8);
+							sim->kill_part(r);
 						else
-							sim->part_change_type(r>>8, x+rx, y+ry, PT_SALT);
+							sim->part_change_type(r, x+rx, y+ry, PT_SALT);
 					}
 					break;
 				case PT_CBNW:
 					if (parts[i].tmp<100 && 100>rand()%absorbChanceDenom)
 					{
 						parts[i].tmp++;
-						sim->part_change_type(r>>8, x+rx, y+ry, PT_CO2);
+						sim->part_change_type(r, x+rx, y+ry, PT_CO2);
 					}
 					break;
 				case PT_SPNG:
 					// Concentration diffusion
-					if (parts[r>>8].life>0 && parts[i].tmp<100 && ((parts[r>>8].life+1)>parts[i].tmp))
+					if (parts[r].life>0 && parts[i].tmp<100 && ((parts[r].life+1)>parts[i].tmp))
 					{
 						// SPNG -> GEL
-						parts[r>>8].life--;
+						parts[r].life--;
 						parts[i].tmp++;
 					}
-					else if (parts[i].tmp>0 && (parts[r>>8].life+1)<parts[i].tmp)
+					else if (parts[i].tmp>0 && (parts[r].life+1)<parts[i].tmp)
 					{
 						// SPNG <- GEL (saturation limit of SPNG is ignored here)
-						parts[r>>8].life++;
+						parts[r].life++;
 						parts[i].tmp--;
 					}
 					break;
 				case PT_GEL:
-					if ((parts[r>>8].tmp+1)<parts[i].tmp)
+					if ((parts[r].tmp+1)<parts[i].tmp)
 					{
-						parts[r>>8].tmp++;
+						parts[r].tmp++;
 						parts[i].tmp--;
 					}
 					gel = true;
 					break;
 				case ELEM_MULTIPP:
-					if (parts[r>>8].life == 38 && (parts[r>>8].tmp2 & 7) != 4)
+					if (parts[r].life == 38 && (parts[r].tmp2 & 7) != 4)
 					{
-						int * ctype = &parts[r>>8].ctype;
+						int * ctype = &parts[r].ctype;
 						if (!(*ctype)) *ctype = PT_WATR;
 						if (*ctype == PT_WATR || *ctype == PT_DSTW)
 						{
-							parts[r>>8].tmp += parts[i].tmp;
+							parts[r].tmp += parts[i].tmp;
 							parts[i].tmp = 0;
 						}
 						else if (*ctype == PT_GEL)
@@ -140,24 +140,24 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 									sim->kill_part(i);
 								else
 									sim->part_change_type(i, x, y, PT_WATR);
-								parts[r>>8].tmp++;
+								parts[r].tmp++;
 								return 1;
 							}
 							else // merging N GELs
 							{
 								int rndstore = rand();
-								int mx, my, mr, ms;
+								int mx, my, mr, ms, mi;
 								mx = x + sim->portal_rx[rndstore&7];
 								my = y + sim->portal_ry[rndstore&7];
-								mr = pmap[my][mx];
-								if ((mr&0xFF) == PT_GEL)
+								mr = pmap[my][mx]; mi = mr >> PMAPBITS;
+								if (TYP(mr) == PT_GEL)
 								{
-									ms = parts[mr>>8].tmp + parts[i].tmp;
+									ms = parts[mi].tmp + parts[i].tmp;
 									if (ms < 100)
 									{
 										parts[i].tmp = ms;
-										sim->kill_part(mr>>8);
-										parts[r>>8].tmp++;
+										sim->kill_part(mi);
+										parts[r].tmp++;
 									}
 								}
 							}
@@ -165,17 +165,17 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_PINVIS:
-					r = parts[r>>8].tmp4;
+					r = parts[r].tmp4;
 					if (!r) continue;
-					rt = r & 0xFF;
+					rt = TYP(r);
 					if (rt == PT_GEL) gel = true;
 					break;
 				default:
 					break;
 				}
 				float dx, dy;
-				dx = parts[i].x - parts[r>>8].x;
-				dy = parts[i].y - parts[r>>8].y;
+				dx = parts[i].x - parts[r].x;
+				dy = parts[i].y - parts[r].y;
 
 				//Stickiness
 				if ((dx*dx + dy*dy)>1.5 && (gel || !sim->elements[rt].Falldown || (fabs((float)rx)<2 && fabs((float)ry)<2)))
@@ -190,8 +190,8 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 					parts[i].vy += dy;
 					if ((sim->elements[rt].Properties&TYPE_PART) || rt==PT_GOO)
 					{
-						parts[r>>8].vx -= dx;
-						parts[r>>8].vy -= dy;
+						parts[r].vx -= dx;
+						parts[r].vy -= dy;
 					}
 				}
 			}

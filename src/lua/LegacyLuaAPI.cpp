@@ -760,20 +760,18 @@ __asm__ (
 	"push %ebx;"
 	"push %esi;"
 	"push %edi;"
-	"movl 4(%esi), %edi;"
 	"pushl 28(%edi);"
-	"pushl (%esi);"
 	"movl $.Lcall_dll_excp, %esi;"
 	"pushl %esi;"
 	"pushl %fs:0;"
 	"movl %esp, %fs:0;"
 	"movl $.LcaptureGPR0, %esi;"
-	"call *-20(%ebp);"
+	"call *-8(%ebp);"
 	"xorl %ebx, %ebx;"
 	".Lcall_dll_exc_end:"
 	"movl %fs:0, %esp;"
 	"pop  %fs:0;"
-	"add  $8, %esp;"
+	"add  $4, %esp;"
 	"pop  %edi;"
 	"orl  %ebx, (%edi);"
 	"pop  %edi;"
@@ -788,15 +786,32 @@ __asm__ (
 	"jmp  .Lcall_dll_exc_end\n\t"
 	".p2align 3,,7\n\t"
 	".LcaptureGPR0:"
+	"push %ebp;"
+	"mov %esp, %ebp;"
 	"pushfl;"
-	"pushal;"
-	"mov %esp, %eax;"
-	"addl $8, 12(%eax);"
 	"push %eax;"
+	"push %edi;"
+	"push %esi;"
+	"movl (%ebp), %esi;"
+	"leal 8(%esi), %edi;"
+	"push %edi;"
+	"push (%esi);"
+	"push %edx;"
+	"push %ecx;"
+	"push %ebx;"
+	"push %eax;"
+	"push %esp;"
 	"call ._captureGPR_render0;"
-	"add $4, %esp;" // can replace with "pop"
-	"popal;"
+	"pop %eax;"
+	"pop %eax;"
+	"pop %ebx;"
+	"pop %ecx;"
+	"pop %edx;"
+	"movl 8(%esp), %esi;"
+	"movl 12(%esp), %edi;"
+	"addl $20, %esp;"
 	"popfl;"
+	"pop %ebp;"
 	"ret\n\t"
 	".p2align 4,,15\n\t"
 );
@@ -821,7 +836,7 @@ void captureGPR_render0 (int32_t* GPR)
 			for (i = 0; i < 10; i++)
 				gpra[i] = gprl[i];
 			MakeActiveWindow();
-			int32_t* tmpstack = (int32_t*)gprl[3];
+			int32_t* tmpstack = (int32_t*)gprl[5];
 			int32_t* tmpstackend;
 			std::cout << tmpstack << std::endl;
 			__asm__ __volatile__ ("mov %%fs:4, %0" : "+r"(tmpstackend));
@@ -839,11 +854,10 @@ void captureGPR_render0 (int32_t* GPR)
 			g->clearrect(x-2, y-2, Size.X+3, Size.Y+3);
 			g->drawrect(x, y, Size.X, Size.Y, 200, 200, 200, 255);
 			const char* r[] = {"EAX","EBX","ECX","EDX","EBP","ESP","ESI","EDI","EIP","EFLAGS"};
-			const char rp[] = {7,4,6,5,2,3,1,0,9,8};
 			char gprs[20];
 			for (i = 0; i < 10; i++)
 			{
-				sprintf(gprs, "%s=%08X", r[i], gpra[(int)rp[i]]);
+				sprintf(gprs, "%s=%08X", r[i], gpra[(int)i]);
 				g->drawtext(x+8+80*(i%4), y+8+15*(i/4), gprs, 255, 255, 255, 255);
 			}
 			g->drawtext(x+8, y+53, "Stack:", 255, 255, 255, 255);
@@ -891,7 +905,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		0x0100,0x0300,0x0001,0x0200
 	};
 	int currload = loadorder[fnmode];
-	intptr_t callfunc[2];
+	intptr_t callfunc;
 	for (;;)
 	{
 		if (currload & 0x200)
@@ -906,13 +920,12 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		else
 #endif
 		{
-			callfunc[0] = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
-			callfunc[1] = (intptr_t)simdata;
-			if (callfunc[0] != (intptr_t)NULL)
+			callfunc = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
+			if (callfunc != (intptr_t)NULL)
 			{
 				__asm__ __volatile__ (
 					"call .call_dll_api_1;"
-					:: "a"(i), "c"(x), "d"(y), "S"(callfunc) : "cc"
+					:: "a"(i), "b"(trigr_id), "c"(x), "d"(y), "S"(callfunc), "D"(simdata) : "cc"
 				);
 			}
 		}
@@ -1470,6 +1483,8 @@ int luatpt_set_wallmap(lua_State* l)
 	if (wallType < 0 || wallType >= UI_WALLCOUNT)
 		return luaL_error(l, "Unrecognised wall number %d", wallType);
 
+	luacon_sim->breakable_wall_recount = true;
+	
 	if (acount == 5)	//Draw rect
 	{
 		if(x1 > (XRES/CELL))
@@ -1480,14 +1495,11 @@ int luatpt_set_wallmap(lua_State* l)
 			width = (XRES/CELL)-x1;
 		if(y1+height > (YRES/CELL))
 			height = (YRES/CELL)-y1;
-		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
-			luacon_sim->breakable_wall_count += width*height;
+
 		for (nx = x1; nx<x1+width; nx++)
 			for (ny = y1; ny<y1+height; ny++)
 			{
-				if (luacon_sim->wtypes[ luacon_sim->bmap[ny][nx] ].PressureTransition >= 0)
-					luacon_sim->breakable_wall_count--;
-				luacon_sim->bmap[ny][nx] = wallType;
+				luacon_sim->CreateWall_with_brk(nx, ny, wallType);
 			}
 	}
 	else	//Set point
@@ -1496,11 +1508,7 @@ int luatpt_set_wallmap(lua_State* l)
 			x1 = (XRES/CELL);
 		if(y1 > (YRES/CELL))
 			y1 = (YRES/CELL);
-		if (luacon_sim->wtypes[ luacon_sim->bmap[y1][x1] ].PressureTransition >= 0)
-			luacon_sim->breakable_wall_count--;
-		if (luacon_sim->wtypes[ wallType ].PressureTransition >= 0)
-			luacon_sim->breakable_wall_count++;
-		luacon_sim->bmap[y1][x1] = wallType;
+		luacon_sim->CreateWall_with_brk(x1, y1, wallType);
 	}
 	return 0;
 }

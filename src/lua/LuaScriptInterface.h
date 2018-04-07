@@ -33,7 +33,7 @@ class Tool;
 	lua_pushinteger(L, NAME);\
 	lua_setfield(L, -2, #NAME)
 
-#define MAX_LUA_DEBUG_FUNCTIONS 320
+#define MAX_LUA_DEBUG_FUNCTIONS 384
 
 #ifdef TPT_NEED_DLL_PLUGIN
 #include <windows.h>
@@ -61,6 +61,7 @@ class LuaScriptInterface: public CommandInterface
 
 	void initSimulationAPI();
 	static void set_map(int x, int y, int width, int height, float value, int mapType);
+	static int luatpt_sim_set_wallmap_brk(lua_State * l);
 	static int simulation_partNeighbours(lua_State * l);
 	static int simulation_partChangeType(lua_State * l);
 	static int simulation_partCreate(lua_State * l);

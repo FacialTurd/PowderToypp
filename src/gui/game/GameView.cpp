@@ -2832,7 +2832,7 @@ void GameView::OnDraw()
 				switch (temp_shift)
 				{
 				case 0:
-					tempValue = ren->sim->breakable_wall_count;
+					tempValue = ren->sim->_GetBreakableWallCount();
 					if (tempValue)
 						sampleInfo << "breakable_wall_count: " << tempValue << ", ";
 					sampleInfo << "sim_max_pressure (break): " << std::fixed << c->sim_max_pressure_resolve();

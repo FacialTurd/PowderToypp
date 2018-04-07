@@ -19,6 +19,7 @@
 #include "ToolClasses.h"
 #include "client/GameSave.h"
 #include "common/tpt-compat.h"
+#include "common/tpt-math.h"
 #include "common/tpt-minmax.h"
 #include "gui/game/Brush.h"
 
@@ -265,6 +266,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 	}
 	parts_lastActiveIndex = NPART-1;
 	force_stacking_check = true;
+	breakable_wall_recount = true;
 	Element_PPIP::ppip_changed = 1;
 	RecalcFreeParticles(false);
 
@@ -307,15 +309,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 		{
 			if(save->blockMap[saveBlockY][saveBlockX])
 			{
-				if (wtypes[ bmap[saveBlockY+blockY][saveBlockX+blockX] ].PressureTransition >= 0)
-				{
-					breakable_wall_count--;
-				}
-				if (wtypes[ save->blockMap[saveBlockY][saveBlockX] ].PressureTransition >= 0)
-				{
-					breakable_wall_count++;
-				}
-				bmap[saveBlockY+blockY][saveBlockX+blockX] = save->blockMap[saveBlockY][saveBlockX];
+				CreateWall_with_brk(saveBlockX+blockX, saveBlockY+blockY, save->blockMap[saveBlockY][saveBlockX]);
 				fvx[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelX[saveBlockY][saveBlockX];
 				fvy[saveBlockY+blockY][saveBlockX+blockX] = save->fanVelY[saveBlockY][saveBlockX];
 			}
@@ -534,13 +528,13 @@ Snapshot * Simulation::CreateSnapshot()
 	snap->GravMap.insert(snap->GravMap.begin(), gravmap, gravmap+((XRES/CELL)*(YRES/CELL)));
 	snap->BlockMap.insert(snap->BlockMap.begin(), &bmap[0][0], &bmap[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->ElecMap.insert(snap->ElecMap.begin(), &emap[0][0], &emap[0][0]+((XRES/CELL)*(YRES/CELL)));
+	snap->BlockMapBrk.insert(snap->BlockMapBrk.begin(), &bmap_brk[0][0], &bmap_brk[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->FanVelocityX.insert(snap->FanVelocityX.begin(), &fvx[0][0], &fvx[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->FanVelocityY.insert(snap->FanVelocityY.begin(), &fvy[0][0], &fvy[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->stickmen.push_back(player2);
 	snap->stickmen.push_back(player);
 	snap->stickmen.insert(snap->stickmen.begin(), &fighters[0], &fighters[MAX_FIGHTERS]);
 	snap->signs = signs;
-	snap->breakable_wall_count = breakable_wall_count;
 	return snap;
 }
 
@@ -549,6 +543,7 @@ void Simulation::Restore(const Snapshot & snap)
 	parts_lastActiveIndex = NPART-1;
 	elementRecount = true;
 	force_stacking_check = true;
+	breakable_wall_recount = true;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);
@@ -572,13 +567,13 @@ void Simulation::Restore(const Snapshot & snap)
 	gravWallChanged = true;
 	std::copy(snap.BlockMap.begin(), snap.BlockMap.end(), &bmap[0][0]);
 	std::copy(snap.ElecMap.begin(), snap.ElecMap.end(), &emap[0][0]);
+	std::copy(snap.BlockMapBrk.begin(), snap.BlockMapBrk.end(), &bmap_brk[0][0]);
 	std::copy(snap.FanVelocityX.begin(), snap.FanVelocityX.end(), &fvx[0][0]);
 	std::copy(snap.FanVelocityY.begin(), snap.FanVelocityY.end(), &fvy[0][0]);
 	std::copy(snap.stickmen.begin(), snap.stickmen.end()-2, &fighters[0]);
 	player = snap.stickmen[snap.stickmen.size()-1];
 	player2 = snap.stickmen[snap.stickmen.size()-2];
 	signs = snap.signs;
-	breakable_wall_count = snap.breakable_wall_count;
 }
 
 void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
@@ -598,7 +593,7 @@ void Simulation::clear_area(int area_x, int area_y, int area_w, int area_h)
 			if (bmap[y][x] == WL_GRAV)
 				gravWallChanged = true;
 			else if (wtypes[ bmap[y][x] ].PressureTransition >= 0)
-				breakable_wall_count --;
+				breakable_wall_recount = true;
 			bmap[y][x] = 0;
 			emap[y][x] = 0;
 		}
@@ -968,6 +963,9 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 	edgeMode = newEdgeMode;
 	int i;
 	char new_wall_type = (edgeMode == 1 ? WL_WALL : 0);
+
+	breakable_wall_recount = true;
+
 	switch(edgeMode)
 	{
 	case 0:
@@ -975,21 +973,13 @@ void Simulation::SetEdgeMode(int newEdgeMode)
 	case 2:
 		for(i = 0; i<(XRES/CELL); i++)
 		{
-			if (wtypes[ bmap[0][i] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[0][i] = new_wall_type;
-			if (wtypes[ bmap[YRES/CELL-1][i] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[YRES/CELL-1][i] = new_wall_type;
+			CreateWall_with_brk(i, 0,           new_wall_type);
+			CreateWall_with_brk(i, YRES/CELL-1, new_wall_type);
 		}
 		for(i = 1; i<((YRES/CELL)-1); i++)
 		{
-			if (wtypes[ bmap[i][0] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[i][0] = new_wall_type;
-			if (wtypes[ bmap[i][XRES/CELL-1] ].PressureTransition >= 0)
-				breakable_wall_count--;
-			bmap[i][XRES/CELL-1] = new_wall_type;
+			CreateWall_with_brk(0,           i, new_wall_type);
+			CreateWall_with_brk(XRES/CELL-1, i, new_wall_type);
 		}
 		break;
 	default:
@@ -1393,6 +1383,13 @@ void Simulation::ToolBox(int x1, int y1, int x2, int y2, int tool, float strengt
 			Tool(i, j, tool, brushX, brushY, strength);
 }
 
+int Simulation::CreateWall_with_brk(int x, int y, int wall)
+{
+	if (wtypes[ bmap[y][x] ].PressureTransition < 0)
+		bmap_brk[y][x] = 0;
+	bmap[y][x] = wall;
+}
+
 int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBrush)
 {
 	if(cBrush)
@@ -1407,6 +1404,8 @@ int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBru
 	y = y/CELL;
 	x -= rx;
 	y -= ry;
+	
+	breakable_wall_recount = true;
 
 	for (int wallX = x; wallX <= x+rx+rx; wallX++)
 	{
@@ -1434,13 +1433,9 @@ int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBru
 				if (wall == WL_GRAV || bmap[wallY][wallX] == WL_GRAV)
 					gravWallChanged = true;
 
-				if (wtypes[ bmap[wallY][wallX] ].PressureTransition >= 0)
+				if (wtypes[ bmap[wallY][wallX] ].PressureTransition < 0)
 				{
-					breakable_wall_count--;
-				}
-				if (wtypes[ wall ].PressureTransition >= 0)
-				{
-					breakable_wall_count++;
+					bmap_brk[wallY][wallX] = 0;
 				}
 
 				if (wall == WL_ERASEALL)
@@ -1456,7 +1451,7 @@ int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBru
 					bmap[wallY][wallX] = 0;
 				}
 				else
-					bmap[wallY][wallX] = wall;
+					CreateWall_with_brk(wallX, wallY, wall);
 			}
 		}
 	}
@@ -1591,6 +1586,21 @@ int Simulation::FloodWalls(int x, int y, int wall, int bm)
 				if (!FloodWalls(x, y+dy, wall, bm))
 					return 0;
 	return 1;
+}
+
+int Simulation::_GetBreakableWallCount()
+{
+	if (breakable_wall_recount)
+	{
+		int x, y, c = 0;
+		for (y = 0; y < YRES/CELL; y++)
+			for (x = 0; x < XRES/CELL; x++)
+				if (wtypes[ bmap[y][x] ].PressureTransition >= 0)
+					c++;
+		breakable_wall_count = c;
+		breakable_wall_recount = false;
+	}
+	return breakable_wall_count;
 }
 
 int Simulation::CreateParts(int positionX, int positionY, int c, Brush * cBrush, int flags)
@@ -2187,7 +2197,7 @@ void Simulation::clear_sim(void)
 	SimExtraFunc = 0;
 	extraDelay = 0;
 	Extra_FIGH_pause = 0;
-	breakable_wall_count = 0;
+	breakable_wall_recount = true;
 	signs.clear();
 	memset(bmap, 0, sizeof(bmap));
 	memset(emap, 0, sizeof(emap));
@@ -2211,6 +2221,7 @@ void Simulation::clear_sim(void)
 	fighcount = 0;
 	Element_STKM::STKM_clear(this, &player);
 	Element_STKM::STKM_clear(this, &player2);
+	Element_MULTIPP::Arrow_keys[1] = 0;
 	for (int i = 0; i < 4; i++)
 		Element_STKM::lifeinc [i] = 0;
 
@@ -6001,7 +6012,7 @@ void Simulation::BeforeSim()
 	if (!sys_pause && !(SimExtraFunc & 2) || framerender)
 	{
 		// decrease wall conduction, make walls block air and ambient heat
-		int x, y;
+		int x, y, xx, yy;
 		for (y = 0; y < YRES/CELL; y++)
 		{
 			for (x = 0; x < XRES/CELL; x++)
@@ -6012,24 +6023,20 @@ void Simulation::BeforeSim()
 				air->bmap_blockairh[y][x] = (bmap[y][x]==WL_WALL || /* bmap[y][x]==WL_BREAKABLE_WALL || */ bmap[y][x]==WL_WALLELEC || bmap[y][x]==WL_BLOCKAIR || bmap[y][x]==WL_GRAV || (bmap[y][x]==WL_EWALL && !emap[y][x])) ? 0x8:0;
 			}
 		}
-		
-		int tmp_count = breakable_wall_count, xx, yy;
-		if (breakable_wall_count >= 0)
+
+		if (breakable_wall_recount || breakable_wall_count >= 0)
 		{
+			breakable_wall_count = 0;
 			// maybe "spaghetti code" ?
 			for (y = 0; y < YRES/CELL; y++)
 			{
 				for (x = 0; x < XRES/CELL; x++)
 				{
-					if (!tmp_count)
-						goto bwall_count_end;
 					int wtrans = wtypes[ bmap[y][x] ].PressureTransition;
 					if (wtrans >= 0)
 					{
-						tmp_count--;
-						if (pv[y][x] > sim_max_pressure || pv[y][x] < -sim_max_pressure)
+						if (bmap_brk[y][x])
 						{
-							breakable_wall_count--;
 							bmap[y][x] = 0;
 							emap[y][x] = 0;
 							if (wtrans)
@@ -6043,11 +6050,17 @@ void Simulation::BeforeSim()
 								}
 							}
 						}
+						else
+						{
+							breakable_wall_count++;
+						}
+						if (pv[y][x] > sim_max_pressure || pv[y][x] < -sim_max_pressure)
+							bmap_brk[y][x] |= 1;
 					}
 				}
 			}
+			breakable_wall_recount = false;
 		}
-	bwall_count_end:
 
 		// check for stacking and create BHOL if found
 		if (force_stacking_check || (rand()%10)==0)
@@ -6324,6 +6337,8 @@ void Simulation::AfterSim()
 		SimExtraFunc &= ~0x00003BF4;
 		Element_MULTIPP::maxPrior = 0;
 	}
+	if (Element_MULTIPP::Arrow_keys != NULL)
+		Element_MULTIPP::Arrow_keys[1] = Element_MULTIPP::Arrow_keys[0];
 	if (Extra_FIGH_pause_check)
 	{
 		Extra_FIGH_pause ^= Extra_FIGH_pause_check;
@@ -6442,6 +6457,10 @@ Simulation::~Simulation()
 	delete air;
 	for (size_t i = 0; i < tools.size(); i++)
 		delete tools[i];
+
+	if (Element_MULTIPP::Arrow_keys != NULL && Element_MULTIPP::Arrow_keys[2] == (intptr_t)this)
+		delete[] Element_MULTIPP::Arrow_keys;
+	Element_MULTIPP::Arrow_keys = NULL;
 	free(DIRCHInteractTable);
 }
 
@@ -6479,6 +6498,14 @@ Simulation::Simulation():
 	, dllexceptionflag(0)
 #endif
 {
+	if (Element_MULTIPP::Arrow_keys == NULL)
+	{
+		Element_MULTIPP::Arrow_keys = new intptr_t[3];
+		Element_MULTIPP::Arrow_keys[0] = 0;
+		Element_MULTIPP::Arrow_keys[1] = 0;
+		Element_MULTIPP::Arrow_keys[2] = (intptr_t)this;
+	}
+	
 	int tportal_rx[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 	int tportal_ry[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 

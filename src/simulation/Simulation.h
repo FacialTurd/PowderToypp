@@ -119,8 +119,10 @@ public:
 	//Walls
 	unsigned char bmap[YRES/CELL][XRES/CELL];
 	unsigned char emap[YRES/CELL][XRES/CELL];
+	unsigned char bmap_brk[YRES/CELL][XRES/CELL];
 	float fvx[YRES/CELL][XRES/CELL];
 	float fvy[YRES/CELL][XRES/CELL];
+	bool breakable_wall_recount;
 	int breakable_wall_count;
 	float sim_max_pressure;
 	//Particles
@@ -244,10 +246,12 @@ public:
 	void ToolBox(int x1, int y1, int x2, int y2, int tool, float strength = 1.0f);
 	
 	//Drawing Walls
+	int CreateWall_with_brk(int x, int y, int wall);
 	int CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBrush = NULL);
 	void CreateWallLine(int x1, int y1, int x2, int y2, int rx, int ry, int wall, Brush * cBrush = NULL);
 	void CreateWallBox(int x1, int y1, int x2, int y2, int wall);
 	int FloodWalls(int x, int y, int wall, int bm);
+	int _GetBreakableWallCount();
 
 	//Drawing Particles
 	int CreateParts(int positionX, int positionY, int c, Brush * cBrush, int flags = -1);

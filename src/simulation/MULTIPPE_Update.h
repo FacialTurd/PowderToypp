@@ -38,6 +38,19 @@ public:
 			partsi(r).life = 4;
 		}
 	}
+	static bool BreakWallTest (Simulation* sim, int x, int y, bool a) // Inline or macro?
+	{
+		int xb = x/CELL, yb = y/CELL;
+		if (xb >= 0 && xb < XRES/CELL && yb >= 0 && yb < YRES/CELL &&
+			sim->wtypes[ sim->bmap[yb][xb] ].PressureTransition >= 0)
+		{
+			if (a) sim->bmap_brk[yb][xb] = true;
+			return true;
+		}
+		return false;
+	}
+	
+	// struct ???
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
 	// static bool GetDecoration();
 };

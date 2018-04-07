@@ -787,27 +787,29 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 				}
 			}
 		}
-		if (!gameView->GetPlacingSave())
+		if (!gameView->GetPlacingSave() && Element_MULTIPP::Arrow_keys != NULL)
 		{
+			int a = 0;
 			switch(key)
 			{
 			case SDLK_UP:
-				Element_MULTIPP::Arrow_keys |= 0x1;
+				a |= 0x1;
 				break;
 			case SDLK_LEFT:
-				Element_MULTIPP::Arrow_keys |= 0x2;
+				a |= 0x2;
 				break;
 			case SDLK_DOWN:
-				Element_MULTIPP::Arrow_keys |= 0x4;
+				a |= 0x4;
 				break;
 			case SDLK_RIGHT:
-				Element_MULTIPP::Arrow_keys |= 0x8;
+				a |= 0x8;
 				break;
 			case SDLK_KP_ENTER:
 			case SDLK_RETURN:
-				Element_MULTIPP::Arrow_keys |= 0x10;
+				a |= 0x10;
 				break;
 			}
+			Element_MULTIPP::Arrow_keys[0] |= a;
 		}
 	}
 		
@@ -828,27 +830,30 @@ bool GameController::KeyRelease(int key, Uint16 character, bool shift, bool ctrl
 	bool ret = commandInterface->OnKeyRelease(key, character, shift, ctrl, alt);
 	if (ret)
 	{
+		int clrf = 0;
 		Simulation * sim = gameModel->GetSimulation();
 		if (key == SDLK_RIGHT || key == SDLK_LEFT)
 		{
 			sim->player.pcomm = sim->player.comm;  //Saving last movement
 			sim->player.comm = (int)(sim->player.comm)&12;  //Stop command
-			Element_MULTIPP::Arrow_keys &= (key == SDLK_LEFT ? ~0x2 : ~0x8);
+			clrf |= (key == SDLK_LEFT ? 0x2 : 0x8);
 		}
 		if (key == SDLK_UP)
 		{
 			sim->player.comm = (int)(sim->player.comm)&11;
-			Element_MULTIPP::Arrow_keys &= ~0x1;
+			clrf |= 0x1;
 		}
 		if (key == SDLK_DOWN)
 		{
 			sim->player.comm = (int)(sim->player.comm)&7;
-			Element_MULTIPP::Arrow_keys &= ~0x4;
+			clrf |= 0x4;
 		}
 		if (key == SDLK_KP_ENTER || key == SDLK_RETURN)
 		{
-			Element_MULTIPP::Arrow_keys &= ~0x10;
+			clrf |= 0x10;
 		}
+		if (Element_MULTIPP::Arrow_keys != NULL)
+			Element_MULTIPP::Arrow_keys[0] &= ~clrf;
 
 		if (key == SDLK_d || key == SDLK_a)
 		{
@@ -1595,7 +1600,9 @@ void GameController::ClearSim()
 
 void GameController::ReloadSim()
 {
-	if(gameModel->GetSave() && gameModel->GetSave()->GetGameSave())
+	if (Element_MULTIPP::Arrow_keys != NULL)
+		Element_MULTIPP::Arrow_keys[1] = 0;
+	if (gameModel->GetSave() && gameModel->GetSave()->GetGameSave())
 	{
 		HistorySnapshot();
 		gameModel->SetSave(gameModel->GetSave());

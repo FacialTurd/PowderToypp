@@ -7,6 +7,7 @@
 #include "Misc.h"
 #include "Renderer.h"
 #include "Graphics.h"
+#include "common/tpt-math.h"
 #include "common/tpt-minmax.h"
 #include "gui/game/RenderPreset.h"
 #include "simulation/Elements.h"
@@ -206,7 +207,7 @@ void Renderer::decorate_sim()
 		sim->kill_part(i);
 
 	// clear any walls
-	sim->breakable_wall_count = 0;
+	sim->breakable_wall_recount = true;
 	for (ny = 0; ny < YRES/CELL; ny++)
 	{
 		for (nx = 0; nx < XRES/CELL; nx++)

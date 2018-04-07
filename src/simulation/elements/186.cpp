@@ -1,5 +1,6 @@
 // #include <stdint.h>
 #include "simulation/Elements.h"
+#include "simulation/MULTIPPE_Update.h"
 //Temp particle used for graphics
 Particle tpart_phot;
 
@@ -239,6 +240,10 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					if (itmp >= 1 && itmp <= 26)
 						parts[s].ctype = 0x1F << (itmp - 1);
 				}
+			}
+			else if (sctype == PT_DMG && MULTIPPE_Update::BreakWallTest(sim, x, y, true))
+			{
+				sim->pv[y/CELL][x/CELL] += 5.0f;
 			}
 		}
 	skip1a:

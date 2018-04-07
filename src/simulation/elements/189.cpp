@@ -72,8 +72,8 @@ Element_MULTIPP::Element_MULTIPP()
 //#TPT-Directive ElementHeader Element_MULTIPP static bool useDefaultPart
 bool Element_MULTIPP::useDefaultPart = false;
 
-//#TPT-Directive ElementHeader Element_MULTIPP static int Arrow_keys
-int Element_MULTIPP::Arrow_keys = 0; // Note: TPT uses SDL
+//#TPT-Directive ElementHeader Element_MULTIPP static intptr_t * Arrow_keys
+intptr_t * Element_MULTIPP::Arrow_keys = NULL; // Note: TPT uses SDL
 
 //#TPT-Directive ElementHeader Element_MULTIPP static int maxPrior
 int Element_MULTIPP::maxPrior = 0;

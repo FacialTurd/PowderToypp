@@ -181,6 +181,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"get_wallmap", &luatpt_get_wallmap},
 		{"set_elecmap", &luatpt_set_elecmap},
 		{"get_elecmap", &luatpt_get_elecmap},
+		{"set_wallmap_brk", &LuaScriptInterface::luatpt_sim_set_wallmap_brk},
 		{"drawpixel", &luatpt_drawpixel},
 		{"drawrect", &luatpt_drawrect},
 		{"fillrect", &luatpt_fillrect},
@@ -449,6 +450,22 @@ int LuaScriptInterface::simulation_get_pfree (lua_State *l)
 		lua_pushinteger(l, pfree);
 	}
 	return args;
+}
+
+int LuaScriptInterface::luatpt_sim_set_wallmap_brk (lua_State *l)
+{
+	int ac = lua_gettop(l);
+	int x = lua_tointeger(l, 1);
+	int y = lua_tointeger(l, 2);
+	if (x >= 0 && x < XRES/CELL && y >= 0 && y < YRES/CELL && luacon_sim->wtypes[ luacon_sim->bmap[y][x] ].PressureTransition >= 0)
+	{
+		lua_pushboolean(l, luacon_sim->bmap_brk[y][x]);
+		if (ac >= 3)
+			luacon_sim->bmap_brk[y][x] |= (lua_toboolean(l, 3) ? 1 : 0);
+	}
+	else
+		lua_pushnil(l);
+	return 1;
 }
 
 int LuaScriptInterface::tpt_index(lua_State *l)
@@ -842,6 +859,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"createWallLine", simulation_createWallLine},
 		{"createWallBox", simulation_createWallBox},
 		{"floodWalls", simulation_floodWalls},
+		{"getBreakableWallCount", simulation_breakable_wall_count},
 		{"toolBrush", simulation_toolBrush},
 		{"toolLine", simulation_toolLine},
 		{"toolBox", simulation_toolBox},
@@ -1463,7 +1481,7 @@ int LuaScriptInterface::simulation_partKill(lua_State * l)
 
 int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 {
-	int i = lua_tointeger(l, 1);
+	int i = lua_tointeger(l, 1), t;
 	if (lua_gettop(l) == 2)
 	{
 		int y = lua_tointeger(l, 2);
@@ -1473,7 +1491,12 @@ int LuaScriptInterface::simulation_partKillDestroyable(lua_State * l)
 		if (!r) return 0; // luaL_error(l, "Dead particle");
 		i = r >> 8;
 	}
-	if (i>=0 && i<NPART && !(luacon_sim->elements[luacon_sim->parts[i].type].Properties2 & PROP_INDESTRUCTIBLE))
+	if (i < 0 && i >= NPART)
+		return 0;
+	t = luacon_sim->parts[i].type;
+	if (t == PT_SPRK)
+		t = luacon_sim->parts[i].ctype;
+	if (!(luacon_sim->elements[t].Properties2 & PROP_INDESTRUCTIBLE))
 		luacon_sim->kill_part(i);
 	return 0;
 }
@@ -2388,7 +2411,7 @@ int LuaScriptInterface::simulation_canMove(lua_State * l)
 
 int LuaScriptInterface::simulation_breakable_wall_count(lua_State * l)
 {
-	lua_pushnumber(l, luacon_sim->breakable_wall_count);
+	lua_pushnumber(l, luacon_sim->_GetBreakableWallCount());
 	return 1;
 }
 
@@ -2542,6 +2565,8 @@ int LuaScriptInterface::simulation_isDestructible(lua_State * l) // input argume
 	}
 	if (i < 0 || i >= NPART) goto ret_true;
 	t = luacon_sim->parts[i].type;
+	if (t == PT_SPRK)
+		t = luacon_sim->parts[i].ctype;
 	lua_pushboolean(l, (luacon_sim->elements[t].Properties2 & PROP_INDESTRUCTIBLE) == 0);
 	return 1;
 ret_true:
@@ -4879,6 +4904,8 @@ std::string LuaScriptInterface::FormatCommand(std::string command)
 }
 
 LuaScriptInterface::~LuaScriptInterface() {
+	free(lua_trigger_func);
+	lua_trigger_func = NULL;
 	lua_close(l);
 	delete legacy;
 }

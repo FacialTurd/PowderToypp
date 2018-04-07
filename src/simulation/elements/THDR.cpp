@@ -58,15 +58,15 @@ int Element_THDR::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = r&0xFF;
-				if ((sim->elements[r&0xFF].Properties&PROP_CONDUCTS) && parts[r>>8].life==0 && !(rt==PT_WATR||rt==PT_SLTW) && parts[r>>8].ctype!=PT_SPRK)
+				rt = TYP(r), r >>= PMAPBITS;
+				if ((sim->elements[rt].Properties&PROP_CONDUCTS) && parts[r].life==0 && !(rt==PT_WATR||rt==PT_SLTW) && parts[r].ctype!=PT_SPRK)
 				{
-					parts[r>>8].ctype = parts[r>>8].type;
-					sim->part_change_type(r>>8,x+rx,y+ry,PT_SPRK);
-					parts[r>>8].life = 4;
+					parts[r].ctype = parts[r].type;
+					sim->part_change_type(r,x+rx,y+ry,PT_SPRK);
+					parts[r].life = 4;
 					kill=true;
 				}
-				else if (rt!=PT_CLNE&&rt!=PT_THDR&&rt!=PT_SPRK&&!(sim->elements[r&0xFF].Properties2 & PROP_NODESTRUCT)&&rt!=PT_FIRE)
+				else if (rt!=PT_CLNE&&rt!=PT_THDR&&rt!=PT_SPRK&&!(sim->elements[rt].Properties2 & PROP_NODESTRUCT)&&rt!=PT_FIRE)
 				{
 					sim->pv[y/CELL][x/CELL] += 100.0f;
 					if (sim->legacy_enable&&1>(rand()%200))

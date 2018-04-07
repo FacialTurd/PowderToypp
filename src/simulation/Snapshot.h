@@ -22,6 +22,7 @@ public:
 
 	std::vector<unsigned char> BlockMap;
 	std::vector<unsigned char> ElecMap;
+	std::vector<unsigned char> BlockMapBrk;
 
 	std::vector<float> FanVelocityX;
 	std::vector<float> FanVelocityY;
@@ -32,8 +33,6 @@ public:
 	std::vector<int> Wireless2Data;
 	std::vector<playerst> stickmen;
 	std::vector<sign> signs;
-	
-	int breakable_wall_count;
 	
 	Json::Value Authors;
 
@@ -49,14 +48,14 @@ public:
 		GravMap(),
 		BlockMap(),
 		ElecMap(),
+		BlockMapBrk(),
 		FanVelocityX(),
 		FanVelocityY(),
 		PortalParticles(),
 		WirelessData(),
 		Wireless2Data(),
 		stickmen(),
-		signs(),
-		breakable_wall_count()
+		signs()
 	{
 
 	}
