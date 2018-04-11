@@ -9,11 +9,11 @@ Particle tpart_phot;
 #define _PHOT_mov_rel_i(i,sx,sy,nt) transportPhotons(sim,i,x,y,(int)(x+(sx)),(int)(y+(sy)),(nt),&parts[i])
 #define _PHOT_mov_rel_f(i,sx,sy,nt) transportPhotons(sim,i,x,y,(float)(parts[i].x+(sx)),(float)(parts[i].y+(sy)),(nt),&parts[i])
 
-//#TPT-Directive ElementClass Element_E186 PT_E186 186
-Element_E186::Element_E186()
+//#TPT-Directive ElementClass Element_E195 PT_E195 195
+Element_E195::Element_E195()
 {
-	Identifier = "DEFAULT_PT_E186";
-	Name = "E186";
+	Identifier = "DEFAULT_PT_E195";
+	Name = "E195";
 	Colour = PIXPACK(0xDFEFFF);
 	MenuVisible = 0;
 	MenuSection = SC_NUCLEAR;
@@ -52,14 +52,14 @@ Element_E186::Element_E186()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	Update = &Element_E186::update;
-	Graphics = &Element_E186::graphics;
+	Update = &Element_E195::update;
+	Graphics = &Element_E195::graphics;
 	
 	memset(&tpart_phot, 0, sizeof(Particle));
 }
 
-//#TPT-Directive ElementHeader Element_E186 static int update(UPDATE_FUNC_ARGS)
-int Element_E186::update(UPDATE_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_E195 static int update(UPDATE_FUNC_ARGS)
+int Element_E195::update(UPDATE_FUNC_ARGS)
 {
 	int r, rr, s, sctype, rf;
 	int dx, dy;
@@ -207,7 +207,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 		else if (isbray || !(rand()%60))
 		{
 			int rt = TYP(r), itmp;
-			if (!sctype || sctype == PT_E186)
+			if (!sctype || sctype == PT_E195)
 				s = sim->create_part(-3, x, y, PT_ELEC);
 			else if (
 				(sctype != PT_PROT || (rt != PT_URAN && rt != PT_PLUT && rt != PT_FILT)) &&
@@ -326,7 +326,7 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 					}
 					else
 					{
-						sim->create_part(ID(r), x, y, PT_E186);
+						sim->create_part(ID(r), x, y, PT_E195);
 					}
 				}
 				break;
@@ -387,8 +387,8 @@ int Element_E186::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E186 static int graphics(GRAPHICS_FUNC_ARGS)
-int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_E195 static int graphics(GRAPHICS_FUNC_ARGS)
+int Element_E195::graphics(GRAPHICS_FUNC_ARGS)
 {
 	if (cpart->ctype == 0x100)
 	{
@@ -407,8 +407,8 @@ int Element_E186::graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
-void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
+//#TPT-Directive ElementHeader Element_E195 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
+void Element_E195::transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)
 {
 	if (ID(sim->photons[y][x]) == i)
 		sim->photons[y][x] = 0;
@@ -432,8 +432,8 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, int nx
 	// return;
 }
 
-//#TPT-Directive ElementHeader Element_E186 static void transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
-void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
+//#TPT-Directive ElementHeader Element_E195 static void transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
+void Element_E195::transportPhotons(Simulation* sim, int i, int x, int y, float nxf, float nyf, int t, Particle *phot)
 {
 	int nx, ny;
 	if (ID(sim->photons[y][x]) == i)
@@ -460,4 +460,4 @@ void Element_E186::transportPhotons(Simulation* sim, int i, int x, int y, float 
 }
 
 
-Element_E186::~Element_E186() {}
+Element_E195::~Element_E195() {}
