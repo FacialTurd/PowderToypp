@@ -107,7 +107,7 @@ int Element_ELEC::update(UPDATE_FUNC_ARGS)
 					sim->kill_part(i);
 					return 1;
 				case PT_EXOT:
-					if (parts[ID(r)].ctype == PT_E186)
+					if (parts[ID(r)].ctype == PT_E195)
 						continue;
 					parts[ID(r)].tmp2 += 5;
 					parts[ID(r)].life = 1000;

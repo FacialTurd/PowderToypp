@@ -80,7 +80,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 		sctype = TYP(parts[i].ctype); // don't create SPC_AIR
 		int rrt = TYP(rr);
 
-		b1 = rrt && (rrt == PT_ELEC || rrt == PT_E186);
+		b1 = rrt && (rrt == PT_ELEC || rrt == PT_E195);
 		
 		if (b1 ? (rand() < strengthlist[std::max(stmp, 0)]) : (!stmp && !(rand() % 8192)))
 		{
@@ -88,7 +88,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 			if (!sctype || sim->elements[sctype].Properties & TYPE_ENERGY)
 			{
 				actype = sctype ? sctype : PT_ELEC;
-				(b1 && tobranch) && (actype = PT_E186);
+				(b1 && tobranch) && (actype = PT_E195);
 				s = sim->create_part(-3, x, y, actype);
 			}
 			else
@@ -106,7 +106,7 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 				if (parts[i].temp < 516.0f)
 					parts[i].temp += 10.0f;
 				parts[s].temp = parts[i].temp;
-				if (actype == PT_E186)
+				if (actype == PT_E195)
 					parts[s].ctype = sctype;
 				else if (actype == PT_GRVT)
 					parts[s].tmp = 0;

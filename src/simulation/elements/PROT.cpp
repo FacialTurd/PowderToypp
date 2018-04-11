@@ -56,7 +56,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		under = partsi(under).tmp4;
 	int utype = TYP(under), aheadT;
 	int underI = ID(under), aheadI;
-	bool find_E186_only = false;
+	bool find_E195_only = false;
 
 	switch (utype)
 	{
@@ -92,7 +92,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case PT_EXOT:
-		if (parts[underI].ctype != PT_E186)
+		if (parts[underI].ctype != PT_E195)
 			parts[underI].ctype = PT_PROT;
 		break;
 	case PT_WIFI:
@@ -176,7 +176,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 				}
 				parts[i].tmp += velSqThreshold;
 				parts[underI].tmp2 -= velSqThreshold;
-				goto finding_E186;
+				goto finding_E195;
 			}
 			break;
 		case 16:
@@ -240,12 +240,12 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	aheadI = ID(ahead);
 	aheadT = TYP(ahead);
 	
-	if (parts[aheadI].ctype < PMAPID(1) && aheadT == PT_E186)
+	if (parts[aheadI].ctype < PMAPID(1) && aheadT == PT_E195)
 	{
 		parts[i].tmp2 |= 2;
 	}
 	
-	if (find_E186_only)
+	if (find_E195_only)
 		return 0;
 
 	if (parts[i].tmp)
@@ -307,8 +307,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	}
 	return 0;
 	
-finding_E186:
-	find_E186_only = true;
+finding_E195:
+	find_E195_only = true;
 	goto no_temp_change;
 }
 

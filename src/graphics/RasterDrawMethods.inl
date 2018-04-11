@@ -445,15 +445,16 @@ void PIXELMETHODS_CLASS::clearrect(int x, int y, int w, int h)
 
 void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int a)
 {
-	int startX = 0;
+	int startX = 0, endX = w, unused_width = 0;
 	if (!img)
 		return;
 	// Adjust height to prevent drawing off the bottom
 	if (y + h > VIDYRES)
 		h = ((VIDYRES)-y)-1;
-	// Too big
+
+	// Adjust height to prevent drawing off the right
 	if (x + w > VIDXRES)
-		return;
+		endX = VIDXRES - x;
 
 	// Starts off the top of the screen, adjust
 	if (y < 0 && -y < h)
@@ -463,30 +464,36 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 		y = 0;
 	}
 	// Starts off the left side of the screen, adjust
-	if (x < 0 && -x < w)
+	if (x < 0)
 	{
-		startX = -x;
+		if (-x < w)
+			startX = -x;
+		else
+			return;
 	}
 
-	if (!h || y < 0 || !w)
+	if (!h || y < 0 || !w || endX <= 0)
 		return;
+	
+	img += startX;
+	unused_width = w + startX - endX;
+
 	if (a >= 255)
 		for (int j = 0; j < h; j++)
 		{
-			img += startX;
-			for (int i = startX; i < w; i++)
+			for (int i = startX; i < endX; i++)
 			{
 				vid[(y+j)*(VIDXRES)+(x+i)] = *img;
 				img++;
 			}
+			img += startX;
 		}
 	else
 	{
 		int r, g, b;
 		for (int j = 0; j < h; j++)
 		{
-			img += startX;
-			for (int i = startX; i < w; i++)
+			for (int i = startX; i < endX; i++)
 			{
 				r = PIXR(*img);
 				g = PIXG(*img);
@@ -494,6 +501,7 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 				blendpixel(x+i, y+j, r, g, b, a);
 				img++;
 			}
+			img += startX;
 		}
 	}
 }

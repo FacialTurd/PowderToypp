@@ -748,30 +748,41 @@ int luatpt_element_func(lua_State *l)
 }
 
 #if defined(TPT_NEED_DLL_PLUGIN)
-// TODO: 64-bit
+// TODO: 64-bit, ARM, ARM-64
 
 __asm__ (
+	// for 32-bit x86
 	".text\n\t"
 	".p2align 4,,15\n\t"
 	".call_dll_api_1:"
 	".byte 0xEB, 0; cld;" // 2-byte nop + cld
+	//	x86-64 汇编代码:
+	// 		push rbp
+	// 		mov rbp, rsp
+	// 		push rbx rsi rdi r8 r9 r10 r11 r12 r13 r14 r15
+	// 		mov r12, rsi
+	// 		mov rsi, .LcaptureGPR0
+	// 		call r12
+	//		lea rsp, [rbp-88]
+	//		pop r15 r14 r13 r12 r11 r10 r9 r8 rdi rsi rbx
+	//		pop rbp
 	"push %ebp;"
 	"movl %esp, %ebp;"
 	"push %ebx;"
 	"push %esi;"
 	"push %edi;"
-	"pushl 28(%edi);"
+	"pushl 36(%edi);"
 	"movl $.Lcall_dll_excp, %esi;"
 	"pushl %esi;"
 	"pushl %fs:0;"
 	"movl %esp, %fs:0;"
 	"movl $.LcaptureGPR0, %esi;"
-	"call *-8(%ebp);"
+	"call *-8(%ebp);" // 函数调用之后 ebx, esi 和 edi 变成 "未占用" 状态.
 	"xorl %ebx, %ebx;"
-	".Lcall_dll_exc_end:"
+	".Lcall_dll_exc_end:" // 异常处理例程返回地址 (ebx = 1 表示错误)
 	"movl %fs:0, %esp;"
 	"pop  %fs:0;"
-	"add  $4, %esp;"
+	"pop  %edi;"
 	"pop  %edi;"
 	"orl  %ebx, (%edi);"
 	"pop  %edi;"
@@ -779,13 +790,13 @@ __asm__ (
 	"pop  %ebx;"
 	"pop  %ebp;"
 	"ret\n"
-	".Lcall_dll_excp:"
+	".Lcall_dll_excp:" // 这是异常处理例程
 	"movl 8(%esp), %ebx;"
 	"movl %ebx, %fs:0;"
 	"movl $1, %ebx;"
 	"jmp  .Lcall_dll_exc_end\n\t"
 	".p2align 3,,7\n\t"
-	".LcaptureGPR0:"
+	".LcaptureGPR0:" // 寄存器捕获例程
 	"push %ebp;"
 	"mov %esp, %ebp;"
 	"pushfl;"
@@ -818,11 +829,6 @@ __asm__ (
 
 void captureGPR_render0 (int32_t* GPR)
 {
-	// EDI, ESI, EBP, ESP, EBX, EDX, ECX, EAX, EFLAGS, EIP
-	// char fstr[20];
-	// sprintf(fstr, "EAX=%08x", GPR[7]);
-	// luacon_g->drawtext(30,50,fstr,255,255,255,255);
-	
 	class GPR_window: public ui::Window
 	{
 	public:
@@ -880,7 +886,8 @@ void captureGPR_render0 (int32_t* GPR)
 
 void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 {
-	unsigned char fnmode = lua_trigger_fmode[trigr_id];
+	LuaScriptInterface * ci = luacon_ci;
+	unsigned char fnmode = ci->trigger_func[trigr_id].m;
 	/* fnmode:
 		0: no function / only DLL
 		1: replace
@@ -888,7 +895,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		3: update before
 	*/
 #ifdef TPT_NEED_DLL_PLUGIN
-	const static void *(simdata[8]) = {
+	static void *(simdata[]) = {
 		luacon_sim,
 		luacon_sim->parts,		// particle data
 		luacon_sim->pmap,		// particle map
@@ -896,6 +903,8 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		luacon_sim->bmap,		// block (wall) map
 		luacon_sim->pv,			// pressure map
 		&luacon_sim->pfree,		// last freed particle
+		(void*)ci->l,			// current lua state
+		(void*)&(ci->simulation_dll_st.lock),
 		&luacon_sim->dllexceptionflag
 	};
 	const static short loadorder[4] = {
@@ -923,10 +932,12 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 			callfunc = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
 			if (callfunc != (intptr_t)NULL)
 			{
+				EnterCriticalSection(&(ci->simulation_dll_st.lock));
 				__asm__ __volatile__ (
 					"call .call_dll_api_1;"
 					:: "a"(i), "b"(trigr_id), "c"(x), "d"(y), "S"(callfunc), "D"(simdata) : "cc"
 				);
+				LeaveCriticalSection(&(ci->simulation_dll_st.lock));
 			}
 		}
 		if (currload & 0x100)
@@ -939,7 +950,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 
 void luacall_debug_trigger(int t, int i, int x, int y)
 {
-	int fnid = lua_trigger_func[t];
+	int fnid = luacon_ci->trigger_func[t].i;
 	lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, fnid);
 	lua_pushinteger(luacon_ci->l, i);
 	lua_pushinteger(luacon_ci->l, x);
@@ -961,8 +972,8 @@ void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
 {
 	if (f2 < 0 && f2 >= MAX_LUA_DEBUG_FUNCTIONS)
 		return;
-	if (lua_trigger_fmode[f2])
-		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, lua_trigger_func[f2]);
+	if (luacon_ci->trigger_func[f2].m)
+		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[f2].i);
 	else
 		return;
 	lua_pushinteger(luacon_ci->l, i);
@@ -981,9 +992,9 @@ void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
 int luatpt_call_debug_trigger(lua_State* l)
 {
 	int t = lua_tointeger(l, 1);
-	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && lua_trigger_fmode[t])
+	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && luacon_ci->trigger_func[t].m)
 	{
-		lua_rawgeti (luacon_ci->l, LUA_REGISTRYINDEX, lua_trigger_func[t]);
+		lua_rawgeti (luacon_ci->l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[t].i);
 		lua_replace (l, 1);
 		int c = lua_gettop (l) - 1;
 		luacall_debug_tfunc(l, c);
@@ -1022,14 +1033,14 @@ int luatpt_debug_trigger_add(lua_State* l)
 	int tid = luaL_checkinteger(l, 1);
 	if (tid < 0 || tid >= MAX_LUA_DEBUG_FUNCTIONS) // fix overflow bug
 		return 0;
-	if (lua_trigger_fmode[tid])
-		luaL_unref(l, LUA_REGISTRYINDEX, lua_trigger_func[tid]);
+	if (luacon_ci->trigger_func[tid].m)
+		luaL_unref(l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[tid].i);
 	if (lua_type(l, 2) == LUA_TFUNCTION)
 	{
 		lua_pushvalue(l, 2);
 		int fn = luaL_ref(l, LUA_REGISTRYINDEX);
 		int n = 1;
-		lua_trigger_func[tid] = fn;
+		luacon_ci->trigger_func[tid].i = fn;
 #ifdef TPT_NEED_DLL_PLUGIN
 		if (lua_gettop(l) >= 3)
 		{
@@ -1037,10 +1048,10 @@ int luatpt_debug_trigger_add(lua_State* l)
 			(m >= 1) && (m <= 3) && (n = m);
 		}
 #endif
-		lua_trigger_fmode[tid] = n;
+		luacon_ci->trigger_func[tid].m = n;
 	}
 	else
-		lua_trigger_fmode[tid] = 0;
+		luacon_ci->trigger_func[tid].m = 0;
 	return 0;
 }
 

@@ -154,7 +154,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_EXOT:
-					if (partsi(r).ctype != PT_E186 && !(rand()%20))
+					if (partsi(r).ctype != PT_E195 && !(rand()%20))
 						partsi(r).life = 1500;
 					break;
 				case PT_RFRG:
@@ -306,7 +306,7 @@ void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particl
 	{
 		neut->ctype = 0x100;
 		neut->tmp2 = 0x3FFFFFFF;
-		sim->part_change_type(i, x, y, PT_E186);
+		sim->part_change_type(i, x, y, PT_E195);
 	}
 	else if (under->tmp2 == 25)
 	{

@@ -39,6 +39,9 @@
 #include "LuaProgressBar.h"
 
 #ifndef WIN
+#ifdef TPT_NEED_DLL_PLUGIN
+// #include "DLLInteractAPI.h"
+#endif
 #include <unistd.h>
 #endif
 
@@ -75,18 +78,13 @@ bool *luacon_currentCommand;
 std::string *luacon_lastError;
 std::string lastCode;
 
-int *lua_el_func, *lua_el_mode, *lua_gr_func, *lua_trigger_func;
-unsigned char *lua_trigger_fmode;
+int *lua_el_func, *lua_el_mode, *lua_gr_func;
 
 int getPartIndex_curIdx;
 int tptProperties; //Table for some TPT properties
 int tptPropertiesVersion;
 int tptElements; //Table for TPT element names
 int tptParts, tptPartsMeta, tptElementTransitions, tptPartsCData, tptPartMeta, tptPart, cIndex;
-
-#ifdef TPT_NEED_DLL_PLUGIN
-bool DLLLoaded = false;
-#endif
 
 int atPanic(lua_State *l)
 {
@@ -128,6 +126,12 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	luacon_g = ui::Engine::Ref().g;
 	luacon_ren = m->GetRenderer();
 	luacon_ci = this;
+#ifdef TPT_NEED_DLL_PLUGIN
+	InitializeCriticalSection(&simulation_dll_st.lock);
+	simulation_dll_st.loaded = false;
+	simulation_dll_st.lcount = 0;
+	simulation_dll_st.lcount_p = 0;
+#endif
 
 	//New TPT API
 	l = luaL_newstate();
@@ -377,10 +381,11 @@ tpt.partsdata = nil");
 		lua_gr_func[i] = 0;
 	}
 
-	lua_trigger_func = (int*)malloc(MAX_LUA_DEBUG_FUNCTIONS*(sizeof(int)+sizeof(char))); // sizeof(int)+sizeof(char) = 5 in some operating system
-	lua_trigger_fmode = (unsigned char*)(lua_trigger_func+MAX_LUA_DEBUG_FUNCTIONS);
 	for (int i = 0; i < MAX_LUA_DEBUG_FUNCTIONS; i++)
-		lua_trigger_fmode[i] = 0;
+	{
+		trigger_func[i].i = 0;
+		trigger_func[i].m = 0;
+	}
 
 	//make tpt.* a metatable
 	lua_newtable(l);
@@ -391,28 +396,10 @@ tpt.partsdata = nil");
 	lua_pushcclosure(l, TptNewindexClosure, 1);
 	lua_setfield(l, -2, "__newindex");
 	lua_setmetatable(l, -2);
-
+	
 #ifdef TPT_NEED_DLL_PLUGIN
-	if (!(DLLLoaded || (sdl_my_extra_args[0] & ARG0_NO_DLL_PLUGIN)))
-	{
-		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
-		if (DLLFuncPack)
-		{
-			char dllstr[11] = "dllcall_";
-			const char hexdigits[] = "0123456789abcdef";
-			dllstr[10] = 0;
-			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
-			{
-				dllstr[8] = hexdigits[i>>4];
-				dllstr[9] = hexdigits[i&15];
-				int (__stdcall *dllfn)(DLL_FUNCTIONS_ARGS) = (int (__stdcall *)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
-				dll_trigger_func[i] = dllfn;
-			}
-		}
-		else
-			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (__stdcall *)(DLL_FUNCTIONS_ARGS))NULL);
-		DLLLoaded = true;
-	}
+	if (!(sdl_my_extra_args[0] & ARG0_NO_DLL_PLUGIN))
+		simulation_dll_set_loaded(true);
 #endif
 }
 
@@ -457,14 +444,33 @@ int LuaScriptInterface::luatpt_sim_set_wallmap_brk (lua_State *l)
 	int ac = lua_gettop(l);
 	int x = lua_tointeger(l, 1);
 	int y = lua_tointeger(l, 2);
-	if (x >= 0 && x < XRES/CELL && y >= 0 && y < YRES/CELL && luacon_sim->wtypes[ luacon_sim->bmap[y][x] ].PressureTransition >= 0)
+	if (ac < 4)
 	{
-		lua_pushboolean(l, luacon_sim->bmap_brk[y][x]);
-		if (ac >= 3)
-			luacon_sim->bmap_brk[y][x] |= (lua_toboolean(l, 3) ? 1 : 0);
+		if (x >= 0 && x < XRES/CELL && y >= 0 && y < YRES/CELL && luacon_sim->wtypes[ luacon_sim->bmap[y][x] ].PressureTransition >= 0)
+		{
+			lua_pushboolean(l, luacon_sim->bmap_brk[y][x]);
+			if (ac >= 3)
+				luacon_sim->bmap_brk[y][x] |= (lua_toboolean(l, 3) ? 1 : 0);
+		}
+		else
+			lua_pushnil(l);
 	}
 	else
-		lua_pushnil(l);
+	{
+		int w = lua_tointeger(l, 3), h = lua_tointeger(l, 4);
+		int x1 = x, x2 = x + w, y1 = y, y2 = y + h, c = 0;
+		(x1 < 0) && (x1 = 0); (x2 > XRES/CELL) && (x2 = XRES/CELL);
+		(y1 < 0) && (y1 = 0); (y2 > YRES/CELL) && (y2 = YRES/CELL);
+		int s = (ac >= 5 && lua_toboolean(l, 5) ? 1 : 0);
+
+		for (y = y1; y < y2; y++)
+			for (x = y1; x < y2; x++)
+				if (luacon_sim->wtypes[ luacon_sim->bmap[y][x] ].PressureTransition >= 0)
+				{
+					c++; s && (luacon_sim->bmap_brk[y][x] |= 1);
+				}
+		lua_pushinteger(l, c);
+	}
 	return 1;
 }
 
@@ -980,6 +986,15 @@ void LuaScriptInterface::initSimulationAPI()
 	lua_pushcfunction(l, simulation_deletesign);
 	lua_setfield(l, -2, "delete");
 	lua_setfield(l, -2, "signs");
+	
+	lua_newtable(l);
+	lua_newtable(l); // metatable here
+	lua_pushcfunction(l, simulation_dll_index);
+	lua_setfield(l, -2, "__index");
+	lua_pushcfunction(l, simulation_dll_newindex);
+	lua_setfield(l, -2, "__newindex");
+	lua_setmetatable(l, -2);
+	lua_setfield(l, -2, "DLL");
 }
 
 int LuaScriptInterface::simulation_makeCyclone(lua_State * L)
@@ -3111,6 +3126,136 @@ int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
 	return 0;
 }
 
+#ifdef TPT_NEED_DLL_PLUGIN
+bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
+{
+	bool rb = false;
+	EnterCriticalSection(&(simulation_dll_st.lock));
+	// true = success, false = failure
+	if (simulation_dll_st.loaded == b) {}
+	else if (b)
+	{
+		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
+		rb = (DLLFuncPack != NULL);
+		if (rb)
+		{
+			char dllstr[11] = "dllcall_";
+			const char hexdigits[] = "0123456789abcdef";
+			dllstr[10] = 0;
+			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
+			{
+				dllstr[8] = hexdigits[i>>4];
+				dllstr[9] = hexdigits[i&15];
+				int (__stdcall *dllfn)(DLL_FUNCTIONS_ARGS) = (int (__stdcall *)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
+				dll_trigger_func[i] = dllfn;
+			}
+			simulation_dll_st.loaded = true;
+			simulation_dll_st.module = (void*)DLLFuncPack;
+		}
+	}
+	else
+	{
+		rb = FreeLibrary((HMODULE)(simulation_dll_st.module));
+		if (rb)
+		{
+			simulation_dll_st.loaded = false;
+			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (__stdcall *)(DLL_FUNCTIONS_ARGS))NULL);
+		}
+	}
+	LeaveCriticalSection(&(simulation_dll_st.lock));
+	return rb;
+}
+#endif
+
+const char* LuaScriptInterface::simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p)
+{
+	// lua_tostring 不保证值从堆栈中移除后的有效性, 因为可能发生垃圾收集.
+	const char* ss = strchr(s, '.');
+	if (ss == NULL)
+		lua_pushstring(L, s);
+	else
+		lua_pushlstring(L, s, (size_t)(ss - s)), ss++;
+	p = lua_tostring(L, -1);
+	// __asm__ ("int3");
+	return ss;
+	// [-0, +1]
+}
+
+int LuaScriptInterface::simulation_dll_index(lua_State * l)
+{
+	const char* key = luaL_checkstring(l, 2), *keyl;
+	const char* decr = simulation_dll_index_subf0(l, key, keyl);
+
+	switch (keyl[0])
+	{
+	case 's':
+		if (!strcmp(keyl+1, "upported"))
+#ifdef TPT_NEED_DLL_PLUGIN
+			return lua_pushboolean(l, true), 1;
+#else
+			return lua_pushboolean(l, false), 1;
+#endif
+		break;
+	case 'l':
+		if (keyl[1] != 'o')
+			break;
+		if (!strcmp(keyl+2, "aded"))
+#ifdef TPT_NEED_DLL_PLUGIN
+			return lua_pushboolean(l, luacon_ci->simulation_dll_st.loaded), 1;
+#else
+			return lua_pushboolean(l, false), 1;
+#endif
+#ifdef TPT_NEED_DLL_PLUGIN
+		else if (!strcmp(keyl+2, "ckcount"))
+		{
+			if (decr == NULL || *decr == 'c')
+				return lua_pushinteger(l, luacon_ci->simulation_dll_st.lcount), 1;
+			else if (*decr == 'p')
+				return lua_pushinteger(l, luacon_ci->simulation_dll_st.lcount_p), 1;
+		}
+#endif
+		break;
+	}
+	return lua_pushnil(l), 1;
+}
+
+int LuaScriptInterface::simulation_dll_newindex(lua_State * l)
+{
+#ifdef TPT_NEED_DLL_PLUGIN
+	const char* key = luaL_checkstring(l, 2), *keyl;
+	const char* decr = simulation_dll_index_subf0(l, key, keyl);
+
+	if (keyl[0] != 'l' || keyl[1] != 'o')
+		return 0;
+	
+	if (!strcmp(keyl+2, "aded"))
+	{
+		return luacon_ci->simulation_dll_set_loaded(lua_toboolean(l, 3)), 0;
+	}
+	else if (!strcmp(keyl+2, "ckcount"))
+	{
+		if (decr == NULL || *decr == 'c')
+		{
+			int &cnt = luacon_ci->simulation_dll_st.lcount;
+			int oldi = cnt, newi = lua_tonumber(l, 3);
+			if (oldi == 0 && newi != 0)
+				EnterCriticalSection(&(luacon_ci->simulation_dll_st.lock));
+			cnt = newi;
+			if (decr == NULL)
+				luacon_ci->simulation_dll_st.lcount_p = oldi;
+			if (newi == 0 && oldi != 0)
+				LeaveCriticalSection(&(luacon_ci->simulation_dll_st.lock));
+		}
+		else if (*decr == 'p')
+		{
+			luacon_ci->simulation_dll_st.lcount_p = lua_tonumber(l, 3);
+		}
+	}
+#endif
+	return 0;
+}
+
+
 //// Begin Renderer API
 
 void LuaScriptInterface::initRendererAPI()
@@ -4904,9 +5049,11 @@ std::string LuaScriptInterface::FormatCommand(std::string command)
 }
 
 LuaScriptInterface::~LuaScriptInterface() {
-	free(lua_trigger_func);
-	lua_trigger_func = NULL;
 	lua_close(l);
+#ifdef TPT_NEED_DLL_PLUGIN
+	simulation_dll_set_loaded(false);
+	DeleteCriticalSection(&simulation_dll_st.lock);
+#endif
 	delete legacy;
 }
 #endif

@@ -67,7 +67,7 @@
 #define FLAG_WATEREQUAL 0x4  // if a liquid was already checked during equalization
 #define FLAG_MOVABLE    0x8  // compatibility with old saves (moving SPNG), only applies to SPNG
 #define FLAG_PHOTDECO   0x8  // compatibility with old saves (decorated photons), only applies to PHOT. Having the same value as FLAG_MOVABLE is fine because they apply to different elements, and this saves space for future flags,
-#define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E186"
+#define FLAG_SKIPCREATE 0x10 // skip creating PROT, only implemented for "E195"
 
 // additional flags (only implemented for DIRCH)
 #define FLAG_DIRCH_MARK_TVOID	0x08

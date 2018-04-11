@@ -2442,7 +2442,7 @@ void GameView::OnDraw()
 			{
 				switch (type)
 				{
-				case PT_E186:
+				case PT_E195:
 					if (ctype == PMAPID(1))
 					{
 						wavelengthGfx = sample_particle->tmp2;
@@ -2544,7 +2544,7 @@ void GameView::OnDraw()
 						}
 						else
 						{
-							sampleInfo << "E189F" << partlife;
+							sampleInfo << c->ElementResolve(ELEM_MULTIPP, -1) << "_F" << partlife;
 						}
 					}
 					else
@@ -2708,7 +2708,7 @@ void GameView::OnDraw()
 					}
 					else
 					{
-						sampleInfo << "E189F" << partlife;
+						sampleInfo << c->ElementResolve(ELEM_MULTIPP, -1) << "_F" << partlife;
 					}
 				}
 				else if (type == PT_PINVIS)

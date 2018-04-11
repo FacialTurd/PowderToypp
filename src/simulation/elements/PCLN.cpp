@@ -94,7 +94,7 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 					    rt!=PT_STKM && rt!=PT_STKM2 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
-						if (rt==PT_LIFE || rt==PT_LAVA || (rt == PT_E186 && partsi(r).ctype > 0 && partsi(r).ctype < PT_NUM))
+						if (rt==PT_LIFE || rt==PT_LAVA || (rt == PT_E195 && partsi(r).ctype > 0 && partsi(r).ctype < PT_NUM))
 							parts[i].tmp = partsi(r).ctype;
 					}
 				}
@@ -123,7 +123,7 @@ int Element_PCLN::update(UPDATE_FUNC_ARGS)
 				for (ry=-1; ry<2; ry++)
 					sim->create_part(-1, x+rx, y+ry, PT_LIFE, parts[i].tmp);
 
-		else if (ctype1 == PT_E186) // not different way
+		else if (ctype1 == PT_E195) // not different way
 		{
 			np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(parts[i].ctype));
 			if (np>=0)

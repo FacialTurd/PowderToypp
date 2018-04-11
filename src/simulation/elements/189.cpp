@@ -252,7 +252,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->flags |= FLAG_SKIPCREATE;
 			else if (part_phot->ctype == PT_BRAY)
 				part_phot->tmp = 0;
-			sim->part_change_type(i, x, y, PT_E186);
+			sim->part_change_type(i, x, y, PT_E195);
 			break;
 #ifdef LUACONSOLE
 		case 7:
@@ -281,11 +281,11 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 			case 2: // photons diode output
 				part_phot->tmp2 = part_phot->ctype;
 				part_phot->ctype = PMAP(1, 0);
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_E195);
 				break;
 			case 5: // random "energy" particle
 				part_phot->ctype = PMAP(1, 1);
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_E195);
 				break;
 			case 6: // photons absorber
 				if (rct > 1)
@@ -462,13 +462,13 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->tmp |= part_phot->ctype;
 				part_phot->ctype = PMAP(1, 2);
 				part_phot->tmp2 = rct;
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_E195);
 				break;
 			case 22:
 				part_phot->tmp = part_phot->ctype;
 				part_phot->tmp2 = rct;
 				part_phot->ctype = PMAP(1, 3);
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_E195);
 				break;
 			case 23:
 				if (rct <= 0)
@@ -478,7 +478,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				else
 					part_phot->tmp = part_other->tmp3;
 				part_phot->ctype = PMAP(1, 4);
-				sim->part_change_type(i, x, y, PT_E186);
+				sim->part_change_type(i, x, y, PT_E195);
 				break;
 			case 26:
 				{

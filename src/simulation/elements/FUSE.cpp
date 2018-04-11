@@ -86,7 +86,7 @@ int Element_FUSE::update(UPDATE_FUNC_ARGS)
 					burning = true;
 				if (sim->legacy_enable)
 				{
-					if (partsi(r).life < 5 || rt==PT_PLSM)
+					if (((rt==PT_FUSE||rt==PT_FSEP) && partsi(r).life < 5) || rt==PT_PLSM)
 						parts[i].flags |= PFLAG_FUSE_BURNING;
 				}
 				else if (parts[i].temp>=(273.15+700.0f) && !(rand()%20))

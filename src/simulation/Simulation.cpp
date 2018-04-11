@@ -130,7 +130,7 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 				tempPart.ctype = PMAP(extra, ctype);
 			}
 			break;
-		case PT_E186:
+		case PT_E195:
 			if (tempPart.ctype > pmapmask)
 				tempPart.ctype += ctype_diff;
 			else if (tempPart.ctype > 0 && tempPart.ctype < PT_NUM)
@@ -2394,7 +2394,7 @@ void Simulation::init_can_move()
 
 		if (destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_INDI && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO && destinationType != PT_E187)
 			for (int i = 0; i < numTypePassThroughs; i++)
-				can_move[passAllTypes[i]][destinationType] = 2; // PROT, GRVT, "E186"
+				can_move[passAllTypes[i]][destinationType] = 2; // PROT, GRVT, "E195"
 
 		if (elements[destinationType].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
 			can_move[PT_DEST][destinationType] = 0;
@@ -2432,17 +2432,17 @@ void Simulation::init_can_move()
 
 	can_move[PT_ELEC][PT_POLC] = 2;
 	can_move[PT_GLOW][PT_E187] = 0;
-	can_move[PT_E186][PT_E187] = 2; // "E186" pass through "E187"
+	can_move[PT_E195][PT_E187] = 2; // "E195" pass through "E187"
 
-	can_move[PT_E186][PT_VIBR] = 2;
-	can_move[PT_E186][PT_BVBR] = 2;
-	can_move[PT_E186][PT_PRTO] = 2;
+	can_move[PT_E195][PT_VIBR] = 2;
+	can_move[PT_E195][PT_BVBR] = 2;
+	can_move[PT_E195][PT_PRTO] = 2;
 
 	can_move[PT_PROT][ELEM_MULTIPP] = 3;
 	can_move[PT_GRVT][ELEM_MULTIPP] = 3;
 	can_move[PT_NEUT][ELEM_MULTIPP] = 3;
 	can_move[PT_ELEC][ELEM_MULTIPP] = 3;
-	can_move[PT_E186][ELEM_MULTIPP] = 3;
+	can_move[PT_E195][ELEM_MULTIPP] = 3;
 
 	can_move[PT_STKM][ELEM_MULTIPP] = 3;
 	can_move[PT_STKM2][ELEM_MULTIPP] = 3;
@@ -2518,7 +2518,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 					result = 0;
 			}
 			else result = 0;
-			//	if (result == 0 && TYP(r) == PT_E186)
+			//	if (result == 0 && TYP(r) == PT_E195)
 			//		result = 2
 			break;
 		case PT_VOID:
@@ -2526,7 +2526,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 				result = 1;
 			else
 				result = 0;
-			//	if (result == 0 && TYP(r) == PT_E186)
+			//	if (result == 0 && TYP(r) == PT_E195)
 			//		result = 2
 			break;
 		case PT_SWCH:
@@ -2542,17 +2542,17 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 			{
 				int rlife = partsi(r).life, tmp_flag = partsi(r).tmp;
 				// 16 values per dword
-				static unsigned int E186_ilist[] = {
+				static unsigned int E195_ilist[] = {
 					0x88222800U,	//  0 - 15
 					0x02802006U,	// 16 - 31
 					0xAAAA001AU,	// 32 - 47
 				};
 				switch (pt)
 				{
-				case PT_E186:
+				case PT_E195:
 					if (rlife < 0 || rlife >= 48)
 						return 2;
-					return (E186_ilist[rlife>>4] >> ((rlife << 1) & 0x1F)) & 3;
+					return (E195_ilist[rlife>>4] >> ((rlife << 1) & 0x1F)) & 3;
 				case PT_PROT:
 					if (rlife == 15)
 						return 0;
@@ -2903,7 +2903,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		break;
 	*/
 	case ELEM_MULTIPP:
-		if (parts[i].type == PT_E186) // ELEM_MULTIPP (life=17) eats PT_E186
+		if (parts[i].type == PT_E195) // ELEM_MULTIPP (life=17) eats PT_E195
 		{
 			if (partsi(r).life == 17)
 			{
@@ -3531,7 +3531,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 					else if (drawOn != PT_STOR)
 						parts[drawOnID].tmp = v;
 				}
-				else if (t == PT_E186 && oldct != PT_E186 &&
+				else if (t == PT_E195 && oldct != PT_E195 &&
 					(drawOn == PT_CLNE || drawOn == PT_PCLN || drawOn == PT_BCLN || drawOn == PT_PBCN))
 					parts[drawOnID].tmp = 0;
 			}
@@ -3831,7 +3831,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		break;
 	}
 	case PT_ELEC:
-	case PT_E186:
+	case PT_E195:
 	{
 		float a = (rand()%360)*3.14159f/180.0f;
 		parts[i].life = 680;
@@ -4287,7 +4287,7 @@ void Simulation::UpdateParticles(int start, int end)
 						rt = TYP(r);
 						if (rt && elements[rt].HeatConduct && (rt!=PT_HSWC || parts[ID(r)].life==10)
 						        && (t!=PT_FILT || (rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
-						        && (rt!=PT_FILT || (t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_E186&&t!=PT_BIZR&&t!=PT_BIZRG))
+						        && (rt!=PT_FILT || (t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_E195&&t!=PT_BIZR&&t!=PT_BIZRG))
 						        && (t!=PT_ELEC || rt!=PT_DEUT)
 						        && (t!=PT_DEUT || rt!=PT_ELEC)
 								&& (t!=PT_HSWC || rt!=PT_FILT || parts[i].tmp != 1)
@@ -5081,7 +5081,7 @@ killed:
 					}
 					else
 					{
-						if (!(elements[t].Properties2 & PROP_NEUTRONS_LIKE)) /* t!=PT_NEUT && t!=PT_E186 */
+						if (!(elements[t].Properties2 & PROP_NEUTRONS_LIKE)) /* t!=PT_NEUT && t!=PT_E195 */
 							kill_part(i); // only NEUT???
 						continue;
 					}
@@ -6411,7 +6411,7 @@ void Simulation::check_neut()
 					*(int*)(&parts[i].pavg[1]) = (yb << 16) | xb;
 					tmp = i;
 				}
-				else if (parts[i].type == PT_E186 && parts[i].ctype == PT_NEUT)
+				else if (parts[i].type == PT_E195 && parts[i].ctype == PT_NEUT)
 				{
 					blockdata.pid = i;
 				}
@@ -6436,7 +6436,7 @@ void Simulation::check_neut()
 				else
 				{
 					blockdata.flags |= 0xFF;
-					create_part(tmp, (int)(parts[tmp].x+0.5f), (int)(parts[tmp].y+0.5f), PT_E186);
+					create_part(tmp, (int)(parts[tmp].x+0.5f), (int)(parts[tmp].y+0.5f), PT_E195);
 					parts[tmp].life = (n & 0x7F) * 50;
 					parts[tmp].ctype = PT_NEUT;
 				}

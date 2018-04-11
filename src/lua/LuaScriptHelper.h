@@ -12,8 +12,7 @@ extern bool *luacon_currentCommand;
 extern int luaL_tostring(lua_State* l, int n);
 extern std::string *luacon_lastError;
 
-extern int *lua_el_func, *lua_el_mode, *lua_gr_func, *lua_trigger_func;
-extern unsigned char *lua_trigger_fmode;
+extern int *lua_el_func, *lua_el_mode, *lua_gr_func;
 
 extern int getPartIndex_curIdx;
 extern int tptProperties; //Table for some TPT properties

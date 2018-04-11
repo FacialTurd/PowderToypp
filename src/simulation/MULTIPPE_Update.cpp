@@ -5,11 +5,6 @@
 #include "common/tpt-math.h"
 #include "simplugin.h"
 
-#ifdef LUACONSOLE
-#include "lua/LuaScriptInterface.h"
-#include "lua/LuaScriptHelper.h"
-#endif
-
 #ifdef _MSC_VER
 #define __builtin_ctz msvc_ctz
 #define __builtin_clz msvc_clz
@@ -1045,7 +1040,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		case 14: // fast laser?
 			rx = tron_rx[rtmp & 3];
 			ry = tron_ry[rtmp & 3];
-			ri = sim->create_part(-1, x + rx, y + ry, PT_E186);
+			ri = sim->create_part(-1, x + rx, y + ry, PT_E195);
 			parts[ri].ctype = PMAP(1, 5);
 			rtmp >>= 2;
 			parts[ri].vx = rx * rtmp;
@@ -2706,7 +2701,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 	case 40:
 		{
 			int funcid = (parts[i].ctype & 0x3F) + 0x100;
-			if (lua_trigger_fmode[funcid]) luacall_debug_trigger (funcid, i, x, y);
+			if (luacon_ci->trigger_func[funcid].m) luacall_debug_trigger (funcid, i, x, y);
 		}
 		break;
 

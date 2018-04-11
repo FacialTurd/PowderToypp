@@ -67,17 +67,17 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				switch (rt)
 				{
 				case PT_WARP:
-					if (_ctype != PT_E186 && parts[r].tmp2>2000 && !(rand()%100))
+					if (_ctype != PT_E195 && parts[r].tmp2>2000 && !(rand()%100))
 					{
 						parts[i].tmp2 += 100;
 					}
 					break;
 				case PT_EXOT:
-					if (_ctype != PT_E186)
+					if (_ctype != PT_E195)
 					{
-						if (parts[r].ctype == PT_E186 && NOWARPCOND(r))
+						if (parts[r].ctype == PT_E195 && NOWARPCOND(r))
 						{
-							_ctype = PT_E186;
+							_ctype = PT_E195;
 							parts[i].life = 1500;
 							parts[i].tmp2 = parts[r].tmp2;
 							if (r < i)
@@ -111,7 +111,7 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				}
-				if (parts[i].tmp > 245 && parts[i].life > 1337 && parts[i].ctype != PT_E186)
+				if (parts[i].tmp > 245 && parts[i].life > 1337 && parts[i].ctype != PT_E195)
 					if (rt!=PT_EXOT && rt!=PT_BREC && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) && rt!=PT_PRTI && rt!=PT_PRTO && rt!=PT_VOID && rt!=PT_NBHL && rt!=PT_WARP &&
 						rt!=ELEM_MULTIPP /* && !(rt==PT_SPRK && (sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT)) */) // for default, EXOT doesn't conducts electricity
 					{
@@ -120,7 +120,7 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 					}
 			}
 
-	bool isE186 = (_ctype == PT_E186);
+	bool isE195 = (_ctype == PT_E195);
 
 	parts[i].tmp--;
 	parts[i].tmp2--;
@@ -130,13 +130,13 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 
 	if (parts[i].tmp2 < 1)
 	{
-		if (isE186)
+		if (isE195)
 			parts[i].life = 1000,
 			parts[i].tmp2 = 10000;
 		else
 			parts[i].tmp2 = 1;
 	}
-	else if ((!isE186 || parts[i].life < 1001) && parts[i].tmp2 > 6000)
+	else if ((!isE195 || parts[i].life < 1001) && parts[i].tmp2 > 6000)
 	{
 		parts[i].tmp2 = 10000;
 		if (parts[i].life < 1001)
@@ -155,7 +155,7 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 		return 1;
 	}
 
-	if (parts[i].tmp2 > 100 && (!isE186 || NOWARPCOND(i)))
+	if (parts[i].tmp2 > 100 && (!isE195 || NOWARPCOND(i)))
 	{
 		for (trade = 0; trade < 9; trade++)
 		{
@@ -169,8 +169,8 @@ int Element_EXOT::update(UPDATE_FUNC_ARGS)
 				rt = TYP(r), r = ID(r);
 				if (rt == PT_EXOT && (parts[i].tmp2 > parts[r].tmp2) && parts[r].tmp2 >= 0) //diffusion
 				{
-					bool thatE186 = (parts[r].ctype == PT_E186);
-					if (isE186 != thatE186)
+					bool thatE195 = (parts[r].ctype == PT_E195);
+					if (isE195 != thatE195)
 						continue;
 						
 					tym = parts[i].tmp2 - parts[r].tmp2;
@@ -223,7 +223,7 @@ int Element_EXOT::graphics(GRAPHICS_FUNC_ARGS)
 	int c = cpart->tmp2;
 	int d = cpart->ctype;
 
-	if (d == PT_E186)
+	if (d == PT_E195)
 	{
 		int s = atan(c * (M_PI / 127.5)) * (510 / M_PI) + 0.5;
 		if (cpart->life < 1001 && c > 6001)

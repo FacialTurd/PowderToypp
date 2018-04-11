@@ -189,11 +189,11 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 					if (rt == PT_EXOT && !(rand()%25))
 					{
 						sim->part_change_type(i, x, y, PT_EXOT);
-						if (partsi(r).ctype == PT_E186)
-							parts[i].ctype = PT_E186,
+						if (partsi(r).ctype == PT_E195)
+							parts[i].ctype = PT_E195,
 							parts[i].life = 1500,
 							parts[i].tmp2 = partsi(r).tmp2 + (ID(r) > i ? -1 : 0);
-						else if (parts[i].ctype == PT_E186)
+						else if (parts[i].ctype == PT_E195)
 							parts[i].ctype = 0;
 						return 1;
 					}

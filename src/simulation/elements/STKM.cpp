@@ -432,7 +432,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				
 				rt = TYP(r); r = ID(r);
 				
-				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E186 && _IS_EMIT_FN(playerp->__flags, _STKM_FLAG_EMT)))
+				if (!(sim->Extra_FIGH_pause & 32 || rt == PT_E195 && _IS_EMIT_FN(playerp->__flags, _STKM_FLAG_EMT)))
 				{
 					STKM_set_element(sim, playerp, rt);
 				}
@@ -548,7 +548,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		else
 		{
-			const int emt_ell[] = {0, PT_E186, PT_FIGH, 0};
+			const int emt_ell[] = {0, PT_E195, PT_FIGH, 0};
 			int flags = playerp->__flags;
 			int np = -1;
 			int emt_el = emt_ell[(flags & _STKM_FLAG_EPROP) >> _STKM_FLAG_EPROPSH];
@@ -594,7 +594,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 							parts[np].vx = random;
 					}
 				}
-				else if (nelem == PT_E186)
+				else if (nelem == PT_E195)
 				{
 					newpart = &parts[np];
 				}

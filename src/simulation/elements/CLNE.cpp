@@ -63,7 +63,7 @@ int Element_CLNE::update(UPDATE_FUNC_ARGS)
 						continue;
 					rt = TYP(r);
 					if (!(sim->elements[rt].Properties2 & PROP_CLONE)
-						&& rt!=PT_STKM && rt!=PT_STKM2 && rt!=PT_E186 && rt<PT_NUM)
+						&& rt!=PT_STKM && rt!=PT_STKM2 && rt!=PT_E195 && rt<PT_NUM)
 					{
 						parts[i].ctype = rt;
 						if (rt==PT_LIFE || rt==PT_LAVA)
@@ -78,7 +78,7 @@ int Element_CLNE::update(UPDATE_FUNC_ARGS)
 			int np = sim->create_part(-1, x+rand()%3-1, y+rand()%3-1, TYP(ctype1));
 			if (np>=0)
 			{
-				if ((ctype1 == PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA) || ctype1 == PT_E186)
+				if ((ctype1 == PT_LAVA && parts[i].tmp>0 && parts[i].tmp<PT_NUM && sim->elements[parts[i].tmp].HighTemperatureTransition==PT_LAVA) || ctype1 == PT_E195)
 					parts[np].ctype = parts[i].tmp;
 			}
 		}

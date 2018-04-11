@@ -5,6 +5,12 @@
 
 #define NUM_COLOR_SPC 41
 
+#ifdef LUACONSOLE
+#include "lua/LuaScriptInterface.h"
+#include "lua/LuaScriptHelper.h"
+
+class LuaScriptInterface;
+#endif
 class Simulation;
 class Renderer;
 struct Particle;
@@ -49,6 +55,9 @@ public:
 		}
 		return false;
 	}
+// #ifdef LUACONSOLE
+//	static void luacall (LuaScriptInterface* ci, int t, int i, int x, int y);
+// #endif
 	
 	// struct ???
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp

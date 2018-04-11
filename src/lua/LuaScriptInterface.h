@@ -137,6 +137,14 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_makeCyclone(lua_State * l);
 	static int simulation_changeToBeamSwitch(lua_State * l);
 
+	// DLL API in Simulation
+#ifdef TPT_NEED_DLL_PLUGIN
+	bool simulation_dll_set_loaded(bool);
+#endif
+	static const char* simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p);
+	static int simulation_dll_index(lua_State * l);
+	static int simulation_dll_newindex(lua_State * l);
+
 	//Stickman attributes
 	void initStickmanAPI();
 	static int stickman_parent(lua_State * l);
@@ -239,7 +247,17 @@ public:
 	virtual int Command(std::string command);
 	virtual std::string FormatCommand(std::string command);
 	virtual ~LuaScriptInterface();
+	struct trigger_func_struct {
+		int i; int m;
+	} trigger_func [MAX_LUA_DEBUG_FUNCTIONS];
 #ifdef TPT_NEED_DLL_PLUGIN
+	struct {
+		CRITICAL_SECTION lock;
+		int lcount;
+		int lcount_p;
+		int loaded;
+		void* module;
+	} simulation_dll_st;
 	static int (__stdcall *(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
 };

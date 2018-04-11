@@ -154,7 +154,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				{
 					parts[i].pavg[1] = 0;
 				}
-				else if (TYP(r) == PT_E186 && partsi(r).ctype >= 0 && partsi(r).ctype <= PMAPMASK)
+				else if (TYP(r) == PT_E195 && partsi(r).ctype >= 0 && partsi(r).ctype <= PMAPMASK)
 				{
 					parts[i].tmp4 = 0;
 				}
