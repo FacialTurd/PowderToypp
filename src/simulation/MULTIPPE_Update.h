@@ -26,6 +26,8 @@ public:
 	static void do_breakpoint();
 	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);
 	// static int AddCharacter(Simulation *sim, int x, int y, int c, int rgb);
+	static bool isAcceptedConductor (Simulation* sim, int r);
+	static bool isAcceptedConductor_i (Simulation* sim, int r);
 	static void conductTo (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?
 	{
 		if (!partsi(r).life)

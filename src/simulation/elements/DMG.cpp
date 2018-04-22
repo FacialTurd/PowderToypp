@@ -1,21 +1,5 @@
 #include "simulation/Elements.h"
 
-#define PT_DMG_HASH_SIZE	17
-
-int DMGBreaksHash[PT_DMG_HASH_SIZE];
-bool DMGBreaksInit = false;
-
-static int DMGBreaksPairs[][2] = {
-	{PT_BMTL, PT_BRMT},
-	{PT_GLAS, PT_BGLA},
-	{PT_COAL, PT_BCOL},
-	{PT_QRTZ, PT_PQRT},
-	{PT_TUNG, PT_BRMT},
-	{PT_WOOD, PT_SAWD},
-	{PT_WIFI, PT_BRMT}, // Added WIFI + DMG -> BRMT for compatible with official TPT.
-	{0, 0}
-};
-
 //#TPT-Directive ElementClass Element_DMG PT_DMG 163
 Element_DMG::Element_DMG()
 {
@@ -61,18 +45,44 @@ Element_DMG::Element_DMG()
 	Update = &Element_DMG::update;
 	Graphics = &Element_DMG::graphics;
 	
-	if (!DMGBreaksInit)
+	if (brk_array_len == 0)
 	{
-		DMGBreaksInit = true;
-		int i, v;
-		for (i = 0; i < PT_DMG_HASH_SIZE; i++)
+		int i, j, k, v;
+		for (i = 0; brk_sparse_arr[i][0] != 0; i++) { }
+		brk_array_len = i;
+
+		for (j = 0; j < i - 1; j ++) // 选择排序
 		{
-			DMGBreaksHash[i] = -1;
+			for (k = j + 1; k < i; k ++)
+			{
+				if (brk_sparse_arr[j][0] > brk_sparse_arr[k][0])
+				{
+					v = brk_sparse_arr[j][0];
+					brk_sparse_arr[j][0] = brk_sparse_arr[k][0];
+					brk_sparse_arr[k][0] = v;
+					v = brk_sparse_arr[j][1];
+					brk_sparse_arr[j][1] = brk_sparse_arr[k][1];
+					brk_sparse_arr[k][1] = v;
+				}
+			}
 		}
-		for (i = 0; v = DMGBreaksPairs[i][0]; i++)
-			DMGBreaksHash[v % PT_DMG_HASH_SIZE] = i;
 	}
 }
+
+//#TPT-Directive ElementHeader Element_DMG static int brk_array_len
+int Element_DMG::brk_array_len = 0;
+
+//#TPT-Directive ElementHeader Element_DMG static int brk_sparse_arr[][2]
+int Element_DMG::brk_sparse_arr[][2] = { // sparse array
+	{PT_BMTL, PT_BRMT},
+	{PT_GLAS, PT_BGLA},
+	{PT_COAL, PT_BCOL},
+	{PT_QRTZ, PT_PQRT},
+	{PT_TUNG, PT_BRMT},
+	{PT_WOOD, PT_SAWD},
+	{PT_WIFI, PT_BRMT}, // Added WIFI + DMG -> BRMT for compatible with official TPT.
+	{0, 0}
+};
 
 //#TPT-Directive ElementHeader Element_DMG static void BreakingElement(Simulation * sim, Particle * parts, int i, int x, int y, int t)
 void Element_DMG::BreakingElement(Simulation * sim, Particle * parts, int i, int x, int y, int t)
@@ -81,13 +91,23 @@ void Element_DMG::BreakingElement(Simulation * sim, Particle * parts, int i, int
 		sim->part_change_type(i, x, y, sim->elements[t].HighPressureTransition);
 	else
 	{
-		int hashv = DMGBreaksHash[t % PT_DMG_HASH_SIZE];
-		int *pairs = DMGBreaksPairs[hashv];
-		if (hashv >= 0 && pairs[0] == t)
+		int lt = 0, rt = brk_array_len;
+
+		while (lt != rt) // 二分查找
 		{
-			sim->part_change_type(i, x, y, pairs[1]);
-			if (t == PT_TUNG)
-				parts[i].ctype = PT_TUNG;
+			int c = (lt + rt) >> 1;
+			int st = brk_sparse_arr[c][0];
+			if (t == st)
+			{
+				sim->part_change_type(i, x, y, brk_sparse_arr[c][1]);
+				if (t == PT_TUNG)
+					parts[i].ctype = PT_TUNG;
+				break;
+			}
+			if (t < st)
+				rt = c;
+			else // t > st
+				lt = c + 1;
 		}
 	}
 }

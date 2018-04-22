@@ -100,7 +100,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 				}
 	}
 	if(state == PISTON_EXTEND || state == PISTON_RETRACT) {
-		bool E189Push = false;
+		bool pushWithNoPSTNSpawn = false;
 		for (rx=-1; rx<2; rx++)
 			for (ry=-1; ry<2; ry++)
 				if (BOUNDS_CHECK && (rx || ry) && (!rx || !ry))
@@ -128,7 +128,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 							{
 								if (parts[ID(r)].life)
 									armCount++;
-								else if (armCount || E189Push)
+								else if (armCount || pushWithNoPSTNSpawn)
 								{
 									pistonEndX = x+nxx;
 									pistonEndY = y+nyy;
@@ -140,10 +140,10 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 									pistonCount += floor((parts[ID(r)].temp-268.15)/10);// How many tens of degrees above 0 C, rounded to nearest ten degrees. Can be negative.
 								}
 							}
-							else if (!E189Push && (TYP(r) == ELEM_MULTIPP && parts[ID(r)].life == 12 && (parts[ID(r)].tmp & 4)))
+							else if (!pushWithNoPSTNSpawn && (TYP(r) == ELEM_MULTIPP && parts[ID(r)].life == 12 && (parts[ID(r)].tmp & 4)))
 							{
 								pistonCount += floor((parts[ID(r)].temp-268.15)/10);
-								E189Push = true;
+								pushWithNoPSTNSpawn = true;
 							}
 							else if (nxx==0 && nyy==0)
 							{
@@ -166,7 +166,7 @@ int Element_PSTN::update(UPDATE_FUNC_ARGS)
 									pistonCount = armLimit-armCount;
 								if(pistonCount > 0) {
 									newSpace = MoveStack(sim, pistonEndX, pistonEndY, directionX, directionY, maxSize, pistonCount, false, parts[i].ctype, true, maxFrame);
-									if(newSpace && !E189Push) {
+									if(newSpace && !pushWithNoPSTNSpawn) {
 										//Create new piston section
 										for(int j = 0; j < newSpace; j++) {
 											int nr = sim->create_part(-3, pistonEndX+(nxi*j), pistonEndY+(nyi*j), PT_PSTN);

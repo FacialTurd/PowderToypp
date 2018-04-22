@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 #include <iostream>
+#include "simulation/MULTIPPE_Update.h"
 #ifndef ID
 #define ID(r) part_ID(r)
 #endif
@@ -36,6 +37,7 @@ Element_RAYT::Element_RAYT()
 	Description = "RAYT scans in 8 directions for the element in its ctype and sparks the conductor on the opposite side";
 
 	Properties = TYPE_SOLID | PROP_DRAWONCTYPE | PROP_NOCTYPEDRAW;
+	Properties2 |= PROP_DRAWONCTYPE | PROP_DEBUG_USE_TMP2;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -73,23 +75,11 @@ bool phot_data_type(int rt)
 	return false;
 }
 
-/* Returns true for particles that start a ray search ("dtec" mode)
- */
-bool accepted_type(Simulation* sim, int r)
-{
-	int rt = TYP(r);
-	if ((sim->elements[rt].Properties & (PROP_CONDUCTS | PROP_INSULATED)) == PROP_CONDUCTS)
-	{
-		if (sim->parts[ID(r)].life == 0)
-			return true;
-	}
-	return false;
-}
-
 //#TPT-Directive ElementHeader Element_RAYT static int update(UPDATE_FUNC_ARGS)
 int Element_RAYT::update(UPDATE_FUNC_ARGS)
 {
-	int max = parts[i].tmp + parts[i].life;
+	int max = parts[i].tmp + parts[i].life, rt;
+	bool acc_typ;
 	for (int rx = -1; rx <= 1; rx++)
 	{
 		for (int ry = -1; ry <= 1; ry++)
@@ -99,8 +89,10 @@ int Element_RAYT::update(UPDATE_FUNC_ARGS)
 				int r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
+				rt = TYP(r);
 
-				if (!accepted_type(sim, r) && ((parts[i].tmp2 & mask_no_copy_color) || !phot_data_type(TYP(r))))
+				acc_typ = MULTIPPE_Update::isAcceptedConductor_i(sim, r);
+				if (!acc_typ && ((parts[i].tmp2 & mask_no_copy_color) || !phot_data_type(rt)))
 					continue;
 
 				// Stolen from DRAY, does the ray searching
@@ -125,15 +117,17 @@ int Element_RAYT::update(UPDATE_FUNC_ARGS)
 						continue;
 
 					// Usual DTEC-like mode
-					if (!phot_data_type(TYP(r)))
+					if (!phot_data_type(rt))
 					{
 						// If ctype isn't set (no type restriction), or ctype matches what we found
 						// Can use .tmp2 flag to invert this
-						if (parts[i].ctype == 0 || (parts[i].ctype == TYP(rr)) ^ (parts[i].tmp2 & mask_invert_filter))
+						if (parts[i].ctype == 0 || (parts[i].ctype == TYP(rr)) ^ !!(parts[i].tmp2 & mask_invert_filter))
 						{
-							parts[ID(r)].life = 4;
-							parts[ID(r)].ctype = TYP(r);
-							sim->part_change_type(ID(r), xCurrent, yCurrent, PT_SPRK);
+							// if (!acc_typ) break;
+							r = ID(r);
+							parts[r].life = 4;
+							parts[r].ctype = rt;
+							sim->part_change_type(r, x+rx, y+ry, PT_SPRK); // Fixed RAYT!
 							break;
 						}
 						// room for more conditions here.
@@ -143,20 +137,12 @@ int Element_RAYT::update(UPDATE_FUNC_ARGS)
 					{
 						// If ctype isn't set (no type restriction), or ctype matches what we found
 						// Can use .tmp2 flag to invert this
-						if (parts[i].ctype == 0 || (parts[i].ctype == TYP(rr)) ^ (parts[i].tmp2 & mask_invert_filter))
+						if (parts[i].ctype == 0 || (parts[i].ctype == TYP(rr)) ^ !!(parts[i].tmp2 & mask_invert_filter))
 						{
 							if (phot_data_type(TYP(rr)))
 							{
 								int nx = x + rx, ny = y + ry;
-								while (TYP(r) == PT_FILT)
-								{
-									parts[ID(r)].ctype = Element_FILT::getWavelengths(&parts[ID(rr)]);
-									nx += rx;
-									ny += ry;
-									if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
-										break;
-									r = pmap[ny][nx];
-								}
+								Element_MULTIPP::setFilter(sim, nx, ny, rx, ry, Element_FILT::getWavelengths(&parts[ID(rr)]));
 								break;
 							}
 						}

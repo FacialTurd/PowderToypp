@@ -6360,10 +6360,12 @@ void Simulation::AfterSim()
 	}
 }
 
-struct blockd1 {int pid; short flags;};
-
 void Simulation::check_neut()
 {
+	struct blockd1 {
+		int pid;
+		short flags;
+	};
 	blockd1 * neut_map = (blockd1*)malloc((XRES/CELL)*(YRES/CELL)*sizeof(blockd1));
 	int tmp = -1, tmp2, wdata, nextp, n;
 	static unsigned int rndstore;

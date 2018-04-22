@@ -49,7 +49,8 @@ Element_PSNS::Element_PSNS()
 int Element_PSNS::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, rt;
-	if (!(parts[i].tmp3 & 1) == (sim->pv[y/CELL][x/CELL] > parts[i].temp-273.15f))
+	if ((parts[i].tmp == 0 && sim->pv[y/CELL][x/CELL] > parts[i].temp-273.15f) ||
+		(parts[i].tmp == 2 && sim->pv[y/CELL][x/CELL] < parts[i].temp-273.15f))
 	{
 		parts[i].life = 0;
 		for (rx = -2; rx <= 2; rx++)
@@ -87,17 +88,8 @@ int Element_PSNS::update(UPDATE_FUNC_ARGS)
 						r = pmap[y + ry][x + rx];
 						if (!r)
 							continue;
-						nx = x + rx;
-						ny = y + ry;
-						while (TYP(r) == PT_FILT)
-						{
-							parts[ID(r)].ctype = 0x10000000 + roundl(photonWl) + 256;
-							nx += rx;
-							ny += ry;
-							if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
-								break;
-							r = pmap[ny][nx];
-						}
+						int photonWl_i = 0x10000000 + roundl(photonWl) + 256;
+						Element_MULTIPP::setFilter(sim, x+rx, y+ry, rx, ry, photonWl_i);
 					}
 		}
 	}

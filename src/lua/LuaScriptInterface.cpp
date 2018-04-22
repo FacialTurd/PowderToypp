@@ -128,6 +128,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	luacon_ci = this;
 #ifdef TPT_NEED_DLL_PLUGIN
 	InitializeCriticalSection(&simulation_dll_st.lock);
+	simulation_dll_st.ehandler = -1;
 	simulation_dll_st.loaded = false;
 	simulation_dll_st.lcount = 0;
 	simulation_dll_st.lcount_p = 0;
@@ -4576,9 +4577,9 @@ int LuaScriptInterface::platform_releaseType(lua_State * l)
 
 int LuaScriptInterface::platform_exeName(lua_State * l)
 {
-	char *name = Platform::ExecutableName();
-	if (name)
-		lua_pushstring(l, name);
+	std::string name = Platform::ExecutableName();
+	if (name.length())
+		lua_pushstring(l, name.c_str());
 	else
 		luaL_error(l, "Error, could not get executable name");
 	return 1;

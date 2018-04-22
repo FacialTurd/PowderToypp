@@ -171,11 +171,18 @@ void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int a, int w)
 	ix = sim->portal_rx[a];
 	iy = sim->portal_ry[a];
 
-	while (x += ix, y += iy, sim->InBounds(x, y))
+	setFilter(sim, x, y, ix, iy, w);
+}
+
+//#TPT-Directive ElementHeader Element_MULTIPP static void setFilter(Simulation* sim, int x, int y, int rx, int ry, int w)
+void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int rx, int ry, int w)
+{
+	while (x >= 0 && y >= 0 && x < XRES && y < YRES)
 	{
-		r = sim->pmap[y][x];
+		int r = sim->pmap[y][x];
 		if (TYP(r) != PT_FILT) break;
-		sim->partsi(r).ctype = w;
+		sim->parts[ID(r)].ctype = w;
+		x += rx; y += ry;
 	}
 }
 

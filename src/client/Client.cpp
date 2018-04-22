@@ -183,14 +183,14 @@ bool Client::DoInstallation()
 	int returnval;
 	LONG rresult;
 	HKEY newkey;
-	char *currentfilename = Platform::ExecutableName();
+	std::string currentfilename = Platform::ExecutableName();
 	char *iconname = NULL;
 	char *opencommand = NULL;
 	char *protocolcommand = NULL;
 	//char AppDataPath[MAX_PATH];
 	char *AppDataPath = NULL;
-	iconname = (char*)malloc(strlen(currentfilename)+6);
-	sprintf(iconname, "%s,-102", currentfilename);
+	iconname = (char*)malloc(currentfilename.length()+7);
+	sprintf(iconname, "%s,-102", currentfilename.c_str());
 	
 	//Create Roaming application data folder
 	/*if(!SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA|CSIDL_FLAG_CREATE, NULL, 0, AppDataPath))) 
@@ -204,8 +204,8 @@ bool Client::DoInstallation()
 	//Move Game executable into application data folder
 	//TODO: Implement
 	
-	opencommand = (char*)malloc(strlen(currentfilename)+53+strlen(AppDataPath));
-	protocolcommand = (char*)malloc(strlen(currentfilename)+53+strlen(AppDataPath));
+	opencommand = (char*)malloc(currentfilename.length()+54+strlen(AppDataPath));
+	protocolcommand = (char*)malloc(currentfilename.length()+54+strlen(AppDataPath));
 	/*if((strlen(AppDataPath)+strlen(APPDATA_SUBDIR "\\Powder Toy"))<MAX_PATH)
 	{
 		strappend(AppDataPath, APPDATA_SUBDIR);
@@ -216,8 +216,8 @@ bool Client::DoInstallation()
 		returnval = 0;
 		goto finalise;
 	}*/
-	sprintf(opencommand, "\"%s\" open \"%%1\" ddir \"%s\"", currentfilename, AppDataPath);
-	sprintf(protocolcommand, "\"%s\" ddir \"%s\" ptsave \"%%1\"", currentfilename, AppDataPath);
+	sprintf(opencommand, "\"%s\" open \"%%1\" ddir \"%s\"", currentfilename.c_str(), AppDataPath);
+	sprintf(protocolcommand, "\"%s\" ddir \"%s\" ptsave \"%%1\"", currentfilename.c_str(), AppDataPath);
 
 	//Create protocol entry
 	rresult = RegCreateKeyEx(HKEY_CURRENT_USER, "Software\\Classes\\ptsave", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &newkey, NULL);
@@ -342,7 +342,7 @@ bool Client::DoInstallation()
 	free(iconname);
 	free(opencommand);
 	free(protocolcommand);
-	free(currentfilename);
+	// free(currentfilename);
 	
 	return returnval;
 #elif defined(LIN)

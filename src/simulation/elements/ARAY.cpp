@@ -575,11 +575,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 													docontinue = nostop;
 												}
 												continue;
-											case PT_FILT: continue1c:
-												partsi(front1).ctype = colored;
-												nxx += nxi; nyy += nyi;
-												if (BOUNDS_CHECK && ((front1 = TYP(pmap[y+nyy][x+nxx]))) == PT_FILT)
-													goto continue1c;
+											case PT_FILT:
+												Element_MULTIPP::setFilter(sim, x+nxx, y+nyy, nxi, nyi, colored);
 												goto break1a;
 											}
 										}
@@ -845,7 +842,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 									}
 								// this if prevents BRAY from stopping on certain materials
 								}
-								else if (rt != PT_INWR && (rt != PT_SPRK || parts[r].ctype != PT_INWR) && rt != PT_ARAY && rt != PT_WIFI && !(rt == PT_SWCH && parts[r].life >= 10))
+								else if (rt != PT_INWR && (rt != PT_SPRK || parts[r].ctype != PT_INWR) && rt != PT_ARAY && rt != PT_WIFI &&
+									!(rt == PT_SWCH && parts[r].life >= 10) && !(rt == PT_RAYT && (parts[r].tmp2 & 0x10)))
 								{
 									if (!tmpz)
 										sim->create_part(-1, x+nxx, y+nyy, PT_SPRK);
@@ -869,7 +867,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 										parts[r].dcolour = 0xFF000000;
 								//this if prevents red BRAY from stopping on certain materials
 								}
-								else if (rt==PT_STOR || rt==PT_INWR || (rt==PT_SPRK && parts[r].ctype==PT_INWR) || rt==PT_ARAY || rt==PT_WIFI || rt==PT_FILT || (rt==PT_SWCH && parts[r].life>=10))
+								else if (rt==PT_STOR || rt==PT_INWR || (rt==PT_SPRK && parts[r].ctype==PT_INWR) || rt==PT_ARAY || rt==PT_WIFI || rt==PT_FILT ||
+									(rt == PT_SWCH && parts[r].life >= 10) || (rt == PT_RAYT && (parts[r].tmp2 & 0x10)))
 								{
 									if (rt == PT_STOR)
 									{

@@ -140,6 +140,7 @@ class LuaScriptInterface: public CommandInterface
 	// DLL API in Simulation
 #ifdef TPT_NEED_DLL_PLUGIN
 	bool simulation_dll_set_loaded(bool);
+	static intptr_t __fastcall __declspec(noinline) simulation_debug_trigger_dll_check(int);
 #endif
 	static const char* simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p);
 	static int simulation_dll_index(lua_State * l);
@@ -253,6 +254,7 @@ public:
 #ifdef TPT_NEED_DLL_PLUGIN
 	struct {
 		CRITICAL_SECTION lock;
+		int ehandler;
 		int lcount;
 		int lcount_p;
 		int loaded;
@@ -260,6 +262,7 @@ public:
 	} simulation_dll_st;
 	static int (__stdcall *(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
 #endif
+	static void simulation_debug_trigger(int trigr_id, int i, int x, int y);
 };
 
 

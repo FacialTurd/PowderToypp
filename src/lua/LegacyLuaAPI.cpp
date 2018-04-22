@@ -750,80 +750,187 @@ int luatpt_element_func(lua_State *l)
 #if defined(TPT_NEED_DLL_PLUGIN)
 // TODO: 64-bit, ARM, ARM-64
 
+#define _ASM_FUNC_ENTER			"push %ebp; movl %esp, %ebp;"
+#define _ASM_FUNC_ENTER_A		"pushal; movl %esp, %ebp;"
+#define _ASM_FUNC_LEAVE			"leave;"
+#define _ASM_FUNC_LEAVE_2		"pop %ebp;"
+#define _ASM_FUNC_LEAVE_A		"movl %ebp, %esp; popal;"
+#define _ASM_FUNC_LEAVE_N(N)	"leal " N "(%ebp), %esp;"
+#define _ASM_FUNC_LEAVE_R		"leave; ret;"
+#define _ASM_FUNC_LEAVE_2R		"pop %ebp; ret;"
+#define _ASM_FUNC_LEAVE_AR		"movl %ebp, %esp; popal; ret;"
+
+#define _ASM_PUSH_NONVOLATILE	"push %edi; push %esi; push %ebx;"
+#define _ASM_POP_NONVOLATILE	"pop %ebx; pop %esi; pop %edi;"
+
+#define _CS_VAR_EHANDLER	"32"
+#define _CS_VAR_EXCPT		"36"
+#define _CS_VAR_GETFN		"40"
+#define _CS_VAR_SET_LOCK	"44"
+
 __asm__ (
 	// for 32-bit x86
 	".text\n\t"
 	".p2align 4,,15\n\t"
-	".call_dll_api_1:"
-	".byte 0xEB, 0; cld;" // 2-byte nop + cld
-	//	x86-64 汇编代码:
-	// 		push rbp
-	// 		mov rbp, rsp
-	// 		push rbx rsi rdi r8 r9 r10 r11 r12 r13 r14 r15
-	// 		mov r12, rsi
-	// 		mov rsi, .LcaptureGPR0
-	// 		call r12
-	//		lea rsp, [rbp-88]
-	//		pop r15 r14 r13 r12 r11 r10 r9 r8 rdi rsi rbx
-	//		pop rbp
+	".Lcall_dll_api_1:"
+	"jmp .Lcall_dll_api_1_entry;"
+	".p2align 3,,7\n\t"
+	".Lcall_dll_excp:" // 这是异常处理例程
+	"push %esi; push %ebx;" // ENTER EXCEPTION HANDLER
+	"leal 12(%esp), %edx;"
+	"movl (%edx), %eax;" // eax = ExceptionRecord
+	"movl 4(%edx), %ebx;"
+	"movl 20(%ebx), %ecx;"
+	"movl (%eax), %eax;" // eax = ExceptionRecord.ExceptionCode
+	"test %ecx, %ecx;" // ecx == NULL?
+	"je .Lcall_dll_excp.L0;"
+	"movl %eax, (%ecx);"
+	".Lcall_dll_excp.L0:"
+	"cmpl $0xC00000FD, %eax;" // eax == STATUS_STACK_OVERFLOW?
+	"movl (%ebx), %esi;"
+	"jne  .Lcall_dll_excp.L1;"
+	"movl $.Lcall_dll_api_sim_dat0, %ecx;"
+	"call .Lcall_dll_excp.L6;"
+	"cmpl $-1, %eax;"
+	"jne .Lcall_dll_excp.L2;"
+	".Lcall_dll_excp.L1:"
+	"xorl %ecx, %ecx;"
+	"movl %esi, %fs:(%ecx);"
+	"leal 8(%ebx), %esp;"
+	"pop %ebp;"
+	"ret $8\n\t" // LEAVE EXCEPTION HANDLER
+	".Lcall_dll_excp.L2:"
+	"pop %ebx; pop %esi; ret;"
+	".p2align 3,,7\n\t"
+	/*	
+	x86-64 汇编代码:
+		push rbp
+		mov rbp, rsp
+		push rbx rsi rdi r8 r9 r10 r11 r12 r13 r14 r15
+		mov r12, rsi
+		mov rsi, .LcaptureGPR0
+		call r12
+		lea rsp, [rbp-88]
+		pop r15 r14 r13 r12 r11 r10 r9 r8 rdi rsi rbx
+		pop rbp
+	*/
+	".Lcall_dll_api_1_entry:"
+	_ASM_FUNC_ENTER
+	_ASM_PUSH_NONVOLATILE
+	"pushfl;"
+	"mov 8(%ebp), %esi;"
+	"mov 16(%esi), %edi;"
+	"xor %ecx, %ecx; call *" _CS_VAR_SET_LOCK "(%edi);" // CRITICAL SECTION ENTER
+	"push %eax;"
+	"pushl " _CS_VAR_EXCPT "(%edi);"
+	"mov (%esi), %ecx;"
+	"mov %ecx, %ebx;"
+	"call *" _CS_VAR_GETFN "(%edi);"
+	"test %eax, %eax;"
+	"jz .Lcall_dll_api_1_entry.L1;"
+	"leal 20(%esi), %ecx;"
+	"push %ecx; push %ecx; push %eax;"
+	"mov 4(%esi), %eax;"
+	"mov 8(%esi), %ecx;"
+	"mov 12(%esi), %edx;"
+	"mov $.LcaptureGPR0, %esi;"
+	"call .Lcall_dll_excp.L3;"
+	"pop %ebx; pop %ecx; orl $0, (%ebx);"
+	"jz .Lcall_dll_api_1_nowrt;"
+	"test %ecx, %ecx;"
+	"jz .Lcall_dll_api_1_nowrt;"
+	"btsl $0, (%ecx)\n\t"
+	".Lcall_dll_api_1_nowrt:"
+	"pop %ecx; push %eax;"
+	"call *" _CS_VAR_SET_LOCK "(%edi);" // CRITICAL SECTION EXIT
+	"pop %eax;"
+	"popfl;"
+	_ASM_POP_NONVOLATILE
+	_ASM_FUNC_LEAVE_2R
+	".Lcall_dll_api_1_entry.L1:"
+	"pop %ecx;"
+	"jmp .Lcall_dll_api_1_nowrt;"
+	".p2align 3,,7;"
+	".Lcall_dll_excp.L3:"
+	_ASM_PUSH_NONVOLATILE
+	"push 20(%esp); push 20(%esp);"
+	"call .Lcall_dll_excp.L4;"
+	_ASM_POP_NONVOLATILE
+	"ret $8\n\t"
+	".p2align 3,,7;"
+	".Lcall_dll_excp.L4:"
+	"push %ebp;" // ENTER "PROTECTED" SUBROUTINE
+	"movl $.Lcall_dll_excp, %ebp;"
 	"push %ebp;"
-	"movl %esp, %ebp;"
-	"push %ebx;"
-	"push %esi;"
-	"push %edi;"
-	"pushl 36(%edi);"
-	"movl $.Lcall_dll_excp, %esi;"
-	"pushl %esi;"
+	"leal 4(%esp), %ebp;"
 	"pushl %fs:0;"
 	"movl %esp, %fs:0;"
-	"movl $.LcaptureGPR0, %esi;"
-	"call *-8(%ebp);" // 函数调用之后 ebx, esi 和 edi 变成 "未占用" 状态.
-	"xorl %ebx, %ebx;"
-	".Lcall_dll_exc_end:" // 异常处理例程返回地址 (ebx = 1 表示错误)
+	"cld; call *8(%ebp);" // 函数调用之后 ebx, esi 和 edi 变成 "未占用" 状态.
 	"movl %fs:0, %esp;"
-	"pop  %fs:0;"
-	"pop  %edi;"
-	"pop  %edi;"
-	"orl  %ebx, (%edi);"
-	"pop  %edi;"
-	"pop  %esi;"
-	"pop  %ebx;"
-	"pop  %ebp;"
-	"ret\n"
-	".Lcall_dll_excp:" // 这是异常处理例程
-	"movl 8(%esp), %ebx;"
-	"movl %ebx, %fs:0;"
-	"movl $1, %ebx;"
-	"jmp  .Lcall_dll_exc_end\n\t"
-	".p2align 3,,7\n\t"
+	"push %ecx;"
+	"movl 24(%esp), %ecx;"
+	"test %ecx, %ecx;"
+	"jz .Lcall_dll_excp.L5;"
+	"movl $0, (%ecx);"
+	".Lcall_dll_excp.L5:"
+	"pop %ecx;"
+	"popl %fs:0;"
+	"pop %ebp;"
+	"pop %ebp;" // LEAVE "PROTECTED" SUBROUTINE
+	"ret $8;"
+	".p2align 3,,7;"
+	".Lcall_dll_excp.L6:"
+	_ASM_FUNC_ENTER
+	_ASM_PUSH_NONVOLATILE
+	"push %edx;"
+	"movl %ecx, %edi;"
+	"movl " _CS_VAR_EHANDLER "(%edi), %ecx;"
+	"movl (%ecx), %ecx;"
+	"push %ecx;"
+	"call *" _CS_VAR_GETFN "(%edi);"
+	"test %eax, %eax;"
+	"pop %ecx;"
+	"jz .Lcall_dll_excp.L7;"
+	"pop %edx;"
+	"push %eax;"
+	"xorl %eax, %eax;"
+	"decl %eax;"
+	"movl %eax, %ebx;"
+	"call *(%esp);"
+	".Lcall_dll_excp.L7:"
+	_ASM_FUNC_LEAVE_N("-12")
+	_ASM_POP_NONVOLATILE
+	_ASM_FUNC_LEAVE_2R
+	".p2align 3,,7;"
 	".LcaptureGPR0:" // 寄存器捕获例程
-	"push %ebp;"
-	"mov %esp, %ebp;"
+	_ASM_FUNC_ENTER
 	"pushfl;"
 	"push %eax;"
 	"push %edi;"
 	"push %esi;"
-	"movl (%ebp), %esi;"
-	"leal 8(%esi), %edi;"
+	"movl (%ebp), %edi;"
+	"addl $8, %edi;"
 	"push %edi;"
-	"push (%esi);"
+	"push -8(%edi);"
 	"push %edx;"
 	"push %ecx;"
 	"push %ebx;"
 	"push %eax;"
-	"push %esp;"
+	"movl %esp, %ebx;"
+	"movl -4(%edi), %eax;"
+	"movl %eax, 32(%ebx);"
+	"push %ebx;"
 	"call ._captureGPR_render0;"
-	"pop %eax;"
+	"movl %ebx, %esp;"
 	"pop %eax;"
 	"pop %ebx;"
 	"pop %ecx;"
 	"pop %edx;"
-	"movl 8(%esp), %esi;"
-	"movl 12(%esp), %edi;"
-	"addl $20, %esp;"
+	"addl $12, %esp;"
+	"pop %edi;"
+	_ASM_FUNC_LEAVE_N("-4")
 	"popfl;"
-	"pop %ebp;"
-	"ret\n\t"
+	_ASM_FUNC_LEAVE_2R
 	".p2align 4,,15\n\t"
 );
 
@@ -842,12 +949,16 @@ void captureGPR_render0 (int32_t* GPR)
 			for (i = 0; i < 10; i++)
 				gpra[i] = gprl[i];
 			MakeActiveWindow();
-			int32_t* tmpstack = (int32_t*)gprl[5];
-			int32_t* tmpstackend;
-			std::cout << tmpstack << std::endl;
-			__asm__ __volatile__ ("mov %%fs:4, %0" : "+r"(tmpstackend));
-			for (i = 0; i < 20 && tmpstack < tmpstackend; i++)
-				gpra[i+10] = tmpstack[i];
+			int32_t *tmpstack = (int32_t*)gprl[5];
+			NT_TIB *teb = (NT_TIB*)NtCurrentTeb();
+			intptr_t stackbase = (intptr_t)teb->StackBase;
+			intptr_t stacklim = (intptr_t)teb->StackLimit;
+			if (tmpstack >= (int32_t*)stacklim)
+			{
+				i = 0;
+				for (; i < 20 && tmpstack < (int32_t*)stackbase; i++)
+					gpra[i+10] = *tmpstack, tmpstack++;
+			}
 			for (; i < 20; i++)
 				gpra[i+10] = 0;
 		};
@@ -859,7 +970,7 @@ void captureGPR_render0 (int32_t* GPR)
 
 			g->clearrect(x-2, y-2, Size.X+3, Size.Y+3);
 			g->drawrect(x, y, Size.X, Size.Y, 200, 200, 200, 255);
-			const char* r[] = {"EAX","EBX","ECX","EDX","EBP","ESP","ESI","EDI","EIP","EFLAGS"};
+			static const char* r[] = {"EAX","EBX","ECX","EDX","EBP","ESP","ESI","EDI","EIP","EFLAGS"};
 			char gprs[20];
 			for (i = 0; i < 10; i++)
 			{
@@ -884,7 +995,7 @@ void captureGPR_render0 (int32_t* GPR)
 }
 #endif
 
-void luacon_debug_trigger(int trigr_id, int i, int x, int y)
+void LuaScriptInterface::simulation_debug_trigger(int trigr_id, int i, int x, int y)
 {
 	LuaScriptInterface * ci = luacon_ci;
 	unsigned char fnmode = ci->trigger_func[trigr_id].m;
@@ -895,7 +1006,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		3: update before
 	*/
 #ifdef TPT_NEED_DLL_PLUGIN
-	static void *(simdata[]) = {
+	static void *(simdata[]) __asm__(".Lcall_dll_api_sim_dat0") = {
 		luacon_sim,
 		luacon_sim->parts,		// particle data
 		luacon_sim->pmap,		// particle map
@@ -904,8 +1015,11 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		luacon_sim->pv,			// pressure map
 		&luacon_sim->pfree,		// last freed particle
 		(void*)ci->l,			// current lua state
-		(void*)&(ci->simulation_dll_st.lock),
-		&luacon_sim->dllexceptionflag
+		(void*)&(ci->simulation_dll_st.ehandler),
+		&luacon_sim->dllexceptionflag,
+		(void*)&(simulation_debug_trigger_dll_check),
+		(void*)&(simulation_debug_trigger_lock0),
+		(void*)(sizeof(Particle)),	// "Particle" struct length
 	};
 	const static short loadorder[4] = {
 		// 0x00FF: function process ID
@@ -914,7 +1028,7 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 		0x0100,0x0300,0x0001,0x0200
 	};
 	int currload = loadorder[fnmode];
-	intptr_t callfunc;
+	// intptr_t callfunc;
 	for (;;)
 	{
 		if (currload & 0x200)
@@ -923,22 +1037,24 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 #endif
 			luacall_debug_trigger(trigr_id, i, x, y);
 #ifdef TPT_NEED_DLL_PLUGIN
-#if MAX_DLL_FUNCTIONS < 256
-		else if (trigr_id < MAX_DLL_FUNCTIONS)
-#else
 		else
-#endif
 		{
-			callfunc = (intptr_t)LuaScriptInterface::dll_trigger_func[trigr_id];
-			if (callfunc != (intptr_t)NULL)
-			{
-				EnterCriticalSection(&(ci->simulation_dll_st.lock));
-				__asm__ __volatile__ (
-					"call .call_dll_api_1;"
-					:: "a"(i), "b"(trigr_id), "c"(x), "d"(y), "S"(callfunc), "D"(simdata) : "cc"
-				);
-				LeaveCriticalSection(&(ci->simulation_dll_st.lock));
-			}
+			// callfunc = simulation_debug_trigger_dll_check(trigr_id);
+			// if (callfunc != (intptr_t)NULL)
+			union LPUNION {
+				int i;
+				void* v;
+			} _args[6];
+			_args[0].i = trigr_id;
+			_args[1].i = i;
+			_args[2].i = x;
+			_args[3].i = y;
+			_args[4].v = simdata;
+			__asm__ __volatile__ (
+				"pushl %0;"
+				"call .Lcall_dll_api_1;"
+				"popl %%ecx;"
+			:: "r"(&_args) : "eax", "ecx", "edx", "esp", "cc", "memory");
 		}
 		if (currload & 0x100)
 			break;
@@ -947,6 +1063,30 @@ void luacon_debug_trigger(int trigr_id, int i, int x, int y)
 #endif
 	return;
 }
+
+#ifdef TPT_NEED_DLL_PLUGIN
+intptr_t LuaScriptInterface::simulation_debug_trigger_dll_check(int i)
+{
+	if (i >= 0 && i < MAX_DLL_FUNCTIONS)
+		return (intptr_t)LuaScriptInterface::dll_trigger_func[i];
+	return (intptr_t)NULL;
+}
+
+CRITICAL_SECTION* LuaScriptInterface::simulation_debug_trigger_lock0(CRITICAL_SECTION* _lock)
+{
+	if (_lock != NULL)
+	{
+		LeaveCriticalSection(_lock);
+	}
+	else if (luacon_ci != NULL)
+	{
+		_lock = &(luacon_ci->simulation_dll_st.lock);
+		// if (_lock != NULL)
+			EnterCriticalSection(_lock);
+	}
+	return _lock;
+}
+#endif
 
 void luacall_debug_trigger(int t, int i, int x, int y)
 {

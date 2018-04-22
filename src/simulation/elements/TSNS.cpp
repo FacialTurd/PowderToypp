@@ -87,8 +87,10 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = TYP(r);
-				if (TYP(r) != PT_TSNS && rt != PT_METL && !(parts[i].tmp3 & 1) == (partsi(r).temp > parts[i].temp))
+				if (parts[i].tmp == 0 && TYP(r) != PT_TSNS && TYP(r) != PT_METL && parts[ID(r)].temp > parts[i].temp)
 					parts[i].life = 1;
+				if (parts[i].tmp == 2 && TYP(r) != PT_TSNS && TYP(r) != PT_METL && parts[ID(r)].temp < parts[i].temp)
+ 	 	 			parts[i].life = 1;
 				if (parts[i].tmp == 1 && rt != PT_TSNS && rt != PT_FILT)
 				{
 					setFilt = true;
@@ -105,17 +107,8 @@ int Element_TSNS::update(UPDATE_FUNC_ARGS)
 					int r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					nx = x + rx;
-					ny = y + ry;
-					while (TYP(r) == PT_FILT)
-					{
-						partsi(r).ctype = 0x10000000 + photonWl;
-						nx += rx;
-						ny += ry;
-						if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
-							break;
-						r = pmap[ny][nx];
-					}
+					photonWl += 0x10000000;
+					Element_MULTIPP::setFilter(sim, x+rx, y+ry, rx, ry, photonWl);
 				}
 	}
 	return 0;

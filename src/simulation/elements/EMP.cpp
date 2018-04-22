@@ -243,7 +243,7 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount, int triggerCount2)
 				parts[r].life = 0, parts[r].tmp = 9999;
 			else if (t == PT_SPRK)
 				parts[r].ctype = PT_BREC;
-			else if (t == PT_INST || t == PT_CRAY || t == PT_DRAY || t == PT_FRAY)
+			else if (t == PT_INST || t == PT_CRAY || t == PT_DRAY || t == PT_FRAY || t == PT_RAYT)
 				sim->part_change_type(r, rx, ry, PT_BREC);
 
 			if (sim->elements[t].HeatConduct > 0 && (t != PT_HSWC || parts[r].life))

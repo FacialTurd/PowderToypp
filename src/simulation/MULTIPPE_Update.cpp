@@ -10,12 +10,24 @@
 #define __builtin_clz msvc_clz
 #endif
 
-#define ID part_ID
+#define ID(r) part_ID(r)
 
 Renderer * MULTIPPE_Update::ren_;
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
 // FLAG_SKIPMOVE: not only implemented for PHOT
+
+/* Returns true for particles that start a ray search ("dtec" mode)
+ */
+bool MULTIPPE_Update::isAcceptedConductor(Simulation* sim, int r)
+{
+	return (sim->elements[TYP(r)].Properties & (PROP_CONDUCTS | PROP_INSULATED)) == PROP_CONDUCTS;
+}
+
+bool MULTIPPE_Update::isAcceptedConductor_i(Simulation* sim, int r)
+{
+	return isAcceptedConductor(sim, r) && sim->parts[ID(r)].life == 0;
+}
 
 void MULTIPPE_Update::do_breakpoint()
 {
@@ -310,7 +322,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (fcall >= 0)
 						{
 #if !defined(RENDERER) && defined(LUACONSOLE)
-							luacon_debug_trigger(fcall, i, x, y);
+							LuaScriptInterface::simulation_debug_trigger(fcall, i, x, y);
 #endif
 							continue;
 						}
@@ -549,27 +561,44 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								}
 								break;
 							case 5:
-								ri = ((int)parts[i].temp - 258) / 10;
-								if (ri <= 0) ri = 1;
-								nx = x - ri*rx; ny = y - ri*ry;
-								if (sim->InBounds(nx, ny) && TYP(rr = pmap[ny][nx]) == PT_FILT)
 								{
-									rctype = partsi(rr).ctype;
-									while (BOUNDS_CHECK)
+									int rlen = ((int)parts[i].temp - 258) / 10;
+									ri = rlen;
+									if (ri <= 0) ri = 1;
+									int rix = -ri*rx, riy = -ri*ry;
+									if (rtmp & 0x10)
+										nx = x - rx, ny = y - ry;
+									else
+										nx = x + rix, ny = y + riy;
+									if (sim->InBounds(nx, ny))
 									{
-										rr = pmap[ny -= ry][nx -= rx];
+										rr = pmap[ny][nx];
+										if (TYP(rr) == PT_RAYT)
+										{
+											nx -= rx, ny -= ry;
+											if (sim->InBounds(nx, ny))
+												rr = pmap[ny][nx];
+										}
 										if (TYP(rr) != PT_FILT)
 											break;
-										partsi(rr).ctype = rctype;
+										rctype = partsi(rr).ctype;
+										if (rtmp & 0x10)
+											nx += rix, ny += riy;
+										if (rlen <= 0)
+											while (sim->InBounds(nx, ny))
+											{
+												rr = pmap[ny][nx];
+												if (rr) break;
+												nx -= rx, ny -= ry;
+											}
+										Element_MULTIPP::setFilter(sim, nx, ny, -rx, -ry, rctype);
 									}
 								}
 								break;
 							}
 						}
-						if ((rtmp & 0x5) == 0x1 && (ELEMPROP(rt) & (PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
-						{
+						if ((rtmp & 0x5) == 0x1 && isAcceptedConductor(sim, r))
 							conductTo (sim, r, x+rx, y+ry, parts);
-						}
 					}
 		}
 		break;
@@ -1071,10 +1100,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (BOUNDS_CHECK && (rx || ry))
 						{
 							r = pmap[y+ry][x+rx];
-							if (TYP(r) == PT_PSNS || TYP(r) == PT_TSNS || TYP(r) == PT_DTEC || TYP(r) == PT_LSNS)
-							{
+							if (TYP(r) == PT_PSNS || TYP(r) == PT_TSNS)
+								partsi(r).tmp ^= 2;
+							else if (TYP(r) == PT_DTEC || TYP(r) == PT_LSNS)
 								partsi(r).tmp3 ^= 1;
-							}
 						}
 				parts[i].tmp2 = 0;
 			}
@@ -1149,9 +1178,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								}
 								rrx &= 0x1FFFFFFF;
 								rrx |= 0x20000000;
-								while (BOUNDS_CHECK && (TYP(r) == PT_FILT)) // check another FILT
-									partsi(r).ctype = rrx,
-									r = pmap[ny += ry][nx += rx];
+								Element_MULTIPP::setFilter(sim, nx, ny, rx, ry, rrx);
 								break;
 							case PT_CRAY:
 								{
@@ -1415,9 +1442,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 								rrx &= 0x1FFFFFFF;
 								rrx |= 0x20000000;
 							continue1b:
-								while (BOUNDS_CHECK && (TYP(r) == PT_FILT)) // check another FILT
-									partsi(r).ctype = rrx,
-									r = pmap[ny += ry][nx += rx];
+								Element_MULTIPP::setFilter(sim, nx, ny, rx, ry, rrx);
 								break;
 							case PT_PUMP: case PT_GPMP:
 								rrx = TYP(r);
@@ -1564,14 +1589,14 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							if (!r) continue;
 							if (ELEMPROPT(r) & PROP_CONDUCTS)
 								conductTo (sim, r, x+rx, y+ry, parts);
-							else if (TYP(r) == PT_CRMC)
+							else if (TYP(r) == PT_FUSE && partsi(r).life == 40)
 							{
 								rr = pmap[y+2*ry][x+2*rx];
 								if (ELEMPROPT(rr) & PROP_CONDUCTS)
 								{
 									partsi(rr).ctype = TYP(rr);
 									sim->part_change_type(ID(rr), x+2*rx, y+2*ry, PT_SPRK);
-									partsi(rr).life = partsi(r).tmp2;
+									partsi(rr).life = partsi(r).tmp - 40;
 								}
 							}
 							else if (TYP(r) == PT_WIRE)
@@ -1722,8 +1747,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							case PT_INST: parts[i].tmp = !parts[i].tmp; break;
 						}
 					}
-					else if (rtmp && rt != PT_PSCN && rt != PT_NSCN &&
-						(sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+					else if (rtmp && rt != PT_PSCN && rt != PT_NSCN && isAcceptedConductor(sim, r))
 						conductTo (sim, r, x+rx, y+ry, parts);
 				}
 			}
@@ -1837,7 +1861,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					}
 					if (!r)
 						continue;
-					if ((ELEMPROPT(r)&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
+					if (isAcceptedConductor(sim, r))
 						conductTo (sim, r, x+rx, y+ry, parts);
 				}
 			}
@@ -2047,7 +2071,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									break;
 								case PT_FUSE:
 								case PT_FSEP:
-									partsi(rr).life = 39;
+									if (partsi(rr).life > 40)
+										partsi(rr).life = 39;
 									break;
 								}
 							}
@@ -2300,10 +2325,8 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					for (ry = -1; ry <= 1; ry++)
 					{
 						r = pmap[y+ry][x+rx];
-						if ((ELEMPROPT(r) & (PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS)
-						{
+						if (isAcceptedConductor(sim, r))
 							conductTo (sim, r, x+rx, y+ry, parts);
-						}
 					}
 			}
 			parts[i].tmp --;
@@ -2440,11 +2463,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						rr = partsi(r).ctype + parts[i].ctype;
 						rr &= 0x1FFFFFFF;
 						rr |= 0x20000000;
-						while (BOUNDS_CHECK && (TYP(r) == PT_FILT)) // check another FILT
-						{
-							partsi(r).ctype = rr;
-							r = pmap[ny += ry][nx += rx];
-						}
+						Element_MULTIPP::setFilter(sim, nx, ny, rx, ry, rr);
 					}
 				}
 		break;
@@ -2469,7 +2488,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[ny][nx];
 						if (!r || CHECK_EL_SPRK(r, PT_INWR)) // if it's empty or insulated wire
 							continue;
-						if ((ELEMPROP2(TYP(rctype)) & PROP_DRAWONCTYPE))
+						if ((ELEMPROP2(TYP(r)) & PROP_DRAWONCTYPE))
 						{
 							partsi(r).ctype = rrx;
 						}

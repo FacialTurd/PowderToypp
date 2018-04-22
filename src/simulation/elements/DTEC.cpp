@@ -106,17 +106,7 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					nx = x+rx;
-					ny = y+ry;
-					while (TYP(r)==PT_FILT)
-					{
-						partsi(r).ctype = photonWl;
-						nx += rx;
-						ny += ry;
-						if (nx<0 || ny<0 || nx>=XRES || ny>=YRES)
-							break;
-						r = pmap[ny][nx];
-					}
+					Element_MULTIPP::setFilter(sim, x+rx, y+ry, rx, ry, photonWl);
 				}
 	}
 	return 0;
