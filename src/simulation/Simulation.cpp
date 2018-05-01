@@ -6218,8 +6218,6 @@ void Simulation::BeforeSim()
 	}
 }
 
-bool rnd_init = false;
-
 static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 {
 	int c = sim->DIRCHInteractCount;
@@ -6275,6 +6273,12 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 	sim->DIRCHInteractCount = 0;
 }
 
+void Simulation::_DelaySimulate(int ms)
+{
+	delayEnd = GetTicks() + ms;
+	SimExtraFunc |= 2;
+}
+
 void Simulation::AfterSim()
 {
 	if (emp_trigger_count || emp2_trigger_count)
@@ -6318,7 +6322,7 @@ void Simulation::AfterSim()
 			ui::Engine::Ref().Exit(); // fast exit?
 			break;
 		case 11:
-			DelayOperation1(this, extraDelay);
+			_DelaySimulate(extraDelay);
 			break;
 		case 12:
 			Element_STKM::lifeinc [Element_STKM::phase] = 0;
@@ -6346,41 +6350,92 @@ void Simulation::AfterSim()
 	}
 	if (DIRCHInteractTable != NULL)
 		_ELEM_DIRCH_op(this, DIRCHInteractTable);
+
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+	if (ineutcount >= 10 && (luacon_ci != NULL))
+#else
 	if (ineutcount >= 10)
+#endif
 	{
-		if (!rnd_init)
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+		CRITICAL_SECTION *sim_cs = &luacon_ci->simulation_dll_st.lock;
+		if (TryEnterCriticalSection(sim_cs))
+#endif
 		{
-			rnd_init = true;
-			rndseed = rand();
+			static bool rnd_init = false;
+			bool _w;
+			int  *cdl = Element_NEUT::cooldown_counter_l;
+			char *cdb = Element_NEUT::cooldown_counter_b;
+
+			if (cdl != NULL && cdb != NULL && !rnd_init)
+			{
+				rnd_init = true;
+				int &rndseed = cdl[1];
+#if defined(__GNUC__) && defined(X86)
+				__asm__ __volatile__ (
+					"rdtsc; xor{l} {%%edx, %%eax|eax, edx}"
+					: "=a"(rndseed) :: "edx"
+				);
+#else
+				rndseed = rand();
+#endif
+			}
+			_w = !(cdb[2] & 1);
+			cdb[2] &= ~1;
+			_check_neut_base0(cdl, cdb, _w);
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+			LeaveCriticalSection(sim_cs);
+#endif
 		}
-		if (!check_neut_cooldown)
-			check_neut();
-		else
-			check_neut_cooldown--;
 	}
 }
 
-void Simulation::check_neut()
+void Simulation::_check_neut_base0(int * cdl, char * cdb, bool _check)
 {
 	struct blockd1 {
 		int pid;
 		short flags;
 	};
+	
+	char noexec = (cdl == NULL) || (cdb == NULL);
+	if (!noexec && _check)
+	{
+		noexec = cdb[0];
+		cdb[0]--;
+	}
+	if (noexec)
+		return;
+
 	blockd1 * neut_map = (blockd1*)malloc((XRES/CELL)*(YRES/CELL)*sizeof(blockd1));
 	int tmp = -1, tmp2, wdata, nextp, n;
 	static unsigned int rndstore;
 	// int nextp2;
 	if (neut_map)
 	{
-		if (check_neut_counter & 3)
-			rndstore >>= 5;
+		if (cdb[1])
+		{
+			rndstore = (rndstore >> 5) | (rndstore << 27);
+			cdb[1]--;
+		}
 		else
 		{
-			rndseed = (rndseed * 1103515245) + 12345;
-			rndstore ^= rndseed;
+			int32_t &rs = cdl[1];
+			char _shift = cdl[0] ^ ((rs >> 8) & 0xFF);
+			rs = (rs * 1103515245) + 12345;
+			uint32_t rs_next = rndstore ^ rs;
+#if defined(__GNUC__) && defined(X86)
+			__asm__ __volatile__ (
+				"ror{l} {%b1, %k0|%k0, %b1}"
+			: "+r"(rs_next) : "c"(_shift & 0x1F) : "cc");
+#else
+			rs_next = (rs_next >> (_shift & 0x1F)) | (rs_next << (-_shift & 0x1F));
+#endif
+			rndstore = rs_next ^ -(!!(_shift & 0x20));
+			cdl[0]++;
+			cdb[1] = 5;
 		}
-		check_neut_counter++;
-		check_neut_cooldown = rndstore & 0x1F;
+		cdb[0] = rndstore & 0x1F;
+
 		static const blockd1 d = {-1, 0};
 		std::fill(neut_map, neut_map+((XRES/CELL)*(YRES/CELL)), d);
 		int i = parts_lastActiveIndex + 1;
@@ -6449,9 +6504,6 @@ void Simulation::check_neut()
 	free(neut_map);
 }
 
-int Simulation::check_neut_cooldown = 0;
-int Simulation::rndseed = 0;
-
 Simulation::~Simulation()
 {
 	delete[] platent;
@@ -6494,8 +6546,7 @@ Simulation::Simulation():
 	Extra_FIGH_pause(0),
 	framerender(0),
 	pretty_powder(0),
-	sandcolour_frame(0),
-	check_neut_counter(0)
+	sandcolour_frame(0)
 #ifdef TPT_NEED_DLL_PLUGIN
 	, dllexceptionflag(0)
 #endif

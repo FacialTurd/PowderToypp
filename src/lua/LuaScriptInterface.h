@@ -140,7 +140,6 @@ class LuaScriptInterface: public CommandInterface
 	// DLL API in Simulation
 #ifdef TPT_NEED_DLL_PLUGIN
 	bool simulation_dll_set_loaded(bool);
-	static intptr_t __fastcall __declspec(noinline) simulation_debug_trigger_dll_check(int);
 #endif
 	static const char* simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p);
 	static int simulation_dll_index(lua_State * l);
@@ -234,6 +233,21 @@ public:
 	ui::Window * Window;
 	lua_State *l;
 	LuaScriptInterface(GameController * c, GameModel * m);
+
+	class simulation_debug_trigger
+	{
+#ifdef TPT_NEED_DLL_PLUGIN
+#define __FASTCALL_DECL __fastcall __declspec(noinline)
+		static intptr_t __FASTCALL_DECL dll_check(int);
+		static void __FASTCALL_DECL dll_check_write(int, FARPROC);
+	public:
+		static CRITICAL_SECTION* __FASTCALL_DECL _lock0(CRITICAL_SECTION*);
+#else
+	public:
+#endif
+		static void _main(int trigr_id, int i, int x, int y);
+	};
+
 	virtual bool OnActiveToolChanged(int toolSelection, Tool * tool);
 	virtual bool OnMouseMove(int x, int y, int dx, int dy);
 	virtual bool OnMouseDown(int x, int y, unsigned button);
@@ -259,10 +273,12 @@ public:
 		int lcount_p;
 		int loaded;
 		void* module;
+		FARPROC undef_func;
 	} simulation_dll_st;
-	static int (__stdcall *(dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
+	static int _my_ext_args[4];
+	static FARPROC dll_trigger_func[MAX_DLL_FUNCTIONS];
+	static void __FASTCALL_DECL _dll_eh_proc0(void*);
 #endif
-	static void simulation_debug_trigger(int trigr_id, int i, int x, int y);
 };
 
 

@@ -766,7 +766,8 @@ int luatpt_element_func(lua_State *l)
 #define _CS_VAR_EHANDLER	"32"
 #define _CS_VAR_EXCPT		"36"
 #define _CS_VAR_GETFN		"40"
-#define _CS_VAR_SET_LOCK	"44"
+#define _CS_VAR_SETFN		"44"
+#define _CS_VAR_SET_LOCK	"48"
 
 __asm__ (
 	// for 32-bit x86
@@ -951,12 +952,12 @@ void captureGPR_render0 (int32_t* GPR)
 			MakeActiveWindow();
 			int32_t *tmpstack = (int32_t*)gprl[5];
 			NT_TIB *teb = (NT_TIB*)NtCurrentTeb();
-			intptr_t stackbase = (intptr_t)teb->StackBase;
-			intptr_t stacklim = (intptr_t)teb->StackLimit;
-			if (tmpstack >= (int32_t*)stacklim)
+			uintptr_t stackbase = (uintptr_t)teb->StackBase;
+			uintptr_t stacklim = (uintptr_t)teb->StackLimit;
+			if ((uintptr_t)tmpstack >= stacklim)
 			{
 				i = 0;
-				for (; i < 20 && tmpstack < (int32_t*)stackbase; i++)
+				for (; i < 20 && (uintptr_t)tmpstack < stackbase; i++)
 					gpra[i+10] = *tmpstack, tmpstack++;
 			}
 			for (; i < 20; i++)
@@ -993,9 +994,58 @@ void captureGPR_render0 (int32_t* GPR)
 	
 	new GPR_window(GPR);
 }
+
+void LuaScriptInterface::_dll_eh_proc0(void* args)
+{
+	bool _abrt;
+	__asm__ __volatile__(R"*ASM*(
+	lea{l} {4(%1), %%esi|%%esi, [%1+4]}
+	{.intel_syntax noprefix}
+	push DWORD PTR [esi]
+	mov ecx, fs:[0]
+	mov ecx, [ecx+8]
+	test ecx, ecx
+	jz  .L%=_l2
+	lea eax, .L%=_l1
+	lea ebx, [esp+4]
+	mov [ecx], eax
+	mov [ecx+4], ebx
+	mov [ecx+8], ebp
+	mov edi, esp
+	pop ecx
+	imul edx, ecx, 4
+	add esi, edx
+	sub esp, edx
+	std
+	rep movsd
+	push eax
+	push DWORD PTR [esi-4]
+	xor eax, eax
+	xor ebx, ebx
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	cld # 清除 DF 标志位
+	ret
+	.p2align 4,,15
+.L%=_l1:
+	mov ecx, fs:[0]
+	mov ecx, [ecx+8]
+	test ecx, ecx
+	jz  .L%=_l2
+	mov esp, [ecx+4]
+	mov ebp, [ecx+8]
+.L%=_l2:
+	setz %b0
+	{.att_syntax}
+	)*ASM*" : "=c"(_abrt) : "c"(args) : "eax", "ebx", "edx", "esi", "edi", "cc", "memory");
+	if (_abrt)
+		abort();
+}
 #endif
 
-void LuaScriptInterface::simulation_debug_trigger(int trigr_id, int i, int x, int y)
+void LuaScriptInterface::simulation_debug_trigger::_main(int trigr_id, int i, int x, int y)
 {
 	LuaScriptInterface * ci = luacon_ci;
 	unsigned char fnmode = ci->trigger_func[trigr_id].m;
@@ -1017,8 +1067,9 @@ void LuaScriptInterface::simulation_debug_trigger(int trigr_id, int i, int x, in
 		(void*)ci->l,			// current lua state
 		(void*)&(ci->simulation_dll_st.ehandler),
 		&luacon_sim->dllexceptionflag,
-		(void*)&(simulation_debug_trigger_dll_check),
-		(void*)&(simulation_debug_trigger_lock0),
+		(void*)&(dll_check),
+		(void*)&(dll_check_write),
+		(void*)&(_lock0),
 		(void*)(sizeof(Particle)),	// "Particle" struct length
 	};
 	const static short loadorder[4] = {
@@ -1065,14 +1116,25 @@ void LuaScriptInterface::simulation_debug_trigger(int trigr_id, int i, int x, in
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-intptr_t LuaScriptInterface::simulation_debug_trigger_dll_check(int i)
+intptr_t LuaScriptInterface::simulation_debug_trigger::dll_check(int i)
 {
 	if (i >= 0 && i < MAX_DLL_FUNCTIONS)
-		return (intptr_t)LuaScriptInterface::dll_trigger_func[i];
+	{
+		intptr_t fn = (intptr_t)(LuaScriptInterface::dll_trigger_func[i]);
+		if (fn == (intptr_t)NULL) // && luacon_ci != NULL
+			fn = (intptr_t)(luacon_ci->simulation_dll_st.undef_func);
+		return fn;
+	}
 	return (intptr_t)NULL;
 }
 
-CRITICAL_SECTION* LuaScriptInterface::simulation_debug_trigger_lock0(CRITICAL_SECTION* _lock)
+void LuaScriptInterface::simulation_debug_trigger::dll_check_write(int i, FARPROC _proc)
+{
+	if (i >= 0 && i < MAX_DLL_FUNCTIONS)
+		(FARPROC&)(LuaScriptInterface::dll_trigger_func[i]) = _proc;
+}
+
+__declspec(dllexport) CRITICAL_SECTION* LuaScriptInterface::simulation_debug_trigger::_lock0(CRITICAL_SECTION* _lock)
 {
 	if (_lock != NULL)
 	{

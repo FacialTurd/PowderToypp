@@ -175,7 +175,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		r = sim->photons[y][x];
 		rndstore = rand();
-		if (TYP(r) == PT_PHOT || TYP(r) == PT_PROT || TYP(r) == PT_NEUT)
+		if (TYP(r) == PT_PHOT || TYP(r) == PT_PROT)
 		{
 			parts[i].tmp += 2;
 			if (partsi(r).temp > 370.0f)
@@ -322,7 +322,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (fcall >= 0)
 						{
 #if !defined(RENDERER) && defined(LUACONSOLE)
-							LuaScriptInterface::simulation_debug_trigger(fcall, i, x, y);
+							LuaScriptInterface::simulation_debug_trigger::_main(fcall, i, x, y);
 #endif
 							continue;
 						}
@@ -376,6 +376,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						case 11:
 							rctype = partsi(r).ctype;
 							rr = pmap[y-ry][x-rx];
+							if (rr)
 							{
 								rrt = TYP(partsi(rr).ctype);
 								int tFlag = 0;
@@ -460,6 +461,13 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							sim->extraDelay += parts[i].ctype;
 						case 1: case 2: case 4: case 5: case 23: case 24:
 							sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
+						case 16:
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+							__asm__ __volatile__ ("lock or%z0 %1, %0" :: "m"(Element_NEUT::cooldown_counter_b[2]), "i"(1));
+#else
+							Element_NEUT::cooldown_counter_b[2] |= 1;
+#endif
+							break;
 						case 25:
 							do_breakpoint();
 							return return_value;

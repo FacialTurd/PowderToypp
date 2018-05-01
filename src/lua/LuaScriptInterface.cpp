@@ -46,7 +46,7 @@
 #endif
 
 #include "simulation/simplugin.h"
-
+#include <csetjmp>
 
 extern "C"
 {
@@ -104,7 +104,8 @@ int TptNewindexClosure(lua_State *l)
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-int (__stdcall *(LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS]))(DLL_FUNCTIONS_ARGS);
+int LuaScriptInterface::_my_ext_args[4] = {0,0,0,0};
+FARPROC LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS];
 #endif
 	
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
@@ -132,6 +133,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	simulation_dll_st.loaded = false;
 	simulation_dll_st.lcount = 0;
 	simulation_dll_st.lcount_p = 0;
+	simulation_dll_st.undef_func = (FARPROC)NULL;
 #endif
 
 	//New TPT API
@@ -399,7 +401,7 @@ tpt.partsdata = nil");
 	lua_setmetatable(l, -2);
 	
 #ifdef TPT_NEED_DLL_PLUGIN
-	if (!(sdl_my_extra_args[0] & ARG0_NO_DLL_PLUGIN))
+	if (!(_my_ext_args[0] & ARG0_NO_DLL_PLUGIN))
 		simulation_dll_set_loaded(true);
 #endif
 }
@@ -3131,28 +3133,119 @@ int LuaScriptInterface::simulation_takeSnapshot(lua_State * l)
 bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 {
 	bool rb = false;
-	EnterCriticalSection(&(simulation_dll_st.lock));
+	CRITICAL_SECTION * dllcs_lock = &(simulation_dll_st.lock);
+
+	EnterCriticalSection(dllcs_lock);
+
 	// true = success, false = failure
 	if (simulation_dll_st.loaded == b) {}
 	else if (b)
 	{
-		HMODULE DLLFuncPack = LoadLibrary("tptplugin.dll");
-		rb = (DLLFuncPack != NULL);
+		struct MYCTX {
+			intptr_t Eip; intptr_t Esp; intptr_t Ebp;
+		};
+		char dllcstr[] = "dllcall_", *dll_alloc_str;
+		const char _loadstr[] = "load";
+		const char _undefstr[] = "undef";
+		const char hexdigits[] = "0123456789abcdef";
+		int strlen_dllcstr  = strlen(dllcstr),
+			strlen_loadstr  = strlen(_loadstr),
+			strlen_undefstr = strlen(_undefstr);
+		{
+			int load_dll_sz = strlen_loadstr;
+			if (load_dll_sz < 2)
+				load_dll_sz = 2;
+			if (load_dll_sz < strlen_undefstr)
+				load_dll_sz = strlen_undefstr;
+			dll_alloc_str = (char*)malloc(strlen_dllcstr + load_dll_sz + 1);
+			strcpy(dll_alloc_str, dllcstr);
+		}
+		HMODULE DLLFuncPack;
+		if (dll_alloc_str != NULL)
+		{
+			DLLFuncPack = LoadLibrary("tptplugin.dll");
+			rb = (DLLFuncPack != NULL);
+		}
 		if (rb)
 		{
-			char dllstr[11] = "dllcall_";
-			const char hexdigits[] = "0123456789abcdef";
-			dllstr[10] = 0;
+			strcpy(dll_alloc_str + strlen_dllcstr, _undefstr);
+			simulation_dll_st.undef_func = GetProcAddress(DLLFuncPack, dll_alloc_str);
+
 			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
 			{
-				dllstr[8] = hexdigits[i>>4];
-				dllstr[9] = hexdigits[i&15];
-				int (__stdcall *dllfn)(DLL_FUNCTIONS_ARGS) = (int (__stdcall *)(DLL_FUNCTIONS_ARGS))GetProcAddress(DLLFuncPack, dllstr);
-				dll_trigger_func[i] = dllfn;
+				dll_alloc_str[strlen_dllcstr] = hexdigits[i>>4];
+				dll_alloc_str[strlen_dllcstr+1] = hexdigits[i&15];
+				dll_alloc_str[strlen_dllcstr+2] = 0;
+				FARPROC dllfn = GetProcAddress(DLLFuncPack, dll_alloc_str);
+				(FARPROC&)(dll_trigger_func[i]) = dllfn;
 			}
+
 			simulation_dll_st.loaded = true;
 			simulation_dll_st.module = (void*)DLLFuncPack;
+			strcpy(dll_alloc_str + strlen_dllcstr, _loadstr);
+			{
+				struct _MY_SEH_ST {
+					void * next_eh;
+					FARPROC handler;
+					MYCTX * ctx; 
+					int __FASTCALL_DECL eh_enter (FARPROC _proc) // __declspec(dllexport)
+					{
+						__asm__ __volatile__ (
+							"push %%fs:0;"
+							"mov %0, %%fs:0;"
+							"pop (%0);"
+						:: "r"(&this->next_eh) : "memory");
+						this->handler = _proc;
+						this->ctx = NULL;
+					}
+					void __FASTCALL_DECL eh_exit () // __declspec(dllexport)
+					{
+						void * tmp;
+						__asm__ __volatile__ (
+							"mov %%fs:0, %0;"
+							"mov (%0), %0;"
+							"mov %0, %%fs:0;"
+						: "+r"(tmp) :: "memory");
+					}
+					void eh_proc (void* args)
+					{
+						MYCTX *_ctx = (MYCTX *)__builtin_alloca(sizeof(MYCTX)), *octx = this->ctx;
+						this->ctx = _ctx;
+						LuaScriptInterface::_dll_eh_proc0(args);
+						this->ctx = octx;
+					}
+					static int eh_func (EXCEPTION_RECORD * er, void * ef, CONTEXT * cr, void * dc)
+					{
+						MYCTX * _ctx = ((_MY_SEH_ST *)(ef - offsetof(_MY_SEH_ST, next_eh)))->ctx;
+						if (_ctx == NULL)
+							return 2; // ExceptionNestedException ?
+						cr->Eip = _ctx->Eip;
+						cr->Esp = _ctx->Esp;
+						cr->Ebp = _ctx->Ebp;
+						cr->EFlags = 0x202; // eflags.IF enable
+						cr->Eax = 0;
+						cr->Ebx = 0;
+						cr->Ecx = 0;
+						cr->Edx = 0;
+						cr->Esi = 0;
+						cr->Edi = 0;
+						return 0; // ExceptionContinueExecution
+					}
+				} _my_seh;
+				int (__stdcall *dllfn)(void*, void*, CRITICAL_SECTION*) = (int (__stdcall *)(void*, void*, CRITICAL_SECTION*))GetProcAddress(DLLFuncPack, dll_alloc_str);
+				HMODULE _ExeFile = GetModuleHandle(NULL);
+				{
+					_my_seh.eh_enter((FARPROC)(_MY_SEH_ST::eh_func));
+					if (dllfn != NULL)
+					{
+						void* _args[] = {(void*)dllfn, (void*)3, DLLFuncPack, _ExeFile, dllcs_lock};
+						_my_seh.eh_proc(&_args);
+					}
+					_my_seh.eh_exit();
+				}
+			}
 		}
+		free(dll_alloc_str);
 	}
 	else
 	{
@@ -3160,10 +3253,11 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		if (rb)
 		{
 			simulation_dll_st.loaded = false;
-			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (int (__stdcall *)(DLL_FUNCTIONS_ARGS))NULL);
+			simulation_dll_st.undef_func = (FARPROC)NULL;
+			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (FARPROC)NULL);
 		}
 	}
-	LeaveCriticalSection(&(simulation_dll_st.lock));
+	LeaveCriticalSection(dllcs_lock);
 	return rb;
 }
 #endif
@@ -3186,16 +3280,13 @@ int LuaScriptInterface::simulation_dll_index(lua_State * l)
 {
 	const char* key = luaL_checkstring(l, 2), *keyl;
 	const char* decr = simulation_dll_index_subf0(l, key, keyl);
+	int val;
 
 	switch (keyl[0])
 	{
-	case 's':
-		if (!strcmp(keyl+1, "upported"))
-#ifdef TPT_NEED_DLL_PLUGIN
-			return lua_pushboolean(l, true), 1;
-#else
-			return lua_pushboolean(l, false), 1;
-#endif
+	case 'e':
+		if (!strcmp(keyl+1, "rrfunc"))
+			return lua_pushinteger(l, luacon_ci->simulation_dll_st.ehandler), 1;
 		break;
 	case 'l':
 		if (keyl[1] != 'o')
@@ -3216,6 +3307,14 @@ int LuaScriptInterface::simulation_dll_index(lua_State * l)
 		}
 #endif
 		break;
+	case 's':
+		if (!strcmp(keyl+1, "upported"))
+#ifdef TPT_NEED_DLL_PLUGIN
+			return lua_pushboolean(l, true), 1;
+#else
+			return lua_pushboolean(l, false), 1;
+#endif
+		break;
 	}
 	return lua_pushnil(l), 1;
 }
@@ -3226,6 +3325,10 @@ int LuaScriptInterface::simulation_dll_newindex(lua_State * l)
 	const char* key = luaL_checkstring(l, 2), *keyl;
 	const char* decr = simulation_dll_index_subf0(l, key, keyl);
 
+	if (keyl[0] == 'e')
+		if (!strcmp(keyl+1, "rrfunc"))
+			return ( luacon_ci->simulation_dll_st.ehandler = lua_tointeger(l, 3) ), 0;
+	
 	if (keyl[0] != 'l' || keyl[1] != 'o')
 		return 0;
 	
@@ -4052,12 +4155,12 @@ int LuaScriptInterface::elements_property(lua_State * l)
 			lua_pushboolean(l, Element_PHOT::ignite_flammable);
 			return 1;
 		}
-		else if(id == PT_NEUT)
+		else if(id == PT_NEUT && Element_NEUT::cooldown_counter_b != NULL && Element_NEUT::cooldown_counter_l != NULL)
 		{
 			if (propertyName == "RemainingCoolDown")
-				prop_out = luacon_sim->check_neut_cooldown;
+				prop_out = Element_NEUT::cooldown_counter_b[0];
 			else if (propertyName == "TotalDensityChecks0")
-				prop_out = luacon_sim->check_neut_counter;
+				prop_out = Element_NEUT::cooldown_counter_l[0] * 6 - Element_NEUT::cooldown_counter_b[1];
 			else
 				goto luaproperr;
 			lua_pushnumber(l, prop_out);

@@ -36,11 +36,21 @@ class GameSave;
 
 class Simulation
 {
+private:
+	void _DelaySimulate(int);
+
 public:
 
 	Gravity * grav;
 	Air * air;
-
+	
+	union _DWORD_union
+	{
+		int32_t dw;
+		int16_t w[2];
+		int8_t  b[4];
+	};
+	
 	std::vector<sign> signs;
 	Element elements[PT_NUM];
 	//Element * elements;
@@ -58,7 +68,6 @@ public:
 	int replaceModeFlags;
 	bool isFromMyMod;
 	bool isPrevFromMyMod;
-	int check_neut_counter;
 
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
@@ -125,6 +134,7 @@ public:
 	bool breakable_wall_recount;
 	int breakable_wall_count;
 	float sim_max_pressure;
+	static int bltable[][2];
 	//Particles
 	Particle parts[NPART];
 	// int part_references [NPART];
@@ -146,12 +156,6 @@ public:
 	int sandcolour;
 	int sandcolour_frame;
 	bool no_generating_BHOL;
-
-	//Cooldowns and random seeds
-	static int check_neut_cooldown;
-	static int rndseed;
-	
-	static int bltable[][2];
 	
 	int  DIRCHInteractCount;
 	int  DIRCHInteractSize;
@@ -273,7 +277,11 @@ public:
 	int get_normal(int pt, int x, int y, float dx, float dy, float *nx, float *ny);
 	int get_normal_interp(int pt, float x0, float y0, float dx, float dy, float *nx, float *ny);
 	void clear_sim();
-	void check_neut();
+	void
+#if defined(WIN32) && !defined(WIN64)
+	__fastcall
+#endif
+	check_neut(int*, char*, bool = true);
 	Simulation();
 	~Simulation();
 

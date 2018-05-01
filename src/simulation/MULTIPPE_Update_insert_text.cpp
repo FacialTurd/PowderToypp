@@ -11,13 +11,13 @@
 #define ALIGNSIZE 2
 
 uint8_t * mytxt_buffer1 = NULL;
-uint8_t * my_deflate_buffer = NULL;
 int mytxt_buffer1_parts = 0;
 
 void MULTIPPE_Update::InsertText(Simulation *sim, int i, int x, int y, int ix, int iy)
 {
 #ifndef OGLI
 	static z_stream strm;
+	static uint8_t * my_deflate_buffer = NULL;
 	strm.zalloc = Z_NULL;
 	strm.zfree = Z_NULL;
 	strm.opaque = Z_NULL;

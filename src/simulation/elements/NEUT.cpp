@@ -1,4 +1,6 @@
 #include "simulation/Elements.h"
+#include <stdint.h>
+#include <iostream>
 #define ID part_ID
 #define SETTRANS(t, e1, e2, m, p) (\
 	t[2*e1] = PMAP(m, e2), \
@@ -52,11 +54,14 @@ Element_NEUT::Element_NEUT()
 	
 	if (Element_NEUT::TransitionTable == NULL)
 	{
-		int * tt = (int*)calloc(2 * PT_NUM, sizeof(int));
+		size_t sz = (2 * PT_NUM + 8) * sizeof(int) + 32 * sizeof(char);
+		int * tt = (int*)(new char[sz / sizeof(char)]);
 		Element_NEUT::TransitionTable = tt;
-		if (tt != NULL)
+		// if (tt != NULL)
 		{
+			memset(tt, 0, sz);
 			// old type, new type, method, probability
+			SETTRANS(tt, PT_WATR, PT_DSTW, 1,   50);
 			SETTRANS(tt, PT_GUNP, PT_DUST, 1,   15);
 			SETTRANS(tt, PT_DYST, PT_YEST, 1,   15);
 			SETTRANS(tt, PT_YEST, PT_DYST, 1, 1000);
@@ -69,9 +74,18 @@ Element_NEUT::Element_NEUT()
 			SETTRANS(tt, PT_BCOL, PT_SAWD, 2,   50);
 			SETTRANS(tt, PT_DUST, PT_FWRK, 1,   50);
 			SETTRANS(tt, PT_ACID, PT_ISOZ, 2,   50);
+			SETTRANS(tt, PT_TTAN, 0      , 3,   50);
+			cooldown_counter_l = Element_NEUT::TransitionTable + 2 * PT_NUM;
+			cooldown_counter_b = (char*)(cooldown_counter_l + 8);
 		}
 	}
 }
+
+//#TPT-Directive ElementHeader Element_NEUT static int * cooldown_counter_l
+int * Element_NEUT::cooldown_counter_l = NULL;	// _l = "long"
+
+//#TPT-Directive ElementHeader Element_NEUT static char * cooldown_counter_b
+char * Element_NEUT::cooldown_counter_b = NULL;	// _b = "byte"
 
 //#TPT-Directive ElementHeader Element_NEUT static int * TransitionTable
 int * Element_NEUT::TransitionTable = NULL;
@@ -83,6 +97,8 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 	int iX = 0, iY = 0;
 	int pressureFactor = 3 + (int)sim->pv[y/CELL][x/CELL];
 	int DMG_count = 0;
+	bool diffs;
+	
 	for (rx=-1; rx<2; rx++)
 		for (ry=-1; ry<2; ry++)
 			if (BOUNDS_CHECK)
@@ -92,13 +108,11 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 				switch (rt)
 				{
 				case PT_WATR:
-					if (3>(rand()%20))
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_DSTW);
 				case PT_ICEI:
 				case PT_SNOW:
 					parts[i].vx *= 0.995;
 					parts[i].vy *= 0.995;
-					break;
+					goto _transl1;
 				case PT_PLUT:
 					if (pressureFactor>(rand()%1000))
 					{
@@ -146,13 +160,6 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					if (!(rand()%20))
 						partsi(r).ctype = PT_DUST;
 					break;
-				case PT_TTAN:
-					if (!(rand()%20))
-					{
-						sim->kill_part(i);
-						return 1;
-					}
-					break;
 				case PT_EXOT:
 					if (partsi(r).ctype != PT_E195 && !(rand()%20))
 						partsi(r).life = 1500;
@@ -172,8 +179,9 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					break;
 				case ELEM_MULTIPP:
 					{
+					int l = partsi(r).life;
 					int rr, j, nr;
-					if (partsi(r).life == 22)
+					if (l == 22)
 					{
 						switch (partsi(r).tmp >> 3)
 						{
@@ -218,25 +226,13 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							break;
 						}
 					}
-					else if (partsi(r).life <= 8 && !(rx || ry))
+					else if (l <= 8 && !(rx || ry))
 					{
-						if (partsi(r).life == 5 && !partsi(r).tmp)
+						diffs = (l == 8);
+						if ((l == 5 && !partsi(r).tmp) || diffs)
 							target_r = ID(r);
-						if (partsi(r).life != 8)
-							continue;
-						parts[i].vx = 0, parts[i].vy = 0;
-						for (j = 0; j < 5; j++)
-						{
-							iX = rand() % (ISTP * 2 + 1) - ISTP;
-							iY = rand() % (ISTP * 2 + 1) - ISTP;
-							rr = pmap[y+iY][x+iX];
-							if (CHECK_EXTEL(rr, 8))
-								break;
-						}
-						if (j == 5)
-							iY = 0, iX = 0;
 					}
-					else if (partsi(r).life == 16 && partsi(r).ctype == 25 && Element_MULTIPP::Arrow_keys != NULL)
+					else if (l == 16 && partsi(r).ctype == 25 && Element_MULTIPP::Arrow_keys != NULL)
 					{
 						int tmp2 = partsi(r).tmp2;
 						int multiplier = (tmp2 >> 4) + 1;
@@ -252,7 +248,8 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 				case PT_NONE:
 					break;
 				default:
-					if (TransitionTable != NULL)
+				_transl1:
+					// if (TransitionTable != NULL)
 					{
 						int t = TransitionTable[2 * rt];
 						int m = ID(t);
@@ -260,10 +257,14 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							break;
 						t = TYP(t);
 						if (rand() <= TransitionTable[2 * rt + 1])
+						{
 							if (m == 1)
 								sim->part_change_type(ID(r), x+rx, y+ry, t);
-							else
+							else if (m == 2)
 								sim->create_part(ID(r), x+rx, y+ry, t);
+							else
+								return sim->kill_part(i), 1;
+						}
 					}
 					break;
 				}
@@ -288,7 +289,7 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 
 	if (target_r >= 0)
 	{
-		ChangeDirection(sim, i, x, y, &parts[i], &parts[target_r]);
+		return ChangeDirection(sim, i, x, y, diffs, &parts[i], &parts[target_r]);
 	}
 	else
 	{
@@ -299,16 +300,67 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 }
 
 
-//#TPT-Directive ElementHeader Element_NEUT static void ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
-void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particle* neut, Particle* under)
+//#TPT-Directive ElementHeader Element_NEUT static int ChangeDirection(Simulation* sim, int i, int x, int y, bool df, Particle* neut, Particle* under)
+int Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, bool df, Particle* neut, Particle* under)
 {
+	if (df)
+	{
+		bool _fail = true;
+		int nx, ny, j = 0, _status = 1;
+		float ox = neut->x, oy = neut->y,
+		      vx = neut->vx, vy = neut->vy,
+			  nxf, nyf, mv;
+		mv = std::max(std::fabs(vx), std::fabs(vy));
+		if (mv > (float)ISTP)
+			vx *= (ISTP / mv), vy *= (ISTP / mv);
+		
+		// std::cout << vx << ", " << vy << std::endl;
+
+		for (;;)
+		{
+			nxf = ox + vx;
+			nyf = oy + vy;
+			nx = nxf + 0.5f, ny = nyf + 0.5f;
+			if (nx < CELL || ny < CELL || nx >= (XRES-CELL) || ny >= (YRES-CELL))
+			{
+				_status = 2;
+				break;
+			}
+			int r = sim->pmap[ny][nx];
+			if (TYP(r) == ELEM_MULTIPP && sim->partsi(r).life == 8)
+				// (!sim->photons[ny][nx] || (nx == x && ny == y))
+			{
+				_status = 0;
+				break;
+			}
+			if (j >= 5) break;
+			j++;
+			vx = (float)ISTP * ((2.0f * rand() / (float)RAND_MAX) - 1);
+			vy = (float)ISTP * ((2.0f * rand() / (float)RAND_MAX) - 1);
+		}
+		if (_status == 2 || neut->life == 1)
+		{
+			under->tmp += (int)(4.0f * neut->temp);
+			sim->kill_part(i);
+		}
+		else if (!_status)
+		{
+			neut->x = nxf, neut->y = nyf;
+			neut->vx = vx, neut->vy = vy;
+			sim->photons[y][x] = 0;
+			sim->photons[ny][nx] = PMAP(i, neut->type);
+		}
+		return 1;
+	}
+	int tmp2 = under->tmp2;
 	if (under->tmp2 == 2)
 	{
 		neut->ctype = 0x100;
 		neut->tmp2 = 0x3FFFFFFF;
 		sim->part_change_type(i, x, y, PT_E195);
+		return 0; // 1;
 	}
-	else if (under->tmp2 == 25)
+	if (under->tmp2 == 25)
 	{
 		int rr = under->ctype;
 		float angle = rand() / (float)(RAND_MAX) - 0.5f;
@@ -317,6 +369,7 @@ void Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, Particl
 		angle += (float)(rr & 7) / 4.0f;
 		neut->vx = sinf(angle * M_PI) * radius;
 		neut->vy = cosf(angle * M_PI) * radius;
+		return 0;
 	}
 }
 

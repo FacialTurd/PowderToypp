@@ -59,6 +59,11 @@ extern "C" {
 
 #include "simulation/simplugin.h"
 
+#ifdef LUACONSOLE
+#include "lua/LuaScriptInterface.h"
+#include "lua/LuaScriptHelper.h"
+#endif
+
 using namespace std;
 
 #define INCLUDE_SYSWM
@@ -526,8 +531,6 @@ unsigned int GetTicks()
 	return SDL_GetTicks();
 }
 
-int sdl_my_extra_args[4] = {0, 0, 0, 0};
-
 std::map<std::string, std::string> readArguments(int argc, char * argv[])
 {
 	std::map<std::string, std::string> arguments;
@@ -545,13 +548,13 @@ std::map<std::string, std::string> readArguments(int argc, char * argv[])
 
 	for (int i=1; i<argc; i++)
 	{
-#ifdef TPT_NEED_DLL_PLUGIN
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
 		if ((*(short*)argv[i]) == '-' * 0x101)
 		{
 			char *remain_part = argv[i]+2;
 			if (!strncmp(remain_part, "no-dll-plugin", 14))
 			{
-				sdl_my_extra_args[0] |= ARG0_NO_DLL_PLUGIN;
+				LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_DLL_PLUGIN;
 			}
 			break;
 		}
@@ -994,11 +997,6 @@ void SigHandler(int signal)
 		BlueScreen("Unexpected program abort");
 		break;
 	}
-}
-
-void DelayOperation1(Simulation * sim, int ms){
-	sim->delayEnd = SDL_GetTicks() + ms;
-	sim->SimExtraFunc |= 2;
 }
 
 int main(int argc, char * argv[])
