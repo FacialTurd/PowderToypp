@@ -47,6 +47,7 @@
 
 #include "simulation/simplugin.h"
 #include <csetjmp>
+#include <csignal>
 
 extern "C"
 {
@@ -107,6 +108,8 @@ int TptNewindexClosure(lua_State *l)
 int LuaScriptInterface::_my_ext_args[4] = {0,0,0,0};
 FARPROC LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS];
 #endif
+
+struct strlist * LuaScriptInterface::luacon_elem_strlist = NULL;
 	
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	CommandInterface(c, m),
@@ -238,8 +241,8 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"two_state_update",&luatpt_two_state_update},
 		{"get_clipboard", &platform_clipboardCopy},
 		{"set_clipboard", &platform_clipboardPaste},
-		{"add_dbg_trigger", &luatpt_debug_trigger_add},
-		{"call_dbg_trigger", &luatpt_call_debug_trigger},
+		{"add_dbg_trigger", trigger_func_struct::_add},
+		{"call_dbg_trigger", trigger_func_struct::_call},
 		{"get_pfree", &simulation_get_pfree},
 		{NULL,NULL}
 	};
@@ -1344,11 +1347,11 @@ int LuaScriptInterface::simulation_partProperty(lua_State * l)
 {
 	int argCount = lua_gettop(l);
 	int particleID = luaL_checkinteger(l, 1);
-	StructProperty * property = NULL;
+	StructProperty property;
 
-	if(particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
+	if (particleID < 0 || particleID >= NPART || !luacon_sim->parts[particleID].type)
 	{
-		if(argCount == 3)
+		if (argCount == 3)
 		{
 			lua_pushnil(l);
 			return 1;
@@ -1358,98 +1361,44 @@ int LuaScriptInterface::simulation_partProperty(lua_State * l)
 	}
 
 	//Get field
-	if(lua_type(l, 2) == LUA_TNUMBER)
+	if (lua_type(l, 2) == LUA_TNUMBER)
 	{
 		int fieldID = lua_tointeger(l, 2);
-		if(fieldID < 0 || fieldID >= particlePropertiesCount)
+		if (fieldID < 0 || fieldID >= particlePropertiesCount)
 			return luaL_error(l, "Invalid field ID (%d)", fieldID);
-		property = &particleProperties[fieldID];
-	} else if(lua_type(l, 2) == LUA_TSTRING) {
+		property = particleProperties[fieldID];
+	}
+	else if (lua_type(l, 2) == LUA_TSTRING)
+	{
 		std::string fieldName = lua_tostring(l, 2);
-		for(int i = particlePropertiesCount-1; i >= 0; i--)
+		bool foundProperty = false;
+		for (int i = particlePropertiesCount-1; i >= 0; i--)
 		{
-			if(particleProperties[i].Name == fieldName)
-				property = &particleProperties[i];
+			if (particleProperties[i].Name == fieldName)
+			{
+				property = particleProperties[i];
+				foundProperty = true;
+			}
 		}
-		if(!property)
+		if (!foundProperty)
 			return luaL_error(l, "Unknown field (%s)", fieldName.c_str());
-	} else {
+	}
+	else
+	{
 		return luaL_error(l, "Field ID must be an name (string) or identifier (integer)");
 	}
 
 	//Calculate memory address of property
-	intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->parts[particleID])+property->Offset);
+	intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->parts[particleID])+property.Offset);
 
 	if(argCount == 3)
 	{
-		//Set
-		switch(property->Type)
-		{
-			case StructProperty::ParticleType:
-			case StructProperty::Integer:
-				*((int*)propertyAddress) = lua_tointeger(l, 3);
-				break;
-			case StructProperty::UInteger:
-				*((unsigned int*)propertyAddress) = lua_tointeger(l, 3);
-				break;
-			case StructProperty::Float:
-				*((float*)propertyAddress) = lua_tonumber(l, 3);
-				break;
-			case StructProperty::Char:
-				*((char*)propertyAddress) = lua_tointeger(l, 3);
-				break;
-			case StructProperty::UChar:
-				*((unsigned char*)propertyAddress) = lua_tointeger(l, 3);
-				break;
-			case StructProperty::String:
-				*((char**)propertyAddress) = strdup(lua_tostring(l, 3));
-				break;
-			case StructProperty::Colour:
-#if PIXELSIZE == 4
-				*((unsigned int*)propertyAddress) = lua_tointeger(l, 3);
-#else
-				*((unsigned short*)propertyAddress) = lua_tointeger(l, 3);
-#endif
-				break;
-			case StructProperty::Removed:
-				break;
-		}
+		LuaSetProperty(l, property, propertyAddress, 3);
 		return 0;
 	} 
 	else
 	{
-		//Get
-		switch(property->Type)
-		{
-			case StructProperty::ParticleType:
-			case StructProperty::Integer:
-				lua_pushinteger(l, *((int*)propertyAddress));
-				break;
-			case StructProperty::UInteger:
-				lua_pushinteger(l, *((unsigned int*)propertyAddress));
-				break;
-			case StructProperty::Float:
-				lua_pushnumber(l, *((float*)propertyAddress));
-				break;
-			case StructProperty::Char:
-				lua_pushinteger(l, *((char*)propertyAddress));
-				break;
-			case StructProperty::UChar:
-				lua_pushinteger(l, *((unsigned char*)propertyAddress));
-				break;
-			case StructProperty::String:
-				lua_pushstring(l, *((char**)propertyAddress));
-				break;
-			case StructProperty::Colour:
-	#if PIXELSIZE == 4
-				lua_pushinteger(l, *((unsigned int*)propertyAddress));
-	#else
-				lua_pushinteger(l, *((unsigned short*)propertyAddress));
-	#endif
-				break;
-			default:
-				lua_pushnil(l);
-		}
+		LuaGetProperty(l, property, propertyAddress);
 		return 1;
 	}
 }
@@ -3144,50 +3093,65 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		struct MYCTX {
 			intptr_t Eip; intptr_t Esp; intptr_t Ebp;
 		};
-		char dllcstr[] = "dllcall_", *dll_alloc_str;
-		const char _loadstr[] = "load";
-		const char _undefstr[] = "undef";
-		const char hexdigits[] = "0123456789abcdef";
-		int strlen_dllcstr  = strlen(dllcstr),
-			strlen_loadstr  = strlen(_loadstr),
-			strlen_undefstr = strlen(_undefstr);
+
+		char *dll_alloc_str;
+
+		// <<<< DLL config start >>>>
+		const char *dlllibname	= "tptplugin.dll";
+		const char *dllcstr		= "dllcall";
+		const char *_loadstr	= "load";
+		const char *_undefstr	= "undef";
+		// <<<< DLL config end >>>>
+
+		const char *hexdigits	= "0123456789abcdef";
+		size_t strlen_dllcstr	= strlen(dllcstr);
+
+		// jmp_buf dll_alloc_jmp_buf;
+
 		{
-			int load_dll_sz = strlen_loadstr;
-			if (load_dll_sz < 2)
-				load_dll_sz = 2;
-			if (load_dll_sz < strlen_undefstr)
-				load_dll_sz = strlen_undefstr;
-			dll_alloc_str = (char*)malloc(strlen_dllcstr + load_dll_sz + 1);
+			size_t load_el[] = { strlen(_loadstr), strlen(_undefstr) };
+			size_t load_dll_sz = 2;
+			for (int i = 0; i < sizeof(load_el)/sizeof(int); i++)
+			{
+				if (load_dll_sz < load_el[i])
+					load_dll_sz = load_el[i];
+			}
+
+			dll_alloc_str = (char*)malloc(strlen_dllcstr + load_dll_sz + 2);
 			strcpy(dll_alloc_str, dllcstr);
+			dll_alloc_str[strlen_dllcstr] = '_';
+			strlen_dllcstr++;
 		}
 		HMODULE DLLFuncPack;
 		if (dll_alloc_str != NULL)
 		{
-			DLLFuncPack = LoadLibrary("tptplugin.dll");
+			DLLFuncPack = LoadLibrary(dlllibname);
 			rb = (DLLFuncPack != NULL);
 		}
 		if (rb)
 		{
-			strcpy(dll_alloc_str + strlen_dllcstr, _undefstr);
+			char* dll_alloc_sfx = dll_alloc_str + strlen_dllcstr;
+
+			strcpy(dll_alloc_sfx, _undefstr);
 			simulation_dll_st.undef_func = GetProcAddress(DLLFuncPack, dll_alloc_str);
 
 			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
 			{
-				dll_alloc_str[strlen_dllcstr] = hexdigits[i>>4];
-				dll_alloc_str[strlen_dllcstr+1] = hexdigits[i&15];
-				dll_alloc_str[strlen_dllcstr+2] = 0;
+				dll_alloc_sfx[0] = hexdigits[i>>4];
+				dll_alloc_sfx[1] = hexdigits[i&15];
+				dll_alloc_sfx[2] = '\0';
 				FARPROC dllfn = GetProcAddress(DLLFuncPack, dll_alloc_str);
 				(FARPROC&)(dll_trigger_func[i]) = dllfn;
 			}
 
 			simulation_dll_st.loaded = true;
 			simulation_dll_st.module = (void*)DLLFuncPack;
-			strcpy(dll_alloc_str + strlen_dllcstr, _loadstr);
+			strcpy(dll_alloc_sfx, _loadstr);
 			{
 				struct _MY_SEH_ST {
 					void * next_eh;
 					FARPROC handler;
-					MYCTX * ctx; 
+					void * ctx; 
 					int __FASTCALL_DECL eh_enter (FARPROC _proc) // __declspec(dllexport)
 					{
 						__asm__ __volatile__ (
@@ -3209,39 +3173,78 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 					}
 					void eh_proc (void* args)
 					{
-						MYCTX *_ctx = (MYCTX *)__builtin_alloca(sizeof(MYCTX)), *octx = this->ctx;
+						void *_ctx = __builtin_alloca(sizeof(MYCTX)), *octx = this->ctx;
 						this->ctx = _ctx;
 						LuaScriptInterface::_dll_eh_proc0(args);
 						this->ctx = octx;
 					}
-					static int eh_func (EXCEPTION_RECORD * er, void * ef, CONTEXT * cr, void * dc)
+					static _MY_SEH_ST * eh_fram_typ0 (void * ef)
 					{
-						MYCTX * _ctx = ((_MY_SEH_ST *)(ef - offsetof(_MY_SEH_ST, next_eh)))->ctx;
-						if (_ctx == NULL)
-							return 2; // ExceptionNestedException ?
-						cr->Eip = _ctx->Eip;
-						cr->Esp = _ctx->Esp;
-						cr->Ebp = _ctx->Ebp;
-						cr->EFlags = 0x202; // eflags.IF enable
-						cr->Eax = 0;
-						cr->Ebx = 0;
-						cr->Ecx = 0;
-						cr->Edx = 0;
-						cr->Esi = 0;
-						cr->Edi = 0;
-						return 0; // ExceptionContinueExecution
+						return (_MY_SEH_ST *)(ef - offsetof(_MY_SEH_ST, next_eh));
 					}
-				} _my_seh;
+					static bool in_stack_and_aligned (uintptr_t p)
+					{
+						NT_TIB *teb = (NT_TIB*)NtCurrentTeb();
+						return (!(p & 3) &&
+							((PVOID)p < teb->StackBase) &&
+							((PVOID)p >= teb->StackLimit));
+					}
+					static int eh_func0 (EXCEPTION_RECORD * er, void * ef, CONTEXT * cr, void * dc)
+					{
+						int ret_value = 2; // ExceptionNestedException
+						jmp_buf _rec;
+						_MY_SEH_ST *frame_st = eh_fram_typ0(ef), _nest_seh;
+						MYCTX * _ctx = (MYCTX *)frame_st->ctx;
+
+						if (_ctx == NULL || ((intptr_t)_ctx & 3) || (
+							!in_stack_and_aligned((uintptr_t)frame_st->next_eh) &&
+							~((uintptr_t)frame_st->next_eh)))
+							abort();
+
+						_nest_seh.eh_enter((FARPROC)abort);
+						_nest_seh.ctx = &_rec;
+						// if (!setjmp(_rec))
+						{
+							NT_TIB *teb = (NT_TIB*)NtCurrentTeb();
+
+							if (!in_stack_and_aligned((uintptr_t)_ctx->Esp))
+								abort(); // not in stack or misaligned
+
+							cr->Eip = _ctx->Eip;
+							cr->Esp = _ctx->Esp;
+							cr->Ebp = _ctx->Ebp;
+							cr->EFlags = 0x202; // eflags.IF enable
+							cr->Eax = 0;
+							cr->Ebx = 0;
+							cr->Ecx = 0;
+							cr->Edx = 0;
+							cr->Esi = 0;
+							cr->Edi = 0;
+							er->ExceptionFlags &= ~0x01;
+							ret_value = 0; // ExceptionContinueExecution
+						}
+
+						_nest_seh.eh_exit();
+
+						return ret_value;
+					}
+				} *_my_seh;
+				_my_seh = (_MY_SEH_ST *)__builtin_alloca(sizeof(_MY_SEH_ST));
 				int (__stdcall *dllfn)(void*, void*, CRITICAL_SECTION*) = (int (__stdcall *)(void*, void*, CRITICAL_SECTION*))GetProcAddress(DLLFuncPack, dll_alloc_str);
 				HMODULE _ExeFile = GetModuleHandle(NULL);
 				{
-					_my_seh.eh_enter((FARPROC)(_MY_SEH_ST::eh_func));
+					_my_seh->eh_enter((FARPROC)(_MY_SEH_ST::eh_func0));
 					if (dllfn != NULL)
 					{
-						void* _args[] = {(void*)dllfn, (void*)3, DLLFuncPack, _ExeFile, dllcs_lock};
-						_my_seh.eh_proc(&_args);
+						struct {
+							FARPROC res1;
+							int res2;
+							const void* res3[3];
+							CRITICAL_SECTION* res4;
+						} _args = {(FARPROC)dllfn, 4, DLLFuncPack, _ExeFile, dlllibname, dllcs_lock};
+						_my_seh->eh_proc(&_args);
 					}
-					_my_seh.eh_exit();
+					_my_seh->eh_exit();
 				}
 			}
 		}
@@ -3278,6 +3281,40 @@ const char* LuaScriptInterface::simulation_dll_index_subf0(lua_State * L, const 
 
 int LuaScriptInterface::simulation_dll_index(lua_State * l)
 {
+#ifdef TPT_NEED_DLL_PLUGIN
+	struct _funcs {
+		static int _sym (lua_State * L)
+		{
+			FARPROC ret_value = NULL;
+			if (luacon_ci->simulation_dll_st.loaded)
+			{
+				size_t proc_len;
+				int proc_i = lua_tointeger(L, 1);
+				const char *proc_name = lua_tolstring(L, 2, &proc_len);
+				// lua_upvalueindex
+				if (proc_name)
+				{
+					bool _changing = (proc_i >= 0 && proc_i < MAX_DLL_FUNCTIONS);
+					if (proc_len && _changing)
+					{
+						ret_value = GetProcAddress((HMODULE)(luacon_ci->simulation_dll_st.module), proc_name);
+						_changing = (ret_value != NULL);
+					}
+					if (_changing)
+						simulation_debug_trigger::dll_check_write(proc_i, ret_value);
+				}
+				else
+					ret_value = (FARPROC)simulation_debug_trigger::dll_check_ex(proc_i, lua_toboolean(L, 2));
+			}
+			if (ret_value != NULL)
+				lua_pushlightuserdata(L, (void*)ret_value);
+			else
+				lua_pushnil(L);
+			return 1;
+		}
+	};
+#endif
+
 	const char* key = luaL_checkstring(l, 2), *keyl;
 	const char* decr = simulation_dll_index_subf0(l, key, keyl);
 	int val;
@@ -3289,7 +3326,16 @@ int LuaScriptInterface::simulation_dll_index(lua_State * l)
 			return lua_pushinteger(l, luacon_ci->simulation_dll_st.ehandler), 1;
 		break;
 	case 'l':
-		if (keyl[1] != 'o')
+#ifdef TPT_NEED_DLL_PLUGIN
+		if (!strcmp(keyl+1, "sym"))
+		{
+			// lua_push
+			return lua_pushcclosure(l, _funcs::_sym, 0), 1;
+		}
+#else
+		if (false) {}
+#endif
+		else if (keyl[1] != 'o')
 			break;
 		if (!strcmp(keyl+2, "aded"))
 #ifdef TPT_NEED_DLL_PLUGIN
@@ -3325,12 +3371,19 @@ int LuaScriptInterface::simulation_dll_newindex(lua_State * l)
 	const char* key = luaL_checkstring(l, 2), *keyl;
 	const char* decr = simulation_dll_index_subf0(l, key, keyl);
 
-	if (keyl[0] == 'e')
+	switch (keyl[0])
+	{
+	case 'e':
 		if (!strcmp(keyl+1, "rrfunc"))
-			return ( luacon_ci->simulation_dll_st.ehandler = lua_tointeger(l, 3) ), 0;
-	
-	if (keyl[0] != 'l' || keyl[1] != 'o')
+		{
+			luacon_ci->simulation_dll_st.ehandler = lua_tointeger(l, 3);
+		}
 		return 0;
+	case 'l':
+		if (keyl[1] != 'o')
+			return 0;
+		break;
+	}
 	
 	if (!strcmp(keyl+2, "aded"))
 	{
@@ -3694,6 +3747,105 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, NT);
 	lua_setfield(l, -2, "transition");
 }
+ 
+void LuaScriptInterface::LuaGetProperty(lua_State* l, StructProperty property, intptr_t propertyAddress)
+{
+	switch (property.Type)
+	{
+		case StructProperty::ParticleType:
+		case StructProperty::Integer:
+			lua_pushinteger(l, *((int*)propertyAddress));
+			break;
+		case StructProperty::UInteger:
+			lua_pushinteger(l, *((unsigned int*)propertyAddress));
+			break;
+		case StructProperty::Float:
+			lua_pushnumber(l, *((float*)propertyAddress));
+			break;
+		case StructProperty::Char:
+			lua_pushinteger(l, *((char*)propertyAddress));
+			break;
+		case StructProperty::UChar:
+			lua_pushinteger(l, *((unsigned char*)propertyAddress));
+			break;
+//		case StructProperty::BString:
+//			lua_pushstring(l, *((char**)propertyAddress));
+//			break;
+		case StructProperty::String:
+//			lua_pushstring(l, (*((String*)propertyAddress)).ToUtf8().c_str());
+			lua_pushstring(l, *((char**)propertyAddress));
+			break;
+		case StructProperty::Colour:
+#if PIXELSIZE == 4
+			lua_pushinteger(l, *((unsigned int*)propertyAddress));
+#else
+			lua_pushinteger(l, *((unsigned short*)propertyAddress));
+#endif
+			break;
+		case StructProperty::Removed:
+			lua_pushnil(l);
+	}
+}
+
+void LuaScriptInterface::LuaSetProperty(lua_State* l, StructProperty property, intptr_t propertyAddress, int stackPos)
+{
+	switch (property.Type)
+	{
+		case StructProperty::ParticleType:
+		case StructProperty::Integer:
+			*((int*)propertyAddress) = luaL_checkinteger(l, stackPos);
+			break;
+		case StructProperty::UInteger:
+			*((unsigned int*)propertyAddress) = luaL_checkinteger(l, stackPos);
+			break;
+		case StructProperty::Float:
+			*((float*)propertyAddress) = luaL_checknumber(l, stackPos);
+			break;
+		case StructProperty::Char:
+			*((char*)propertyAddress) = luaL_checkinteger(l, stackPos);
+			break;
+		case StructProperty::UChar:
+			*((unsigned char*)propertyAddress) = luaL_checkinteger(l, stackPos);
+			break;
+//		case StructProperty::BString:
+//			*((ByteString*)propertyAddress) = ByteString(luaL_checkstring(l, stackPos));
+//			break;
+		case StructProperty::String:
+//			*((String*)propertyAddress) = ByteString(luaL_checkstring(l, stackPos)).FromUtf8();
+			{
+#ifdef TPT_NEED_DLL_PLUGIN
+				CRITICAL_SECTION *cs0 = &(luacon_ci->simulation_dll_st.lock);
+				EnterCriticalSection(cs0);
+#endif
+				strlist *sl0;
+				const char * s1 = luaL_checkstring(l, stackPos);
+				char *&s2 = *((char**)propertyAddress);
+				char _state = strlist_realloc(luacon_elem_strlist, s2, s1, sl0);
+				
+				if (_state == 1)
+				{
+					s2 = strlist_add(&luacon_elem_strlist, s1);
+					if (s2 == NULL)
+						_state = 2;
+				}
+				if (_state == 2)
+					abort();
+#ifdef TPT_NEED_DLL_PLUGIN
+				LeaveCriticalSection(cs0);
+#endif
+			}
+			break;
+		case StructProperty::Colour:
+#if PIXELSIZE == 4
+			*((unsigned int*)propertyAddress) = luaL_checkinteger(l, stackPos);
+#else
+			*((unsigned short*)propertyAddress) = luaL_checkinteger(l, stackPos);
+#endif
+			break;
+		case StructProperty::Removed:
+			break;
+	}
+}
 
 int LuaScriptInterface::elements_loadDefault(lua_State * l)
 {
@@ -3721,6 +3873,12 @@ int LuaScriptInterface::elements_loadDefault(lua_State * l)
 	}
 	else
 	{
+#ifdef TPT_NEED_DLL_PLUGIN
+		CRITICAL_SECTION *cs0 = &(luacon_ci->simulation_dll_st.lock);
+		EnterCriticalSection(cs0);
+#endif
+		strlist_free(&luacon_elem_strlist, true);
+
 		std::vector<Element> elementList = GetElements();
 		for (int i = 0; i < PT_NUM; i++)
 		{
@@ -3729,6 +3887,9 @@ int LuaScriptInterface::elements_loadDefault(lua_State * l)
 			else
 				luacon_sim->elements[i] = Element();
 		}
+#ifdef TPT_NEED_DLL_PLUGIN
+		LeaveCriticalSection(cs0);
+#endif
 		lua_pushnil(l);
 		lua_setglobal(l, "elements");
 		lua_pushnil(l);
@@ -3758,7 +3919,7 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 	id = std::string(lua_tostring(l, 2));
 	std::transform(id.begin(), id.end(), id.begin(), ::toupper);
 
-	if(group == "DEFAULT")
+	if (group == "DEFAULT")
 		return luaL_error(l, "You cannot create elements in the 'default' group.");
 
 	identifier = group + "_PT_" + id;
@@ -3769,18 +3930,31 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 			return luaL_error(l, "Element identifier already in use");
 	}
 
+#ifdef TPT_NEED_DLL_PLUGIN
+	CRITICAL_SECTION *cs0 = &(luacon_ci->simulation_dll_st.lock);
+	EnterCriticalSection(cs0);
+#endif
+
 	int newID = -1;
 	for(int i = PT_NUM-1; i >= 0; i--)
 	{
 		if(!luacon_sim->elements[i].Enabled)
 		{
+			// probably causes memory leak
+			char * _identif = strlist_add(&luacon_elem_strlist, identifier.c_str());
+			if (_identif == NULL)
+				break;
 			newID = i;
 			luacon_sim->elements[i] = Element();
 			luacon_sim->elements[i].Enabled = true;
-			luacon_sim->elements[i].Identifier = strdup(identifier.c_str());
+			luacon_sim->elements[i].Identifier = _identif;
 			break;
 		}
 	}
+	
+#ifdef TPT_NEED_DLL_PLUGIN
+	LeaveCriticalSection(cs0);
+#endif
 
 	if(newID != -1)
 	{	
@@ -3814,38 +3988,8 @@ int LuaScriptInterface::elements_element(lua_State * l)
 			lua_getfield(l, -1, (*iter).Name.c_str());
 			if(lua_type(l, -1) != LUA_TNIL)
 			{
-				intptr_t offset = (*iter).Offset;
-				switch((*iter).Type)
-				{
-					case StructProperty::ParticleType:
-					case StructProperty::Integer:
-						*((int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-						break;
-					case StructProperty::UInteger:
-						*((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-						break;
-					case StructProperty::Float:
-						*((float*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tonumber(l, -1);
-						break;
-					case StructProperty::Char:
-						*((char*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-						break;
-					case StructProperty::UChar:
-						*((unsigned char*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-						break;
-					case StructProperty::String:
-						*((char**)(((unsigned char*)&luacon_sim->elements[id])+offset)) = strdup(lua_tostring(l, -1));
-						break;
-					case StructProperty::Colour:
-#if PIXELSIZE == 4
-						*((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-#else
-						*((unsigned short*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = lua_tointeger(l, -1);
-#endif
-						break;
-					case StructProperty::Removed:
-						break;
-				}
+				intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->elements[id]) + (*iter).Offset);
+				LuaSetProperty(l, (*iter), propertyAddress, -1);
 			}
 			lua_pop(l, 1);
 		}
@@ -3892,38 +4036,8 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_newtable(l);
 		for(std::vector<StructProperty>::iterator iter = properties.begin(), end = properties.end(); iter != end; ++iter)
 		{
-			intptr_t offset = (*iter).Offset;
-			switch((*iter).Type)
-			{
-				case StructProperty::ParticleType:
-				case StructProperty::Integer:
-					lua_pushinteger(l, *((int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::UInteger:
-					lua_pushinteger(l, *((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Float:
-					lua_pushnumber(l, *((float*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Char:
-					lua_pushinteger(l, *((char*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::UChar:
-					lua_pushinteger(l, *((unsigned char*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::String:
-					lua_pushstring(l, *((char**)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Colour:
-#if PIXELSIZE == 4
-					lua_pushinteger(l, *((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-#else
-					lua_pushinteger(l, *((unsigned short*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-#endif
-					break;
-				case StructProperty::Removed:
-					continue;
-			}
+			intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->elements[id]) + (*iter).Offset);
+			LuaGetProperty(l, (*iter), propertyAddress);
 			lua_setfield(l, -2, (*iter).Name.c_str());
 		}
 		lua_pushstring(l, luacon_sim->elements[id].Identifier);
@@ -3965,38 +4079,8 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if(lua_type(l, 3) != LUA_TNIL)
 			{
-				intptr_t offset = property.Offset;
-				switch(property.Type)
-				{
-					case StructProperty::ParticleType:
-					case StructProperty::Integer:
-						*((int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-						break;
-					case StructProperty::UInteger:
-						*((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-						break;
-					case StructProperty::Float:
-						*((float*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checknumber(l, 3);
-						break;
-					case StructProperty::Char:
-						*((char*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-						break;
-					case StructProperty::UChar:
-						*((unsigned char*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-						break;
-					case StructProperty::String:
-						*((char**)(((unsigned char*)&luacon_sim->elements[id])+offset)) = strdup(luaL_checkstring(l, 3));
-						break;
-					case StructProperty::Colour:
-#if PIXELSIZE == 4
-						*((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-#else
-						*((unsigned short*)(((unsigned char*)&luacon_sim->elements[id])+offset)) = luaL_checkinteger(l, 3);
-#endif
-						break;
-					case StructProperty::Removed:
-						break;
-				}
+				intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->elements[id]) + property.Offset);
+				LuaSetProperty(l, property, propertyAddress, 3);
 			}
 
 			luacon_model->BuildMenus();
@@ -4097,38 +4181,8 @@ int LuaScriptInterface::elements_property(lua_State * l)
 
 		if(propertyFound)
 		{
-			intptr_t offset = property.Offset;
-			switch(property.Type)
-			{
-				case StructProperty::ParticleType:
-				case StructProperty::Integer:
-					lua_pushinteger(l, *((int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::UInteger:
-					lua_pushinteger(l, *((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Float:
-					lua_pushnumber(l, *((float*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Char:
-					lua_pushinteger(l, *((char*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::UChar:
-					lua_pushinteger(l, *((unsigned char*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::String:
-					lua_pushstring(l, *((char**)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-					break;
-				case StructProperty::Colour:
-#if PIXELSIZE == 4
-					lua_pushinteger(l, *((unsigned int*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-#else
-					lua_pushinteger(l, *((unsigned short*)(((unsigned char*)&luacon_sim->elements[id])+offset)));
-#endif
-					break;
-				default:
-					lua_pushnil(l);
-			}
+			intptr_t propertyAddress = (intptr_t)(((unsigned char*)&luacon_sim->elements[id]) + property.Offset);
+			LuaGetProperty(l, property, propertyAddress);
 			return 1;
 		}
 		else if(propertyName == "Identifier")

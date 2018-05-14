@@ -39,7 +39,7 @@ float restrict_flt(float f, float min, float max) //TODO Inline or macro or some
 char *mystrdup(const char *s)
 {
 	char *x;
-	if (s)
+	if (s != NULL)
 	{
 		x = (char*)malloc(strlen(s)+1);
 		strcpy(x, s);
@@ -48,30 +48,70 @@ char *mystrdup(const char *s)
 	return NULL;
 }
 
-void strlist_add(struct strlist **list, char *str)
+char * strlist_add(struct strlist **list, const char *str)
 {
+	// 成功返回 true, 失败返回 false
 	struct strlist *item = (struct strlist*)malloc(sizeof(struct strlist));
-	item->str = mystrdup(str);
-	item->next = *list;
-	*list = item;
+	char* tmp_str = mystrdup(str);
+	if (tmp_str != NULL)
+	{
+		item->str = tmp_str;
+		item->next = *list;
+		*list = item;
+		return tmp_str;
+	}
+	free(item);
+	return NULL;
+}
+
+bool strlist_remove(struct strlist **list, char *str, bool release)
+{
+	// 成功返回 true, 失败返回 false
+	struct strlist *item, **p_item = list;
+	while (*p_item != NULL)
+	{
+		item = *p_item;
+		if (item->str == str)
+		{
+			struct strlist *item_next = item->next;
+			if (release)
+				free(item->str);
+			free(item);
+			*p_item = item_next;
+			return true;
+		}
+		p_item = &item->next;
+	}
+	return false;
 }
 
 int strlist_find(struct strlist **list, char *str)
 {
 	struct strlist *item;
-	for (item=*list; item; item=item->next)
+	for (item=*list; item != NULL; item=item->next)
 		if (!strcmp(item->str, str))
 			return 1;
 	return 0;
 }
 
-void strlist_free(struct strlist **list)
+struct strlist * strlist_find_ptr(struct strlist **list, const char *str)
 {
 	struct strlist *item;
-	while (*list)
+	for (item=*list; item != NULL; item=item->next)
+		if (item->str == str)
+			return item;
+	return NULL;
+}
+
+void strlist_free(struct strlist **list, bool release)
+{
+	struct strlist *item;
+	while (*list != NULL)
 	{
 		item = *list;
 		*list = (*list)->next;
+		if (release)
+			free(item->str);
 		free(item);
 	}
 }

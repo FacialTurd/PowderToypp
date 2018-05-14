@@ -42,14 +42,20 @@ struct strlist
 {
 	char *str;
 	struct strlist *next;
+//	void operator += (char*);
+//	void operator -= (char*);
 };
 
-void strlist_add(struct strlist **list, char *str);
+char * strlist_add(struct strlist **list, const char *str);
+
+bool strlist_remove(struct strlist **list, char *str, bool release = true);
 
 int strlist_find(struct strlist **list, char *str);
 
-void strlist_free(struct strlist **list);
+struct strlist * strlist_find_ptr(struct strlist **list, const char *str);
 
+void strlist_free(struct strlist **list, bool release = false);
+	
 void save_presets(int do_update);
 
 void load_presets(void);

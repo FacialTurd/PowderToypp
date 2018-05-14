@@ -866,6 +866,7 @@ __asm__ (
 	"leal 4(%esp), %ebp;"
 	"pushl %fs:0;"
 	"movl %esp, %fs:0;"
+	"pushl $0;"
 	"cld; call *8(%ebp);" // 函数调用之后 ebx, esi 和 edi 变成 "未占用" 状态.
 	"movl %fs:0, %esp;"
 	"push %ecx;"
@@ -887,17 +888,16 @@ __asm__ (
 	"movl %ecx, %edi;"
 	"movl " _CS_VAR_EHANDLER "(%edi), %ecx;"
 	"movl (%ecx), %ecx;"
-	"push %ecx;"
+	"movl %ecx, %ebx;"
 	"call *" _CS_VAR_GETFN "(%edi);"
 	"test %eax, %eax;"
-	"pop %ecx;"
 	"jz .Lcall_dll_excp.L7;"
 	"pop %edx;"
 	"push %eax;"
 	"xorl %eax, %eax;"
 	"decl %eax;"
-	"movl %eax, %ebx;"
-	"call *(%esp);"
+	"pushl $1;"
+	"call *4(%esp);"
 	".Lcall_dll_excp.L7:"
 	_ASM_FUNC_LEAVE_N("-12")
 	_ASM_POP_NONVOLATILE
@@ -937,6 +937,8 @@ __asm__ (
 
 void captureGPR_render0 (int32_t* GPR)
 {
+	static int _appcount = 0;
+	
 	class GPR_window: public ui::Window
 	{
 	public:
@@ -946,9 +948,12 @@ void captureGPR_render0 (int32_t* GPR)
 		ui::Window(ui::Point(-1, -1), ui::Point(330, 113)),
 		gprl(gprl_)
 		{
-			int i;
+			int i; int32_t *stacka;
+
 			for (i = 0; i < 10; i++)
 				gpra[i] = gprl[i];
+			stacka = gpra + i;
+
 			MakeActiveWindow();
 			int32_t *tmpstack = (int32_t*)gprl[5];
 			NT_TIB *teb = (NT_TIB*)NtCurrentTeb();
@@ -958,10 +963,13 @@ void captureGPR_render0 (int32_t* GPR)
 			{
 				i = 0;
 				for (; i < 20 && (uintptr_t)tmpstack < stackbase; i++)
-					gpra[i+10] = *tmpstack, tmpstack++;
+					stacka[i] = *tmpstack, tmpstack++;
 			}
 			for (; i < 20; i++)
-				gpra[i+10] = 0;
+				stacka[i] = 0;
+
+			_appcount++;
+			::LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_QUIT_SHORTCUT;
 		};
 		void OnDraw()
 		{
@@ -987,6 +995,9 @@ void captureGPR_render0 (int32_t* GPR)
 		};
 		void OnTryExit(ExitMethod method)
 		{
+			_appcount--;
+			if (!_appcount)
+				::LuaScriptInterface::_my_ext_args[0] &= ~ARG0_NO_QUIT_SHORTCUT;
 			CloseActiveWindow();
 			SelfDestruct();
 		}
@@ -1006,7 +1017,7 @@ void LuaScriptInterface::_dll_eh_proc0(void* args)
 	mov ecx, [ecx+8]
 	test ecx, ecx
 	jz  .L%=_l2
-	lea eax, .L%=_l1
+	mov eax, OFFSET .L%=_l1
 	lea ebx, [esp+4]
 	mov [ecx], eax
 	mov [ecx+4], ebx
@@ -1038,6 +1049,7 @@ void LuaScriptInterface::_dll_eh_proc0(void* args)
 	mov ebp, [ecx+8]
 .L%=_l2:
 	setz %b0
+	cld
 	{.att_syntax}
 	)*ASM*" : "=c"(_abrt) : "c"(args) : "eax", "ebx", "edx", "esi", "edi", "cc", "memory");
 	if (_abrt)
@@ -1116,22 +1128,27 @@ void LuaScriptInterface::simulation_debug_trigger::_main(int trigr_id, int i, in
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-intptr_t LuaScriptInterface::simulation_debug_trigger::dll_check(int i)
+FARPROC LuaScriptInterface::simulation_debug_trigger::dll_check(int i)
+{
+	return dll_check_ex(i, true);
+}
+
+FARPROC LuaScriptInterface::simulation_debug_trigger::dll_check_ex(int i, bool chk_undef)
 {
 	if (i >= 0 && i < MAX_DLL_FUNCTIONS)
 	{
-		intptr_t fn = (intptr_t)(LuaScriptInterface::dll_trigger_func[i]);
-		if (fn == (intptr_t)NULL) // && luacon_ci != NULL
-			fn = (intptr_t)(luacon_ci->simulation_dll_st.undef_func);
+		FARPROC fn = LuaScriptInterface::dll_trigger_func[i];
+		if ((fn == (FARPROC)NULL) && chk_undef) // && luacon_ci != NULL
+			fn = luacon_ci->simulation_dll_st.undef_func;
 		return fn;
 	}
-	return (intptr_t)NULL;
+	return (FARPROC)NULL;
 }
 
 void LuaScriptInterface::simulation_debug_trigger::dll_check_write(int i, FARPROC _proc)
 {
 	if (i >= 0 && i < MAX_DLL_FUNCTIONS)
-		(FARPROC&)(LuaScriptInterface::dll_trigger_func[i]) = _proc;
+		LuaScriptInterface::dll_trigger_func[i] = _proc;
 }
 
 __declspec(dllexport) CRITICAL_SECTION* LuaScriptInterface::simulation_debug_trigger::_lock0(CRITICAL_SECTION* _lock)
@@ -1191,28 +1208,26 @@ void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
 	}
 }
 
-int luatpt_call_debug_trigger(lua_State* l)
+int LuaScriptInterface::trigger_func_struct::_call (lua_State* L)
 {
-	int t = lua_tointeger(l, 1);
+	int t = lua_tointeger(L, 1);
 	if (t >= 0 && t < MAX_LUA_DEBUG_FUNCTIONS && luacon_ci->trigger_func[t].m)
 	{
 		lua_rawgeti (luacon_ci->l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[t].i);
-		lua_replace (l, 1);
-		int c = lua_gettop (l) - 1;
-		luacall_debug_tfunc(l, c);
+		lua_replace (L, 1);
+		int c = lua_gettop (L) - 1;
+		luacall_debug_tfunc(L, c);
 	}
 	return 0;
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-__declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int t, int v) // TPT common functions call
+__declspec(dllexport) __fastcall int luacon_sim_dllfunc(int ft, int i, int x, int y, int t, int v) // TPT common functions call
 {
-	static int ft;
-	__asm__ __volatile ("":"=a"(ft):);
 	switch (ft)
 	{
 		case 1: return luacon_sim->create_part(i, x, y, t, v);
-		case 2: luacon_sim->part_change_type(i, x, y, t); break;
+		case 2: return (int)luacon_sim->part_change_type(i, x, y, t); break;
 		case 3: luacon_sim->kill_part(i); break;
 		case 4: return luacon_sim->elements[i].Properties;
 		case 5: return luacon_sim->elements[i].Properties2;
@@ -1230,30 +1245,92 @@ __declspec(dllexport) __stdcall int luacon_sim_dllfunc(int i, int x, int y, int 
 }
 #endif
 
-int luatpt_debug_trigger_add(lua_State* l)
+signed char LuaScriptInterface::trigger_func_struct::_unlink ()
 {
-	int tid = luaL_checkinteger(l, 1);
+	trigger_func_struct *_FD, *_BK;
+	_FD = this->f_link;
+	_BK = this->b_link;
+
+	if (_FD->b_link != this || _BK->f_link != this)
+		return -1;
+
+	if (_FD == this)
+		return 1;
+
+	_FD->b_link = _BK;
+	_BK->f_link = _FD;
+	return 0;
+}
+
+int LuaScriptInterface::trigger_func_struct::_add (lua_State* L)
+{
+	int tid = luaL_checkinteger(L, 1), newi = -1, l_typ;
 	if (tid < 0 || tid >= MAX_LUA_DEBUG_FUNCTIONS) // fix overflow bug
 		return 0;
-	if (luacon_ci->trigger_func[tid].m)
-		luaL_unref(l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[tid].i);
-	if (lua_type(l, 2) == LUA_TFUNCTION)
+
+	l_typ = lua_type(L, 2);
+	trigger_func_struct *c_item, *c_ins = NULL;
+
+	if (l_typ == LUA_TNUMBER)
 	{
-		lua_pushvalue(l, 2);
-		int fn = luaL_ref(l, LUA_REGISTRYINDEX);
-		int n = 1;
-		luacon_ci->trigger_func[tid].i = fn;
-#ifdef TPT_NEED_DLL_PLUGIN
-		if (lua_gettop(l) >= 3)
+		newi = lua_tointeger(L, 2);
+		if (tid == newi)
+			return 0;
+		if (newi >= 0 && newi < MAX_LUA_DEBUG_FUNCTIONS)
 		{
-			int m = lua_tointeger(l, 3);
+			c_ins = &luacon_ci->trigger_func[newi];
+			if (!c_ins->m)
+				c_ins = NULL;
+		}
+	}
+
+	c_item = &luacon_ci->trigger_func[tid];
+
+	if (c_item->m)
+	{
+		int n = c_item->_unlink();
+		if (n < 0)
+			abort(); // abort if corrupted
+		else if (n > 0)
+			luaL_unref(L, LUA_REGISTRYINDEX, c_item->i);
+	}
+		
+	if (l_typ == LUA_TFUNCTION || c_ins != NULL)
+	{
+		int n = 1;
+
+		if (newi < 0)
+		{
+			lua_pushvalue(L, 2);
+			c_item->i = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
+		else
+			c_item->i = c_ins->i;
+
+#ifdef TPT_NEED_DLL_PLUGIN
+		if (lua_gettop(L) >= 3)
+		{
+			int m = lua_tointeger(L, 3);
 			(m >= 1) && (m <= 3) && (n = m);
 		}
 #endif
-		luacon_ci->trigger_func[tid].m = n;
+		c_item->m = n;
+		if (newi < 0)
+		{
+			c_item->f_link = c_item;
+			c_item->b_link = c_item;
+		}
+		else
+		{
+			trigger_func_struct *_FD = c_ins->f_link;
+			c_ins->f_link = c_item;
+			c_item->b_link = c_ins;
+			c_item->f_link = _FD;
+			_FD->b_link = c_item;
+		}
 	}
 	else
-		luacon_ci->trigger_func[tid].m = 0;
+		c_item->m = 0;
 	return 0;
 }
 

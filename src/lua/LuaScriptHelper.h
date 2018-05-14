@@ -49,9 +49,6 @@ int luatpt_graphics_func(lua_State *l);
 int luacon_elementReplacement(UPDATE_FUNC_ARGS);
 int luatpt_element_func(lua_State *l);
 
-int luatpt_debug_trigger_add(lua_State* l);
-int luatpt_call_debug_trigger(lua_State* l);
-
 #ifdef TPT_NEED_DLL_PLUGIN
 extern "C" {
 	__declspec(dllexport)

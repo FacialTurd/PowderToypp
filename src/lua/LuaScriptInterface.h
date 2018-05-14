@@ -39,6 +39,9 @@ class Tool;
 #include <windows.h>
 #define MAX_DLL_FUNCTIONS 256
 #define DLL_FUNCTIONS_ARGS Simulation*, int, int, int, void*
+#define __FASTCALL_DECL __fastcall __declspec(noinline)
+#else
+#define __FASTCALL_DECL
 #endif
 
 class TPTScriptInterface;
@@ -144,6 +147,20 @@ class LuaScriptInterface: public CommandInterface
 	static const char* simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p);
 	static int simulation_dll_index(lua_State * l);
 	static int simulation_dll_newindex(lua_State * l);
+	
+	static char __FASTCALL_DECL strlist_realloc(strlist *& sl1, const char* s2, const char* s3, strlist *& sl4)
+	{
+		strlist *sl5 = strlist_find_ptr(&sl1, s2);
+		if (sl5 == NULL)
+			return 1;
+		char *s6 = (char*)realloc(sl5->str, strlen(s3)+1);
+		if (s6 == NULL)
+			return 2;
+		strcpy(s6, s3);
+		sl5->str = s6;
+		sl4 = sl5;
+		return 0;
+	}
 
 	//Stickman attributes
 	void initStickmanAPI();
@@ -170,6 +187,8 @@ class LuaScriptInterface: public CommandInterface
 
 	//Elements
 	void initElementsAPI();
+	static void LuaGetProperty(lua_State* l, StructProperty property, intptr_t propertyAddress);
+	static void LuaSetProperty(lua_State* l, StructProperty property, intptr_t propertyAddress, int stackPos);
 	static int elements_allocate(lua_State * l);
 	static int elements_element(lua_State * l);
 	static int elements_property(lua_State * l);
@@ -229,6 +248,7 @@ class LuaScriptInterface: public CommandInterface
 public:
 	int tpt_index(lua_State *l);
 	int tpt_newIndex(lua_State *l);
+	static struct strlist * luacon_elem_strlist;
 
 	ui::Window * Window;
 	lua_State *l;
@@ -236,14 +256,12 @@ public:
 
 	class simulation_debug_trigger
 	{
+	public:
 #ifdef TPT_NEED_DLL_PLUGIN
-#define __FASTCALL_DECL __fastcall __declspec(noinline)
-		static intptr_t __FASTCALL_DECL dll_check(int);
+		static FARPROC __FASTCALL_DECL dll_check(int);
+		static FARPROC __FASTCALL_DECL dll_check_ex(int, bool);
 		static void __FASTCALL_DECL dll_check_write(int, FARPROC);
-	public:
 		static CRITICAL_SECTION* __FASTCALL_DECL _lock0(CRITICAL_SECTION*);
-#else
-	public:
 #endif
 		static void _main(int trigr_id, int i, int x, int y);
 	};
@@ -264,6 +282,10 @@ public:
 	virtual ~LuaScriptInterface();
 	struct trigger_func_struct {
 		int i; int m;
+		trigger_func_struct *f_link, *b_link;
+		signed char _unlink ();
+		static int _add (lua_State*);
+		static int _call (lua_State*);
 	} trigger_func [MAX_LUA_DEBUG_FUNCTIONS];
 #ifdef TPT_NEED_DLL_PLUGIN
 	struct {

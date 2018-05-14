@@ -554,7 +554,7 @@ std::map<std::string, std::string> readArguments(int argc, char * argv[])
 			char *remain_part = argv[i]+2;
 			if (!strncmp(remain_part, "no-dll-plugin", 14))
 			{
-				LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_DLL_PLUGIN;
+				LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_QUIT_SHORTCUT;
 			}
 			break;
 		}
@@ -666,10 +666,16 @@ void EventProcess(SDL_Event event)
 			engine->Exit();
 		break;
 	case SDL_KEYDOWN:
-		if (event.key.keysym.sym == 'q' && (event.key.keysym.mod&KMOD_CTRL))
-			engine->ConfirmExit();
-		else
-			engine->onKeyPress(event.key.keysym.sym, event.key.keysym.unicode, event.key.keysym.mod&KMOD_SHIFT, event.key.keysym.mod&KMOD_CTRL, event.key.keysym.mod&KMOD_ALT);
+		{
+			bool quit_cond = event.key.keysym.sym == 'q' && (event.key.keysym.mod&KMOD_CTRL);
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+			quit_cond = quit_cond && !(::LuaScriptInterface::_my_ext_args[0] & 0x2);
+#endif
+			if (quit_cond)
+				engine->ConfirmExit();
+			else
+				engine->onKeyPress(event.key.keysym.sym, event.key.keysym.unicode, event.key.keysym.mod&KMOD_SHIFT, event.key.keysym.mod&KMOD_CTRL, event.key.keysym.mod&KMOD_ALT);
+		}
 		break;
 	case SDL_KEYUP:
 		engine->onKeyRelease(event.key.keysym.sym, event.key.keysym.unicode, event.key.keysym.mod&KMOD_SHIFT, event.key.keysym.mod&KMOD_CTRL, event.key.keysym.mod&KMOD_ALT);

@@ -8,4 +8,5 @@
 extern uint8_t * mytxt_buffer1;
 extern int mytxt_buffer1_parts;
 
-#define ARG0_NO_DLL_PLUGIN 0x1
+#define ARG0_NO_DLL_PLUGIN		0x1
+#define ARG0_NO_QUIT_SHORTCUT	0x2
