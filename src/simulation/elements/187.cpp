@@ -63,7 +63,10 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, stmp, stmp2, rt;
 	int rndstore;
-	static int table1[8] = {-2,-1,-1,0,0,1,1,2};
+	static const signed char table1[64] = {
+		1,0,1,1,1,1,0,1,0,1,-1,1,-1,1,-1,0,-1,0,-1,-1,-1,-1,0,-1,0,-1,1,-1,1,-1,1,0,
+		2,0,2,1,2,2,1,2,0,2,-1,2,-2,2,-2,1,-2,0,-2,-1,-2,-2,-1,-2,0,-2,1,-2,2,-2,2,-1
+	};
 
 	stmp = parts[i].tmp;
 	if (!parts[i].life)
@@ -90,15 +93,47 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 		if (parts[i].temp < 160.0f)
 			parts[i].tmp |= PFLAG_SOLID_STATE;
 
+		int rnd1;
+		rndstore = rand();
+
 		for (int trade = 0; trade < 5; trade++) // mixing this with GLOW/ISOZ
 		{
-			if (!(trade%2)) rndstore = rand();
-			rx = table1[rndstore&7];
-			rndstore >>= 3;
-			ry = table1[rndstore&7];
-			rndstore >>= 3;
+			if (trade == 3)
+				rndstore = rand();
+
+#if defined(__GNUC__) && defined(X86)
+			// movsbl is AT&T syntax for movsx
+			// mov*** doesn't affect EFLAGS.
+			__asm__ __volatile__ (
+				"and{l} {%5, %4|%4, %5}\n\t"
+				"mov{w} {(%3,%2,2), %w0|%w0, DWORD PTR [%3+%2*2]}\n\t"
+				"movs{bl|x} {%h0, %k1|%k1, %h0}\n\t"
+				"movs{bl|x} {%b0, %k0|%k0, %b0}"
+				: "=Q"(rx), "=r"(ry), "=r"(rnd1)
+				: "r"(&table1), "2"(rndstore), "i"(31)
+				: "memory" // memory barrier
+			);
+#else
+			rnd1 = (rndstore & 0x1F);
+			rx = table1[2*rnd1];
+			ry = table1[2*rnd1+1];
+#endif
+			rndstore >>= 5;
+
+			if (!BOUNDS_CHECK)
+				continue;
 			r = pmap[y+ry][x+rx];
-			if (!(r && (rx || ry))) continue;
+			if (!r)
+				continue;
+
+			if ((rnd1 >= 0x10))
+			{
+				int rr = pmap[y+(ry>>1)][x+(rx>>1)];
+				int rrt = TYP(rr);
+				if (CHECK_EL_INSL(rrt) || rrt == PT_GLAS)
+					continue;
+			}
+
 			rt = TYP(r);
 			if (rt == PT_GLOW || rt == PT_ISOZ)
 			{

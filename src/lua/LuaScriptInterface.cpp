@@ -6,6 +6,7 @@
 #include <locale>
 #include <fstream>
 #include <stdexcept>
+// #include <thread>	// std::this_thread
 #include "Config.h"
 #include "Format.h"
 #include "LuaLuna.h"
@@ -105,7 +106,8 @@ int TptNewindexClosure(lua_State *l)
 }
 
 #ifdef TPT_NEED_DLL_PLUGIN
-int LuaScriptInterface::_my_ext_args[4] = {0,0,0,0};
+int LuaScriptInterface::_my_ext_args[4] = {0, 0, 0, 0};
+
 FARPROC LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS];
 #endif
 
@@ -138,6 +140,13 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	simulation_dll_st.lcount_p = 0;
 	simulation_dll_st.undef_func = (FARPROC)NULL;
 #endif
+
+/*
+	{
+		int a = ::std::this_thread::get_id();
+		__asm__ ("int3" : : "a"(a));
+	}
+*/
 
 	//New TPT API
 	l = luaL_newstate();
@@ -3093,7 +3102,7 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		struct MYCTX {
 			intptr_t Eip; intptr_t Esp; intptr_t Ebp;
 		};
-
+		
 		char *dll_alloc_str;
 
 		// <<<< DLL config start >>>>
@@ -3101,6 +3110,7 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		const char *dllcstr		= "dllcall";
 		const char *_loadstr	= "load";
 		const char *_undefstr	= "undef";
+		const char *_importstr	= "limport";
 		// <<<< DLL config end >>>>
 
 		const char *hexdigits	= "0123456789abcdef";
@@ -3109,9 +3119,14 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		// jmp_buf dll_alloc_jmp_buf;
 
 		{
-			size_t load_el[] = { strlen(_loadstr), strlen(_undefstr) };
+			size_t load_el[3];
+
+			load_el[0] = strlen(_loadstr);
+			load_el[1] = strlen(_undefstr);
+			load_el[2] = strlen(_importstr);
+			
 			size_t load_dll_sz = 2;
-			for (int i = 0; i < sizeof(load_el)/sizeof(int); i++)
+			for (int i = 0; i < sizeof(load_el)/sizeof(size_t); i++)
 			{
 				if (load_dll_sz < load_el[i])
 					load_dll_sz = load_el[i];
@@ -3131,9 +3146,13 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		if (rb)
 		{
 			char* dll_alloc_sfx = dll_alloc_str + strlen_dllcstr;
+			const char* _tmp;
 
 			strcpy(dll_alloc_sfx, _undefstr);
 			simulation_dll_st.undef_func = GetProcAddress(DLLFuncPack, dll_alloc_str);
+			strcpy(dll_alloc_sfx, _importstr);
+			_tmp = (const char*)GetProcAddress(DLLFuncPack, dll_alloc_str);
+			simulation_dll_st.ext_modules = _tmp ? simulation_dll_set_load_extmod(dlllibname, _tmp) : NULL;
 
 			for (int i = 0; i < MAX_DLL_FUNCTIONS; i++)
 			{
@@ -3239,9 +3258,20 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 						struct {
 							FARPROC res1;
 							int res2;
-							const void* res3[3];
-							CRITICAL_SECTION* res4;
-						} _args = {(FARPROC)dllfn, 4, DLLFuncPack, _ExeFile, dlllibname, dllcs_lock};
+							const void* res3[4];
+							void* res4[3];
+						} _args;
+
+						_args.res1 = (FARPROC)dllfn;
+						_args.res2 = 4;
+						_args.res3[0] = DLLFuncPack;
+						_args.res3[1] = _ExeFile;
+						_args.res3[2] = dlllibname;
+						_args.res3[3] = &_args.res4;
+						_args.res4[0] = dllcs_lock;
+						_args.res4[1] = &simulation_dll_st.undef_func;
+						_args.res4[2] = simulation_dll_st.ext_modules;
+
 						_my_seh->eh_proc(&_args);
 					}
 					_my_seh->eh_exit();
@@ -3255,6 +3285,14 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		rb = FreeLibrary((HMODULE)(simulation_dll_st.module));
 		if (rb)
 		{
+			if (simulation_dll_st.ext_modules != NULL)
+			{
+				HMODULE * loaded_libraries = (HMODULE *)simulation_dll_st.ext_modules;
+				int i;
+				for (i = 0; loaded_libraries[i] != NULL; i++)
+					FreeLibrary(loaded_libraries[i]);
+				free(simulation_dll_st.ext_modules);
+			}
 			simulation_dll_st.loaded = false;
 			simulation_dll_st.undef_func = (FARPROC)NULL;
 			std::fill(&dll_trigger_func[0], &dll_trigger_func[0]+MAX_DLL_FUNCTIONS, (FARPROC)NULL);
@@ -3262,6 +3300,71 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 	}
 	LeaveCriticalSection(dllcs_lock);
 	return rb;
+}
+
+void * LuaScriptInterface::simulation_dll_set_load_extmod(const char* _base, const char* _submods)
+{
+	size_t _base_slen = strlen(_base);
+	HMODULE * modules;
+	if (_base_slen > (MAX_PATH-3))
+		return (void *)NULL;
+	char * _base_fext = strrchr(_base, '.');
+	size_t _base_fnlen = (_base_fext == NULL) ? _base_slen : (_base_fext - _base);
+	size_t _max_fnlen = MAX_PATH;
+	char * modname1 = (char *)malloc(MAX_PATH);
+	if (modname1 == NULL)
+		return (void *)NULL;
+	memcpy(modname1, _base, _base_fnlen);
+	modname1[_base_fnlen] = '_';
+	do
+	{
+		int modules_cap = 8;
+		modules = (HMODULE *)malloc(modules_cap * sizeof(HMODULE));
+		if (modules == NULL)
+			break;
+		char * modname1_ex1 = modname1 + (_base_fnlen + 1);
+		int modules_len = 0;
+		for (;;)
+		{
+			size_t _submods_len = strlen(_submods);
+			if (!_submods_len)
+				break;
+			if (_submods_len + _base_slen <= (MAX_PATH-2))
+			{
+				memcpy(modname1_ex1, _submods, _submods_len);
+				if (_base_fext == NULL)
+					modname1_ex1[_submods_len] = '\0';
+				else
+					strcpy(modname1_ex1+_submods_len, _base_fext);
+				HMODULE newlib = LoadLibrary(modname1);
+				if (newlib != NULL)
+				{
+					modules[modules_len] = newlib;
+					modules_len++;
+					if ((modules_len + 2) > modules_cap)
+					{
+						HMODULE * modules_realloc = (HMODULE *)realloc(modules, (modules_len+2)*sizeof(HMODULE));
+						if (modules_realloc == NULL)
+							break;
+						modules = modules_realloc;
+					}
+				}
+			}
+			_submods += (_submods_len + 1);
+		}
+		if (!modules_len)
+		{
+			free(modules);
+			modules = NULL;
+		}
+		else
+		{
+			modules[modules_len] = NULL;
+		}
+	}
+	while(0);
+	free(modname1);
+	return modules;
 }
 #endif
 
@@ -3322,8 +3425,10 @@ int LuaScriptInterface::simulation_dll_index(lua_State * l)
 	switch (keyl[0])
 	{
 	case 'e':
+#ifdef TPT_NEED_DLL_PLUGIN
 		if (!strcmp(keyl+1, "rrfunc"))
 			return lua_pushinteger(l, luacon_ci->simulation_dll_st.ehandler), 1;
+#endif
 		break;
 	case 'l':
 #ifdef TPT_NEED_DLL_PLUGIN
@@ -3819,7 +3924,7 @@ void LuaScriptInterface::LuaSetProperty(lua_State* l, StructProperty property, i
 #endif
 				strlist *sl0;
 				const char * s1 = luaL_checkstring(l, stackPos);
-				char *&s2 = *((char**)propertyAddress);
+				const char * &s2 = *((const char**)propertyAddress);
 				char _state = strlist_realloc(luacon_elem_strlist, s2, s1, sl0);
 				
 				if (_state == 1)
@@ -3935,13 +4040,15 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 	EnterCriticalSection(cs0);
 #endif
 
+	char * _identif;
 	int newID = -1;
-	for(int i = PT_NUM-1; i >= 0; i--)
+
+	for (int i = PT_NUM-1; i >= 0; i--)
 	{
-		if(!luacon_sim->elements[i].Enabled)
+		if (!luacon_sim->elements[i].Enabled)
 		{
 			// probably causes memory leak
-			char * _identif = strlist_add(&luacon_elem_strlist, identifier.c_str());
+			_identif = strlist_add(&luacon_elem_strlist, identifier.c_str());
 			if (_identif == NULL)
 				break;
 			newID = i;
@@ -3960,7 +4067,7 @@ int LuaScriptInterface::elements_allocate(lua_State * l)
 	{	
 		lua_getglobal(l, "elements");
 		lua_pushinteger(l, newID);
-		lua_setfield(l, -2, identifier.c_str());
+		lua_setfield(l, -2, _identif);
 		lua_pop(l, 1);
 	}
 
@@ -4235,8 +4342,10 @@ int LuaScriptInterface::elements_free(lua_State * l)
 	
 	if(id < 0 || id >= PT_NUM || !luacon_sim->elements[id].Enabled)
 		return luaL_error(l, "Invalid element");
+	
+	const char *_identif = luacon_sim->elements[id].Identifier;
 
-	std::string identifier = luacon_sim->elements[id].Identifier;
+	std::string identifier = _identif;
 	if(identifier.length()>7 && identifier.substr(0, 7) == "DEFAULT")
 		return luaL_error(l, "Cannot free default elements");
 
@@ -4245,8 +4354,17 @@ int LuaScriptInterface::elements_free(lua_State * l)
 
 	lua_getglobal(l, "elements");
 	lua_pushnil(l);
-	lua_setfield(l, -2, identifier.c_str());
+	lua_setfield(l, -2, _identif);
 	lua_pop(l, 1);
+	
+#ifdef TPT_NEED_DLL_PLUGIN
+	CRITICAL_SECTION *cs0 = &(luacon_ci->simulation_dll_st.lock);
+	EnterCriticalSection(cs0);
+#endif
+	strlist_remove(&luacon_elem_strlist, (char*)_identif);
+#ifdef TPT_NEED_DLL_PLUGIN
+	LeaveCriticalSection(cs0);
+#endif
 
 	return 0;
 }

@@ -278,10 +278,10 @@ public:
 	int get_normal_interp(int pt, float x0, float y0, float dx, float dy, float *nx, float *ny);
 	void clear_sim();
 	void
-#if defined(WIN32) && !defined(WIN64)
+#if defined(_WIN32) && !defined(_WIN64) && defined(TPT_NEED_DLL_PLUGIN)
 	__fastcall
 #endif
-	check_neut(int*, char*, bool = true);
+	_check_neut_base0(int*, char*, bool = true);
 	Simulation();
 	~Simulation();
 

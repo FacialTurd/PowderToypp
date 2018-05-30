@@ -24,6 +24,13 @@
 #include "gui/interface/Keys.h"
 #include "simulation/Simulation.h"
 
+#include "simulation/simplugin.h"
+
+#if defined(TPT_NEED_DLL_PLUGIN)
+// #include <excpt.h>
+int LuaScriptInterface::simulation_debug_trigger::_quit_locked = 0;
+#endif
+
 #ifndef FFI
 int luacon_partread(lua_State* l)
 {
@@ -920,7 +927,9 @@ __asm__ (
 	"movl %esp, %ebx;"
 	"movl -4(%edi), %eax;"
 	"movl %eax, 32(%ebx);"
-	"push %ebx;"
+	"subl $4, %esp;"
+	"andl $-16, %esp;" // 用于对齐
+	"movl %ebx, (%esp);"
 	"call ._captureGPR_render0;"
 	"movl %ebx, %esp;"
 	"pop %eax;"
@@ -943,10 +952,12 @@ void captureGPR_render0 (int32_t* GPR)
 	{
 	public:
 		int32_t* gprl;
+		int & lock0;
 		int32_t gpra[30];
-		GPR_window(int32_t* gprl_):
+		GPR_window(int32_t* gprl_, int32_t & lock_):
 		ui::Window(ui::Point(-1, -1), ui::Point(330, 113)),
-		gprl(gprl_)
+		gprl(gprl_),
+		lock0(lock_)
 		{
 			int i; int32_t *stacka;
 
@@ -968,14 +979,14 @@ void captureGPR_render0 (int32_t* GPR)
 			for (; i < 20; i++)
 				stacka[i] = 0;
 
-			_appcount++;
-			::LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_QUIT_SHORTCUT;
+			lock0++;
 		};
 		void OnDraw()
 		{
 			Graphics * g = GetGraphics();
 			
 			int x = Position.X, y = Position.Y, i;
+			int32_t *stacka;
 
 			g->clearrect(x-2, y-2, Size.X+3, Size.Y+3);
 			g->drawrect(x, y, Size.X, Size.Y, 200, 200, 200, 255);
@@ -983,34 +994,34 @@ void captureGPR_render0 (int32_t* GPR)
 			char gprs[20];
 			for (i = 0; i < 10; i++)
 			{
-				sprintf(gprs, "%s=%08X", r[i], gpra[(int)i]);
+				sprintf(gprs, "%s=%08X", r[i], gpra[i]);
 				g->drawtext(x+8+80*(i%4), y+8+15*(i/4), gprs, 255, 255, 255, 255);
 			}
+			stacka = gpra + i;
 			g->drawtext(x+8, y+53, "Stack:", 255, 255, 255, 255);
 			for (i = 0; i < 20; i++)
 			{
-				sprintf(gprs, "%08X", gpra[i+10]);
+				sprintf(gprs, "%08X", stacka[i]);
 				g->drawtext(x+42+55*(i%5), y+53+15*(i/5), gprs, 255, 255, 255, 255);
 			}
 		};
 		void OnTryExit(ExitMethod method)
 		{
-			_appcount--;
-			if (!_appcount)
-				::LuaScriptInterface::_my_ext_args[0] &= ~ARG0_NO_QUIT_SHORTCUT;
+			lock0--;
 			CloseActiveWindow();
 			SelfDestruct();
 		}
 	};
 	
-	new GPR_window(GPR);
+	new GPR_window(GPR, ::LuaScriptInterface::simulation_debug_trigger::_quit_locked);
 }
 
 void LuaScriptInterface::_dll_eh_proc0(void* args)
 {
 	bool _abrt;
+	FARPROC _proc;
 	__asm__ __volatile__(R"*ASM*(
-	lea{l} {4(%1), %%esi|%%esi, [%1+4]}
+	lea{l} {4(%2), %%esi|%%esi, [%2+4]}
 	{.intel_syntax noprefix}
 	push DWORD PTR [esi]
 	mov ecx, fs:[0]
@@ -1051,9 +1062,15 @@ void LuaScriptInterface::_dll_eh_proc0(void* args)
 	setz %b0
 	cld
 	{.att_syntax}
-	)*ASM*" : "=c"(_abrt) : "c"(args) : "eax", "ebx", "edx", "esi", "edi", "cc", "memory");
+	)*ASM*" : "=c"(_abrt), "=a"(_proc) : "c"(args) : "ebx", "edx", "esi", "edi",
+#if defined(X86_SSE) || defined(X86_SSE2)
+	"xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", 
+#endif
+	"cc", "memory");
 	if (_abrt)
 		abort();
+	// if (_proc != NULL)
+	//	luacon_ci->simulation_dll_st.undef_func = _proc;
 }
 #endif
 

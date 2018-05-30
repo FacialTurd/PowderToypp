@@ -44,6 +44,8 @@ class Tool;
 #define __FASTCALL_DECL
 #endif
 
+// typedef const char* immute_str;
+	
 class TPTScriptInterface;
 class LuaScriptInterface: public CommandInterface
 {
@@ -143,12 +145,13 @@ class LuaScriptInterface: public CommandInterface
 	// DLL API in Simulation
 #ifdef TPT_NEED_DLL_PLUGIN
 	bool simulation_dll_set_loaded(bool);
+	void * simulation_dll_set_load_extmod(const char*, const char*);
 #endif
 	static const char* simulation_dll_index_subf0(lua_State * L, const char* s, const char* &p);
 	static int simulation_dll_index(lua_State * l);
 	static int simulation_dll_newindex(lua_State * l);
 	
-	static char __FASTCALL_DECL strlist_realloc(strlist *& sl1, const char* s2, const char* s3, strlist *& sl4)
+	static char __FASTCALL_DECL strlist_realloc(strlist *& sl1, const char* &s2, const char* s3, strlist *& sl4)
 	{
 		strlist *sl5 = strlist_find_ptr(&sl1, s2);
 		if (sl5 == NULL)
@@ -159,6 +162,7 @@ class LuaScriptInterface: public CommandInterface
 		strcpy(s6, s3);
 		sl5->str = s6;
 		sl4 = sl5;
+		s2 = s6;
 		return 0;
 	}
 
@@ -262,6 +266,7 @@ public:
 		static FARPROC __FASTCALL_DECL dll_check_ex(int, bool);
 		static void __FASTCALL_DECL dll_check_write(int, FARPROC);
 		static CRITICAL_SECTION* __FASTCALL_DECL _lock0(CRITICAL_SECTION*);
+		static int _quit_locked;
 #endif
 		static void _main(int trigr_id, int i, int x, int y);
 	};
@@ -295,6 +300,7 @@ public:
 		int lcount_p;
 		int loaded;
 		void* module;
+		void* ext_modules;
 		FARPROC undef_func;
 	} simulation_dll_st;
 	static int _my_ext_args[4];

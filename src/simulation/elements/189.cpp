@@ -487,7 +487,7 @@ void Element_MULTIPP::interactDir(Simulation* sim, int i, int x, int y, int ri, 
 				part_phot->ctype = PMAP(1, 4);
 				sim->part_change_type(i, x, y, PT_E195);
 				break;
-			case 26:
+			case 26: // QRTZ-like scatter
 				{
 					float rr = part_other->ctype / 256.0f;
 					float ra = rand() * (2.0f * M_PI) / (RAND_MAX + 1.0f);

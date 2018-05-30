@@ -875,13 +875,14 @@ void Renderer::DrawWalls()
 					}
 					else if (wt == WL_WALLELEC)
 					{
+						pixel _bg = (findingElement ? PIXPACK(0x0C0C0C) : PIXPACK(0x808080));
 						for (int j = 0; j < CELL; j++)
 							for (int i = 0; i < CELL; i++)
 							{
 								if (!((y*CELL+j)%2) && !((x*CELL+i)%2))
 									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = pc;
 								else
-									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = PIXPACK(0x808080);
+									vid[(y*CELL+j)*(VIDXRES)+(x*CELL+i)] = _bg;
 							}
 					}
 					else if (wt == WL_EHOLE)
