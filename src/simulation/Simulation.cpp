@@ -4450,6 +4450,12 @@ void Simulation::UpdateParticles(int start, int end)
 							else
 								t = PT_LAVA;
 						}
+#if 0
+						else if (t == PT_ISZS)
+						{
+							t = ((parts[i].life == 1) ? PT_E187 : PT_ISOZ);
+						}
+#endif
 						else
 							s = 0;
 					}
@@ -5123,7 +5129,7 @@ killed:
 			}
 			else
 			{
-				if (water_equal_test && elements[t].Falldown == 2 && 1>= rand()%400)//checking stagnant is cool, but then it doesn't update when you change it later.
+				if (water_equal_test && elements[t].Falldown == 2 && 1 >= (rand()%400)) //checking stagnant is cool, but then it doesn't update when you change it later.
 				{
 					if (!flood_water(x,y,i,y, parts[i].flags&FLAG_WATEREQUAL))
 						goto movedone;
@@ -5190,21 +5196,24 @@ killed:
 
 							for (j=clear_x+r; j>=0 && j>=clear_x-rt && j<clear_x+rt && j<XRES; j+=r)
 							{
-								if ((TYP(pmap[fin_y][j])!=t || bmap[fin_y/CELL][j/CELL])
+								int fin_r = pmap[fin_y][j];
+								if ((TYP(fin_r) != t || bmap[fin_y/CELL][j/CELL])
 									&& (s=do_move(i, x, y, (float)j, fin_yf)))
 								{
 									nx = (int)(parts[i].x+0.5f);
 									ny = (int)(parts[i].y+0.5f);
 									break;
 								}
-								if (fin_y!=clear_y && (TYP(pmap[clear_y][j])!=t || bmap[clear_y/CELL][j/CELL])
+								int clear_r = pmap[clear_y][j];
+								if (fin_y!=clear_y && (TYP(clear_r)!=t || bmap[clear_y/CELL][j/CELL])
 									&& (s=do_move(i, x, y, (float)j, clear_yf)))
 								{
 									nx = (int)(parts[i].x+0.5f);
 									ny = (int)(parts[i].y+0.5f);
 									break;
 								}
-								if (TYP(pmap[clear_y][j])!=t || (bmap[clear_y/CELL][j/CELL] && bmap[clear_y/CELL][j/CELL]!=WL_STREAM))
+								if (TYP(clear_r)!=t || (bmap[clear_y/CELL][j/CELL] && bmap[clear_y/CELL][j/CELL]!=WL_STREAM) ||
+									(t == PT_E187 && (partsi(clear_r).tmp & 4)))
 									break;
 							}
 							if (parts[i].vy>0)
@@ -5214,7 +5223,10 @@ killed:
 							if (s==1)
 								for (j=ny+r; j>=0 && j<YRES && j>=ny-rt && j<ny+rt; j+=r)
 								{
-									if ((TYP(pmap[j][nx])!=t || bmap[j/CELL][nx/CELL]) && do_move(i, nx, ny, (float)nx, (float)j))
+									int nr = pmap[j][nx];
+									if ((TYP(nr)!=t || bmap[j/CELL][nx/CELL]) && do_move(i, nx, ny, (float)nx, (float)j))
+										break;
+									else if (t == PT_E187 && (partsi(nr).tmp & 4))
 										break;
 									if (TYP(pmap[j][nx])!=t || (bmap[j/CELL][nx/CELL] && bmap[j/CELL][nx/CELL]!=WL_STREAM))
 										break;
@@ -5289,9 +5301,10 @@ killed:
 								// Check whether movement is allowed
 								nx = (int)(nxf+0.5f);
 								ny = (int)(nyf+0.5f);
-								if (nx<0 || ny<0 || nx>=XRES || ny >=YRES)
+								if (nx < 0 || ny < 0 || nx >= XRES || ny >= YRES)
 									break;
-								if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL])
+								int nr = pmap[ny][nx];
+								if (TYP(nr) != t || bmap[ny/CELL][nx/CELL])
 								{
 									s = do_move(i, x, y, nxf, nyf);
 									if (s)
@@ -5305,6 +5318,8 @@ killed:
 									if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 										break;
 								}
+								else if (t == PT_E187 && (partsi(nr).tmp & 4))
+									break;
 							}
 							if (s==1)
 							{
@@ -5348,13 +5363,16 @@ killed:
 									ny = (int)(nyf+0.5f);
 									if (nx<0 || ny<0 || nx>=XRES || ny>=YRES)
 										break;
+									int nr = pmap[ny][nx];
 									// If the space is anything except the same element (a wall, empty space, or occupied by a particle of a different element), try to move into it
-									if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL])
+									if (TYP(nr) != t || bmap[ny/CELL][nx/CELL])
 									{
 										s = do_move(i, clear_x, clear_y, nxf, nyf);
 										if (s || TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 											break; // found the edge of the liquid and movement into it succeeded, so stop moving down
 									}
+									else if (t == PT_E187 && (partsi(nr).tmp & 4))
+										break;
 								}
 							}
 							else if (s==-1) {} // particle is out of bounds

@@ -129,6 +129,8 @@ void Air::update_airh(void)
 
 void Air::update_air(void)
 {
+	// Problem: unoptimized code cause laggy.
+
 	int x = 0, y = 0, i = 0, j = 0;
 	float dp = 0.0f, dx = 0.0f, dy = 0.0f, f = 0.0f, tx = 0.0f, ty = 0.0f;
 	const float advDistanceMult = 0.7f;

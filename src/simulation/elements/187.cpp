@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+#include <stdint.h>
 //#TPT-Directive ElementClass Element_E187 PT_E187 187
 Element_E187::Element_E187()
 {
@@ -58,6 +59,21 @@ Element_E187::Element_E187()
 #define PFLAG_DILUTED_BITS		4
 #define PFLAG_DILUTED_LEVELS	((1<<(PFLAG_DILUTED_BITS))-1)
 
+#define PFLAG_COLLIDED			0x10
+
+//#TPT-Directive ElementHeader Element_E187 static unsigned int my_random()
+unsigned int Element_E187::my_random()
+{
+	static uint32_t state[2] = {1, 0};
+	uint32_t x = state[0];
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	state[0] = x;
+	state[1]++;
+	return x ^ state[1];
+}
+
 //#TPT-Directive ElementHeader Element_E187 static int update(UPDATE_FUNC_ARGS)
 int Element_E187::update(UPDATE_FUNC_ARGS)
 {
@@ -67,7 +83,9 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 		1,0,1,1,1,1,0,1,0,1,-1,1,-1,1,-1,0,-1,0,-1,-1,-1,-1,0,-1,0,-1,1,-1,1,-1,1,0,
 		2,0,2,1,2,2,1,2,0,2,-1,2,-2,2,-2,1,-2,0,-2,-1,-2,-2,-1,-2,0,-2,1,-2,2,-2,2,-1
 	};
-
+	
+	// parts[i].flags &= ~PFLAG_COLLIDED;
+	
 	stmp = parts[i].tmp;
 	if (!parts[i].life)
 	{
@@ -94,13 +112,10 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 			parts[i].tmp |= PFLAG_SOLID_STATE;
 
 		int rnd1;
-		rndstore = rand();
+		rndstore = my_random();
 
 		for (int trade = 0; trade < 5; trade++) // mixing this with GLOW/ISOZ
 		{
-			if (trade == 3)
-				rndstore = rand();
-
 #if defined(__GNUC__) && defined(X86)
 			// movsbl is AT&T syntax for movsx
 			// mov*** doesn't affect EFLAGS.
@@ -111,7 +126,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 				"movs{bl|x} {%b0, %k0|%k0, %b0}"
 				: "=Q"(rx), "=r"(ry), "=r"(rnd1)
 				: "r"(&table1), "2"(rndstore), "i"(31)
-				: "memory" // memory barrier
+				: "cc", "memory" // memory barrier
 			);
 #else
 			rnd1 = (rndstore & 0x1F);
@@ -140,10 +155,11 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 				int diluted_level = (parts[i].tmp >> PFLAG_DILUTED_SHIFT) & PFLAG_DILUTED_LEVELS;
 				if (rt == PT_ISOZ && (diluted_level < PFLAG_DILUTED_LEVELS) && !parts[i].life)
 				{
+					unsigned int z = my_random();
 					parts[i].tmp += 1 << PFLAG_DILUTED_SHIFT;
-					parts[i].life = 20 + (rand() % 50);
+					parts[i].life = 20 + (z % 50);
 					partsi(r).tmp = parts[i].tmp | PFLAG_EMITTED;
-					partsi(r).life = 20 + (rand() % 50);
+					partsi(r).life = 20 + ((z >> 16) % 50);
 					sim->part_change_type(part_ID(r), x+rx, y+ry, parts[i].type);
 					continue;
 				}
@@ -157,9 +173,12 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 			}
 			else if (rt == parts[i].type)
 			{
-				int swaptmp = parts[i].tmp;
-				parts[i].tmp = partsi(r).tmp;
-				partsi(r).tmp = swaptmp;
+				int swaptmp = partsi(r).tmp;
+				if (!(swaptmp & PFLAG_SOLID_STATE))
+				{
+					partsi(r).tmp = parts[i].tmp;
+					parts[i].tmp = swaptmp;
+				}
 				continue;
 			}
 		}

@@ -581,7 +581,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									if (sim->InBounds(nx, ny))
 									{
 										rr = pmap[ny][nx];
-										if (TYP(rr) == PT_RAYT)
+										if (TYP(rr) == PT_LDTC)
 										{
 											nx -= rx, ny -= ry;
 											if (sim->InBounds(nx, ny))

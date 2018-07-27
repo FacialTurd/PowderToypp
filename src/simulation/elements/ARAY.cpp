@@ -843,7 +843,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								// this if prevents BRAY from stopping on certain materials
 								}
 								else if (rt != PT_INWR && (rt != PT_SPRK || parts[r].ctype != PT_INWR) && rt != PT_ARAY && rt != PT_WIFI &&
-									!(rt == PT_SWCH && parts[r].life >= 10) && !(rt == PT_RAYT && (parts[r].tmp2 & 0x10)))
+									!(rt == PT_SWCH && parts[r].life >= 10) && !(rt == PT_LDTC && (parts[r].tmp2 & 0x10)))
 								{
 									if (!tmpz)
 										sim->create_part(-1, x+nxx, y+nyy, PT_SPRK);
@@ -868,7 +868,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 								//this if prevents red BRAY from stopping on certain materials
 								}
 								else if (rt==PT_STOR || rt==PT_INWR || (rt==PT_SPRK && parts[r].ctype==PT_INWR) || rt==PT_ARAY || rt==PT_WIFI || rt==PT_FILT ||
-									(rt == PT_SWCH && parts[r].life >= 10) || (rt == PT_RAYT && (parts[r].tmp2 & 0x10)))
+									(rt == PT_SWCH && parts[r].life >= 10) || (rt == PT_LDTC && (parts[r].tmp2 & 0x10)))
 								{
 									if (rt == PT_STOR)
 									{

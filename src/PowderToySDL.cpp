@@ -556,7 +556,24 @@ std::map<std::string, std::string> readArguments(int argc, char * argv[])
 			{
 				LuaScriptInterface::_my_ext_args[0] |= ARG0_NO_DLL_PLUGIN;
 			}
-			break;
+			else if (!strncmp(remain_part, "enable-dep:", 11))
+			{
+				char cpLevel = remain_part[11];
+				if ((cpLevel == '1' || cpLevel == '2') && remain_part[12] == '\0')
+				{
+					HMODULE hNtdll = GetModuleHandle("ntdll.dll");
+					if (hNtdll != NULL)
+					{
+						// typedef int NTSTATUS
+						// NtSetInformationProcess is undocumented API.
+						int _dep_protect = 1 | ((cpLevel == '1') ? 0 : 0x8);
+						int __stdcall (*fSetInformationProcess)(HANDLE,int,PVOID,ULONG) = (int __stdcall (*)(HANDLE,int,PVOID,ULONG)) GetProcAddress(hNtdll, "NtSetInformationProcess");
+						if (fSetInformationProcess != NULL)
+							fSetInformationProcess(GetCurrentProcess(), 0x22, &_dep_protect, 4);
+					}
+				}
+			}
+			continue;
 		}
 #else
 		if (false) {}

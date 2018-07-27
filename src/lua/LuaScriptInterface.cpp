@@ -112,7 +112,9 @@ FARPROC LuaScriptInterface::dll_trigger_func[MAX_DLL_FUNCTIONS];
 #endif
 
 struct strlist * LuaScriptInterface::luacon_elem_strlist = NULL;
-	
+
+int (*_myResetStackOverflow)(void) = NULL;
+
 LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	CommandInterface(c, m),
 	luacon_mousex(0),
@@ -133,20 +135,29 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	luacon_ren = m->GetRenderer();
 	luacon_ci = this;
 #ifdef TPT_NEED_DLL_PLUGIN
+#if (_WIN32_WINNT >= 0x0403)
+	// InitializeCriticalSectionAndSpinCount: always returns a nonzero value.
+	InitializeCriticalSectionAndSpinCount(&simulation_dll_st.lock, 0);
+#else
 	InitializeCriticalSection(&simulation_dll_st.lock);
+#endif
 	simulation_dll_st.ehandler = -1;
 	simulation_dll_st.loaded = false;
 	simulation_dll_st.lcount = 0;
 	simulation_dll_st.lcount_p = 0;
 	simulation_dll_st.undef_func = (FARPROC)NULL;
-#endif
 
-/*
+	if (_myResetStackOverflow == NULL)
 	{
-		int a = ::std::this_thread::get_id();
-		__asm__ ("int3" : : "a"(a));
+		const char * lpMsvcrtDllName = "msvcrt.dll";
+		HMODULE hMsvcrt = ::LoadLibrary(lpMsvcrtDllName);
+		if (hMsvcrt != NULL)
+		{
+			_myResetStackOverflow = (int (*)(void)) ::GetProcAddress(hMsvcrt, "_resetstkoflw");
+		}
+		// else if (::GetLastError())
 	}
-*/
+#endif
 
 	//New TPT API
 	l = luaL_newstate();
@@ -3208,6 +3219,10 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 							((PVOID)p < teb->StackBase) &&
 							((PVOID)p >= teb->StackLimit));
 					}
+					static __declspec(noinline) bool my_abort (uintptr_t p)
+					{
+						__asm__ __volatile__ ("call %0; int3" :: "m"(abort)); 
+					}
 					static int eh_func0 (EXCEPTION_RECORD * er, void * ef, CONTEXT * cr, void * dc)
 					{
 						int ret_value = 2; // ExceptionNestedException
@@ -3220,7 +3235,7 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 							~((uintptr_t)frame_st->next_eh)))
 							abort();
 
-						_nest_seh.eh_enter((FARPROC)abort);
+						_nest_seh.eh_enter((FARPROC)my_abort);
 						_nest_seh.ctx = &_rec;
 						// if (!setjmp(_rec))
 						{
@@ -3229,17 +3244,34 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 							if (!in_stack_and_aligned((uintptr_t)_ctx->Esp))
 								abort(); // not in stack or misaligned
 
-							cr->Eip = _ctx->Eip;
+							if (er->ExceptionCode == 0xC00000FD 
+								&& _myResetStackOverflow)
+							{
+								__asm__ __volatile__ (
+									"call .L%=_restore	\n"
+									"call *%%eax		\n"
+									"jmp *%%ebx			\n"
+									".L%=_restore:		\n"
+									"pop%z0 %0"
+									: "=m"(cr->Eip)
+								);
+								cr->Eax = (DWORD)_myResetStackOverflow;
+								cr->Ebx = _ctx->Eip;
+							}
+							else
+							{
+								cr->Eip = _ctx->Eip;
+								cr->Eax = 0;
+								cr->Ebx = 0;
+							}
 							cr->Esp = _ctx->Esp;
 							cr->Ebp = _ctx->Ebp;
 							cr->EFlags = 0x202; // eflags.IF enable
-							cr->Eax = 0;
-							cr->Ebx = 0;
 							cr->Ecx = 0;
 							cr->Edx = 0;
 							cr->Esi = 0;
 							cr->Edi = 0;
-							er->ExceptionFlags &= ~0x01;
+							DWORD old_flags = __sync_fetch_and_and(&er->ExceptionFlags, ~0x01);
 							ret_value = 0; // ExceptionContinueExecution
 						}
 
@@ -3287,10 +3319,14 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 		{
 			if (simulation_dll_st.ext_modules != NULL)
 			{
-				HMODULE * loaded_libraries = (HMODULE *)simulation_dll_st.ext_modules;
+				struct HMODULE_ITEM {
+					HMODULE module;
+					int module_id;
+				};
+				HMODULE_ITEM * loaded_libraries = (HMODULE_ITEM *)simulation_dll_st.ext_modules;
 				int i;
-				for (i = 0; loaded_libraries[i] != NULL; i++)
-					FreeLibrary(loaded_libraries[i]);
+				for (i = 0; loaded_libraries[i].module != NULL; i++)
+					FreeLibrary(loaded_libraries[i].module);
 				free(simulation_dll_st.ext_modules);
 			}
 			simulation_dll_st.loaded = false;
@@ -3305,7 +3341,10 @@ bool LuaScriptInterface::simulation_dll_set_loaded(bool b)
 void * LuaScriptInterface::simulation_dll_set_load_extmod(const char* _base, const char* _submods)
 {
 	size_t _base_slen = strlen(_base);
-	HMODULE * modules;
+	struct HMODULE_ITEM {
+		HMODULE module;
+		int module_id;
+	} * modules;
 	if (_base_slen > (MAX_PATH-3))
 		return (void *)NULL;
 	char * _base_fext = strrchr(_base, '.');
@@ -3318,13 +3357,13 @@ void * LuaScriptInterface::simulation_dll_set_load_extmod(const char* _base, con
 	modname1[_base_fnlen] = '_';
 	do
 	{
-		int modules_cap = 8;
-		modules = (HMODULE *)malloc(modules_cap * sizeof(HMODULE));
+		int modules_cap = 8, i = 0;
+		modules = (HMODULE_ITEM *)malloc(modules_cap * sizeof(HMODULE_ITEM));
 		if (modules == NULL)
 			break;
 		char * modname1_ex1 = modname1 + (_base_fnlen + 1);
 		int modules_len = 0;
-		for (;;)
+		for (;; i++)
 		{
 			size_t _submods_len = strlen(_submods);
 			if (!_submods_len)
@@ -3339,11 +3378,12 @@ void * LuaScriptInterface::simulation_dll_set_load_extmod(const char* _base, con
 				HMODULE newlib = LoadLibrary(modname1);
 				if (newlib != NULL)
 				{
-					modules[modules_len] = newlib;
+					modules[modules_len].module = newlib;
+					modules[modules_len].module_id = i;
 					modules_len++;
 					if ((modules_len + 2) > modules_cap)
 					{
-						HMODULE * modules_realloc = (HMODULE *)realloc(modules, (modules_len+2)*sizeof(HMODULE));
+						HMODULE_ITEM * modules_realloc = (HMODULE_ITEM *)realloc(modules, (modules_len+2)*sizeof(HMODULE_ITEM));
 						if (modules_realloc == NULL)
 							break;
 						modules = modules_realloc;
@@ -3359,7 +3399,8 @@ void * LuaScriptInterface::simulation_dll_set_load_extmod(const char* _base, con
 		}
 		else
 		{
-			modules[modules_len] = NULL;
+			modules[modules_len].module = NULL;
+			// modules[modules_len].module_id is undefined
 		}
 	}
 	while(0);
