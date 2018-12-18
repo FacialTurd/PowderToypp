@@ -14,6 +14,7 @@
 #include "GOLMenu.h"
 #include "MenuSection.h"
 #include "elements/Element.h"
+#include "sim-move-struct.h"
 
 #define CHANNELS ((int)(MAX_TEMP-73)/100+2)
 
@@ -177,7 +178,8 @@ public:
 	void photoelectric_effect(int nx, int ny);
 	unsigned direction_to_map(float dx, float dy, int t);
 	int do_move(int i, int x, int y, float nxf, float nyf);
-	int try_move(int i, int x, int y, int nx, int ny);
+	int do_move(Simulation_move & mov);
+	int try_move(Simulation_move & mov);
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
 	void init_can_move();
 	bool IsWallBlocking(int x, int y, int type);

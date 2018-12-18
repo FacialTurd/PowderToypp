@@ -5,6 +5,7 @@
 #else
 #include <strings.h>
 #endif
+
 #include "Air.h"
 #include "Config.h"
 #include "CoordStack.h"
@@ -554,6 +555,7 @@ void Simulation::Restore(const Snapshot & snap)
 	std::copy(snap.Particles.begin(), snap.Particles.end(), parts);
 	parts_lastActiveIndex = NPART-1;
 	RecalcFreeParticles(false);
+
 	std::copy(snap.PortalParticles.begin(), snap.PortalParticles.end(), &portalp[0][0][0]);
 	std::copy(snap.WirelessData.begin(), snap.WirelessData.end(), &wireless[0][0]);
 	std::copy(snap.Wireless2Data.begin(), snap.Wireless2Data.end(), &wireless2[0][0]);
@@ -2472,7 +2474,7 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 	if (TYP(r) == PT_PINVIS && partsi(r).tmp4)
 		r = partsi(r).tmp4;
 
-	if (rr)
+	if (rr != NULL)
 		*rr = r;
 	if (pt>=PT_NUM || TYP(r)>=PT_NUM)
 		return 0;
@@ -2629,17 +2631,15 @@ int Simulation::eval_move(int pt, int nx, int ny, unsigned *rr)
 	return result;
 }
 
-int Simulation::try_move(int i, int x, int y, int nx, int ny)
+int Simulation::try_move(Simulation_move & mov)
 {
-	unsigned r, e;
-	int rr;
+	unsigned e = mov.e, r = mov.r;
+	int i = mov.i, x = mov.x, y = mov.y, nx = mov.nx, ny = mov.ny, rr;
 
 	if (x==nx && y==ny)
 		return 1;
 	if (nx<0 || ny<0 || nx>=XRES || ny>=YRES)
 		return 1;
-
-	e = eval_move(parts[i].type, nx, ny, &r);
 
 	/* half-silvered mirror */
 	if (!e && parts[i].type==PT_PHOT &&
@@ -3004,36 +3004,26 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 }
 
 // try to move particle, and if successful update pmap and parts[i].x,y
-int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
+int Simulation::do_move(Simulation_move & mov)
 {
-	int nx = (int)(nxf+0.5f), ny = (int)(nyf+0.5f), result;
 	if (edgeMode == 2)
 	{
-		bool x_ok = (nx >= CELL && nx < XRES-CELL);
-		bool y_ok = (ny >= CELL && ny < YRES-CELL);
+		bool x_ok = (mov.nx >= CELL && mov.nx < XRES-CELL);
+		bool y_ok = (mov.ny >= CELL && mov.ny < YRES-CELL);
 		if (!x_ok)
-			nxf = remainder_p(nxf-CELL+.5f, XRES-CELL*2.0f)+CELL-.5f;
+			mov.nxf = remainder_p(mov.nxf-CELL+.5f, XRES-CELL*2.0f)+CELL-.5f;
 		if (!y_ok)
-			nyf = remainder_p(nyf-CELL+.5f, YRES-CELL*2.0f)+CELL-.5f;
-		nx = (int)(nxf+0.5f);
-		ny = (int)(nyf+0.5f);
-
-		/*if (!x_ok || !y_ok)
-		{
-			//make sure there isn't something blocking it on the other side
-			//only needed if this if statement is moved after the try_move (like my mod)
-			//if (!eval_move(t, nx, ny, NULL) || (t == PT_PHOT && pmap[ny][nx]))
-			//	return -1;
-		}*/
+			mov.nyf = remainder_p(mov.nyf-CELL+.5f, YRES-CELL*2.0f)+CELL-.5f;
+		mov.nx = (int)(mov.nxf+0.5f);
+		mov.ny = (int)(mov.nyf+0.5f);
 	}
-	if (parts[i].type == PT_NONE)
-		return 0;
-	result = try_move(i, x, y, nx, ny);
+	int result = try_move(mov);
 	if (result)
 	{
+		int i = mov.i, x = mov.x, y = mov.y, nx = mov.nx, ny = mov.ny;
 		int t = parts[i].type;
-		parts[i].x = nxf;
-		parts[i].y = nyf;
+		parts[i].x = mov.nxf;
+		parts[i].y = mov.nyf;
 		if (ny!=y || nx!=x)
 		{
 			pmap_remove (i, x, y);
@@ -3051,6 +3041,26 @@ int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
 		}
 	}
 	return result;
+}
+
+// try to move particle, and if successful update pmap and parts[i].x,y
+int Simulation::do_move(int i, int x, int y, float nxf, float nyf)
+{
+	Simulation_move mov;
+	mov.i = i;
+	mov.x = x;
+	mov.y = y;
+	mov.nx = (int)(nxf+0.5f);
+	mov.ny = (int)(nyf+0.5f);
+	mov.nxf = nxf+0.5f;
+	mov.nyf = nyf+0.5f;
+	
+	int pt = parts[i].type;
+	if (pt == PT_NONE)
+		return 0;
+
+	mov.e = eval_move(pt, mov.nx, mov.ny, &mov.r);
+	return do_move(mov);
 }
 
 void Simulation::photoelectric_effect(int nx, int ny)//create sparks from PHOT when hitting PSCN and NSCN
@@ -4966,6 +4976,8 @@ killed:
 			}
 			else if (elements[t].Properties & TYPE_ENERGY)
 			{
+				Simulation_move mov;
+				
 				if (t == PT_PHOT)
 				{
 					if (parts[i].flags&FLAG_SKIPMOVE)
@@ -4974,9 +4986,9 @@ killed:
 						continue;
 					}
 
-					if (eval_move(PT_PHOT, fin_x, fin_y, NULL))
+					if (mov.e = eval_move(PT_PHOT, fin_x, fin_y, &mov.r))
 					{
-						int rt = TYP(pmap[fin_y][fin_x]);
+						int rt = TYP(mov.r);
 						int lt = TYP(pmap[y][x]);
 						int rt_glas = (rt == PT_GLAS) || (rt == PT_BGLA);
 						int lt_glas = (lt == PT_GLAS) || (lt == PT_BGLA);
@@ -5016,18 +5028,36 @@ killed:
 								parts[i].vx = nn*parts[i].vx + ct2*nrx;
 								parts[i].vy = nn*parts[i].vy + ct2*nry;
 							}
+							goto re_eval_phot;
 						}
 					}
 				}
+				else
+				{
+				re_eval_phot:
+					mov.e = eval_move(parts[i].type, fin_x, fin_y, &mov.r);
+				}
+
+				mov.i = i;
+				mov.x = x;
+				mov.y = y;
+				mov.nx = fin_x;
+				mov.ny = fin_y;
+				mov.nxf = fin_xf;
+				mov.nyf = fin_yf;
+
 				if (stagnant)//FLAG_STAGNANT set, was reflected on previous frame
 				{
 					// cast coords as int then back to float for compatibility with existing saves
-					if (!do_move(i, x, y, (float)fin_x, (float)fin_y) && parts[i].type) {
+					mov.nxf = (float)fin_x;
+					mov.nyf = (float)fin_y;
+
+					if (!do_move(mov) && parts[i].type) {
 						kill_part(i);
 						continue;
 					}
 				}
-				else if (!do_move(i, x, y, fin_xf, fin_yf))
+				else if (!do_move(mov))
 				{
 					if (parts[i].type == PT_NONE)
 						continue;
@@ -5040,23 +5070,24 @@ killed:
 					}
 					r = pmap[fin_y][fin_x];
 					int rt = TYP(r);
+					int ri = ID(r);
 
-					if ((rt==PT_PIPE || rt == PT_PPIP) && !TYP(partsi(r).ctype))
+					if ((rt==PT_PIPE || rt == PT_PPIP) && !TYP(parts[ri].ctype))
 					{
-						parts[ID(r)].ctype = parts[i].type;
-						parts[ID(r)].temp = parts[i].temp;
-						parts[ID(r)].tmp2 = parts[i].life;
+						parts[ri].ctype = parts[i].type;
+						parts[ri].temp = parts[i].temp;
+						parts[ri].tmp2 = parts[i].life;
 						/* original code:
-						parts[ID(r)].pavg[0] = parts[i].tmp;
-						parts[ID(r)].pavg[1] = parts[i].ctype;
-						parts[ID(r)].tmp3 = parts[i].tmp2;
-						parts[ID(r)].tmp4 = parts[i].tmp3;
+						parts[ri].pavg[0] = parts[i].tmp;
+						parts[ri].pavg[1] = parts[i].ctype;
+						parts[ri].tmp3 = parts[i].tmp2;
+						parts[ri].tmp4 = parts[i].tmp3;
 						*/
-						parts[ID(r)].tmp3 = parts[i].tmp;
-						parts[ID(r)].tmp4 = parts[i].ctype;
-						parts[ID(r)].pavg[0] = parts[i].tmp2;
-						parts[ID(r)].pavg[1] = parts[i].tmp3;
-						parts[ID(r)].cdcolour = parts[i].dcolour;
+						parts[ri].tmp3 = parts[i].tmp;
+						parts[ri].tmp4 = parts[i].ctype;
+						parts[ri].pavg[0] = parts[i].tmp2;
+						parts[ri].pavg[1] = parts[i].tmp3;
+						parts[ri].cdcolour = parts[i].dcolour;
 						kill_part(i);
 						continue;
 					}
@@ -5893,7 +5924,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 			parts[lastPartUnused].life = parts_lastActiveIndex+1;
 	}
 	parts_lastActiveIndex = lastPartUsed;
-	if (elementRecount && (!sys_pause && !(SimExtraFunc & 2) || framerender))
+	if (elementRecount && actual_life_dec)
 		elementRecount = false;
 }
 
@@ -6009,8 +6040,9 @@ void Simulation::BeforeSim()
 		etrd_life0_count = 0;
 
 		currentTick++;
-		elementRecount |= !(currentTick%180);
-		if (elementRecount)
+		if (!(currentTick%180))
+			elementRecount = true;
+		if (elementRecount)	// <==== here!!!
 			std::fill(elementCount, elementCount+PT_NUM, 0);
 		
 #ifdef TPT_NEED_DLL_PLUGIN
