@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_BTRY PT_BTRY 53
 Element_BTRY::Element_BTRY()
 {
@@ -63,7 +64,7 @@ int Element_BTRY::update(UPDATE_FUNC_ARGS)
 					{
 						partsi(r).life = 4;
 						partsi(r).ctype = rt;
-						sim->part_change_type(part_ID(r),x+rx,y+ry,PT_SPRK);
+						sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
 					}
 				}
 			}

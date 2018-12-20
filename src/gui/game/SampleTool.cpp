@@ -3,7 +3,6 @@
 #include "Tool.h"
 #include "GameModel.h"
 #include "gui/interface/Colour.h"
-#define ID part_ID
 
 VideoBuffer * SampleTool::GetIcon(int toolID, int width, int height)
 {

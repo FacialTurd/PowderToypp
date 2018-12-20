@@ -1,5 +1,3 @@
-#define ID(r) part_ID(r)
-
 #include "simulation/Elements.h"
 #include "simulation/MULTIPPE_Update.h"
 #include <iostream>

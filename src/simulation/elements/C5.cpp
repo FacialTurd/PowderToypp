@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_C5 PT_C5 130
 Element_C5::Element_C5()
 {
@@ -58,7 +59,7 @@ int Element_C5::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int rt = TYP(r);
-				if ((rt!=PT_C5 && partsi(r).temp<100 && sim->GetHeatConduct(part_ID(r), rt)) || rt==PT_CFLM)
+				if ((rt!=PT_C5 && partsi(r).temp<100 && sim->GetHeatConduct(ID(r), rt)) || rt==PT_CFLM)
 				{
 					if (!(rand()%6))
 					{

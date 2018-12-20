@@ -1,6 +1,5 @@
 #include "common/tpt-minmax.h"
 #include "simulation/Elements.h"
-#define ID(r) part_ID(r)
 
 //#TPT-Directive ElementClass Element_PSTN PT_PSTN 168
 Element_PSTN::Element_PSTN()

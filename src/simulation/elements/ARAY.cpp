@@ -1,5 +1,4 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_ARAY PT_ARAY 126
 Element_ARAY::Element_ARAY()

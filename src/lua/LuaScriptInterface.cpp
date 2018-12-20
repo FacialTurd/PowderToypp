@@ -65,8 +65,6 @@ extern "C"
 
 #define IN_BOUNDS(x, y) ((x)>=0 && (y)>=0 && (x)<XRES && (y)<YRES)
 
-#define ID part_ID
-
 // #include "gui/game/Notification.h" // already in GameModel.h
 
 GameModel * luacon_model;

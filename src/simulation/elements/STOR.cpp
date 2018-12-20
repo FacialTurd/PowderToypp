@@ -59,7 +59,7 @@ int Element_STOR::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				if (part_ID(r) >= NPART || !r)
+				if (ID(r) >= NPART || !r)
 					continue;
 				int rt = TYP(r);
 				r >>= PMAPBITS;

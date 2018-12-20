@@ -89,7 +89,7 @@ int Element_LIGH::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = TYP(r); r = part_ID(r);
+				rt = TYP(r); r = ID(r);
 				if ((surround_space || sim->elements[rt].Explosive) &&
 				    (rt!=PT_SPNG || parts[r].life==0) &&
 					sim->elements[rt].Flammable && (sim->elements[rt].Flammable + (int)(sim->pv[(y+ry)/CELL][(x+rx)/CELL]*10.0f))>(rand()%1000))
@@ -271,7 +271,7 @@ int Element_LIGH::contact_part(Simulation * sim, int i, int tp)
 				if (!r)
 					continue;
 				if (TYP(r)==tp)
-					return part_ID(r);
+					return ID(r);
 			}
 	return -1;
 }

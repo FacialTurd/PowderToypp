@@ -3,7 +3,6 @@
 #include "Sign.h"
 #include "graphics/Graphics.h"
 #include "simulation/Simulation.h"
-#define ID part_ID
 
 sign::sign(std::string text_, int x_, int y_, Justification justification_):
 	x(x_),

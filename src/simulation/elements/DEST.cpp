@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_DEST PT_DEST 89
 Element_DEST::Element_DEST()
 {
@@ -52,7 +53,8 @@ int Element_DEST::update(UPDATE_FUNC_ARGS)
 	int ry = rand()%5-2;
 	int r = pmap[y+ry][x+rx];
 	int rt = TYP(r);
-	r = part_ID(r);
+	r >>= PMAPBITS;
+
 	if (!r || !BOUNDS_CHECK || rt==PT_DEST || (sim->elements[rt].Properties2 & (PROP_NODESTRUCT|PROP_CLONE))
 		|| ( rt==PT_SPRK && (sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT) ))
 		return 0;

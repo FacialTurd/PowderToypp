@@ -2,7 +2,6 @@
 #include "simulation/Elements.h"
 
 //#TPT-Directive ElementClass Element_PLNT PT_PLNT 20
-#define ID part_ID
 Element_PLNT::Element_PLNT()
 {
 	Identifier = "DEFAULT_PT_PLNT";

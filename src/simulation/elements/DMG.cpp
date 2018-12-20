@@ -149,7 +149,7 @@ int Element_DMG::update(UPDATE_FUNC_ARGS)
 										sim->pv[(y+nxj)/CELL][(x+nxi)/CELL] += 1.0f;
 										t = TYP(rr);
 										if (t)
-											Element_DMG::BreakingElement(sim, parts, part_ID(rr), x+nxi, y+nxj, t);
+											Element_DMG::BreakingElement(sim, parts, ID(rr), x+nxi, y+nxj, t);
 									}
 								}
 							}

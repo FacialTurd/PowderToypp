@@ -1,5 +1,4 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_ACID PT_ACID 21
 Element_ACID::Element_ACID()

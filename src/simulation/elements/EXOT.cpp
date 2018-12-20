@@ -1,9 +1,9 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_EXOT PT_EXOT 145
-#define ID(r) part_ID(r)
+
 #define NOWARPCOND(i) (parts[i].life >= 1001 || parts[i].tmp2 <= 6000)
 #define WARPCOND(i) (!NOWARPCOND(i))
 
+//#TPT-Directive ElementClass Element_EXOT PT_EXOT 145
 Element_EXOT::Element_EXOT()
 {
 	Identifier = "DEFAULT_PT_EXOT";

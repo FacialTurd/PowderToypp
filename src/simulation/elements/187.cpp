@@ -160,7 +160,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 					parts[i].life = 20 + (z % 50);
 					partsi(r).tmp = parts[i].tmp | PFLAG_EMITTED;
 					partsi(r).life = 20 + ((z >> 16) % 50);
-					sim->part_change_type(part_ID(r), x+rx, y+ry, parts[i].type);
+					sim->part_change_type(ID(r), x+rx, y+ry, parts[i].type);
 					continue;
 				}
 				parts[i].x = partsi(r).x;

@@ -112,23 +112,24 @@ int Element_SING::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = TYP(r);
-				rt2 = (rt == PT_SPRK) ? partsi(r).ctype : rt;
+				r >>= PMAPBITS;
+				rt2 = (rt == PT_SPRK) ? parts[r].ctype : rt;
 				if (!(sim->elements[rt2].Properties2 & PROP_NODESTRUCT) && !(rand()%3))
 				{
-					if (rt==PT_SING && partsi(r).life >10)
+					if (rt==PT_SING && parts[r].life >10)
 					{
-						if (parts[i].life+partsi(r).life > 255)
+						if (parts[i].life + parts[r].life > 255)
 							continue;
-						parts[i].life += partsi(r).life;
+						parts[i].life += parts[r].life;
 					}
 					else
 					{
 						if (parts[i].life+3 > 255)
 						{
-							if (partsi(r).type!=PT_SING && !(rand()%100))
+							if (parts[r].type!=PT_SING && !(rand()%100))
 							{
 								int np;
-								np = sim->create_part(part_ID(r),x+rx,y+ry,PT_SING);
+								np = sim->create_part(r,x+rx,y+ry,PT_SING);
 								parts[np].life = rand()%50+60;
 							}
 							continue;
@@ -136,8 +137,8 @@ int Element_SING::update(UPDATE_FUNC_ARGS)
 						parts[i].life += 3;
 						parts[i].tmp++;
 					}
-					parts[i].temp = restrict_flt(partsi(r).temp+parts[i].temp, MIN_TEMP, MAX_TEMP);
-					sim->kill_part(part_ID(r));
+					parts[i].temp = restrict_flt(parts[r].temp+parts[i].temp, MIN_TEMP, MAX_TEMP);
+					sim->kill_part(r);
 				}
 			}
 	return 0;

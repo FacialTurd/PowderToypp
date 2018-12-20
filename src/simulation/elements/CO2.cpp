@@ -64,7 +64,7 @@ int Element_CO2::update(UPDATE_FUNC_ARGS)
 				}
 				rt = TYP(r);
 				if (rt==PT_FIRE){
-					sim->kill_part(part_ID(r));
+					sim->kill_part(ID(r));
 					if(!(rand()%30)){
 						sim->kill_part(i);
 						return 1;
@@ -72,7 +72,7 @@ int Element_CO2::update(UPDATE_FUNC_ARGS)
 				}
 				else if ((rt==PT_WATR || rt==PT_DSTW) && !(rand()%50))
 				{
-					sim->part_change_type(part_ID(r), x+rx, y+ry, PT_CBNW);
+					sim->part_change_type(ID(r), x+rx, y+ry, PT_CBNW);
 					if (parts[i].ctype==5) //conserve number of water particles - ctype=5 means this CO2 hasn't released the water particle from BUBW yet
 					{
 						sim->create_part(i, x, y, PT_WATR);

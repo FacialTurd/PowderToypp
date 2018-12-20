@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_PSNS PT_PSNS 172
-#define ID(r) part_ID(r)
 Element_PSNS::Element_PSNS()
 {
 	Identifier = "DEFAULT_PT_PSNS";

@@ -79,7 +79,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 									&& (nt!=PT_SPRK || !(sim->elements[partsi(rr).ctype].Properties2 & PROP_NODESTRUCT)))
 								{
 									if (nt)
-										sim->kill_part(part_ID(rr));
+										sim->kill_part(ID(rr));
 									sim->pv[(ynxj)/CELL][(xnxi)/CELL] += 0.1f;
 									nb = sim->create_part(-3, xnxi, ynxj, PT_EMBR);
 									if (nb!=-1)

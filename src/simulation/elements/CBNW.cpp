@@ -1,6 +1,5 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_CBNW PT_CBNW 82
-#define ID(r) part_ID(r)
 Element_CBNW::Element_CBNW()
 {
 	Identifier = "DEFAULT_PT_CBNW";

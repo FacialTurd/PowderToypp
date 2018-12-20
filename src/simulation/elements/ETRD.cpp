@@ -1,6 +1,6 @@
 #include <algorithm>
 #include "simulation/Elements.h"
-#define ID part_ID
+
 //#TPT-Directive ElementClass Element_ETRD PT_ETRD 50
 Element_ETRD::Element_ETRD()
 {

@@ -12,7 +12,6 @@
 #define __builtin_clz msvc_clz
 #endif
 
-#define ID part_ID
 #define saveWl cdcolour
 
 //#TPT-Directive ElementClass Element_MULTIPP PT_E189 189
@@ -607,7 +606,7 @@ void Element_MULTIPP::duplicatePhotons(Simulation* sim, int i, int x, int y, Par
 	}
 }
 
-//#TPT-Directive ElementHeader Element_MULTIPP static bool DrawOn_(Simulation * sim, Particle & part, int x, int y, int t, int v)
+//#TPT-Directive ElementHeader Element_MULTIPP static bool DrawOn_(Simulation * sim, int i, int x, int y, int t, int v)
 bool Element_MULTIPP::DrawOn_ (Simulation * sim, int i, int x, int y, int t, int v)
 {
 	Particle &part = sim->parts[i];

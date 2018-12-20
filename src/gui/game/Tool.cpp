@@ -163,5 +163,5 @@ void Element_TESC_Tool::DrawFill(Simulation * sim, Brush * brush, ui::Point posi
 
 void PlopTool::Click(Simulation * sim, Brush * brush, ui::Point position)
 {
-	sim->create_part(-2, position.X, position.Y, TYP(toolID), part_ID(toolID));
+	sim->create_part(-2, position.X, position.Y, TYP(toolID), ID(toolID));
 }

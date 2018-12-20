@@ -1,5 +1,4 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID(x)
 
 //Temp particle used for graphics
 //Don't conflict with 186.cpp "tpart_phot"
@@ -353,9 +352,6 @@ int Element_PIPE::graphics(GRAPHICS_FUNC_ARGS)
 				Element::defaultGraphics(ren, &tpart, nx, ny, pixel_mode, cola, colr, colg, colb, firea, firer, fireg, fireb);
 			}
 		}
-		//*colr = PIXR(elements[cpart->tmp&0xFF].pcolors);
-		//*colg = PIXG(elements[cpart->tmp&0xFF].pcolors);
-		//*colb = PIXB(elements[cpart->tmp&0xFF].pcolors);
 	}
 	else
 	{

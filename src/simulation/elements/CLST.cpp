@@ -63,13 +63,13 @@ int Element_CLST::update(UPDATE_FUNC_ARGS)
 					if (!(rand()%1500))
 					{
 						sim->create_part(i, x, y, PT_PSTS);
-						sim->kill_part(part_ID(r));
+						sim->kill_part(ID(r));
 					}
 				}
 				else if (rt==PT_NITR)
 				{
 					sim->create_part(i, x, y, PT_BANG);
-					sim->create_part(part_ID(r), x+rx, y+ry, PT_BANG);
+					sim->create_part(ID(r), x+rx, y+ry, PT_BANG);
 				}
 				else if (rt==PT_CLST)
 				{

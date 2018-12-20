@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_VIBR PT_VIBR 165
-#define ID part_ID
 Element_VIBR::Element_VIBR()
 {
 	Identifier = "DEFAULT_PT_VIBR";

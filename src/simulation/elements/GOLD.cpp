@@ -1,7 +1,7 @@
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
+
 //#TPT-Directive ElementClass Element_GOLD PT_GOLD 170
-#define ID part_ID
 Element_GOLD::Element_GOLD()
 {
 	Identifier = "DEFAULT_PT_GOLD";

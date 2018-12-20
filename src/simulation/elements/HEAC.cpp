@@ -2,7 +2,7 @@
 #include <functional>
 #include "simulation/Elements.h"
 #include "simulation/Air.h"
-#define ID(r) part_ID(r)
+
 //#TPT-Directive ElementClass Element_HEAC PT_HEAC 180
 Element_HEAC::Element_HEAC()
 {

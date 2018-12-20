@@ -32,7 +32,7 @@ namespace MULTIPPE_Update
 		if (!partsi(r).life)
 		{
 			partsi(r).ctype = TYP(r);
-			sim->part_change_type(part_ID(r), x, y, PT_SPRK);
+			sim->part_change_type(ID(r), x, y, PT_SPRK);
 			partsi(r).life = 4;
 		}
 	}
@@ -41,7 +41,7 @@ namespace MULTIPPE_Update
 		if (partsi(r).life == 10)
 		{
 			partsi(r).ctype = TYP(r);
-			sim->part_change_type(part_ID(r), x, y, PT_SPRK);
+			sim->part_change_type(ID(r), x, y, PT_SPRK);
 			partsi(r).life = 4;
 		}
 	}

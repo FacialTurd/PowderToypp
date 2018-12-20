@@ -5,7 +5,6 @@
 Particle tpart_phot;
 
 #define TYPMAP(x,y) TYP(pmap[y][x])
-#define ID part_ID
 #define _PHOT_mov_rel_i(i,sx,sy,nt) transportPhotons(sim,i,x,y,(int)(x+(sx)),(int)(y+(sy)),(nt),&parts[i])
 #define _PHOT_mov_rel_f(i,sx,sy,nt) transportPhotons(sim,i,x,y,(float)(parts[i].x+(sx)),(float)(parts[i].y+(sy)),(nt),&parts[i])
 

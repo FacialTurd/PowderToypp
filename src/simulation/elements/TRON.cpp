@@ -1,7 +1,6 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_TRON PT_TRON 143
-#define ID(r) part_ID(r)
 
+//#TPT-Directive ElementClass Element_TRON PT_TRON 143
 Element_TRON::Element_TRON()
 {
 	Identifier = "DEFAULT_PT_TRON";

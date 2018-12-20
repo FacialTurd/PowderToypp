@@ -11,7 +11,7 @@ void Simulation::pmap_add(int i, int x, int y, int t)
 
 bool Simulation::pmap_clearif(int & r, unsigned int i)
 {
-	bool ret = r && (part_ID((unsigned int)r) == i);
+	bool ret = r && (ID((unsigned int)r) == i);
 	if (ret)
 		r = 0;
 	return ret;
@@ -47,6 +47,6 @@ void Simulation::pmap_remove(unsigned int i, int x, int y)
 	// NB: all arguments are assumed to be within bounds
 	if (pmap_clearif(pmap[y][x], i) || (TYP(pmap[y][x]) == PT_PINVIS && pmap_clearif(partsi(pmap[y][x]).tmp4, i)))
 		return;
-	if (part_ID((unsigned int)(photons[y][x])) == i)
+	if (ID((unsigned int)(photons[y][x])) == i)
 		photons[y][x] = 0;
 }

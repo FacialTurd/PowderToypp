@@ -55,9 +55,9 @@ int Element_FRZW::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_WATR && !(rand()%14))
+				if (TYP(r)==PT_WATR && !(rand()%14))
 				{
-					sim->part_change_type(r>>8,x+rx,y+ry,PT_FRZW);
+					sim->part_change_type(ID(r),x+rx,y+ry,PT_FRZW);
 				}
 			}
 	if ((parts[i].life==0 && !(rand()%192)) || (100-(parts[i].life))>rand()%50000 )

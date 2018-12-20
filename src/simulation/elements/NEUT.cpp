@@ -1,7 +1,7 @@
 #include "simulation/Elements.h"
 #include <stdint.h>
 #include <iostream>
-#define ID part_ID
+
 #define SETTRANS(t, e1, e2, m, p) (\
 	t[2*e1] = PMAP(m, e2), \
 	t[2*e1+1] = p * (RAND_MAX / 1000.0))

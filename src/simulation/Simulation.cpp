@@ -26,7 +26,6 @@
 
 //#include "gui/interface/Engine.h"
 
-#define ID(r) part_ID(r)
 #include "simplugin.h"
 #include "sim-pmap.h"
 
@@ -6308,7 +6307,7 @@ static void _ELEM_DIRCH_op(Simulation * sim, int * t)
 				if (!rt)
 					sim->create_part(-1, xx, yy, PT_VOID);
 				else if (rt == PT_VOID || rt == PT_PVOD)
-					sim->kill_part(part_ID(r));
+					sim->kill_part(ID(r));
 			}
 			while(0);
 

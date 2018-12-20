@@ -1,5 +1,4 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_SPRK PT_SPRK 15
 Element_SPRK::Element_SPRK()

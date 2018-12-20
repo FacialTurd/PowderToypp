@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_PHOT PT_PHOT 31
 Element_PHOT::Element_PHOT()
 {
@@ -76,7 +77,7 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 					{
 						parts[i].vx *= 0.90;
 						parts[i].vy *= 0.90;
-						sim->create_part(part_ID(r), x+rx, y+ry, PT_PHOT);
+						sim->create_part(ID(r), x+rx, y+ry, PT_PHOT);
 						rrr = (rand()%360)*3.14159f/180.0f;
 						if (rt == PT_ISOZ)
 							rr = (rand()%128+128)/127.0f;

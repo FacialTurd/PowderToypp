@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_PUMP PT_PUMP 97
-#define ID(r) part_ID(r)
 Element_PUMP::Element_PUMP()
 {
 	Identifier = "DEFAULT_PT_PUMP";

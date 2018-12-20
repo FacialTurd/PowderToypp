@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_HSWC PT_HSWC 75
-#define ID part_ID
 Element_HSWC::Element_HSWC()
 {
 	Identifier = "DEFAULT_PT_HSWC";

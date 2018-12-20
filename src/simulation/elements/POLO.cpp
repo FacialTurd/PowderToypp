@@ -54,7 +54,7 @@ Element_POLO::Element_POLO()
 int Element_POLO::update(UPDATE_FUNC_ARGS)
 {
 	int r = sim->photons[y][x];
-	int ri = part_ID(r);
+	int ri = ID(r);
 	if (parts[i].tmp < LIMIT && !(parts[i].life || sim->isFromMyMod && TYP(r) == PT_ELEC))
 	{
 		if (!(rand()%10000) && !parts[i].tmp)
@@ -106,7 +106,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 		ry = rndstore%5-2;
 		rx = (rndstore>>6)%5-2;
 		rr = sim->pmap[y+ry][x+rx];
-		rrt = TYP(rr); rr = part_ID(rr);
+		rrt = TYP(rr); rr = ID(rr);
 		if (rrt == PT_POLO || rrt == PT_POLC)
 			parts[rr].tmp = 0;
 		parts[i].tmp2 = 0;

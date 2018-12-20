@@ -1258,7 +1258,7 @@ __declspec(dllexport) __fastcall int luacon_sim_dllfunc(int ft, int i, int x, in
 			luacon_sim->parts[i].x = (float)x;
 			luacon_sim->parts[i].y = (float)y;
 			luacon_sim->pmap[yy][xx] = 0;
-			luacon_sim->pmap[y][x] = luacon_sim->parts[i].type | (i << 8);
+			luacon_sim->pmap[y][x] = PMAP(i, luacon_sim->parts[i].type);
 			break;
 		}
 	}
@@ -1761,7 +1761,7 @@ int luatpt_set_property(lua_State* l)
 				r = luacon_sim->photons[y][i];
 			if (!r || (partsel && partsel != TYP(r)))
 				return 0;
-			i = part_ID(r);
+			i = ID(r);
 		}
 		if (i < 0 || i >= NPART)
 			return luaL_error(l, "Invalid particle ID '%d'", i);
@@ -1909,7 +1909,7 @@ int luatpt_get_property(lua_State* l)
 				return luaL_error(l, "Particle does not exist");
 			}
 		}
-		i = part_ID(r);
+		i = ID(r);
 	}
 	else if (y != -1)
 		return luaL_error(l, "Coordinates out of range (%d,%d)", i, y);

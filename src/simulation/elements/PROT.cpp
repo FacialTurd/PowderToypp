@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_PROT PT_PROT 173
-#define ID part_ID
 Element_PROT::Element_PROT()
 {
 	Identifier = "DEFAULT_PT_PROT";

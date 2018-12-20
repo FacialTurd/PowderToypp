@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_QRTZ PT_QRTZ 132
 Element_QRTZ::Element_QRTZ()
 {
@@ -73,7 +74,7 @@ int Element_QRTZ::update(UPDATE_FUNC_ARGS)
 						continue;
 					else if (TYP(r)==PT_SLTW && !(rand()%500))
 					{
-						sim->kill_part(part_ID(r));
+						sim->kill_part(ID(r));
 						parts[i].tmp++;
 					}
 				}

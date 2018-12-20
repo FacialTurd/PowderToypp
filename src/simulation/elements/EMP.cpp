@@ -138,7 +138,7 @@ int Element_EMP::Trigger(Simulation *sim, int triggerCount, int triggerCount2)
 						if (!n)
 							continue;
 						int ntype = TYP(n);
-						n = part_ID(n);
+						n = ID(n);
 						//Some elements should only be affected by wire/swch, or by a spark on inst/semiconductor
 						//So not affected by spark on metl, watr etc
 						if (is_elec)

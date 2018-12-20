@@ -1,9 +1,8 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_POLC PT_POLC 188
-#define ID part_ID
 
 bool Element_POLC_Init = false;
 
+//#TPT-Directive ElementClass Element_POLC PT_POLC 188
 Element_POLC::Element_POLC()
 {
 	Identifier = "DEFAULT_PT_POLC";

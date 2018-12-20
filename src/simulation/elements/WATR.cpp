@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_WATR PT_WATR 2
-#define ID(r) part_ID(r)
 Element_WATR::Element_WATR()
 {
 	Identifier = "DEFAULT_PT_WATR";

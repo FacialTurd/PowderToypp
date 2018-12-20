@@ -209,7 +209,7 @@ int MULTIPPE_Update::graphics(GRAPHICS_FUNC_ARGS)
 		break;
 	case 35:
 		ptmp = TYP(cpart->ctype);
-		ppos = part_ID(cpart->ctype);
+		ppos = ID(cpart->ctype);
 		if (ptmp > 0 && ptmp < PT_NUM && ren->sim->elements[ptmp].Enabled)
 		{
 			tempPartColor = ren->sim->elements[ptmp].Colour;

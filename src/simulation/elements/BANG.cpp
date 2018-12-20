@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_BANG PT_BANG 139
 Element_BANG::Element_BANG()
 {
@@ -70,7 +71,7 @@ int Element_BANG::update(UPDATE_FUNC_ARGS)
 	}
 	else if(parts[i].tmp==1)
 	{
-		if (part_ID(pmap[y][x]) == i)
+		if (ID(pmap[y][x]) == i)
 		{
 			PropertyValue value;
 			value.Integer = 2;

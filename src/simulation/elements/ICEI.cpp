@@ -47,7 +47,7 @@ Element_ICEI::Element_ICEI()
 //#TPT-Directive ElementHeader Element_ICEI static int update(UPDATE_FUNC_ARGS)
 int Element_ICEI::update(UPDATE_FUNC_ARGS)
  { //currently used for snow as well
-	int r, rx, ry;
+	int r, rx, ry, rt;
 	if (parts[i].ctype==PT_FRZW)//get colder if it is from FRZW
 	{
 		parts[i].temp = restrict_flt(parts[i].temp-1.0f, MIN_TEMP, MAX_TEMP);
@@ -59,19 +59,20 @@ int Element_ICEI::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((r&0xFF)==PT_SALT || (r&0xFF)==PT_SLTW)
+				rt = TYP(r);
+				if (rt==PT_SALT || rt==PT_SLTW)
 				{
 					if (parts[i].temp > sim->elements[PT_SLTW].LowTemperature && !(rand()%200))
 					{
 						sim->part_change_type(i,x,y,PT_SLTW);
-						sim->part_change_type(r>>8,x+rx,y+ry,PT_SLTW);
+						sim->part_change_type(ID(r),x+rx,y+ry,PT_SLTW);
 						return 0;
 					}
 				}
-				else if (((r&0xFF)==PT_FRZZ) && !(rand()%200))
+				else if ((rt==PT_FRZZ) && !(rand()%200))
 				{
-					sim->part_change_type(r>>8,x+rx,y+ry,PT_ICEI);
-					parts[r>>8].ctype = PT_FRZW;
+					sim->part_change_type(ID(r),x+rx,y+ry,PT_ICEI);
+					parts[ID(r)].ctype = PT_FRZW;
 				}
 			}
 	return 0;

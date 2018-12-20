@@ -1,6 +1,6 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_DLAY PT_DLAY 79
-#define ID part_ID
 Element_DLAY::Element_DLAY()
 {
 	Identifier = "DEFAULT_PT_DLAY";

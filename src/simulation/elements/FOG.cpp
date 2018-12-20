@@ -55,11 +55,11 @@ int Element_FOG::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((sim->elements[r&0xFF].Properties&TYPE_SOLID) && !(rand()%10) && parts[i].life==0 && !(sim->elements[r&0xFF].Properties2 & (PROP_UNBREAKABLECLONE))) // TODO: should this also exclude BCLN?
+				if ((sim->elements[TYP(r)].Properties&TYPE_SOLID) && !(rand()%10) && parts[i].life==0 && !(sim->elements[TYP(r)].Properties2 & (PROP_UNBREAKABLECLONE))) // TODO: should this also exclude BCLN?
 				{
 					sim->part_change_type(i,x,y,PT_RIME);
 				}
-				if ((r&0xFF)==PT_SPRK)
+				if (TYP(r) == PT_SPRK)
 				{
 					parts[i].life += rand()%20;
 				}

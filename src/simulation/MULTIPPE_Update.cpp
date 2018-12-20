@@ -10,8 +10,6 @@
 #define __builtin_clz msvc_clz
 #endif
 
-#define ID(r) part_ID(r)
-
 Renderer * MULTIPPE_Update::ren_;
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]

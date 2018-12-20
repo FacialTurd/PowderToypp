@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_BOYL PT_BOYL 141
 Element_BOYL::Element_BOYL()
 {
@@ -71,13 +72,13 @@ int Element_BOYL::update(UPDATE_FUNC_ARGS)
 				if (TYP(r)==PT_WATR)
 				{
 					if (!(rand()%30))
-						sim->part_change_type(part_ID(r),x+rx,y+ry,PT_FOG);
+						sim->part_change_type(ID(r),x+rx,y+ry,PT_FOG);
 				}
 				else if (TYP(r)==PT_O2)
 				{
 					if (!(rand()%9))
 					{
-						sim->kill_part(part_ID(r));
+						sim->kill_part(ID(r));
 						sim->part_change_type(i,x,y,PT_WATR);
 						sim->pv[y/CELL][x/CELL] += 4.0;
 					}

@@ -2526,7 +2526,7 @@ void GameView::OnDraw()
 					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
-						partnerID = part_ID(sample_particle->tmp4);
+						partnerID = ID(sample_particle->tmp4);
 						tpt_hasPartner = true;
 						sample_particle = sample.cparticle;
 						goto showDebugBack;
@@ -2557,14 +2557,14 @@ void GameView::OnDraw()
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
-						if (TYP(ctype) == ELEM_MULTIPP && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= maxE189Type)
-							sampleInfo << E189Modes[part_ID(ctype)];
+						if (TYP(ctype) == ELEM_MULTIPP && type != PT_DRAY && ID(ctype) >= 0 && ID(ctype) <= maxE189Type)
+							sampleInfo << E189Modes[ID(ctype)];
 						else
 						{
-							sampleInfo << c->ElementResolve(TYP(ctype), part_ID(ctype));
-							if (TYP(ctype) == PT_FILT && type != PT_DRAY && part_ID(ctype) >= 0 && part_ID(ctype) <= 11)
+							sampleInfo << c->ElementResolve(TYP(ctype), ID(ctype));
+							if (TYP(ctype) == PT_FILT && type != PT_DRAY && ID(ctype) >= 0 && ID(ctype) <= 11)
 							{
-								sampleInfo << " (" << filtModes[part_ID(ctype)] << ")";
+								sampleInfo << " (" << filtModes[ID(ctype)] << ")";
 							}
 						}
 						sampleInfo << ")";
@@ -2719,7 +2719,7 @@ void GameView::OnDraw()
 					if (ctype && ctype != type && c->IsValidElement(ctype) && !tpt_hasPartner && sample.cparticle != NULL)
 					{
 						sampleInfo << c->ElementResolve(type, -1) << " with ";
-						// partnerID = part_ID(sample_particle->tmp4);
+						// partnerID = ID(sample_particle->tmp4);
 						tpt_hasPartner = true;
 						sample_particle = sample.cparticle;
 						goto showDebugBack;

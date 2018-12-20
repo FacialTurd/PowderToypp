@@ -71,7 +71,7 @@ newseg_0:
 		if (!sim->InBounds(x, y)) break;
 		r = sim->pmap[y][x];
 		if (TYP(r) != ELEM_MULTIPP) break;
-		int ri = part_ID(r);
+		int ri = ID(r);
 		if (sim->parts[ri].life == 10)
 		{
 			v = sim->parts[ri].ctype;
@@ -141,7 +141,7 @@ brkloop_0:
 		if (!sim->InBounds(x, y)) return;
 		r = sim->pmap[y][x];
 		if (TYP(r) != ELEM_MULTIPP || sim->partsi(r).life != 10) return;
-		i = part_ID(r);
+		i = ID(r);
 		goto newseg_0;
 	}
 	return;

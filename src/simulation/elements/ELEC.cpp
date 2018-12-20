@@ -1,6 +1,5 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_ELEC PT_ELEC 136
-#define ID part_ID
 Element_ELEC::Element_ELEC()
 {
 	Identifier = "DEFAULT_PT_ELEC";

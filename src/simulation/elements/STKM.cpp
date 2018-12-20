@@ -64,7 +64,6 @@ int Element_STKM::update(UPDATE_FUNC_ARGS)
 }
 
 #define PMAPBITSp1 (PMAPBITS + 1)
-#define ID part_ID
 
 //#TPT-Directive ElementHeader Element_STKM static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_STKM::graphics(GRAPHICS_FUNC_ARGS)

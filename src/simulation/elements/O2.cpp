@@ -1,8 +1,9 @@
 #include "simulation/Elements.h"
-//#TPT-Directive ElementClass Element_O2 PT_O2 61
+
 // in real life, burning is actually a reaction of oxygen and the burning material.
 // TODO: New element: realistic oxygen gas.
-#define ID(r) part_ID(r)
+
+//#TPT-Directive ElementClass Element_O2 PT_O2 61
 Element_O2::Element_O2()
 {
 	Identifier = "DEFAULT_PT_O2";

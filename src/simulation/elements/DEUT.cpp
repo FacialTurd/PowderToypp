@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+
 //#TPT-Directive ElementClass Element_DEUT PT_DEUT 95
 Element_DEUT::Element_DEUT()
 {
@@ -73,7 +74,7 @@ int Element_DEUT::update(UPDATE_FUNC_ARGS)
 						if (partsi(r).life <= maxlife - parts[i].life - 1)
 						{
 							parts[i].life += partsi(r).life + 1;
-							sim->kill_part(part_ID(r));
+							sim->kill_part(ID(r));
 						}
 					}
 				}

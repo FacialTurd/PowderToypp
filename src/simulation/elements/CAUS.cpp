@@ -59,7 +59,7 @@ int Element_CAUS::update(UPDATE_FUNC_ARGS)
 				{
 					if (sim->pv[(y+ry)/CELL][(x+rx)/CELL] > 3)
 					{
-						sim->part_change_type(part_ID(r), x+rx, y+ry, PT_RFRG);
+						sim->part_change_type(ID(r), x+rx, y+ry, PT_RFRG);
 						sim->part_change_type(i, x, y, PT_RFRG);
 					}
 				}
@@ -77,7 +77,7 @@ int Element_CAUS::update(UPDATE_FUNC_ARGS)
 								newtemp = 0;
 							parts[i].temp += newtemp;
 							parts[i].life--;
-							sim->kill_part(part_ID(r));
+							sim->kill_part(ID(r));
 						}
 					}
 					else if (parts[i].life <= 50)

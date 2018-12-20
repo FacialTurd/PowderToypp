@@ -1,5 +1,4 @@
 #include "simulation/Elements.h"
-#define ID(x) part_ID(x)
 
 //#TPT-Directive ElementClass Element_CRAY PT_CRAY 167
 Element_CRAY::Element_CRAY()

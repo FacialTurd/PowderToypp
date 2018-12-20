@@ -1,6 +1,5 @@
 #include "simulation/Elements.h"
 //#TPT-Directive ElementClass Element_CONV PT_CONV 85
-#define ID part_ID
 
 Element_CONV::Element_CONV()
 {

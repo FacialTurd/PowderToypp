@@ -57,9 +57,9 @@ int Element_EMBR::update(UPDATE_FUNC_ARGS) {
 				if (!r)
 					continue;
 				/*
-				if ((r&0xFF) == PT_PINVIS)
+				if (TYP(r) == PT_PINVIS)
 				{
-					r = parts[r>>8].tmp4;
+					r = parts[ID(r)].tmp4;
 					if (!r) continue;
 				}
 				*/

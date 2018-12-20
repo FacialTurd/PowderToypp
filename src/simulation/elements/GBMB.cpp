@@ -48,7 +48,7 @@ Element_GBMB::Element_GBMB()
 //#TPT-Directive ElementHeader Element_GBMB static int update(UPDATE_FUNC_ARGS)
 int Element_GBMB::update(UPDATE_FUNC_ARGS)
 {
-	int rx,ry,r;
+	int rx,ry,r, rt;
 	if (parts[i].life<=0)
 	{
 		for (rx=-1; rx<2; rx++)
@@ -59,8 +59,9 @@ int Element_GBMB::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if(!r)
 						continue;
-					if((r&0xFF)!=PT_BOMB && (r&0xFF)!=PT_GBMB &&
-					   !(sim->elements[r&0xFF].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)))
+					rt = TYP(r);
+					if(rt!=PT_BOMB && rt!=PT_GBMB &&
+					   !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)))
 					{
 						parts[i].life=60;
 						break;

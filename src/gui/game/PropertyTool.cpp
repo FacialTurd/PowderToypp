@@ -174,7 +174,7 @@ void PropertyWindow::SetProperty()
 								buffer.exceptions(std::stringstream::failbit | std::stringstream::badbit);
 								buffer << std::hex << value.substr(v2+1);
 								buffer >> v1;
-								v |= (v1 << 8);
+								v |= PMAPID(v1);
 							}
 							
 #ifdef DEBUG

@@ -89,7 +89,6 @@ std::vector<StructProperty> Element::GetProperties()
 	return properties;
 }
 
-#define ID(r) part_ID(r)
 
 int Element::legacyUpdate(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt;
