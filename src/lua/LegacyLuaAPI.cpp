@@ -1204,25 +1204,29 @@ void luacall_debug_tfunc (lua_State* L, int c)
 	}
 }
 
-void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
+bool luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2)
 {
 	if (f2 < 0 && f2 >= MAX_LUA_DEBUG_FUNCTIONS)
-		return;
+		return true;
 	if (luacon_ci->trigger_func[f2].m)
 		lua_rawgeti(luacon_ci->l, LUA_REGISTRYINDEX, luacon_ci->trigger_func[f2].i);
 	else
-		return;
+		return true;
+
+	bool alive = true;
+
 	lua_pushinteger(luacon_ci->l, i);
 	lua_pushinteger(luacon_ci->l, ri);
 	lua_pushinteger(luacon_ci->l, wl);
 	lua_pushinteger(luacon_ci->l, f1);
 	lua_pushinteger(luacon_ci->l, f2);
-	int callret = lua_pcall(luacon_ci->l, 5, 0, 0);
+	int callret = lua_pcall(luacon_ci->l, 5, 1, 0);
 	if (callret)
-	{
 		luacon_ci->Log(CommandInterface::LogError, luacon_geterror());
-		lua_pop(luacon_ci->l, 1);
-	}
+	else
+		alive = lua_toboolean(luacon_ci->l, -1);
+	lua_pop(luacon_ci->l, 1);
+	return alive;
 }
 
 int LuaScriptInterface::trigger_func_struct::_call (lua_State* L)
@@ -2073,7 +2077,7 @@ int luatpt_textwidth(lua_State* l)
 
 int luatpt_get_name(lua_State* l)
 {
-	if (luacon_model->GetUser().ID)
+	if (luacon_model->GetUser().UserID)
 	{
 		lua_pushstring(l, luacon_model->GetUser().Username.c_str());
 		return 1;

@@ -53,7 +53,7 @@ Element_HEAC::Element_HEAC()
 struct Element_HEAC::IsInsulator : public std::binary_function<Simulation*,int,bool> {
   bool operator() (Simulation* a, int b)
   {
-	  return b && (a->elements[TYP(b)].HeatConduct == 0 ? !(TYP(b) == ELEM_MULTIPP && a->parts[ID(b)].life == 6) : (TYP(b) == PT_HSWC && a->parts[ID(b)].life != 10));
+	  return b && !a->GetHeatConduct(ID(b), TYP(b)) && !(TYP(b) == ELEM_MULTIPP && a->parts[ID(b)].life == 6);
   }
 };
 //#TPT-Directive ElementHeader Element_HEAC static IsInsulator isInsulator
@@ -129,7 +129,7 @@ bool Element_HEAC::CheckLine(Simulation* sim, int x1, int y1, int x2, int y2, Bi
 int Element_HEAC::update(UPDATE_FUNC_ARGS)
 {
 	const int rad = 4;
-	int rry, rrx, r, rt, ri, count = 0;
+	int rry, rrx, r, ri, count = 0;
 	float tempAgg = 0;
 	for (int rx = -1; rx <= 1; rx++)
 	{
@@ -142,9 +142,9 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+rry][x+rrx];
 				if (r)
   				{
-					rt = TYP(r);
 					ri = ID(r);
-					if (sim->elements[rt].HeatConduct > 0 && (rt != PT_HSWC || parts[ri].life == 10))
+					int rt = TYP(r);
+					if (sim->GetHeatConduct(ri, rt))
 					{
 						count++;
 						tempAgg += parts[ri].temp;
@@ -156,7 +156,8 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 					}
   				}
 				r = sim->photons[y+rry][x+rrx];
-				if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
+				ri = ID(r);
+				if (r && sim->GetHeatConduct(ri, TYP(r)))
 				{
 					count++;
 					tempAgg += parts[ID(r)].temp;
@@ -177,18 +178,7 @@ int Element_HEAC::update(UPDATE_FUNC_ARGS)
 				rry = ry * rad;
 				rrx = rx * rad;
 				if (x+rrx >= 0 && x+rrx < XRES && y+rry >= 0 && y+rry < YRES && !Element_HEAC::CheckLine<Element_HEAC::IsInsulator>(sim, x, y, x+rrx, y+rry, isInsulator))
-				{
-					r = pmap[y+rry][x+rrx];
-					if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
-					{
-						parts[ID(r)].temp = parts[i].temp;
-					}
-					r = sim->photons[y+rry][x+rrx];
-					if (r && sim->elements[TYP(r)].HeatConduct > 0 && (TYP(r) != PT_HSWC || parts[ID(r)].life == 10))
-					{
-						parts[ID(r)].temp = parts[i].temp;
-					}
-				}
+					sim->pmap_heatconduct(x+rrx, y+rry, parts[i].temp);
 			}
 		}
 	}

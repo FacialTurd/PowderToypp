@@ -55,6 +55,14 @@ void MULTIPPE_Update::do_breakpoint()
 #endif
 }
 
+namespace
+{
+inline int my_create_part (Simulation * sim, int x, int y, int t, int v = -1)
+{
+	return sim->create_part(t == PT_PHOT ? -3 : -1, x, y, t, v);
+}
+}
+
 int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {
 	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
@@ -145,8 +153,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
-						if ((sim->elements[TYP(r)].HeatConduct > 0) && (TYP(r) != PT_HSWC || partsi(r).life == 10))
-							partsi(r).temp = parts[i].temp;
+						sim->pmap_heatconduct(r, parts[i].temp);
 					}
 			if (sim->aheat_enable) //if ambient heat sim is on
 			{
@@ -201,11 +208,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (sim->elements[TYP(r)].HeatConduct > 0)
+					ri = ID(r), rt = TYP(r);
+					if (sim->GetHeatConduct(ri, rt))
 					{
-						int transfer = (int)(partsi(r).temp - 273.15f);
+						int transfer = (int)(parts[ri].temp - 273.15f);
 						parts[i].tmp += transfer;
-						partsi(r).temp -= (float)transfer;
+						parts[ri].temp -= (float)transfer;
 					}
 				}
 		{
@@ -2084,7 +2092,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 									break;
 								}
 							}
-							int np = sim->create_part(-1, nx, ny, rctype, rctypeExtra);
+							int np = my_create_part(sim, nx, ny, rctype, rctypeExtra);
 							if (np >= 0) {
 								parts[np].vx = rtmp*rx; parts[np].vy = rtmp*ry;
 								parts[np].dcolour = parts[i].dcolour;

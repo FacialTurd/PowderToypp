@@ -41,7 +41,7 @@ Element_E195::Element_E195()
 	Description = "Experimental element.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_RADIOACTIVE|PROP_LIFE_KILL_DEC;
-	Properties2 |= PROP_NOWAVELENGTHS | PROP_CTYPE_SPEC | PROP_NEUTRONS_LIKE | PROP_ALLOWS_WALL | PROP_PASSTHROUGHALL;
+	Properties2 |= PROP_CTYPE_SPEC | PROP_NEUTRONS_LIKE | PROP_ALLOWS_WALL | PROP_PASSTHROUGHALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -71,7 +71,7 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 		r = pmap[y][x];
 		switch (sctype - PMAPID(1))
 		{
-		case 0: // TODO: move into another element
+		case 0: // TODO: move into another element (e.g. PT_PHOT)
 			if (!(parts[i].tmp2&0x3FFFFFFF))
 			{
 				sim->kill_part(i);

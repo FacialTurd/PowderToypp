@@ -6,7 +6,7 @@
 #define PATH_SEP "\\"
 #define PATH_SEP_CHAR '\\'
 #ifdef __GNUC__
-// #define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
+//#define TPT_NEED_DLL_PLUGIN // if your need DLL, uncomment this line.
 #endif
 #else
 #define PATH_SEP "/"
@@ -99,8 +99,8 @@
 #define MTOS_EXPAND(str) #str
 #define MTOS(str) MTOS_EXPAND(str)
 
-#define SERVER "powdertoy.co.uk"
-#define STATICSERVER "static.powdertoy.co.uk"
+#define SERVER "tpt.starcatcher.us"
+#define STATICSERVER "statictpt.starcatcher.us"
 
 #define LOCAL_SAVE_DIR "Saves"
 

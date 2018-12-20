@@ -278,14 +278,14 @@ GameView::GameView():
 		SaveSimulationAction(GameView * _v) { v = _v; }
 		void ActionCallbackRight(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().ID)
+			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
 				v->c->OpenLocalSaveWindow(false);
 			else
 				v->c->OpenSaveWindow();
 		}
 		void ActionCallbackLeft(ui::Button * sender)
 		{
-			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().ID)
+			if(v->CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
 				v->c->OpenLocalSaveWindow(true);
 			else
 				v->c->SaveAsCurrent();
@@ -916,7 +916,7 @@ void GameView::NotifySimulationChanged(GameModel * sender)
 }
 void GameView::NotifyUserChanged(GameModel * sender)
 {
-	if(!sender->GetUser().ID)
+	if(!sender->GetUser().UserID)
 	{
 		loginButton->SetText("[sign in]");
 		((SplitButton*)loginButton)->SetShowSplit(false);
@@ -928,7 +928,7 @@ void GameView::NotifyUserChanged(GameModel * sender)
 		((SplitButton*)loginButton)->SetShowSplit(true);
 		((SplitButton*)loginButton)->SetRightToolTip("Edit profile");
 	}
-	// saveSimulationButtonEnabled = sender->GetUser().ID;
+	// saveSimulationButtonEnabled = sender->GetUser().UserID;
 	saveSimulationButtonEnabled = true;
 	NotifySaveChanged(sender);
 }
@@ -964,19 +964,19 @@ void GameView::NotifySaveChanged(GameModel * sender)
 		else
 			((SplitButton*)saveSimulationButton)->SetShowSplit(false);
 		reloadButton->Enabled = true;
-		upVoteButton->Enabled = (sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==0);
-		if (sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==1)
+		upVoteButton->Enabled = (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==0);
+		if (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==1)
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 108, 10, 255));
 		else
 			upVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 
 		downVoteButton->Enabled = upVoteButton->Enabled;
-		if (sender->GetSave()->GetID() && sender->GetUser().ID && sender->GetSave()->GetVote()==-1)
+		if (sender->GetSave()->GetID() && sender->GetUser().UserID && sender->GetSave()->GetVote()==-1)
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(108, 0, 10, 255));
 		else
 			downVoteButton->Appearance.BackgroundDisabled = (ui::Colour(0, 0, 0));
 
-		if (sender->GetUser().ID)
+		if (sender->GetUser().UserID)
 		{
 			upVoteButton->Appearance.BorderDisabled = upVoteButton->Appearance.BorderInactive;
 			downVoteButton->Appearance.BorderDisabled = downVoteButton->Appearance.BorderInactive;
@@ -2207,7 +2207,7 @@ void GameView::UpdateToolStrength()
 
 void GameView::SetSaveButtonTooltips()
 {
-	if (!Client::Ref().GetAuthUser().ID)
+	if (!Client::Ref().GetAuthUser().UserID)
 		((SplitButton*)saveSimulationButton)->SetToolTips("Overwrite the open simulation on your hard drive.", "Save the simulation to your hard drive. Login to save online.");
 	else if (ctrlBehaviour)
 		((SplitButton*)saveSimulationButton)->SetToolTips("Overwrite the open simulation on your hard drive.", "Save the simulation to your hard drive.");

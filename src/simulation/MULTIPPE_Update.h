@@ -14,20 +14,19 @@ class LuaScriptInterface;
 class Simulation;
 class Renderer;
 struct Particle;
-class MULTIPPE_Update
+struct Simulation_move;
+
+namespace MULTIPPE_Update
 {
-public:
-	MULTIPPE_Update() { }
-	virtual ~MULTIPPE_Update() { }
-	static pixel ColorsSpc [NUM_COLOR_SPC];
-	static Renderer * ren_;
-	static int update(UPDATE_FUNC_ARGS);
-	static int graphics(GRAPHICS_FUNC_ARGS);
-	static void do_breakpoint();
-	static void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);
+	extern pixel ColorsSpc [NUM_COLOR_SPC];
+	extern Renderer * ren_;
+	int update(UPDATE_FUNC_ARGS);
+	int graphics(GRAPHICS_FUNC_ARGS);
+	void do_breakpoint();
+	void InsertText(Simulation *sim, int i, int x, int y, int ix, int iy);
 	// static int AddCharacter(Simulation *sim, int x, int y, int c, int rgb);
-	static bool isAcceptedConductor (Simulation* sim, int r);
-	static bool isAcceptedConductor_i (Simulation* sim, int r);
+	bool isAcceptedConductor (Simulation* sim, int r);
+	bool isAcceptedConductor_i (Simulation* sim, int r);
 	static void conductTo (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?
 	{
 		if (!partsi(r).life)

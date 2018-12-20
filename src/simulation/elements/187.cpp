@@ -182,6 +182,7 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 				continue;
 			}
 		}
+		return -1;
 	}
 
 	return 0;

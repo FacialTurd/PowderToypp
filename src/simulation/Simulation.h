@@ -14,12 +14,11 @@
 #include "GOLMenu.h"
 #include "MenuSection.h"
 #include "elements/Element.h"
-#include "sim-move-struct.h"
 
 #define CHANNELS ((int)(MAX_TEMP-73)/100+2)
 
 #ifndef PT_PINVIS
-#define PT_PINVIS 192
+// #define PT_PINVIS 192
 #endif
 
 class Snapshot;
@@ -34,6 +33,7 @@ class Renderer;
 class Gravity;
 class Air;
 class GameSave;
+struct Simulation_move;
 
 class Simulation
 {
@@ -89,9 +89,6 @@ public:
 	int extraDelay;
 	int delayEnd;
 	int ineutcount;
-#ifdef TPT_NEED_DLL_PLUGIN
-	int dllexceptionflag;
-#endif
 	//Stickman
 	playerst player;
 	playerst player2;
@@ -157,6 +154,9 @@ public:
 	int sandcolour;
 	int sandcolour_frame;
 	bool no_generating_BHOL;
+#ifdef TPT_NEED_DLL_PLUGIN
+	int dllexceptionflag;
+#endif
 	
 	int  DIRCHInteractCount;
 	int  DIRCHInteractSize;
@@ -179,7 +179,7 @@ public:
 	unsigned direction_to_map(float dx, float dy, int t);
 	int do_move(int i, int x, int y, float nxf, float nyf);
 	int do_move(Simulation_move & mov);
-	int try_move(Simulation_move & mov);
+	int try_move(const Simulation_move & mov);
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
 	void init_can_move();
 	bool IsWallBlocking(int x, int y, int type);
@@ -189,24 +189,6 @@ public:
 	void create_cherenkov_photon(int pp);
 	void create_gain_photon(int pp);
 
-	inline void pmap_add(int i, int x, int y, int t)
-	{
-		// NB: all arguments are assumed to be within bounds
-		if (elements[t].Properties & TYPE_ENERGY)
-			photons[y][x] = PMAP(i, t);
-		else if ((!pmap[y][x] || !(elements[t].Properties2 & PROP_INVISIBLE))) // fixed
-			pmap[y][x] = PMAP(i, t);
-	}
-	inline void pmap_remove(unsigned int i, int x, int y)
-	{
-		// NB: all arguments are assumed to be within bounds
-		if (pmap[y][x] && part_ID((unsigned int)(pmap[y][x]))==i)
-			pmap[y][x] = 0;
-		else if (TYP(pmap[y][x])==PT_PINVIS && part_ID((unsigned int)(partsi(pmap[y][x]).tmp4))==i)
-			partsi(pmap[y][x]).tmp4 = 0;
-		else if (part_ID((unsigned int)(photons[y][x]))==i)
-			photons[y][x] = 0;
-	}
 	void restrict_can_move(/* bool oldstate, bool newstate */);
 	void kill_part(int i);
 	bool FloodFillPmapCheck(int x, int y, int type);
@@ -267,10 +249,31 @@ public:
 	void CreateLine(int x1, int y1, int x2, int y2, int c);
 	void CreateBox(int x1, int y1, int x2, int y2, int c, int flags = -1);
 	int FloodParts(int x, int y, int c, int cm, int flags = -1);
+	void pmap_add(int i, int x, int y, int t);
+	bool pmap_clearif(int & r, unsigned int i);
+	int & pmap_get(int x, int y);
+	void pmap_heatconduct(int r, float temp);
+	void pmap_heatconduct(int x, int y, float temp);
+	void pmap_remove(unsigned int i, int x, int y);
+	int parts_allocate()
+	{
+		if (pfree == -1)
+			return -1;
+		int i = pfree;
+		pfree = parts[i].life;
+		if (i>parts_lastActiveIndex)
+			parts_lastActiveIndex = i;
+		return i;
+	}
+	void parts_deallocate(int i)
+	{
+		parts[i].type = 0;
+		parts[i].life = pfree;
+		pfree = i;
+	}
 
-	
 	void GetGravityField(int x, int y, float particleGrav, float newtonGrav, float & pGravX, float & pGravY);
-
+	int GetHeatConduct(int i, int t);
 	int GetParticleType(std::string type);
 
 	void orbitalparts_get(int block1, int block2, int resblock1[], int resblock2[]);

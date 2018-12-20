@@ -818,7 +818,7 @@ bool GameController::KeyPress(int key, Uint16 character, bool shift, bool ctrl, 
 	{
 		for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 		{
-			if ((*iter)->ID & debugFlags)
+			if ((*iter)->debugID & debugFlags)
 				if (!(*iter)->KeyPress(key, character, shift, ctrl, alt, gameView->GetMousePosition()))
 					ret = false;
 		}
@@ -895,7 +895,7 @@ void GameController::Tick()
 	}
 	for(std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
 	{
-		if ((*iter)->ID & debugFlags)
+		if ((*iter)->debugID & debugFlags)
 			(*iter)->Draw();
 	}
 	commandInterface->OnTick();
@@ -1376,7 +1376,7 @@ void GameController::OpenLogin()
 
 void GameController::OpenProfile()
 {
-	if(Client::Ref().GetAuthUser().ID)
+	if(Client::Ref().GetAuthUser().UserID)
 	{
 		new ProfileActivity(Client::Ref().GetAuthUser().Username);
 	}
@@ -1483,7 +1483,7 @@ void GameController::OpenSaveWindow()
 			c->LoadSave(&save);
 		}
 	};
-	if(gameModel->GetUser().ID)
+	if(gameModel->GetUser().UserID)
 	{
 		Simulation * sim = gameModel->GetSimulation();
 		GameSave * gameSave = sim->Save();
@@ -1530,7 +1530,7 @@ void GameController::SaveAsCurrent()
 		}
 	};
 
-	if(gameModel->GetSave() && gameModel->GetUser().ID && gameModel->GetUser().Username == gameModel->GetSave()->GetUserName())
+	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetUser().Username == gameModel->GetSave()->GetUserName())
 	{
 		Simulation * sim = gameModel->GetSimulation();
 		GameSave * gameSave = sim->Save();
@@ -1556,7 +1556,7 @@ void GameController::SaveAsCurrent()
 			}
 		}
 	}
-	else if(gameModel->GetUser().ID)
+	else if(gameModel->GetUser().UserID)
 	{
 		OpenSaveWindow();
 	}
@@ -1574,7 +1574,7 @@ void GameController::FrameStep()
 
 void GameController::Vote(int direction)
 {
-	if(gameModel->GetSave() && gameModel->GetUser().ID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
+	if(gameModel->GetSave() && gameModel->GetUser().UserID && gameModel->GetSave()->GetID() && gameModel->GetSave()->GetVote()==0)
 	{
 		try
 		{

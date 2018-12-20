@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+#define ID(r) part_ID(r)
 //#TPT-Directive ElementClass Element_DRAY PT_DRAY 178
 Element_DRAY::Element_DRAY()
 {
@@ -55,7 +56,7 @@ bool InBounds(int x, int y)
 //#TPT-Directive ElementHeader Element_DRAY static int update(UPDATE_FUNC_ARGS)
 int Element_DRAY::update(UPDATE_FUNC_ARGS)
 {
-	int ctype = parts[i].ctype&0xFF, ctypeExtra = parts[i].ctype>>8, copyLength = parts[i].tmp, copySpaces = parts[i].tmp2;
+	int ctype = TYP(parts[i].ctype), ctypeExtra = ID(parts[i].ctype), copyLength = parts[i].tmp, copySpaces = parts[i].tmp2;
 	if (copySpaces < 0)
 		copySpaces = parts[i].tmp2 = 0;
 	if (copyLength < 0)
@@ -69,12 +70,15 @@ int Element_DRAY::update(UPDATE_FUNC_ARGS)
 				if (BOUNDS_CHECK && (rx || ry))
 				{
 					int r = pmap[y+ry][x+rx];
-					if ((r&0xFF) == PT_SPRK && parts[r>>8].life == 3) //spark found, start creating
+					int rt = TYP(r);
+					r >>= PMAPBITS;
+
+					if (rt == PT_SPRK && parts[r].life == 3) //spark found, start creating
 					{
-						bool overwrite = parts[r>>8].ctype == PT_PSCN;
+						bool overwrite = parts[r].ctype == PT_PSCN;
 						int partsRemaining = copyLength, xCopyTo, yCopyTo; //positions where the line will start being copied at
 
-						if (parts[r>>8].ctype == PT_INWR && rx && ry) // INWR doesn't spark from diagonals
+						if (parts[r].ctype == PT_INWR && rx && ry) // INWR doesn't spark from diagonals
 							continue;
 
 						//figure out where the copying will start/end
@@ -107,7 +111,7 @@ int Element_DRAY::update(UPDATE_FUNC_ARGS)
 							//  1: if .tmp isn't set, and the element in this spot is the ctype, then stop
 							//  2: if .tmp is set, stop when the length limit reaches 0
 							//  3. Stop when we are out of bounds
-							if ((!copyLength && (rr&0xFF) == ctype && (ctype != PT_LIFE || parts[rr>>8].ctype == ctypeExtra))
+							if ((!copyLength && TYP(rr) == ctype && (ctype != PT_LIFE || parts[ID(rr)].ctype == ctypeExtra))
 									|| !(--partsRemaining && InBounds(xCurrent+xStep, yCurrent+yStep)))
 							{
 								copyLength -= partsRemaining;
@@ -124,23 +128,24 @@ int Element_DRAY::update(UPDATE_FUNC_ARGS)
 						{
 							// get particle to copy
 							if (isEnergy)
-								type = sim->photons[yCurrent][xCurrent]&0xFF;
+								type = TYP(sim->photons[yCurrent][xCurrent]);
 							else
-								type = pmap[yCurrent][xCurrent]&0xFF;
+								type = TYP(pmap[yCurrent][xCurrent]);
 
 							// if sparked by PSCN, overwrite whatever is in the target location, instead of just ignoring it
 							if (overwrite)
 							{
+								int r2;
 								if (isEnergy)
 								{
-									if (sim->photons[yCopyTo][xCopyTo])
-										sim->kill_part(sim->photons[yCopyTo][xCopyTo]>>8);
+									if (r2 = sim->photons[yCopyTo][xCopyTo])
+										sim->kill_part(ID(r2));
 								}
 								else
 								{
-									int r2 = pmap[yCopyTo][xCopyTo];
-									if (r2 && !(sim->elements[r2 & 0xFF].Properties2 & PROP_NODESTRUCT))
-										sim->kill_part(r2>>8);
+									r2 = pmap[yCopyTo][xCopyTo];
+									if (r2 && !(sim->elements[TYP(r2)].Properties2 & PROP_NODESTRUCT))
+										sim->kill_part(ID(r2));
 								}
 							}
 							if (type == PT_SPRK) // spark hack
@@ -156,9 +161,9 @@ int Element_DRAY::update(UPDATE_FUNC_ARGS)
 								if (type == PT_SPRK) // spark hack
 									sim->part_change_type(p, xCopyTo, yCopyTo, PT_SPRK);
 								if (isEnergy)
-									parts[p] = parts[sim->photons[yCurrent][xCurrent]>>8];
+									parts[p] = parts[ID(sim->photons[yCurrent][xCurrent])];
 								else
-									parts[p] = parts[pmap[yCurrent][xCurrent]>>8];
+									parts[p] = parts[ID(pmap[yCurrent][xCurrent])];
 								parts[p].x = xCopyTo;
 								parts[p].y = yCopyTo;
 							}

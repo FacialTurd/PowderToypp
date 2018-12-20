@@ -32,7 +32,7 @@ Element_PROT::Element_PROT()
 	Description = "Protons. Transfer heat to materials, and removes sparks.";
 
 	Properties = TYPE_ENERGY;
-	Properties2 |= PROP_ENERGY_PART | PROP_PASSTHROUGHALL;
+	Properties2 |= TYPE_ENERGY | PROP_PASSTHROUGHALL;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -47,6 +47,114 @@ Element_PROT::Element_PROT()
 	Graphics = &Element_PROT::graphics;
 }
 
+namespace
+{
+const int FLAG_HEAT_CONDUCT = 1;
+const int FLAG_COLLIDE = 2;
+
+int PROT_interaction_1 (Simulation * sim, int i, int x, int y, int uID, int func, int & flags)
+{
+	Particle &p_i = sim->parts[i], &p_uID = sim->parts[uID];
+
+	switch (func)
+	{
+	case 6:
+		p_i.temp = p_uID.temp;
+		flags &= ~FLAG_HEAT_CONDUCT;
+		break;
+	case 10:
+		if (p_uID.temp > 1273.0f)
+			return 0;
+		if (p_uID.temp < 73.15f)
+		{
+			p_i.tmp2 &= ~1;
+			p_i.tmp2 |= (p_uID.tmp >> 9) & 1;
+			flags &= ~FLAG_HEAT_CONDUCT;
+		}
+		break;
+	case 11:
+		if (p_uID.tmp2 == 1)
+		{
+			p_i.x = x;
+			p_i.y = y;
+			p_i.life *= 2;
+			p_i.ctype = 0x3FFFFFFF;
+			return PT_PHOT;
+		}
+		break;
+	case 12:
+		if ((p_uID.tmp & 7) == 2)
+		{
+			bool vibr_found = false;
+			int velSqThreshold = (int)(p_uID.temp - (273.15f - 0.5f));
+			if (velSqThreshold < 0)
+				velSqThreshold = 0;
+			else if (p_uID.tmp == 10)
+				velSqThreshold *= 100;
+			int r, rx, ry, trade;
+
+			for (trade = 0; trade < 5; trade++)
+			{
+				rx = rand()%5-2;
+				ry = rand()%5-2;
+				if (BOUNDS_CHECK && (rx || ry))
+				{
+					r = sim->pmap[y+ry][x+rx];
+					switch (TYP(r))
+					{
+					case PT_BVBR:
+					case PT_VIBR:
+						p_uID.tmp2 += sim->partsi(r).tmp;
+						sim->partsi(r).tmp = 0;
+						break;
+					}
+				}
+			}
+
+			if (vibr_found && sim->pv[y/CELL][x/CELL] > 0.0f)
+			{
+				p_uID.tmp2 += sim->pv[y/CELL][x/CELL] * 7.0f,
+				sim->pv[y/CELL][x/CELL] = 0.0f;
+			}
+			if (p_uID.tmp2 < velSqThreshold)
+			{
+				p_uID.tmp2 += p_i.tmp + (int)(p_i.vx * p_i.vx + p_i.vy * p_i.vy + 0.5f);
+				return 0;
+			}
+			p_i.tmp += velSqThreshold;
+			p_uID.tmp2 -= velSqThreshold;
+			flags &= ~(FLAG_HEAT_CONDUCT | FLAG_COLLIDE);
+		}
+		break;
+	case 16:
+		if (p_uID.ctype == 5)
+		{
+			if (p_uID.tmp >= 0x40)
+			{
+				p_i.tmp2 &= ~2;
+				((p_uID.tmp & 0x40) && (p_i.tmp2 |= 2));
+			}
+		}
+		break;
+	case 22:
+		if ((p_uID.tmp>>3) == 2)
+			flags &= ~FLAG_HEAT_CONDUCT;
+		break;
+	case 33:
+		{
+			const float dtable[7] = {0.0f, 100.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, (MAX_TEMP-MIN_TEMP)};
+			float change;
+			int temp = (int)(p_i.temp - 323.15f) / 50;
+			bool sign1 = (temp < 0); sign1 && (temp = -temp); temp > 6 && (temp = 6);
+			change = dtable[temp] * (sign1 ? -1 : 1);
+			p_uID.temp = restrict_flt(p_uID.temp + change, MIN_TEMP, MAX_TEMP);
+		}
+		flags &= ~FLAG_HEAT_CONDUCT;
+	}
+	return -1;
+}
+}
+
 //#TPT-Directive ElementHeader Element_PROT static int update(UPDATE_FUNC_ARGS)
 int Element_PROT::update(UPDATE_FUNC_ARGS)
 {
@@ -56,7 +164,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		under = partsi(under).tmp4;
 	int utype = TYP(under), aheadT;
 	int underI = ID(under), aheadI;
-	bool find_E195_only = false;
+	int flags = -1;
 
 	switch (utype)
 	{
@@ -72,7 +180,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			parts[underI].ctype = 0;
 		}
 		else
-			utype = 0;
+			flags &= ~FLAG_HEAT_CONDUCT;
 		break;
 	}
 	case PT_DEUT:
@@ -103,106 +211,16 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		else if (parts[i].temp > 373.15f) change = 100.0f;
 		else change = 0.0f;
 		parts[underI].temp = restrict_flt(parts[underI].temp + change, MIN_TEMP, MAX_TEMP);
+		flags &= ~FLAG_HEAT_CONDUCT;
 		break;
 	case ELEM_MULTIPP:
-		switch (parts[underI].life)
 		{
-		case 6:
-			parts[i].temp = parts[underI].temp;
-			goto no_temp_change;
-		case 10:
-			if (parts[underI].temp > 1273.0f)
+			int t = PROT_interaction_1(sim, i, x, y, underI, parts[underI].life, flags);
+			if (t >= 0)
 			{
-				sim->kill_part(i);
+				sim->part_change_type(i, x, y, t);
 				return 1;
 			}
-			else if (parts[underI].temp < 73.15f)
-			{
-				parts[i].tmp2 &= ~1;
-				parts[i].tmp2 |= (parts[underI].tmp >> 9) & 1;
-				goto no_temp_change;
-			}
-			break;
-		case 11:
-			if (parts[underI].tmp2 == 1)
-			{
-				sim->part_change_type(i, x, y, PT_PHOT);
-				parts[i].x = x;
-				parts[i].y = y;
-				parts[i].life *= 2;
-				parts[i].ctype = 0x3FFFFFFF;
-				return 1;
-			}
-			break;
-		case 12:
-			if ((parts[underI].tmp & 7) == 2)
-			{
-				bool vibr_found = false;
-				int velSqThreshold = (int)(parts[underI].temp - (273.15f - 0.5f));
-				if (velSqThreshold < 0)
-					velSqThreshold = 0;
-				else if (parts[underI].tmp == 10)
-					velSqThreshold *= 100;
-				int r, rx, ry, trade;
-
-				for (trade = 0; trade < 5; trade++)
-				{
-					rx = rand()%5-2;
-					ry = rand()%5-2;
-					if (BOUNDS_CHECK && (rx || ry))
-					{
-						r = pmap[y+ry][x+rx];
-						switch (TYP(r))
-						{
-						case PT_BVBR:
-						case PT_VIBR:
-							parts[underI].tmp2 += partsi(r).tmp;
-							partsi(r).tmp = 0;
-							break;
-						}
-					}
-				}
-
-				if (vibr_found && sim->pv[y/CELL][x/CELL] > 0.0f)
-				{
-					parts[underI].tmp2 += sim->pv[y/CELL][x/CELL] * 7.0f,
-					sim->pv[y/CELL][x/CELL] = 0.0f;
-				}
-				if (parts[underI].tmp2 < velSqThreshold)
-				{
-					parts[underI].tmp2 += parts[i].tmp + (int)(parts[i].vx * parts[i].vx + parts[i].vy * parts[i].vy + 0.5f);
-					sim->kill_part(i);
-					return 1;
-				}
-				parts[i].tmp += velSqThreshold;
-				parts[underI].tmp2 -= velSqThreshold;
-				goto finding_E195;
-			}
-			break;
-		case 16:
-			if (parts[underI].ctype == 5)
-			{
-				if (parts[underI].tmp >= 0x40)
-				{
-					parts[i].tmp2 &= ~2;
-					((parts[underI].tmp & 0x40) && (parts[i].tmp2 |= 2));
-				}
-			}
-			break;
-		case 22:
-			if ((parts[underI].tmp>>3) == 2)
-				goto no_temp_change;
-			break;
-		case 33:
-			{
-				const float dtable[7] = {0.0f, 100.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, (MAX_TEMP-MIN_TEMP)};
-				float change;
-				int temp = (int)(parts[i].temp - 323.15f) / 50;
-				bool sign1 = (temp < 0); sign1 && (temp = -temp); temp > 6 && (temp = 6);
-				change = dtable[temp] * (sign1 ? -1 : 1);
-				parts[underI].temp = restrict_flt(parts[underI].temp + change, MIN_TEMP, MAX_TEMP);
-			}
-			goto no_temp_change;
 		}
 		break;
 	case PT_NONE:
@@ -212,6 +230,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 			if (!--parts[i].life)
 				sim->kill_part(i);
 		}
+		flags &= ~FLAG_HEAT_CONDUCT;
 		break;
 	default:
 		//set off explosives (only when hot because it wasn't as fun when it made an entire save explode)
@@ -229,13 +248,10 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		break;
 	}
 	//make temp of other things closer to it's own temperature. This will change temp of things that don't conduct, and won't change the PROT's temperature
-	if (utype && utype != PT_WIFI)
+	if (flags & FLAG_HEAT_CONDUCT)
 		parts[underI].temp = restrict_flt(parts[underI].temp-(parts[underI].temp-parts[i].temp)/4.0f, MIN_TEMP, MAX_TEMP);
  
-
 	//if this proton has collided with another last frame, change it into a heavier element
-	no_temp_change:
-
 	ahead = sim->photons[y][x];
 	aheadI = ID(ahead);
 	aheadT = TYP(ahead);
@@ -245,7 +261,7 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		parts[i].tmp2 |= 2;
 	}
 	
-	if (find_E195_only)
+	if (!(flags & FLAG_COLLIDE))
 		return 0;
 
 	if (parts[i].tmp)
@@ -306,10 +322,6 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 	}
 	return 0;
-	
-finding_E195:
-	find_E195_only = true;
-	goto no_temp_change;
 }
 
 //#TPT-Directive ElementHeader Element_PROT static int DeutImplosion(Simulation * sim, int n, int x, int y, float temp, int t)

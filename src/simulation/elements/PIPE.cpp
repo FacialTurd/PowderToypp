@@ -220,7 +220,7 @@ int Element_PIPE::update(UPDATE_FUNC_ARGS)
 					//try eating particle at entrance
 					else if (!TYP(parts[i].ctype) && (
 						(sim->elements[TYP(r)].Properties  & (TYPE_PART | TYPE_LIQUID | TYPE_GAS)) ||
-						(sim->elements[TYP(r)].Properties2 & (PROP_ENERGY_PART))))
+						(sim->elements[TYP(r)].Properties2 & (TYPE_ENERGY))))
 					{
 						if (TYP(r)==PT_SOAP)
 							Element_SOAP::detach(sim, ID(r));

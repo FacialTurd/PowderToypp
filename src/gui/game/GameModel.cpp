@@ -99,7 +99,7 @@ GameModel::GameModel():
 	Favorite::Ref().LoadFavoritesFromPrefs();
 
 	//Load last user
-	if(Client::Ref().GetAuthUser().ID)
+	if(Client::Ref().GetAuthUser().UserID)
 	{
 		currentUser = Client::Ref().GetAuthUser();
 	}

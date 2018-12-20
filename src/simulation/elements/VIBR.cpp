@@ -102,7 +102,7 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 		{
 			rx = rndstore%7-3;
 			ry = (rndstore>>3)%7-3;
-			if(BOUNDS_CHECK)
+			if (BOUNDS_CHECK)
 			{
 				r = pmap[y+ry][x+rx];
 				rt = TYP(r);
@@ -114,7 +114,7 @@ int Element_VIBR::update(UPDATE_FUNC_ARGS) {
 						transfer = parts[i].tmp;
 					}
 					*/
-					if (rt!=PT_VIBR && rt!=PT_BVBR && sim->elements[rt].HeatConduct && (rt!=PT_HSWC||partsi(r).life==10))
+					if (rt!=PT_VIBR && rt!=PT_BVBR && sim->GetHeatConduct(ID(r), rt))
 					{
 						partsi(r).temp += parts[i].tmp*3;
 						parts[i].tmp = 0;

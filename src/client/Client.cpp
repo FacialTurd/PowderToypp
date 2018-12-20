@@ -91,13 +91,13 @@ Client::Client():
 		{
 			preferences.clear();
 			configFile >> preferences;
-			int ID = preferences["User"]["ID"].asInt();
+			int UserID = preferences["User"]["ID"].asInt();
 			std::string Username = preferences["User"]["Username"].asString();
 			std::string SessionID = preferences["User"]["SessionID"].asString();
 			std::string SessionKey = preferences["User"]["SessionKey"].asString();
 			std::string Elevation = preferences["User"]["Elevation"].asString();
 
-			authUser.ID = ID;
+			authUser.UserID = UserID;
 			authUser.Username = Username;
 			authUser.SessionID = SessionID;
 			authUser.SessionKey = SessionKey;
@@ -149,9 +149,9 @@ void Client::Initialise(std::string proxyString)
 	//Begin version check
 	versionCheckRequest = http_async_req_start(NULL, "http://" SERVER "/Startup.json", NULL, 0, 0);
 
-	if (authUser.ID)
+	if (authUser.UserID)
 	{
-		std::string idTempString = format::NumberToString<int>(authUser.ID);
+		std::string idTempString = format::NumberToString<int>(authUser.UserID);
 		char *id = new char[idTempString.length() + 1];
 		std::strcpy (id, idTempString.c_str());
 		char *session = new char[authUser.SessionID.length() + 1];
@@ -165,7 +165,7 @@ void Client::Initialise(std::string proxyString)
 	// use an alternate update server
 	alternateVersionCheckRequest = http_async_req_start(NULL, "http://" UPDATESERVER "/Startup.json", NULL, 0, 0);
 	usingAltUpdateServer = true;
-	if (authUser.ID)
+	if (authUser.UserID)
 	{
 		http_auth_headers(alternateVersionCheckRequest, authUser.Username.c_str(), NULL, NULL);
 	}
@@ -947,9 +947,9 @@ void Client::WritePrefs()
 	
 	if (configFile)
 	{
-		if (authUser.ID)
+		if (authUser.UserID)
 		{
-			preferences["User"]["ID"] = authUser.ID;
+			preferences["User"]["ID"] = authUser.UserID;
 			preferences["User"]["SessionID"] = authUser.SessionID;
 			preferences["User"]["SessionKey"] = authUser.SessionKey;
 			preferences["User"]["Username"] = authUser.Username;
@@ -1005,8 +1005,8 @@ RequestStatus Client::UploadSave(SaveInfo & save)
 	char * data;
 	int dataLength = 0;
 	std::stringstream userIDStream;
-	userIDStream << authUser.ID;
-	if (authUser.ID)
+	userIDStream << authUser.UserID;
+	if (authUser.UserID)
 	{
 		if (!save.GetGameSave())
 		{
@@ -1246,11 +1246,11 @@ RequestStatus Client::ExecVote(int saveID, int direction)
 	char * data;
 	int dataLength = 0;
 
-	if (authUser.ID)
+	if (authUser.UserID)
 	{
 		char * directionText = (char*)(direction==1?"Up":"Down");
 		std::string saveIDText = format::NumberToString<int>(saveID);
-		std::string userIDText = format::NumberToString<int>(authUser.ID);
+		std::string userIDText = format::NumberToString<int>(authUser.UserID);
 
 		char *id = new char[saveIDText.length() + 1];
 		std::strcpy(id, saveIDText.c_str());
@@ -1401,7 +1401,7 @@ LoginStatus Client::Login(std::string username, std::string password, User & use
 	char passwordHash[33];
 	char totalHash[33];
 
-	user.ID = 0;
+	user.UserID = 0;
 	user.Username = "";
 	user.SessionID = "";
 	user.SessionKey = "";
@@ -1445,7 +1445,7 @@ LoginStatus Client::Login(std::string username, std::string password, User & use
 			}
 
 			user.Username = username;
-			user.ID = userIDTemp;
+			user.UserID = userIDTemp;
 			user.SessionID = sessionIDTemp;
 			user.SessionKey = sessionKeyTemp;
 			std::string userElevation = userElevationTemp;
@@ -1474,10 +1474,10 @@ RequestStatus Client::DeleteSave(int saveID)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/Delete.json?ID=" << saveID << "&Mode=Delete&Key=" << authUser.SessionKey;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1497,10 +1497,10 @@ RequestStatus Client::AddComment(int saveID, std::string comment)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/Comments.json?ID=" << saveID;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		
 		const char *const postNames[] = { "Comment", NULL };
 		const char *const postDatas[] = { (char*)(comment.c_str()) };
@@ -1526,10 +1526,10 @@ RequestStatus Client::FavouriteSave(int saveID, bool favourite)
 	urlStream << "http://" << SERVER << "/Browse/Favourite.json?ID=" << saveID << "&Key=" << authUser.SessionKey;
 	if(!favourite)
 		urlStream << "&Mode=Remove";
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1549,10 +1549,10 @@ RequestStatus Client::ReportSave(int saveID, std::string message)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/Report.json?ID=" << saveID << "&Key=" << authUser.SessionKey;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 
 		const char *const postNames[] = { "Reason", NULL };
 		const char *const postDatas[] = { (char*)(message.c_str()) };
@@ -1576,10 +1576,10 @@ RequestStatus Client::UnpublishSave(int saveID)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/Delete.json?ID=" << saveID << "&Mode=Unpublish&Key=" << authUser.SessionKey;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1599,10 +1599,10 @@ RequestStatus Client::PublishSave(int saveID)
 	char *data;
 	int dataStatus;
 	urlStream << "http://" << SERVER << "/Browse/View.json?ID=" << saveID << "&Key=" << authUser.SessionKey;
-	if (authUser.ID)
+	if (authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		const char *const postNames[] = { "ActionPublish", NULL };
 		const char *const postDatas[] = { "" };
 		size_t postLengths[] = { 1 };
@@ -1628,10 +1628,10 @@ SaveInfo * Client::GetSave(int saveID, int saveDate)
 	}
 	char * data;
 	int dataStatus, dataLength;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1868,10 +1868,10 @@ std::vector<SaveInfo*> * Client::SearchSaves(int start, int count, std::string q
 	{
 		urlStream << "&Category=" << format::URLEncode(category);
 	}
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1937,10 +1937,10 @@ std::list<std::string> * Client::RemoveTag(int saveID, std::string tag)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/EditTag.json?Op=delete&ID=" << saveID << "&Tag=" << tag << "&Key=" << authUser.SessionKey;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else
@@ -1979,10 +1979,10 @@ std::list<std::string> * Client::AddTag(int saveID, std::string tag)
 	char * data = NULL;
 	int dataStatus, dataLength;
 	urlStream << "http://" << SERVER << "/Browse/EditTag.json?Op=add&ID=" << saveID << "&Tag=" << tag << "&Key=" << authUser.SessionKey;
-	if(authUser.ID)
+	if(authUser.UserID)
 	{
 		std::stringstream userIDStream;
-		userIDStream << authUser.ID;
+		userIDStream << authUser.UserID;
 		data = http_auth_get((char *)urlStream.str().c_str(), (char *)(userIDStream.str().c_str()), NULL, (char *)(authUser.SessionID.c_str()), &dataStatus, &dataLength);
 	}
 	else

@@ -41,12 +41,11 @@
 // second properties flag:
 #define PROP_DEBUG_USE_TMP2		0x00000001	//   1 Use .tmp2 show it in the debug HUD
 #define PROP_ELEC_HEATING		0x00000002  //   2 Electricity heating effect
-#define PROP_NOWAVELENGTHS		0x00000004  //   4 Energy particle without wavelengths
-#define PROP_CTYPE_INTG			0x00000008	//   8 Show .ctype as integer
-#define PROP_CTYPE_WAVEL		0x00000010	//  16 Show .ctype as wavelengths
+#define PROP_CTYPE_INTG			0x00000004	//   4 Show .ctype as integer
+#define PROP_CTYPE_WAVEL		0x00000008	//   8 Show .ctype as wavelengths
+// #define TYPE_ENERGY			0x00000010  //  16 VIBR absorb-able particle
 #define PROP_CTYPE_SPEC			0x00000020	//  32 Special case for .ctype
-#define PROP_ENERGY_PART		0x00000040	//  64 VIBR absorb-able particle
-#define PROP_DEBUG_HIDE_TMP		0x00000080	// 128 .tmp is hidden from the debug HUD
+#define PROP_DEBUG_HIDE_TMP		0x00000040	//  64 .tmp is hidden from the debug HUD
 #define PROP_NEUTRONS_LIKE		0x00000100	// 256 neutrons-like element
 #define PROP_PASSTHROUGHALL		0x00000200	// 512 travel acts like PROT
 //		PROP_RESERVED

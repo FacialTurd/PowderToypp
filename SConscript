@@ -51,6 +51,7 @@ AddSconsOption('build-number', False, True, "Build number.")
 AddSconsOption('snapshot', False, False, "Snapshot build.")
 AddSconsOption('snapshot-id', False, True, "Snapshot build ID.")
 AddSconsOption('no-script-manager', False, False, "Disable built-in Script Manager")
+AddSconsOption('call-seh-plugin', False, False, "")
 
 AddSconsOption('64bit', False, False, "Compile a 64 bit binary.")
 AddSconsOption('32bit', False, False, "Compile a 32 bit binary.")
@@ -542,9 +543,14 @@ if GetOption('beta'):
 if GetOption('no-script-manager'):
 	env.Append(CPPDEFINES=['NO_SCRIPT_MANAGER'])
 
-
 #Generate list of sources to compile
-sources = Glob("src/*.cpp") + Glob("src/*/*.cpp") + Glob("src/*/*/*.cpp") + Glob("generated/*.cpp")
+sources = []
+
+if platform == "Windows" and (not msvc) and GetOption('call-seh-plugin'):
+	env.Append(CPPDEFINES=['TPT_NEED_DLL_PLUGIN'])
+	sources += Glob("src/asm/*.s")
+
+sources += Glob("src/*.cpp") + Glob("src/*/*.cpp") + Glob("src/*/*/*.cpp") + Glob("generated/*.cpp")
 if not GetOption('nolua') and not GetOption('renderer'):
 	sources += Glob("src/lua/socket/*.c") + Glob("src/lua/LuaCompat.c")
 

@@ -32,7 +32,7 @@ Element_ELEC::Element_ELEC()
 	Description = "Electrons. Sparks electronics, reacts with NEUT and WATR.";
 
 	Properties = TYPE_ENERGY|PROP_LIFE_DEC|PROP_LIFE_KILL_DEC;
-	Properties2 |= PROP_ENERGY_PART;
+	Properties2 |= TYPE_ENERGY;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

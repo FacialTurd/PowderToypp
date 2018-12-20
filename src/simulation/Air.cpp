@@ -146,14 +146,14 @@ void Air::update_air(void)
 			pv[i][2] = pv[i][2]*0.8f;
 			pv[i][XRES/CELL-2] = pv[i][XRES/CELL-2]*0.8f;
 			pv[i][XRES/CELL-1] = pv[i][XRES/CELL-1]*0.8f;
-			vx[i][0] = vx[i][1]*0.9f;
-			vx[i][1] = vx[i][2]*0.9f;
-			vx[i][XRES/CELL-2] = vx[i][XRES/CELL-3]*0.9f;
-			vx[i][XRES/CELL-1] = vx[i][XRES/CELL-2]*0.9f;
-			vy[i][0] = vy[i][1]*0.9f;
-			vy[i][1] = vy[i][2]*0.9f;
-			vy[i][XRES/CELL-2] = vy[i][XRES/CELL-3]*0.9f;
-			vy[i][XRES/CELL-1] = vy[i][XRES/CELL-2]*0.9f;
+			vx[i][0] = vx[i][0]*0.9f;
+			vx[i][1] = vx[i][1]*0.9f;
+			vx[i][XRES/CELL-2] = vx[i][XRES/CELL-2]*0.9f;
+			vx[i][XRES/CELL-1] = vx[i][XRES/CELL-1]*0.9f;
+			vy[i][0] = vy[i][0]*0.9f;
+			vy[i][1] = vy[i][1]*0.9f;
+			vy[i][XRES/CELL-2] = vy[i][XRES/CELL-2]*0.9f;
+			vy[i][XRES/CELL-1] = vy[i][XRES/CELL-1]*0.9f;
 		}
 		for (i=0; i<XRES/CELL; i++) //reduces pressure/velocity on the edges every frame
 		{
@@ -162,14 +162,14 @@ void Air::update_air(void)
 			pv[2][i] = pv[2][i]*0.8f;
 			pv[YRES/CELL-2][i] = pv[YRES/CELL-2][i]*0.8f;
 			pv[YRES/CELL-1][i] = pv[YRES/CELL-1][i]*0.8f;
-			vx[0][i] = vx[1][i]*0.9f;
-			vx[1][i] = vx[2][i]*0.9f;
-			vx[YRES/CELL-2][i] = vx[YRES/CELL-3][i]*0.9f;
-			vx[YRES/CELL-1][i] = vx[YRES/CELL-2][i]*0.9f;
-			vy[0][i] = vy[1][i]*0.9f;
-			vy[1][i] = vy[2][i]*0.9f;
-			vy[YRES/CELL-2][i] = vy[YRES/CELL-3][i]*0.9f;
-			vy[YRES/CELL-1][i] = vy[YRES/CELL-2][i]*0.9f;
+			vx[0][i] = vx[0][i]*0.9f;
+			vx[1][i] = vx[1][i]*0.9f;
+			vx[YRES/CELL-2][i] = vx[YRES/CELL-2][i]*0.9f;
+			vx[YRES/CELL-1][i] = vx[YRES/CELL-1][i]*0.9f;
+			vy[0][i] = vy[0][i]*0.9f;
+			vy[1][i] = vy[1][i]*0.9f;
+			vy[YRES/CELL-2][i] = vy[YRES/CELL-2][i]*0.9f;
+			vy[YRES/CELL-1][i] = vy[YRES/CELL-1][i]*0.9f;
 		}
 
 		for (j=1; j<YRES/CELL; j++) //clear some velocities near walls
@@ -220,6 +220,7 @@ void Air::update_air(void)
 				dp = 0.0f;
 				for (j=-1; j<2; j++)
 					for (i=-1; i<2; i++)
+					{
 						if (y+j>0 && y+j<YRES/CELL-1 &&
 						        x+i>0 && x+i<XRES/CELL-1 &&
 						        !bmap_blockair[y+j][x+i])
@@ -236,6 +237,7 @@ void Air::update_air(void)
 							dy += vy[y][x]*f;
 							dp += pv[y][x]*f;
 						}
+					}
 
 				tx = x - dx*advDistanceMult;
 				ty = y - dy*advDistanceMult;
@@ -336,6 +338,7 @@ void Air::update_air(void)
 				ovy[y][x] = dy;
 				opv[y][x] = dp;
 			}
+
 		memcpy(vx, ovx, sizeof(vx));
 		memcpy(vy, ovy, sizeof(vy));
 		memcpy(pv, opv, sizeof(pv));
@@ -373,9 +376,11 @@ void Air::RecalculateBlockAirMaps()
 				bmap_blockair[y][x] = 1;
 				bmap_blockairh[y][x] = 0x8;
 			}
+			continue;
 		}
 		// mostly accurate insulator blocking, besides checking GEL
-		else if ((type == PT_HSWC && sim.parts[i].life != 10) || sim.elements[type].HeatConduct <= (rand()%250))
+		int c = sim.GetHeatConduct(i, type);
+		if (!c || c <= (rand()%250))
 		{
 			int x = ((int)(sim.parts[i].x+0.5f))/CELL, y = ((int)(sim.parts[i].y+0.5f))/CELL;
 			if (sim.InBounds(x, y) && !(bmap_blockairh[y][x]&0x8))

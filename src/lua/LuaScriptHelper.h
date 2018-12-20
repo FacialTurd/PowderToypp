@@ -146,7 +146,7 @@ int luatpt_record(lua_State* l);
 
 int luatpt_two_state_update(lua_State* l);
 
-void luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2);
+bool luatpt_interactDirELEM(int i, int ri, int wl, int f1, int f2);
 
 
 #endif /* LUASCRIPTHELPER_H_ */

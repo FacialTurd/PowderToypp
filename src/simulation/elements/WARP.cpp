@@ -83,7 +83,7 @@ int Element_WARP::update(UPDATE_FUNC_ARGS)
 			}
 		}
 	}
-	return 0;
+	return -1;
 }
 
 //#TPT-Directive ElementHeader Element_WARP static int graphics(GRAPHICS_FUNC_ARGS)

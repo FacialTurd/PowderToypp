@@ -58,7 +58,7 @@ int Element_C5::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int rt = TYP(r);
-				if ((rt!=PT_C5 && partsi(r).temp<100 && sim->elements[rt].HeatConduct && (rt!=PT_HSWC||partsi(r).life==10)) || rt==PT_CFLM)
+				if ((rt!=PT_C5 && partsi(r).temp<100 && sim->GetHeatConduct(part_ID(r), rt)) || rt==PT_CFLM)
 				{
 					if (!(rand()%6))
 					{
