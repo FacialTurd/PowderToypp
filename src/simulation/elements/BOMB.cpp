@@ -75,7 +75,7 @@ int Element_BOMB::update(UPDATE_FUNC_ARGS)
 								
 								int rr = pmap[ynxj][xnxi];
 								nt = TYP(rr);
-								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && (nt!=ELEM_MULTIPP || (partsi(rr).life&~0x1)!=8)
+								if (!(sim->elements[ nt ].Properties2 & (PROP_NODESTRUCT|PROP_CLONE)) && nt!=PT_VIBR && nt!=ELEM_MULTIPP
 									&& (nt!=PT_SPRK || !(sim->elements[partsi(rr).ctype].Properties2 & PROP_NODESTRUCT)))
 								{
 									if (nt)

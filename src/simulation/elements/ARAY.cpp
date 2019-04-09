@@ -1,4 +1,5 @@
 #include "simulation/Elements.h"
+#include "simulation/MULTIPPE_Update.h"
 
 //#TPT-Directive ElementClass Element_ARAY PT_ARAY 126
 Element_ARAY::Element_ARAY()
@@ -31,7 +32,7 @@ Element_ARAY::Element_ARAY()
 	HeatConduct = 0;
 	Description = "Ray Emitter. Rays create points when they collide.";
 
-	Properties = TYPE_SOLID|PROP_LIFE_DEC;
+	Properties = TYPE_SOLID;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;
@@ -44,6 +45,8 @@ Element_ARAY::Element_ARAY()
 
 	Update = &Element_ARAY::update;
 }
+
+using namespace MULTIPPE_Update;
 
 //#TPT-Directive ElementHeader Element_ARAY static const unsigned char to_angle[9];
 const unsigned char Element_ARAY::to_angle[9] = {0,1,2,7,0,3,6,5,4};
@@ -62,7 +65,7 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 	int modFlag;
 	static float flt1;
 	static Particle *partt;
-	if (!parts[i].life)
+	// if (!parts[i].life)
 	{
 		for (int rx = -1; rx <= 1; rx++)
 			for (int ry = -1; ry <= 1; ry++)
@@ -587,13 +590,8 @@ int Element_ARAY::update(UPDATE_FUNC_ARGS)
 											int f_type = TYP(front1);
 											if (TYP(front1) == PT_SPRK)
 											{
-												f_type = partsi(front1).ctype;
-												if (f_type <= 0 || f_type >= PT_NUM || !sim->elements[f_type].Enabled)
-													f_type = PT_METL;
-												sim->part_change_type(ID(front1), x+nxi+nxx, y+nyi+nyy, f_type);
-												partsi(front1).ctype = PT_NONE; // clear ctype
-												if (f_type == PT_SWCH)
-													partsi(front1).life = 19; // keep SWCH on
+												if (sim->clear_spark(ID(front1), x+nxi+nxx, y+nyi+nyy) == PT_SWCH)
+													parts[ID(front1)].life = 19; // keep SWCH on
 											}
 											else if (f_type == PT_SWCH)
 											{

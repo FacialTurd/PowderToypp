@@ -4,7 +4,6 @@
 
 #include <cmath>
 #include "ElementGraphics.h"
-#include "sim-move-struct.h"
 #include "Gravity.h"
 #include "Misc.h"
 #include "Simulation.h"

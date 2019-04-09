@@ -71,8 +71,10 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int rt = TYP(r);
-				if (rt==PT_ISOZ || rt==PT_ISZS)
+				switch (rt)
 				{
+				case PT_ISOZ:
+				case PT_ISZS:
 					if (!(rand()%400))
 					{
 						parts[i].vx *= 0.90;
@@ -83,35 +85,43 @@ int Element_PHOT::update(UPDATE_FUNC_ARGS)
 							rr = (rand()%128+128)/127.0f;
 						else
 							rr = (rand()%228+128)/127.0f;
-						partsi(r).vx = rr*cosf(rrr);
-						partsi(r).vy = rr*sinf(rrr);
+						parts[ID(r)].vx = rr*cosf(rrr);
+						parts[ID(r)].vy = rr*sinf(rrr);
 						sim->pv[y/CELL][x/CELL] -= 15.0f * CFDS;
 					}
-				}
-				else if((rt == PT_QRTZ || rt == PT_PQRT) && !ry && !rx) //if on QRTZ or PQRT
-				{
-					float a = (rand()%360)*3.14159f/180.0f;
-					parts[i].vx = 3.0f*cosf(a);
-					parts[i].vy = 3.0f*sinf(a);
-					// if(parts[i].ctype == 0x3FFFFFFF)
-					if (!(~parts[i].ctype & 0x3FFFFFFF))
-						parts[i].ctype = 0x1F<<(rand()%26);
-					if (parts[i].life)
-						parts[i].life++; //Delay death
-				}
-				else if(rt == PT_BGLA && !ry && !rx)//if on BGLA
-				{
-					float a = (rand()%101 - 50) * 0.001f;
-					float rx = cosf(a), ry = sinf(a), vx, vy;
-					vx = rx * parts[i].vx + ry * parts[i].vy;
-					vy = rx * parts[i].vy - ry * parts[i].vx;
-					parts[i].vx = vx;
-					parts[i].vy = vy;
-				}
-				else if (rt == PT_FILT && partsi(r).tmp==9)
-				{
-					parts[i].vx += ((float)(rand()%1000-500))/1000.0f;
-					parts[i].vy += ((float)(rand()%1000-500))/1000.0f;
+					break;
+				case PT_QRTZ:
+				case PT_PQRT: //if on QRTZ or PQRT
+					if (!ry && !rx)
+					{
+						float a = (rand()%360)*3.14159f/180.0f;
+						parts[i].vx = 3.0f*cosf(a);
+						parts[i].vy = 3.0f*sinf(a);
+						// if(parts[i].ctype == 0x3FFFFFFF)
+						if (!(~parts[i].ctype & 0x3FFFFFFF))
+							parts[i].ctype = 0x1F<<(rand()%26);
+						if (parts[i].life)
+							parts[i].life++; //Delay death
+					}
+					break;
+				case PT_BGLA: //if on BGLA
+					if (!ry && !rx)
+					{
+						float a = (rand()%101 - 50) * 0.001f;
+						float rx = cosf(a), ry = sinf(a), vx, vy;
+						vx = rx * parts[i].vx + ry * parts[i].vy;
+						vy = rx * parts[i].vy - ry * parts[i].vx;
+						parts[i].vx = vx;
+						parts[i].vy = vy;
+					}
+					break;
+				case PT_FILT:
+					if (parts[ID(r)].tmp == 9)
+					{
+						parts[i].vx += ((float)(rand()%1000-500))/1000.0f;
+						parts[i].vy += ((float)(rand()%1000-500))/1000.0f;
+					}
+					break;
 				}
 			}
 	return 0;

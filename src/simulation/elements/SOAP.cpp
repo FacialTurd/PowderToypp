@@ -163,7 +163,7 @@ int Element_SOAP::update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
-						r >>= PMAPBITS;
+						r = ID(r);
 						if ((parts[r].type == PT_SOAP) && (parts[r].ctype & SOAP_BACK_MATE_BUB) == SOAP_BUBBLE_NO_MATES)
 							Element_SOAP::attach(parts, i, r);
 					}
@@ -191,7 +191,7 @@ int Element_SOAP::update(UPDATE_FUNC_ARGS)
 							}
 							if (rt == PT_SOAP)
 							{
-								r >>= PMAPBITS;
+								r = ID(r);
 								if (parts[r].ctype == SOAP_BUBBLE_NO_MATES)
 								{
 									int buf = parts[i].tmp;
@@ -260,7 +260,7 @@ int Element_SOAP::update(UPDATE_FUNC_ARGS)
 						continue;
 					if (TYP(r) == PT_OIL)
 					{
-						r >>= PMAPBITS;
+						r = ID(r);
 						float ax, ay;
 						ax = (parts[i].vx*0.5f + parts[r].vx)/2;
 						ay = ((parts[i].vy-0.1f)*0.5f + parts[r].vy)/2;

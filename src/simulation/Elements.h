@@ -82,7 +82,7 @@
 #define ELEM_MDECOR	13
 
 
-#define PMAPBITS 8
+#define PMAPBITS 9
 
 #define PMAPMASK ((1<<PMAPBITS)-1)
 #define ID(r) ((r)>>PMAPBITS)
@@ -102,13 +102,6 @@
 #define CHECK_EXTEL(r, t) \
 	(TYP(r) == ELEM_MULTIPP && partsi(r).life == (t))
 #define CHECK_EL_INSL(t) ((t) == PT_INSL || (t) == PT_INDI)
-#define PAVG_INSL(r) sim->parts_avg(i, ID(r), PT_INSL)
-
-#define ELEMPROP(t) sim->elements[t].Properties
-#define ELEMPROP2(t) sim->elements[t].Properties2
-#define ELEMPROPT(t) ELEMPROP(TYP(t))
-#define ELEMPROPP(r, p) ELEMPROP(partsi(r).p)
-#define ELEMPROPW(id, op) (parts[id].flags op (FLAG_SKIPMOVE))
 
 
 #define UPDATE_FUNC_ARGS Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]

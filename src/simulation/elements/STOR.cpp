@@ -62,7 +62,7 @@ int Element_STOR::update(UPDATE_FUNC_ARGS)
 				if (ID(r) >= NPART || !r)
 					continue;
 				int rt = TYP(r);
-				r >>= PMAPBITS;
+				r = ID(r);
 				if (!parts[i].tmp && !parts[i].life && rt!=PT_STOR && !(sim->elements[rt].Properties&TYPE_SOLID) && (!parts[i].ctype || rt == parts[i].ctype))
 				{
 					if (rt == PT_SOAP)

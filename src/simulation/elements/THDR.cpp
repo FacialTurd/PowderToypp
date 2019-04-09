@@ -58,7 +58,7 @@ int Element_THDR::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = TYP(r), r >>= PMAPBITS;
+				rt = TYP(r), r = ID(r);
 				if ((sim->elements[rt].Properties&PROP_CONDUCTS) && parts[r].life==0 && !(rt==PT_WATR||rt==PT_SLTW) && parts[r].ctype!=PT_SPRK)
 				{
 					parts[r].ctype = parts[r].type;

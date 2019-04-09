@@ -88,7 +88,7 @@ int Element_VIRS::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int rt = TYP(r), irt;
-				r >>= PMAPBITS;
+				r = ID(r);
 				irt = rt;
 
 				switch (rt)

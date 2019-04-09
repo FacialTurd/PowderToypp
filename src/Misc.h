@@ -55,6 +55,8 @@ int strlist_find(struct strlist **list, char *str);
 struct strlist * strlist_find_ptr(struct strlist **list, const char *str);
 
 void strlist_free(struct strlist **list, bool release = false);
+
+bool str_realloc(char *& a, char *b);
 	
 void save_presets(int do_update);
 

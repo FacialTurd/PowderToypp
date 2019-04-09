@@ -341,7 +341,10 @@ void Air::update_air(void)
 
 		memcpy(vx, ovx, sizeof(vx));
 		memcpy(vy, ovy, sizeof(vy));
-		memcpy(pv, opv, sizeof(pv));
+		// memcpy(pv, opv, sizeof(pv));
+
+		// __asm__("int3");
+		std::swap(pv, opv);
 	}
 }
 
@@ -395,6 +398,8 @@ Air::Air(Simulation & simulation):
 	ambientAirTemp(295.15f)
 {
 	//Simulation should do this.
+	pv = pv_;
+	opv = opv_;
 	make_kernel();
 	std::fill(&bmap_blockair[0][0], &bmap_blockair[0][0]+((XRES/CELL)*(YRES/CELL)), 0);
 	std::fill(&bmap_blockairh[0][0], &bmap_blockairh[0][0]+((XRES/CELL)*(YRES/CELL)), 0);

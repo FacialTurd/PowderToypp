@@ -112,7 +112,7 @@ int Element_SING::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = TYP(r);
-				r >>= PMAPBITS;
+				r = ID(r);
 				rt2 = (rt == PT_SPRK) ? parts[r].ctype : rt;
 				if (!(sim->elements[rt2].Properties2 & PROP_NODESTRUCT) && !(rand()%3))
 				{

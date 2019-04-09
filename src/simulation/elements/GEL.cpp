@@ -62,7 +62,7 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = TYP(r); r >>= PMAPBITS;
+				rt = TYP(r); r = ID(r);
 				//Desaturation
 				switch (rt)
 				{
@@ -149,7 +149,7 @@ int Element_GEL::update(UPDATE_FUNC_ARGS)
 								int mx, my, mr, ms, mi;
 								mx = x + sim->portal_rx[rndstore&7];
 								my = y + sim->portal_ry[rndstore&7];
-								mr = pmap[my][mx]; mi = mr >> PMAPBITS;
+								mr = pmap[my][mx]; mi = ID(mr);
 								if (TYP(mr) == PT_GEL)
 								{
 									ms = parts[mi].tmp + parts[i].tmp;

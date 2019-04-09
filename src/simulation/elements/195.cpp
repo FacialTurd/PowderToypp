@@ -78,7 +78,7 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 			}
 			else if (TYP(r) == ELEM_MULTIPP)
 			{
-				under = &partsi(r);
+				under = &parts[ID(r)];
 				if (under->life == 34)
 				{
 					parts[i].ctype = parts[i].tmp2;
@@ -255,14 +255,14 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 				if (!(isbray || sctype == PT_CAUS || sctype == PT_NEUT))
 				{
 					sim->part_change_type(ID(r), x, y, PT_RFRG); // probably inverse for NEUT???
-					partsi(r).tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
+					parts[ID(r)].tmp = * (int*) &(sim->pv[y/CELL][x/CELL]); // floating point hacking
 				}
 				break;
 			case PT_FILT:
 				if (isbray)
 				{
-					partsi(r).life = 4;
-					int filtmode = partsi(r).tmp;
+					parts[ID(r)].life = 4;
+					int filtmode = parts[ID(r)].tmp;
 					switch (filtmode)
 					{
 					case 6: break; // no operation
@@ -274,7 +274,7 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 						break;
 					default:
 						{
-							int shift = (int)((partsi(r).temp - 273.0f) * 0.025f);
+							int shift = (int)((parts[ID(r)].temp - 273.0f) * 0.025f);
 							shift < 0 ? (shift = 0) : shift > 25 && (shift = 25);
 							int wl = parts[i].tmp;
 							if (filtmode == 4 || filtmode == 5)
@@ -285,7 +285,7 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 								else
 									wl && (wl -= shift, wl <  1 && (wl =  1));
 							}
-							else if (partsi(r).ctype != 0x3FFFFFFF)
+							else if (parts[ID(r)].ctype != 0x3FFFFFFF)
 								wl = shift + 1;
 							else
 								wl = 0;
@@ -298,10 +298,10 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 					parts[i].ctype = 0x3FFFFFFF;
 				break;
 			case PT_EXOT:
-				if (partsi(r).ctype != parts[i].type && !(rand()%3))
+				if (parts[ID(r)].ctype != parts[i].type && !(rand()%3))
 				{
-					partsi(r).ctype = parts[i].type;
-					partsi(r).tmp2 = rand()%50 + 120;
+					parts[ID(r)].ctype = parts[i].type;
+					parts[ID(r)].tmp2 = rand()%50 + 120;
 				}
 				break;
 			case PT_ISOZ:
@@ -330,7 +330,7 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_INVIS:
-				if (!(partsi(r).tmp2 || isbray))
+				if (!(parts[ID(r)].tmp2 || isbray))
 					parts[i].ctype = PT_NEUT;
 				break;
 			case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
@@ -350,17 +350,17 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 				}
 				break;
 			case PT_BRAY:
-				if (isbray && (partsi(r).tmp == 0 || partsi(r).tmp == 1))
-					partsi(r).life = 1020,
-					partsi(r).tmp = 1;
+				if (isbray && (parts[ID(r)].tmp == 0 || parts[ID(r)].tmp == 1))
+					parts[ID(r)].life = 1020,
+					parts[ID(r)].tmp = 1;
 				break;
 /*
 			case PT_STOR:
-				if (partsi(r).ctype > 0 && partsi(r).ctype < PT_NUM)
-					parts[i].ctype = partsi(r).ctype;
+				if (parts[ID(r)].ctype > 0 && parts[ID(r)].ctype < PT_NUM)
+					parts[i].ctype = parts[ID(r)].ctype;
 				break;
 			case PT_LAVA:
-				switch (partsi(r).ctype)
+				switch (parts[ID(r)].ctype)
 				{
 				}
 				break;
@@ -374,11 +374,11 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 
 		if (TYP(ahead) == PT_PROT)
 		{
-			partsi(ahead).tmp2 |= 2;
-			if (!r && partsi(ahead).tmp > 2000 && (fabsf(partsi(ahead).vx) + fabsf(partsi(ahead).vy)) > 12)
+			parts[ID(ahead)].tmp2 |= 2;
+			if (!r && parts[ID(ahead)].tmp > 2000 && (fabsf(parts[ID(ahead)].vx) + fabsf(parts[ID(ahead)].vy)) > 12)
 			{
 				sim->part_change_type(ID(ahead), x, y, PT_BOMB);
-				partsi(ahead).tmp = 0;
+				parts[ID(ahead)].tmp = 0;
 			}
 		}
 	}
@@ -389,21 +389,13 @@ int Element_E195::update(UPDATE_FUNC_ARGS)
 //#TPT-Directive ElementHeader Element_E195 static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_E195::graphics(GRAPHICS_FUNC_ARGS)
 {
-	if (cpart->ctype == 0x100)
-	{
-		// Emulate the PHOT graphics
-		tpart_phot.ctype = cpart->tmp2;
-		tpart_phot.flags = cpart->flags;
-		Element_PHOT::graphics(ren, &tpart_phot, nx, ny, pixel_mode, cola, colr, colg, colb, firea, firer, fireg, fireb);
-		return 0;
-	}
 	*firea = 70;
 	*firer = *colr;
 	*fireg = *colg;
 	*fireb = *colb;
 
 	*pixel_mode |= FIRE_ADD;
-	return 0;
+	return 1;
 }
 
 //#TPT-Directive ElementHeader Element_E195 static void transportPhotons(Simulation* sim, int i, int x, int y, int nx, int ny, int t, Particle *phot)

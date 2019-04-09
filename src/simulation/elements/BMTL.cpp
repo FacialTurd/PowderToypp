@@ -61,7 +61,7 @@ int Element_BMTL::update(UPDATE_FUNC_ARGS)
 						continue;
 					if ((TYP(r) == PT_METL || TYP(r) == PT_IRON) && !(rand()%100))
 					{
-						r >>= PMAPBITS;
+						r = ID(r);
 						sim->part_change_type(r,x+rx,y+ry,PT_BMTL);
 						parts[r].tmp = (parts[i].tmp <= 7) ? (parts[i].tmp = 1) : parts[i].tmp - (rand() % 5); //rand()/(RAND_MAX/300)+100;
 					}

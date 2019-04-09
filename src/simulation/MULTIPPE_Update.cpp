@@ -10,6 +10,31 @@
 #define __builtin_clz msvc_clz
 #endif
 
+#define ELEMPROP(t) sim->elements[t].Properties
+#define ELEMPROP2(t) sim->elements[t].Properties2
+#define ELEMPROPT(t) ELEMPROP(TYP(t))
+#define ELEMPROPP(r, p) ELEMPROP(partsi(r).p)
+#define ELEMPROPW(id, op) (parts[id].flags op (FLAG_SKIPMOVE))
+
+/* usage:
+	CHECK_SPRK_BEGIN(r, rx, ry)
+	{ ... }
+	else
+	{ ... }
+	CHECK_SPRK_END
+*/
+
+#define CHECK_SPRK_BEGIN(a, b, c) \
+	for (b = -1; b < 2; b++)\
+		for (c = -1; c < 2; c++)\
+			if (BOUNDS_CHECK && (b || c))\
+			{\
+				a = pmap[y+ry][x+rx];\
+				if (CHECK_EL_SPRKL3(a))
+
+#define CHECK_SPRK_END }
+
+
 Renderer * MULTIPPE_Update::ren_;
 
 // 'UPDATE_FUNC_ARGS' definition: Simulation* sim, int i, int x, int y, int surround_space, int nt, Particle *parts, int pmap[YRES][XRES]
@@ -59,11 +84,53 @@ inline int my_create_part (Simulation * sim, int x, int y, int t, int v = -1)
 {
 	return sim->create_part(t == PT_PHOT ? -3 : -1, x, y, t, v);
 }
+
+#ifdef __GNUC__
+__attribute__((regparm(3)))
+#endif
+void change_ray_type (Simulation * sim, int x, int y, int rx, int ry, int ctype, int v)
+{
+	for (;;)
+	{
+		x += rx; y += ry;
+		if (!sim->InBounds(x, y))
+			break;
+		unsigned r = sim->pmap[y][x];
+		if (!r)
+			continue;
+		int rt = TYP(r);
+		if (rt == PT_INWR || (rt == PT_SPRK && sim->parts[ID(r)].ctype == PT_INWR)) // if it's empty or insulated wire
+			continue;
+		if ((ELEMPROP2(TYP(r)) & PROP_DRAWONCTYPE))
+		{
+			sim->parts[ID(r)].ctype = ctype;
+		}
+		else if (TYP(r) == ELEM_MULTIPP)
+		{
+			int p_life = sim->parts[ID(r)].life;
+			if (p_life == 20 || p_life == 35 || p_life == 36)
+			{
+				sim->parts[ID(r)].ctype = ctype;
+			}
+		}
+		else if (CHECK_EL_INSL(TYP(r)) || !v)
+			break;
+	}
 }
+}
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	extern int (*(MULTIPPE_Update_table[]))(UPDATE_FUNC_ARGS);
+#ifdef __cplusplus
+}
+#endif
 
 int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 {
-	int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
+	const int return_value = 1; // skip movement, 'stagnant' check, legacyUpdate, etc.
 	static int tron_rx[4] = {-1, 0, 1, 0};
 	static int tron_ry[4] = { 0,-1, 0, 1};
 	static int osc_r1 [4] = { 1,-1, 2,-2};
@@ -307,207 +374,194 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 #endif /* NO_SPC_ELEM_EXPLODE */
 	case 10: // electronics debugger input [电子产品调试]
 		{
-		int funcid = rtmp & 0xFF, fcall = -1;
-		if (rtmp & 0x100)
-		{
-			fcall = funcid;
-		}
-		else if (funcid >= 0x78)
-			funcid -= 0x66;
-		else if (funcid >= 0x12)
-			return return_value;
-		for (rx = -1; rx <= 1; rx++)
-			for (ry = -1; ry <= 1; ry++)
-				if (BOUNDS_CHECK && (rx || ry))
+			int funcid = rtmp & 0xFF, fcall = -1;
+			if (rtmp & 0x100)
+			{
+				fcall = funcid;
+			}
+			else if (funcid >= 0x78)
+				funcid -= 0x66;
+			else if (funcid >= 0x12)
+				return return_value;
+
+			CHECK_SPRK_BEGIN(r, rx, ry)
+			{
+				if (fcall >= 0)
 				{
-					r = pmap[y+ry][x+rx];
-					if (!r)
-						continue;
-					if (CHECK_EL_SPRKL3(r))
-					{
-						if (fcall >= 0)
-						{
 #if !defined(RENDERER) && defined(LUACONSOLE)
-							LuaScriptInterface::simulation_debug_trigger::_main(fcall, i, x, y);
+					LuaScriptInterface::simulation_debug_trigger::_main(fcall, i, x, y);
 #endif
-							continue;
-						}
-						static char shift1[7] = {8,9,1,3,11,4,5}; // 23,24,1,2,15,4,5
-						switch (funcid & 0xFF)
+					continue;
+				}
+				static char shift1[7] = {8,9,1,3,11,4,5}; // 23,24,1,2,15,4,5
+				switch (funcid & 0xFF)
+				{
+				case 0:
+					if (Element_MULTIPP::maxPrior <= parts[i].ctype)
+					{
+						sim->SimExtraFunc |= 0x81;
+						Element_MULTIPP::maxPrior = parts[i].ctype;
+					}
+					break;
+				case 3: sim->SimExtraFunc &= ~0x08; break;
+				case 6:
+					switch (partsi(r).ctype)
+					{
+						case PT_NTCT: Element_PHOT::ignite_flammable = 0; break;
+						case PT_PTCT: Element_PHOT::ignite_flammable = 1; break;
+						default: sim->SimExtraFunc |= 0x40;
+					}
+					break;
+				case 7:
+				case 8:
+					if (parts[i].temp < 273.15f)
+						parts[i].temp = 273.15f;
+					rdif = (int)(parts[i].temp - 272.65f);
+					if (partsi(r).ctype != PT_INST)
+						rdif /= 100.0f;
+					sim->sim_max_pressure += (funcid & 1) ? rdif : -rdif;
+					if (sim->sim_max_pressure > 256.0f)
+						sim->sim_max_pressure = 256.0f;
+					if (sim->sim_max_pressure < 0.0f)
+						sim->sim_max_pressure = 0.0f;
+					break;
+				case 9: // set sim_max_pressure
+					if (parts[i].temp < 273.15f)
+						parts[i].temp = 273.15f;
+					if (parts[i].temp > 273.15f + 256.0f)
+						parts[i].temp = 273.15f + 256.0f;
+					sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
+					break;
+				case 10: // reset currentTick
+					sim->lightningRecreate -= sim->currentTick;
+					if (sim->lightningRecreate < 0)
+						sim->lightningRecreate = 0;
+					sim->currentTick = 0;
+					if (partsi(r).ctype == PT_INST)
+						sim->elementRecount = true;
+					break;
+				case 11:
+					rctype = partsi(r).ctype;
+					rr = pmap[y-ry][x-rx];
+					if (rr)
+					{
+						rrt = TYP(partsi(rr).ctype);
+						int tFlag = 0;
+						switch (TYP(rr))
 						{
-						case 0:
-							if (Element_MULTIPP::maxPrior <= parts[i].ctype)
+							case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
+							case PT_CRAY: tFlag = PROP_CTYPE_WAVEL; break;
+							case PT_DRAY: tFlag = PROP_CTYPE_SPEC; break;
+						}
+						switch (rctype)
+						{
+							case PT_PSCN: ELEMPROP2(rrt) |=  tFlag; break;
+							case PT_NSCN: ELEMPROP2(rrt) &= ~tFlag; break;
+							case PT_INWR: ELEMPROP2(rrt) ^=  tFlag; break;
+						}
+					}
+					break;
+				case 12:
+					if (Element_MULTIPP::maxPrior < parts[i].ctype)
+					{
+						sim->SimExtraFunc |= 0x80;
+						sim->SimExtraFunc &= ~0x01;
+						Element_MULTIPP::maxPrior = parts[i].ctype;
+					}
+					break;
+				case 13: // heal/harm stickmen lifes
+					{
+						int lifeincx = parts[i].ctype;
+						rctype = partsi(r).ctype;
+						(rctype == PT_NSCN) && (lifeincx = -lifeincx);
+						sim->SimExtraFunc |= 0x1000;
+						pavg = (Element_STKM::phase + 2) % 4;
+						Element_STKM::lifeinc[pavg] |= 2 | (rctype == PT_INST);
+						Element_STKM::lifeinc[pavg + 1] += lifeincx;
+					}
+					break;
+				case 14: // set stickman's element power
+					rctype = partsi(r).ctype;
+					rii = parts[i].ctype;
+					if (rctype == PT_METL || rctype == PT_INWR)
+					{
+						if (sim->player2.spwn)
+						{
+							if (sim->player.spwn)
 							{
-								sim->SimExtraFunc |= 0x81;
-								Element_MULTIPP::maxPrior = parts[i].ctype;
-							}
-							break;
-						case 3: sim->SimExtraFunc &= ~0x08; break;
-						case 6:
-							switch (partsi(r).ctype)
-							{
-								case PT_NTCT: Element_PHOT::ignite_flammable = 0; break;
-								case PT_PTCT: Element_PHOT::ignite_flammable = 1; break;
-								default: sim->SimExtraFunc |= 0x40;
-							}
-							break;
-						case 7:
-						case 8:
-							if (parts[i].temp < 273.15f)
-								parts[i].temp = 273.15f;
-							rdif = (int)(parts[i].temp - 272.65f);
-							if (partsi(r).ctype != PT_INST)
-								rdif /= 100.0f;
-							sim->sim_max_pressure += (funcid & 1) ? rdif : -rdif;
-							if (sim->sim_max_pressure > 256.0f)
-								sim->sim_max_pressure = 256.0f;
-							if (sim->sim_max_pressure < 0.0f)
-								sim->sim_max_pressure = 0.0f;
-							break;
-						case 9: // set sim_max_pressure
-							if (parts[i].temp < 273.15f)
-								parts[i].temp = 273.15f;
-							if (parts[i].temp > 273.15f + 256.0f)
-								parts[i].temp = 273.15f + 256.0f;
-							sim->sim_max_pressure = (int)(parts[i].temp - 272.65f);
-							break;
-						case 10: // reset currentTick
-							sim->lightningRecreate -= sim->currentTick;
-							if (sim->lightningRecreate < 0)
-								sim->lightningRecreate = 0;
-							sim->currentTick = 0;
-							if (partsi(r).ctype == PT_INST)
-								sim->elementRecount = true;
-							break;
-						case 11:
-							rctype = partsi(r).ctype;
-							rr = pmap[y-ry][x-rx];
-							if (rr)
-							{
-								rrt = TYP(partsi(rr).ctype);
-								int tFlag = 0;
-								switch (TYP(rr))
-								{
-									case PT_STOR: tFlag = PROP_CTYPE_INTG; break;
-									case PT_CRAY: tFlag = PROP_CTYPE_WAVEL; break;
-									case PT_DRAY: tFlag = PROP_CTYPE_SPEC; break;
-								}
-								switch (rctype)
-								{
-									case PT_PSCN: ELEMPROP2(rrt) |=  tFlag; break;
-									case PT_NSCN: ELEMPROP2(rrt) &= ~tFlag; break;
-									case PT_INWR: ELEMPROP2(rrt) ^=  tFlag; break;
-								}
-							}
-							break;
-						case 12:
-							if (Element_MULTIPP::maxPrior < parts[i].ctype)
-							{
-								sim->SimExtraFunc |= 0x80;
-								sim->SimExtraFunc &= ~0x01;
-								Element_MULTIPP::maxPrior = parts[i].ctype;
-							}
-							break;
-						case 13: // heal/harm stickmen lifes
-							{
-								int lifeincx = parts[i].ctype;
-								rctype = partsi(r).ctype;
-								(rctype == PT_NSCN) && (lifeincx = -lifeincx);
-								sim->SimExtraFunc |= 0x1000;
-								pavg = (Element_STKM::phase + 2) % 4;
-								Element_STKM::lifeinc[pavg] |= 2 | (rctype == PT_INST);
-								Element_STKM::lifeinc[pavg + 1] += lifeincx;
-							}
-							break;
-						case 14: // set stickman's element power
-							rctype = partsi(r).ctype;
-							rii = parts[i].ctype;
-							if (rctype == PT_METL || rctype == PT_INWR)
-							{
-								if (sim->player2.spwn)
-								{
-									if (sim->player.spwn)
-									{
-										rrx = (sim->player2.rocketBoots ? 4 : 0) + (sim->player.rocketBoots ? 2 : 0);
-										sim->player.rocketBoots  = (rii >> (rrx++)) & 1;
-									}
-									else
-										rrx = (sim->player2.rocketBoots ? 11 : 10);
-									sim->player2.rocketBoots = (rii >> rrx) & 1;
-								}
-								else if (sim->player.spwn)
-								{
-									sim->player.rocketBoots = (rii >> (sim->player.rocketBoots ? 9 : 8)) & 1;
-								}
+								rrx = (sim->player2.rocketBoots ? 4 : 0) + (sim->player.rocketBoots ? 2 : 0);
+								sim->player.rocketBoots  = (rii >> (rrx++)) & 1;
 							}
 							else
-							{
-								if (!rii)
-								{
-									int fr = pmap[y-ry][x-rx];
-									int frt = TYP(fr);
-									if (frt == PT_CRAY)
-									{
-										rii = TYP(parts[ID(fr)].ctype);
-										if (rii == PT_LIFE)
-											rii = PMAP(1, parts[ID(fr)].ctype);
-									}
-									else if (frt == PT_FILT)
-										rii = PMAP(1, Element_FILT::getWavelengths(&parts[ID(fr)]));
-								}
-								if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 5)))
-									break;
-								if (rctype == PT_PSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element_Ex(sim, &sim->player, rii | PMAPID(2));
-								if (rctype == PT_NSCN || rctype == PT_INST)
-									Element_STKM::STKM_set_element_Ex(sim, &sim->player2, rii | PMAPID(2));
-							}
-							break;
-						case 15:
-							sim->extraDelay += parts[i].ctype;
-						case 1: case 2: case 4: case 5: case 23: case 24:
-							sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
-						case 16:
-#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
-							__asm__ __volatile__ ("lock or%z0 %1, %0" :: "m"(Element_NEUT::cooldown_counter_b[2]), "i"(1));
-#else
-							Element_NEUT::cooldown_counter_b[2] |= 1;
-#endif
-							break;
-						case 25:
-							do_breakpoint();
-							return return_value;
+								rrx = (sim->player2.rocketBoots ? 11 : 10);
+							sim->player2.rocketBoots = (rii >> rrx) & 1;
 						}
-						if ((rtmp & 0x3FE) == 0x200 && (rx != ry))
-							MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
+						else if (sim->player.spwn)
+						{
+							sim->player.rocketBoots = (rii >> (sim->player.rocketBoots ? 9 : 8)) & 1;
+						}
 					}
+					else
+					{
+						if (!rii)
+						{
+							int fr = pmap[y-ry][x-rx];
+							int frt = TYP(fr);
+							if (frt == PT_CRAY)
+							{
+								rii = TYP(parts[ID(fr)].ctype);
+								if (rii == PT_LIFE)
+									rii = PMAP(1, parts[ID(fr)].ctype);
+							}
+							else if (frt == PT_FILT)
+								rii = PMAP(1, Element_FILT::getWavelengths(&parts[ID(fr)]));
+						}
+						if (!sim->IsValidElement(rii) && (rii < PMAPID(1) || rii > PMAP(1, 5)))
+							break;
+						if (rctype == PT_PSCN || rctype == PT_INST)
+							Element_STKM::STKM_set_element_Ex(sim, &sim->player, rii | PMAPID(2));
+						if (rctype == PT_NSCN || rctype == PT_INST)
+							Element_STKM::STKM_set_element_Ex(sim, &sim->player2, rii | PMAPID(2));
+					}
+					break;
+				case 15:
+					sim->extraDelay += parts[i].ctype;
+				case 1: case 2: case 4: case 5: case 23: case 24:
+					sim->SimExtraFunc |= 1 << shift1[(funcid + 1) % 12]; break;
+				case 16:
+#if defined(LUACONSOLE) && defined(TPT_NEED_DLL_PLUGIN)
+					__sync_fetch_and_or(&Element_NEUT::cooldown_counter_b[2], 1);
+#else
+					Element_NEUT::cooldown_counter_b[2] |= 1;
+#endif
+					break;
+				case 25:
+					do_breakpoint();
+					return return_value;
 				}
+				if ((rtmp & 0x3FE) == 0x200 && (rx != ry))
+					MULTIPPE_Update::InsertText(sim, i, x, y, -rx, -ry);
+			}
+			CHECK_SPRK_END
 		}
 		break;
 	case 11: // photons emitter [单光子发射器]
-		for (rx = -1; rx <= 1; rx++)
-			for (ry = -1; ry <= 1; ry++)
-				if (BOUNDS_CHECK && (rx || ry))
-				{
-					r = pmap[y+ry][x+rx];
-					if (!r)
-						continue;
-					if (CHECK_EL_SPRKL3(r))
-					{
-						ri = sim->create_part(-3, x-rx, y-ry, PT_PHOT);
-						parts[ri].vx = (float)(-3 * rx);
-						parts[ri].vy = (float)(-3 * ry);
-						parts[ri].life = parts[i].tmp2;
-						parts[ri].temp = parts[i].temp;
+		CHECK_SPRK_BEGIN(r, rx, ry)
+		{
+			ri = sim->create_part(-3, x-rx, y-ry, PT_PHOT);
+			parts[ri].vx = (float)(-3 * rx);
+			parts[ri].vy = (float)(-3 * ry);
+			parts[ri].life = parts[i].tmp2;
+			parts[ri].temp = parts[i].temp;
 
-						rtmp = parts[i].ctype & 0x3FFFFFFF;
-						if (rtmp)
-							parts[ri].ctype = rtmp;
+			rtmp = parts[i].ctype & 0x3FFFFFFF;
+			if (rtmp)
+				parts[ri].ctype = rtmp;
 
-						if (ri > i)
-							parts[ri].flags |= FLAG_SKIPMOVE;
-					}
-				}
+			if (ri > i)
+				parts[ri].flags |= FLAG_SKIPMOVE;
+		}
+		CHECK_SPRK_END
 		break;
 	case 12: // SPRK reflector [电脉冲反射器]
 		if ((rtmp & 0x7) != 0x4)
@@ -914,21 +968,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			}
 			break;
 		case 8: // FIGH stopper
-			for (rx = -1; rx < 2; rx++)
-				for (ry = -1; ry < 2; ry++)
-					if (BOUNDS_CHECK && (rx || ry))
-					{
-						r = pmap[y+ry][x+rx];
-						if (CHECK_EL_SPRKL3(r))
-						{
-							rtmp = parts[i].tmp;
-							if (rtmp >= 0)
-								sim->Extra_FIGH_pause_check |= 1 << (rtmp < 31 ? (rtmp > 0 ? rtmp : 0) : 31);
-							else
-								sim->SimExtraFunc |= 4;
-							return return_value;
-						}
-					}
+			CHECK_SPRK_BEGIN(r, rx, ry)
+			{
+				rtmp = parts[i].tmp;
+				if (rtmp >= 0)
+					sim->Extra_FIGH_pause_check |= 1 << (rtmp < 31 ? (rtmp > 0 ? rtmp : 0) : 31);
+				else
+					sim->SimExtraFunc |= 4;
+				return return_value;
+			}
+			CHECK_SPRK_END
 			break;
 		case 9:
 			if (rtmp >= 0)
@@ -1535,11 +1584,11 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (rx || ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if (!r) continue;
-						pavg = PAVG_INSL(r);
-						if (!CHECK_EL_INSL(pavg) && CHECK_EL_SPRKL3(r))
+						if (!r || sim->parts_avg_elec(i, ID(r)))
+							continue;
+						if (CHECK_EL_SPRKL3(r))
 						{
-							parts[i].tmp = partsi(r).ctype;
+							parts[i].tmp = parts[ID(r)].ctype;
 							parts[i].tmp2 = 1;
 							return return_value;
 						}
@@ -1558,9 +1607,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					if (BOUNDS_CHECK && (!rx || !ry))
 					{
 						r = pmap[y+ry][x+rx];
-						if (!r) continue;
-						pavg = PAVG_INSL(r);
-						if (CHECK_EL_INSL(pavg))
+						if (!r || sim->parts_avg_elec(i, ID(r)))
 							continue;
 						if (TYP(r) == PT_SPRK && partsi(r).life == 3 && !rii)
 						{
@@ -1634,15 +1681,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						if (TYP(r) == PT_SPRK)
 						{
 							if (rry)
-							{
-								rii = partsi(r).ctype;
-								if (rii > 0 && rii < PT_NUM && sim->elements[rii].Enabled)
-								{
-									sim->part_change_type(ID(r), x+rx, y+ry, rii);
-									partsi(r).life = (rii == PT_SWCH) ? 10 : 0; // keep SWCH on
-									partsi(r).ctype = PT_NONE;
-								}
-							}
+								partsi(r).life = (sim->clear_spark(ID(r), x+rx, y+ry) == PT_SWCH) ? 10 : 0;
 							else
 								partsi(r).life = rrx;
 						}
@@ -1651,11 +1690,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 							if (rry)
 								partsi(r).life = 0;
 							else
-							{
-								partsi(r).ctype = TYP(r);
-								partsi(r).life = rrx;
-								sim->part_change_type(ID(r), x+rx, y+ry, PT_SPRK);
-							}
+								sim->set_spark(ID(r), x+rx, y+ry, rrx);
 						}
 					}
 			break;
@@ -1746,92 +1781,84 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry) && abs(rx)+abs(ry) < 4)
 			{
 				r = pmap[y+ry][x+rx];
-				if (!r)
+				if (!r || sim->parts_avg_elec(i, ID(r)))
 					continue;
-				pavg = PAVG_INSL(r);
-				if (!CHECK_EL_INSL(pavg))
+				rt = TYP(r);
+				if (rt == PT_SPRK && partsi(r).life == 3)
 				{
-					rt = TYP(r);
-					if (rt == PT_SPRK && partsi(r).life == 3)
+					switch (partsi(r).ctype)
 					{
-						switch (partsi(r).ctype)
-						{
-							case PT_NSCN: parts[i].tmp = 0; break;
-							case PT_PSCN: parts[i].tmp = 1; break;
-							case PT_INST: parts[i].tmp = !parts[i].tmp; break;
-						}
+						case PT_NSCN: parts[i].tmp = 0; break;
+						case PT_PSCN: parts[i].tmp = 1; break;
+						case PT_INST: parts[i].tmp = !parts[i].tmp; break;
 					}
-					else if (rtmp && rt != PT_PSCN && rt != PT_NSCN && isAcceptedConductor(sim, r))
-						conductTo (sim, r, x+rx, y+ry, parts);
 				}
+				else if (rtmp && rt != PT_PSCN && rt != PT_NSCN && isAcceptedConductor(sim, r))
+					conductTo (sim, r, x+rx, y+ry, parts);
 			}
 			return return_value;
 		case 24: // shift register
 			if (rtmp <= 0)
 				rtmp = XRES + YRES;
-			for (rx = -1; rx < 2; rx++)
-				for (ry = -1; ry < 2; ry++)
-					if (BOUNDS_CHECK && (rx || ry))
+
+			CHECK_SPRK_BEGIN(r, rx, ry)
+			{
+				rctype = partsi(r).ctype;
+				switch (rctype)
+				{
+				case PT_PTCT: // PTCT and NTCT don't moving diagonal
+					if (rx && ry) continue;
+				case PT_PSCN:
+					ri = floor((parts[i].temp - 268.15)/10); // How many tens of degrees above 0 C
+					break;
+				case PT_NTCT:
+					if (rx && ry) continue;
+				case PT_NSCN:
+					ri = -floor((parts[i].temp - 268.15)/10);
+					break;
+				default:
+					continue;
+				}
+				nx = x + rx, ny = y + ry;
+				if (TYP(pmap[ny][nx]) == PT_FRME)
+				{
+					nx += rx, ny += ry;
+				}
+				int nx2 = nx, ny2 = ny;
+				for (rrx = 0; sim->InBounds(nx, ny) && rrx < rtmp; rrx++, nx+=rx, ny+=ry) // fixed
+				{
+					rr = pmap[ny][nx], rt = TYP(rr);
+					if (rt == PT_SPRK)
+						rt = partsi(rr).ctype;
+					if (rt && rt != PT_INWR && rt != PT_FILT && rt != PT_STOR && rt != PT_BIZR && rt != PT_BIZRG && rt != PT_BIZRS && rt != PT_GOO && rt != PT_BRAY)
+						break;
+					pmap[ny][nx] = 0; // clear pmap
+					Element_PSTN::tempParts[rrx] = rr;
+				}
+				for (rry = 0; rry < rrx; rry++) // "rrx" in previous "for" loop
+				{
+					rr = Element_PSTN::tempParts[rry]; // moving like PSTN
+					if (!rr)
+						continue;
+					rii = rry + ri;
+					if (rii < 0 || rii >= rrx) // assembly: "cmp rii, rrx" then "jae/jb ..."
 					{
-						r = pmap[y-ry][x-rx];
-						if (CHECK_EL_SPRKL3(r))
+						if (!(parts[i].tmp2 & 1))
 						{
-							rctype = partsi(r).ctype;
-							switch (rctype)
-							{
-							case PT_PTCT: // PTCT and NTCT don't moving diagonal
-								if (rx && ry) continue;
-							case PT_PSCN:
-								ri = floor((parts[i].temp - 268.15)/10); // How many tens of degrees above 0 C
-								break;
-							case PT_NTCT:
-								if (rx && ry) continue;
-							case PT_NSCN:
-								ri = -floor((parts[i].temp - 268.15)/10);
-								break;
-							default:
-								continue;
-							}
-							nx = x + rx, ny = y + ry;
-							if (TYP(pmap[ny][nx]) == PT_FRME)
-							{
-								nx += rx, ny += ry;
-							}
-							int nx2 = nx, ny2 = ny;
-							for (rrx = 0; sim->InBounds(nx, ny) && rrx < rtmp; rrx++, nx+=rx, ny+=ry) // fixed
-							{
-								rr = pmap[ny][nx], rt = TYP(rr);
-								if (rt == PT_SPRK)
-									rt = partsi(rr).ctype;
-								if (rt && rt != PT_INWR && rt != PT_FILT && rt != PT_STOR && rt != PT_BIZR && rt != PT_BIZRG && rt != PT_BIZRS && rt != PT_GOO && rt != PT_BRAY)
-									break;
-								pmap[ny][nx] = 0; // clear pmap
-								Element_PSTN::tempParts[rrx] = rr;
-							}
-							for (rry = 0; rry < rrx; rry++) // "rrx" in previous "for" loop
-							{
-								rr = Element_PSTN::tempParts[rry]; // moving like PSTN
-								if (!rr)
-									continue;
-								rii = rry + ri;
-								if (rii < 0 || rii >= rrx) // assembly: "cmp rii, rrx" then "jae/jb ..."
-								{
-									if (!(parts[i].tmp2 & 1))
-									{
-										sim->kill_part(ID(rr));
-										continue;
-									}
-									else if (rii < 0)
-										rii += rrx;
-									else
-										rii -= rrx;
-								}
-								nx = nx2 + rii * rx; ny = ny2 + rii * ry;
-								partsi(rr).x = nx; partsi(rr).y = ny;
-								pmap[ny][nx] = rr;
-							}
+							sim->kill_part(ID(rr));
+							continue;
 						}
+						else if (rii < 0)
+							rii += rrx;
+						else
+							rii -= rrx;
 					}
+					nx = nx2 + rii * rx; ny = ny2 + rii * ry;
+					partsi(rr).x = nx; partsi(rr).y = ny;
+					pmap[ny][nx] = rr;
+				}
+			}
+			CHECK_SPRK_END
 			return return_value;
 		case 25: // arrow key detector
 			if (Element_MULTIPP::Arrow_keys == NULL)
@@ -1890,11 +1917,10 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				pavg = PAVG_INSL(r);
-				if (!CHECK_EL_INSL(pavg))
+				if (!sim->parts_avg_elec(i, ID(r)))
 				{
 					rt = TYP(r);
-					r >>= PMAPBITS;
+					r = ID(r);
 					if (rt == PT_SPRK)
 					{
 						rctype = parts[r].ctype;
@@ -1946,20 +1972,16 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				if (!r)
+				if (!r || sim->parts_avg_elec(i, ID(r)))
 					continue;
-				pavg = PAVG_INSL(r);
-				if (!CHECK_EL_INSL(pavg))
+				rt = TYP(r);
+				if (rt == PT_SPRK && partsi(r).life == 3 && partsi(r).ctype == PT_PSCN)
 				{
-					rt = TYP(r);
-					if (rt == PT_SPRK && partsi(r).life == 3 && partsi(r).ctype == PT_PSCN)
-					{
-						parts[i].tmp2 = rrx ? 9 : 0x109;
-					}
-					else if (rt == PT_NSCN && rry)
-					{
-						conductTo (sim, r, x+rx, y+ry, parts);
-					}
+					parts[i].tmp2 = rrx ? 9 : 0x109;
+				}
+				else if (rt == PT_NSCN && rry)
+				{
+					conductTo (sim, r, x+rx, y+ry, parts);
 				}
 			}
 			break;
@@ -1988,6 +2010,29 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 			inverted && (rr = !rr);
 			if (rr)
 				Element_BTRY::update(UPDATE_FUNC_SUBCALL_ARGS);
+			}
+			break;
+		case 31:
+			{
+				int delta = 0;
+				for (rii = 0; rii < 4; rii++)
+				{
+					rx = tron_rx[rii];
+					ry = tron_ry[rii];
+					for (int j = 1; j <= 2; j++)
+					{
+						r = pmap[y+j*ry][x+j*rx];
+						if (CHECK_EL_INSL(TYP(r)))
+							break;
+						if (CHECK_EL_SPRKL3T(r, PT_PSCN))
+							delta += (rii & 1) ? -1 : 1;
+						if (TYP(r) != PT_NSCN)
+							continue;
+						if ((rii & 1) ? (rtmp < 0) : (rtmp > 0))
+							conductTo(sim, r, x+j*rx, y+j*ry, parts);
+					}
+				}
+				parts[i].tmp += delta;
 			}
 			break;
 		}
@@ -2134,7 +2179,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 						{
 							rr = pmap[y-ry][x-rx];
 							rt = TYP(rr);
-							rr >>= PMAPBITS;
+							rr = ID(rr);
 							if (rt == ELEM_MULTIPP && parts[rr].life == 30)
 							{
 								parts[rr].ctype &= ~0x1F;
@@ -2175,7 +2220,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 										rt = TYP(rr);
 										if (rt == PT_WATR || rt == PT_DSTW || rt == PT_SLTW || rt == PT_CBNW || rt == PT_FRZW || rt == PT_WTRV)
 										{
-											rr >>= PMAPBITS;
+											rr = ID(rr);
 											if(!(rand()%3))
 												sim->part_change_type(rr, x-rx, y-ry, PT_O2);
 											else
@@ -2294,15 +2339,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 					ny = y_src + ry_dest;
 					if (!sim->InBounds(nx, ny))
 						break;
-					rii = sim->create_part(-1, nx, ny, (rt == PT_SPRK) ? PT_METL : rt); // spark hack
-					if (rii >= 0)
-					{
-						if (rt == PT_SPRK)
-							sim->part_change_type(rii, nx, ny, PT_SPRK); // restore type for spark hack
-						parts[rii] = partsi(r); // duplicating all properties?
-						parts[rii].x = nx; // restore X coordinates
-						parts[rii].y = ny; // restore Y coordinates
-					}
+					sim->duplicate_part(nx, ny, parts[ID(r)]);
 				}
 				x_src += rx, y_src += ry;
 			}
@@ -2347,17 +2384,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case 28: // ARAY/BRAY reflector
-		for (rx = -1; rx < 2; rx++)
-			for (ry = -1; ry < 2; ry++)
-				if (BOUNDS_CHECK && (rx || ry))
-				{
-					r = pmap[y+ry][x+rx];
-					if (CHECK_EL_SPRKL3(r))
-					{
-						parts[i].tmp ^= 1;
-						return return_value;
-					}
-				}
+		CHECK_SPRK_BEGIN(r, rx, ry)
+		{
+			parts[i].tmp ^= 1;
+			return return_value;
+		}
+		CHECK_SPRK_END
 		break;
 	case 29: // TRON emitter
 		for (rr = 0; rr < 4; rr++)
@@ -2482,44 +2514,12 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 				}
 		break;
 	case 35:
-		nx = x; ny = y;
 		rrx = parts[i].ctype;
-		for (rr = 0; rr < 4; rr++)
-			if (BOUNDS_CHECK)
-			{
-				rx = tron_rx[rr];
-				ry = tron_ry[rr];
-				r = pmap[y-ry][x-rx];
-				if (CHECK_EL_SPRKL3(r))
-				{
-					rry = partsi(r).ctype == PT_INST ? 1 : 0;
-					docontinue = 1;
-					do
-					{
-						nx += rx; ny += ry;
-						if (!sim->InBounds(nx, ny))
-							break;
-						r = pmap[ny][nx];
-						if (!r || CHECK_EL_SPRK(r, PT_INWR)) // if it's empty or insulated wire
-							continue;
-						if ((ELEMPROP2(TYP(r)) & PROP_DRAWONCTYPE))
-						{
-							partsi(r).ctype = rrx;
-						}
-						else if (TYP(r) == ELEM_MULTIPP)
-						{
-							int p_life = partsi(r).life;
-							if (p_life == 20 || p_life == 35 || p_life == 36)
-							{
-								partsi(r).ctype = rrx;
-							}
-						}
-						else if (CHECK_EL_INSL(TYP(r)))
-							break;
-						docontinue = rry;
-					} while (docontinue);
-				}
-			}
+		CHECK_SPRK_BEGIN(r, rx, ry)
+		{
+			change_ray_type(sim, x, y, -rx, -ry, rrx, partsi(r).ctype == PT_INST);
+		}
+		CHECK_SPRK_END
 		break;
 	case 36:
 		rctype = TYP(parts[i].ctype);
@@ -2740,7 +2740,7 @@ int MULTIPPE_Update::update(UPDATE_FUNC_ARGS)
 
 	default: // reserved by Lua
 		if (lua_el_mode[parts[i].type] == 1)
-			return_value = 0;
+			luacon_elementReplacement(UPDATE_FUNC_SUBCALL_ARGS);
 #endif
 	}
 		

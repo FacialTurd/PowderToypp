@@ -973,8 +973,9 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, DECO_MULTIPLY);
 	SETCONST(l, DECO_DIVIDE);
 	SETCONST(l, DECO_SMUDGE);
-	lua_pushinteger(l, 8); lua_setfield(l, -2, "PMAPBITS");
-	lua_pushinteger(l, (1 << 8) - 1); lua_setfield(l, -2, "PMAPMASK");
+	
+	SETCONST(l, PMAPBITS);
+	SETCONST(l, PMAPMASK);
 
 	//Declare FIELD_BLAH constants
 	std::vector<StructProperty> particlePropertiesV = Particle::GetProperties(); 
@@ -4236,8 +4237,9 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		}
 		else if(propertyName == "Update")
 		{
-			if(lua_type(l, 3) == LUA_TFUNCTION)
+			switch (lua_type(l, 3))
 			{
+			case LUA_TFUNCTION:
 				if (args > 3)
 				{
 					luaL_checktype(l, 4, LUA_TNUMBER);
@@ -4253,25 +4255,30 @@ int LuaScriptInterface::elements_property(lua_State * l)
 					lua_el_mode[id] = 1;
 				lua_pushvalue(l, 3);
 				lua_el_func[id] = luaL_ref(l, LUA_REGISTRYINDEX);
-			}
-			else if(lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
-			{
+				break;
+			case LUA_TBOOLEAN:
+				if (lua_toboolean(l, 3))
+					break;
 				lua_el_func[id] = 0;
 				lua_el_mode[id] = 0;
 				luacon_sim->elements[id].Update = NULL;
+				break;
 			}
 		}
 		else if(propertyName == "Graphics")
 		{
-			if(lua_type(l, 3) == LUA_TFUNCTION)
+			switch (lua_type(l, 3))
 			{
+			case LUA_TFUNCTION:
 				lua_pushvalue(l, 3);
 				lua_gr_func[id] = luaL_ref(l, LUA_REGISTRYINDEX);
-			}
-			else if(lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
-			{
+				break;
+			case LUA_TBOOLEAN:
+				if (lua_toboolean(l, 3))
+					break;
 				lua_gr_func[id] = 0;
 				luacon_sim->elements[id].Graphics = NULL;
+				break;
 			}
 			luacon_ren->graphicscache[id].isready = 0;
 		}

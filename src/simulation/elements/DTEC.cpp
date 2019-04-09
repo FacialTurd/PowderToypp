@@ -63,12 +63,10 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					rt = TYP(r);
-					r >>= PMAPBITS;
-					pavg = sim->parts_avg(i,r,PT_INSL);
-					if (pavg != PT_INSL && pavg != PT_INDI)
+					rt = TYP(r); r = ID(r);
+					if (!sim->parts_avg_elec(i, r))
 					{
-						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS /* && !(rt==PT_WATR||rt==PT_SLTW||rt==PT_NTCT||rt==PT_PTCT||rt==PT_INWR) */  && parts[r].life==0)
+						if ((sim->elements[rt].Properties&(PROP_CONDUCTS|PROP_INSULATED)) == PROP_CONDUCTS && parts[r].life==0)
 						{
 							parts[r].life = 4;
 							parts[r].ctype = rt;
@@ -88,12 +86,12 @@ int Element_DTEC::update(UPDATE_FUNC_ARGS)
 					r = sim->photons[y+ry][x+rx];
 				if(!r)
 					continue;
-				if (TYP(r) == parts[i].ctype && (parts[i].ctype != PT_LIFE || parts[i].tmp == partsi(r).ctype || !parts[i].tmp))
+				if (TYP(r) == parts[i].ctype && (parts[i].ctype != PT_LIFE || parts[i].tmp == parts[ID(r)].ctype || !parts[i].tmp))
 					parts[i].life = 1;
-				if (TYP(r) == PT_PHOT || (TYP(r) == PT_BRAY && partsi(r).tmp!=2))
+				if (TYP(r) == PT_PHOT || (TYP(r) == PT_BRAY && parts[ID(r)].tmp!=2))
 				{
 					setFilt = true;
-					photonWl = partsi(r).ctype;
+					photonWl = parts[ID(r)].ctype;
 				}
 			}
 	parts[i].life ^= tmp;

@@ -82,7 +82,7 @@ int Element_PRTI::update(UPDATE_FUNC_ARGS)
 			}
 			
 			int rt = TYP(r);
-			r >>= PMAPBITS;
+			r = ID(r);
 
 			if (rt==PT_STKM || rt==PT_STKM2 || rt==PT_FIGH)
 				continue;// Handling these is a bit more complicated, and is done in STKM_interact()

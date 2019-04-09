@@ -59,7 +59,7 @@ int Element_WIFI::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = TYP(r); r >>= PMAPBITS;
+				rt = TYP(r); r = ID(r);
 				// wireless[][0] - whether channel is active on this frame
 				// wireless[][1] - whether channel should be active on next frame
 				if (sim->wireless[parts[i].tmp][0])

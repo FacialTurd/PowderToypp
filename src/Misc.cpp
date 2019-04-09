@@ -116,6 +116,16 @@ void strlist_free(struct strlist **list, bool release)
 	}
 }
 
+bool str_realloc(char *& a, char *b)
+{
+	size_t l = strlen(b)+1;
+	char *c = (char*)realloc(a, l);
+	if (c == NULL)
+		return false;
+	a = (char*)memcpy(c, b, l);
+	return true;
+}
+
 const static char hex[] = "0123456789ABCDEF";
 void strcaturl(char *dst, char *src)
 {

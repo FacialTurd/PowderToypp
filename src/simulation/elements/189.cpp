@@ -1,5 +1,6 @@
 #include "simulation/Elements.h"
 #include "simulation/MULTIPPE_Update.h"
+#include "simulation/sim-move-struct.h"
 #include "Probability.h"
 
 #ifdef LUACONSOLE
@@ -178,25 +179,18 @@ void Element_MULTIPP::setFilter(Simulation* sim, int x, int y, int rx, int ry, i
 {
 	while (x >= 0 && y >= 0 && x < XRES && y < YRES)
 	{
-		int r = sim->pmap[y][x];
+		unsigned int r = sim->pmap[y][x];
 		if (TYP(r) != PT_FILT) break;
 		sim->parts[ID(r)].ctype = w;
 		x += rx; y += ry;
 	}
 }
 
-namespace
+//#TPT-Directive ElementHeader Element_MULTIPP static int interactDir(Simulation* sim, const void *mov_, bool is_phot, Particle* part_phot, Particle* part_other)
+int Element_MULTIPP::interactDir(Simulation* sim, const void *mov_, bool is_phot, Particle* part_phot, Particle* part_other) // photons direction/type changer
 {
-inline bool change_type (Simulation* sim, const Simulation_move & mov, int t)
-{
-	return sim->part_change_type(mov.i, mov.x, mov.y, t);
-}
-}
-
-//#TPT-Directive ElementHeader Element_MULTIPP static bool interactDir(Simulation* sim, const Simulation_move & mov, bool is_phot, Particle* part_phot, Particle* part_other)
-bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, bool is_phot, Particle* part_phot, Particle* part_other) // photons direction/type changer
-{
-	bool alive = true;
+	int t = -1;
+	const Simulation_move & mov = *(const Simulation_move *)mov_;
 
 	int rtmp = part_other->tmp, rtmp2 = part_other->tmp2, rct = part_other->ctype;
 	int ctype, r1, r2, r3, temp;
@@ -244,7 +238,7 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 			case 0: case 1:
 				{
 					float angle = atan2f(part_phot->vy, part_phot->vx);
-					alive = false;
+					t = 0;
 					int a = (int)(floor(angle * (4.0f / M_PI) + 3.5f));
 					if (rtmp2 & 1)
 						setFilter(sim, x, y, (a + 2) & 7, part_phot->ctype),
@@ -269,16 +263,15 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				part_phot->flags |= FLAG_SKIPCREATE;
 			else if (part_phot->ctype == PT_BRAY)
 				part_phot->tmp = 0;
-			change_type(sim, mov, PT_E195);
-			break;
+			return PT_E195;
 #ifdef LUACONSOLE
 		case 7:
-			if (is_phot)
-				return luatpt_interactDirELEM(mov.i, ID(mov.r), part_phot->ctype, rct, rtmp2);
+			if (is_phot && !luatpt_interactDirELEM(mov.i, ID(mov.r), part_phot->ctype, rct, rtmp2))
+				return 0;
 			break;
 #endif
 		}
-		return alive;
+		return t;
 	}
 
 	{
@@ -302,36 +295,31 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				l = sim->pmap[mov.y][mov.x];
 				if (l)
 				{
-					const Particle & lp = sim->partsi(l);
+					const Particle & lp = sim->parts[ID(l)];
 					if (lp.type == part_other->type && lp.life == 17)	// photons diode input
-						return false;	// filtered out
+						return 0;	// filtered out
 				}
 				break;
 			case 5: // random "energy" particle
 				part_phot->ctype = PMAP(1, 1);
-				change_type(sim, mov, PT_E195);
-				break;
+				return PT_E195;
 			case 6: // photons absorber
 				if (rct > 1)
 					part_other->ctype --;
 				else if (rct == 1)
 					sim->kill_part(ri);
-				return false;
+				return 0;
 			case 7: // PHOT->NEUT
-				change_type(sim, mov, PT_NEUT);
-				break;
+				return PT_NEUT;
 			case 8: // PHOT->ELEC
-				change_type(sim, mov, PT_ELEC);
-				break;
+				return PT_ELEC;
 			case 9: // PHOT->PROT
 				// part_phot->tmp = 0;
 				part_phot->tmp2 = 0;
-				change_type(sim, mov, PT_PROT);
-				break;
+				return PT_PROT;
 			case 10: // PHOT->GRVT
 				part_phot->tmp = rct;
-				change_type(sim, mov, PT_GRVT);
-				break;
+				return PT_GRVT;
 			case 11: // PHOT (tmp: a -> b)
 				r1 = 1 << (rct >> 1);
 				if (rct)
@@ -351,7 +339,7 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 					part_phot->life += rct;
 					if (part_phot->life <= 0)
 						if (rct < 0)
-							return false;
+							return 0;
 						else
 							part_phot->life = 0;
 				}
@@ -406,15 +394,15 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 						switch (r2)
 						{
 						case 8: newrct += 8; break;
-						case 9: newrct -= 8; alive = false; break;
-						case 10: sim->kill_part(ri); return alive;
+						case 9: newrct -= 8; t = 0; break;
+						case 10: sim->kill_part(ri); return t;
 						case 11:
 							a = floor( ( atan2f(rot[b], rot[b+2]) - atan2f(part_phot->vy, part_phot->vx) ) * (4.0 / M_PI) );
 							if ((a + 3) & 2)
 								break;
 							createPhotonsWithVelocity(sim, mov.i, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), r1 * rot[b+2], r1 * rot[b]);
 							break;
-						case 13: alive = false;
+						case 13: t = 0;
 						case 12:
 							newrct = 0; part_other->tmp = 7; part_other->tmp2 = 0; break;
 						}
@@ -462,7 +450,7 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 							break;
 						case 5:
 							(f & (FLAG_DIRCH_MARK_HV)) ? (
-								alive = false,
+								t = 0,
 								(sim->parts[ri].saveWl != part_phot->ctype) &&
 									(omsk |= FLAG_DIRCH_MARK_K)) :
 								(sim->parts[ri].saveWl = part_phot->ctype);
@@ -475,7 +463,7 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				}
 				else if (rot[(rct+2)&7] * part_phot->vx +
 					     rot[rct&7] * part_phot->vy <= 0)
-					return false;
+					return 0;
 				break;
 			case 21: // skip movement for N frame
 				// part_phot->flags |= FLAG_SKIPMOVE;
@@ -483,14 +471,12 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				part_phot->tmp |= part_phot->ctype;
 				part_phot->ctype = PMAP(1, 2);
 				part_phot->tmp2 = rct;
-				change_type(sim, mov, PT_E195);
-				break;
+				return PT_E195;
 			case 22:
 				part_phot->tmp = part_phot->ctype;
 				part_phot->tmp2 = rct;
 				part_phot->ctype = PMAP(1, 3);
-				change_type(sim, mov, PT_E195);
-				break;
+				return PT_E195;
 			case 23:
 				if (rct <= 0)
 					part_phot->tmp = * (int*) &(part_other->temp);
@@ -499,8 +485,7 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				else
 					part_phot->tmp = part_other->tmp3;
 				part_phot->ctype = PMAP(1, 4);
-				change_type(sim, mov, PT_E195);
-				break;
+				return PT_E195;
 			case 26: // QRTZ-like scatter
 				{
 					float rr = part_other->ctype / 256.0f;
@@ -514,14 +499,14 @@ bool Element_MULTIPP::interactDir(Simulation* sim, const Simulation_move & mov, 
 				float tvx = part_phot->vx, tvy = part_phot->vy;
 				int np = createPhotonsWithVelocity(sim, mov.i, (int)(part_other->x+0.5f), (int)(part_other->y+0.5f), -tvy, tvx);
 				if (np < 0)
-					return false;
+					return 0;
 				part_phot->vx = tvy;
 				part_phot->vy = -tvx;
 				break;
 			}
 		}
 	}
-	return alive;
+	return t;
 }
 
 //#TPT-Directive ElementHeader Element_MULTIPP static int createPhotonsWithVelocity(Simulation* sim, int i, int x, int y, float vx, float vy)
@@ -638,22 +623,20 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 	int coord_stack_limit = XRES*YRES;
 	unsigned short (*coord_stack)[2];
 	int coord_stack_size = 0;
-	int x1, x2, r;
+	int x1, x2;
+	unsigned r;
 	
 	Particle * parts = sim->parts;
 	int (*pmap)[XRES] = sim->pmap;
 	
+	if ((parts[i].type != ELEM_MULTIPP) || (parts[i].life != 26) || parts[i].tmp)
+		return;
+
 	coord_stack = new unsigned short[coord_stack_limit][2];
 	coord_stack[coord_stack_size][0] = x;
 	coord_stack[coord_stack_size][1] = y;
 	coord_stack_size++;
-	
-	if ((parts[i].type != ELEM_MULTIPP) || (parts[i].life != 26) || parts[i].tmp)
-	{
-		delete[] coord_stack;
-		return;
-	}
-	
+
 	do
 	{
 		coord_stack_size--;
@@ -662,7 +645,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		x1 = x2 = x;
 		
 		// go left as far as possible
-		while (x1 >= 0)
+		while (x1 >= 1)
 		{
 			r = pmap[y][x1-1];
 			if (!CHECK_EXTEL(r, 26))
@@ -672,7 +655,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 			x1--;
 		}
 		// go right as far as possible
-		while (x2 < XRES)
+		while (x2 < XRES - 1)
 		{
 			r = pmap[y][x2+1];
 			if (!CHECK_EXTEL(r, 26))
@@ -685,9 +668,8 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 		// fill span
 		for (x=x1; x<=x2; x++)
 		{
-			r = ID(pmap[y][x]);
-			parts[r].tmp = 8;
-			// parts[r].flags |= 0x80000000;
+			r = pmap[y][x];
+			parts[ID(r)].tmp = 8;
 		}
 		
 		// add adjacent pixels to stack
@@ -695,7 +677,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y-1][x];
-				if (CHECK_EXTEL(r, 26) && !partsi(r).tmp)
+				if (CHECK_EXTEL(r, 26) && !parts[ID(r)].tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y-1;
@@ -711,7 +693,7 @@ void Element_MULTIPP::FloodButton(Simulation *sim, int i, int x, int y)
 			for (x=x1; x<=x2; x++)
 			{
 				r = pmap[y+1][x];
-				if (CHECK_EXTEL(r, 26) && !partsi(r).tmp)
+				if (CHECK_EXTEL(r, 26) && !parts[ID(r)].tmp)
 				{
 					coord_stack[coord_stack_size][0] = x;
 					coord_stack[coord_stack_size][1] = y+1;

@@ -203,24 +203,24 @@ void Renderer::decorate_sim()
 	ClearAccumulation();
 
 	// clear any particle
-	for (i = 0; i <= sim->parts_lastActiveIndex; i++)
-		sim->kill_part(i);
+	for (i = 0; i < NPART; i++)
+	{
+		sim->parts[i].type = 0;
+		sim->parts[i].life = i+1;
+	}
+	sim->parts[NPART-1].life = -1;
+	sim->pfree = 0;
+	memset(sim->pmap, 0, sizeof(sim->pmap));
+	memset(sim->photons, 0, sizeof(sim->photons));
+
+	sim->elementRecount = true;
 
 	// clear any walls
 	sim->breakable_wall_recount = true;
-	for (ny = 0; ny < YRES/CELL; ny++)
-	{
-		for (nx = 0; nx < XRES/CELL; nx++)
-		{
-			sim->bmap[ny][nx] = 0;
-		}
-	}
+	memset(sim->bmap, 0, sizeof(sim->bmap));
 
 	// clear any signs
-	for (int i = sim->signs.size()-1; i >= 0; i--)
-	{
-		sim->signs.erase(sim->signs.begin()+i);
-	}
+	sim->signs.clear();
 
 	for (ny = 0; ny < YRES; ny++)
 	{
@@ -1442,43 +1442,18 @@ void Renderer::render_parts()
 				}
 				else if(!(colour_mode & COLOUR_BASC))
 				{
+					int gr = 1;
 					if (elements[t].Graphics)
 					{
+						//That's a lot of args, a struct might be better
 #if !defined(RENDERER) && defined(LUACONSOLE)
 						if (lua_gr_func[t])
-						{
-							if (luacon_graphicsReplacement(this, &(sim->parts[i]), nx, ny, &pixel_mode, &cola, &colr, &colg, &colb, &firea, &firer, &fireg, &fireb, i))
-							{
-								graphicscache[t].isready = 1;
-								graphicscache[t].pixel_mode = pixel_mode;
-								graphicscache[t].cola = cola;
-								graphicscache[t].colr = colr;
-								graphicscache[t].colg = colg;
-								graphicscache[t].colb = colb;
-								graphicscache[t].firea = firea;
-								graphicscache[t].firer = firer;
-								graphicscache[t].fireg = fireg;
-								graphicscache[t].fireb = fireb;
-							}
-						}
-						else if ((*(elements[t].Graphics))(this, &(sim->parts[i]), nx, ny, &pixel_mode, &cola, &colr, &colg, &colb, &firea, &firer, &fireg, &fireb)) //That's a lot of args, a struct might be better
-#else
-						if ((*(elements[t].Graphics))(this, &(sim->parts[i]), nx, ny, &pixel_mode, &cola, &colr, &colg, &colb, &firea, &firer, &fireg, &fireb)) //That's a lot of args, a struct might be better
+							gr = luacon_graphicsReplacement(this, &(sim->parts[i]), nx, ny, &pixel_mode, &cola, &colr, &colg, &colb, &firea, &firer, &fireg, &fireb, i);
+						else
 #endif
-						{
-							graphicscache[t].isready = 1;
-							graphicscache[t].pixel_mode = pixel_mode;
-							graphicscache[t].cola = cola;
-							graphicscache[t].colr = colr;
-							graphicscache[t].colg = colg;
-							graphicscache[t].colb = colb;
-							graphicscache[t].firea = firea;
-							graphicscache[t].firer = firer;
-							graphicscache[t].fireg = fireg;
-							graphicscache[t].fireb = fireb;
-						}
+							gr = (*(elements[t].Graphics))(this, &(sim->parts[i]), nx, ny, &pixel_mode, &cola, &colr, &colg, &colb, &firea, &firer, &fireg, &fireb);
 					}
-					else
+					if (gr)
 					{
 						graphicscache[t].isready = 1;
 						graphicscache[t].pixel_mode = pixel_mode;
@@ -2185,7 +2160,7 @@ void Renderer::render_parts()
 				if (pixel_mode & EFFECT_DBGLINES && !(display_mode&DISPLAY_PERS))
 				{
 					// draw lines connecting wifi/portal channels
-					if (mousePos.X == nx && mousePos.Y == ny && (i == sim->pmap[ny][nx]>>8) && debugLines)
+					if (mousePos.X == nx && mousePos.Y == ny && (i == TYP(sim->pmap[ny][nx])) && debugLines)
 					{
 						int type = parts[i].type, tmp = (int)((parts[i].temp-73.15f)/100+1), othertmp;
 						if (type == PT_PRTI)
@@ -2204,7 +2179,9 @@ void Renderer::render_parts()
 					}
 				}
 				//Fire effects
-				if(firea && (pixel_mode & FIRE_BLEND))
+				if (!firea)
+					continue;
+				if(pixel_mode & FIRE_BLEND)
 				{
 #ifdef OGLR
 					smokeV[csmokeV++] = nx;
@@ -2221,7 +2198,7 @@ void Renderer::render_parts()
 					fire_b[ny/CELL][nx/CELL] = (firea*fireb + (255-firea)*fire_b[ny/CELL][nx/CELL]) >> 8;
 #endif
 				}
-				if(firea && (pixel_mode & FIRE_ADD))
+				if(pixel_mode & FIRE_ADD)
 				{
 #ifdef OGLR
 					fireV[cfireV++] = nx;
@@ -2249,7 +2226,7 @@ void Renderer::render_parts()
 					fire_b[ny/CELL][nx/CELL] = fireb;
 #endif
 				}
-				if(firea && (pixel_mode & FIRE_SPARK))
+				if(pixel_mode & FIRE_SPARK)
 				{
 #ifdef OGLR
 					smokeV[csmokeV++] = nx;

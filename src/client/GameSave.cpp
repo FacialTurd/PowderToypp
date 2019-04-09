@@ -1074,10 +1074,6 @@ void GameSave::readOPS(char * data, int dataLength)
 					if (newIndex < 0 || newIndex >= NPART)
 						throw ParseException(ParseException::Corrupt, "Too many particles");
 
-					// Read type (2nd byte)
-					if (fieldDescriptor & 0x4000)
-						throw ParseException(ParseException::Corrupt, "Doesn't support 2nd byte of type");
-
 					//Clear the particle, ready for our new properties
 					memset(&(particles[newIndex]), 0, sizeof(Particle));
 
@@ -1086,6 +1082,10 @@ void GameSave::readOPS(char * data, int dataLength)
 					particles[newIndex].x = x;
 					particles[newIndex].y = y;
 					i+=3;
+
+					// Read type (2nd byte)
+					if (fieldDescriptor & 0x4000)
+						particles[newIndex].type |= (((unsigned)partsData[i++]) << 8);
 
 					//Read temp
 					if(fieldDescriptor & 0x01)
@@ -2314,6 +2314,15 @@ char * GameSave::serialiseOPS(unsigned int & dataLength)
 				//Location of the field descriptor
 				fieldDescLoc = partsDataLen++;
 				partsDataLen++;
+
+				// Extra type byte if necessary
+				if (particles[i].type & 0xFF00)
+				{
+					partsData[partsDataLen++] = particles[i].type >> 8;
+					fieldDesc |= 1 << 14;
+					RESTRICTVERSION(93, 0);
+					RESTRICTRENDERVERSION(93, 0);
+				}
 
 				//Extra Temperature (2nd byte optional, 1st required), 1 to 2 bytes
 				//Store temperature as an offset of 21C(294.15K) or go into a 16byte int and store the whole thing

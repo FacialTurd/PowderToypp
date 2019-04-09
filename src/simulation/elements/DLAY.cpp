@@ -60,8 +60,7 @@ int Element_DLAY::update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				pavg = PAVG_INSL(r);
-				if (!r || CHECK_EL_INSL(pavg))
+				if (!r || sim->parts_avg_elec(i, ID(r)))
 					continue;
 				if (TYP(r)==PT_SPRK && parts[i].life==0 && parts[ID(r)].life>0 && parts[ID(r)].life<4 && parts[ID(r)].ctype==PT_PSCN)
 				{

@@ -77,7 +77,7 @@ int Element_MERC::update(UPDATE_FUNC_ARGS)
 						continue;
 					if (TYP(r) == PT_MERC && !(rand()%3))
 					{
-						r >>= PMAPBITS;
+						r = ID(r);
 						if ((parts[i].tmp + parts[r].tmp + 1) <= maxtmp)
 						{
 							parts[i].tmp += parts[r].tmp + 1;

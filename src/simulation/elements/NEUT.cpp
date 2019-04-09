@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <iostream>
 
+#ifdef LUACONSOLE
+#include "lua/LuaScriptInterface.h"
+#include "lua/LuaScriptHelper.h"
+#endif
+
 #define SETTRANS(t, e1, e2, m, p) (\
 	t[2*e1] = PMAP(m, e2), \
 	t[2*e1+1] = p * (RAND_MAX / 1000.0))
@@ -120,16 +125,16 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						{
 							sim->create_part(ID(r), x+rx, y+ry, rand()%3 ? PT_LAVA : PT_URAN);
 							parts[ID(r)].temp = MAX_TEMP;
-							if (partsi(r).type==PT_LAVA) {
-								partsi(r).tmp = 100;
-								partsi(r).ctype = PT_PLUT;
+							if (parts[ID(r)].type==PT_LAVA) {
+								parts[ID(r)].tmp = 100;
+								parts[ID(r)].ctype = PT_PLUT;
 							}
 						}
 						else
 						{
 							sim->create_part(ID(r), x+rx, y+ry, PT_NEUT);
-							partsi(r).vx = 0.25f*partsi(r).vx + parts[i].vx;
-							partsi(r).vy = 0.25f*partsi(r).vy + parts[i].vy;
+							parts[ID(r)].vx = 0.25f*parts[ID(r)].vx + parts[i].vx;
+							parts[ID(r)].vy = 0.25f*parts[ID(r)].vy + parts[i].vy;
 						}
 						sim->pv[y/CELL][x/CELL] += 10.0f * CFDS; //Used to be 2, some people said nukes weren't powerful enough
 						Element_FIRE::update(UPDATE_FUNC_SUBCALL_ARGS);
@@ -137,9 +142,9 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					break;
 #ifdef SDEUT
 				case PT_DEUT:
-					if ((pressureFactor+1+(partsi(r).life/100))>(rand()%1000))
+					if ((pressureFactor+1+(parts[ID(r)].life/100))>(rand()%1000))
 					{
-						DeutExplosion(sim, partsi(r).life, x+rx, y+ry, restrict_flt(partsi(r).temp + partsi(r).life*500.0f, MIN_TEMP, MAX_TEMP), PT_NEUT);
+						DeutExplosion(sim, parts[ID(r)].life, x+rx, y+ry, restrict_flt(parts[ID(r)].temp + parts[ID(r)].life*500.0f, MIN_TEMP, MAX_TEMP), PT_NEUT);
 						sim->kill_part(ID(r));
 					}
 					break;
@@ -148,21 +153,21 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					if ((pressureFactor+1)>(rand()%1000))
 					{
 						create_part(ID(r), x+rx, y+ry, PT_NEUT);
-						partsi(r).vx = 0.25f*partsi(r).vx + parts[i].vx;
-						partsi(r).vy = 0.25f*partsi(r).vy + parts[i].vy;
-						partsi(r).life --;
-						partsi(r).temp = restrict_flt(partsi(r).temp + partsi(r).life*17.0f, MIN_TEMP, MAX_TEMP);
+						parts[ID(r)].vx = 0.25f*parts[ID(r)].vx + parts[i].vx;
+						parts[ID(r)].vy = 0.25f*parts[ID(r)].vy + parts[i].vy;
+						parts[ID(r)].life --;
+						parts[ID(r)].temp = restrict_flt(parts[ID(r)].temp + parts[ID(r)].life*17.0f, MIN_TEMP, MAX_TEMP);
 						sim->pv[y/CELL][x/CELL] += 6.0f * CFDS;
 					}
 					break;
 #endif
 				case PT_FWRK:
 					if (!(rand()%20))
-						partsi(r).ctype = PT_DUST;
+						parts[ID(r)].ctype = PT_DUST;
 					break;
 				case PT_EXOT:
-					if (partsi(r).ctype != PT_E195 && !(rand()%20))
-						partsi(r).life = 1500;
+					if (parts[ID(r)].ctype != PT_E195 && !(rand()%20))
+						parts[ID(r)].life = 1500;
 					break;
 				case PT_RFRG:
 					if (rand()%2)
@@ -171,27 +176,27 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 						sim->create_part(ID(r), x+rx, y+ry, PT_CAUS);
 					break;
 				case PT_POLC:
-					if (partsi(r).tmp && !(rand()%80))
-						partsi(r).tmp--;
+					if (parts[ID(r)].tmp && !(rand()%80))
+						parts[ID(r)].tmp--;
 					break;
 				case PT_DMG:
 					DMG_count++;
 					break;
 				case ELEM_MULTIPP:
 					{
-					int l = partsi(r).life;
+					int l = parts[ID(r)].life;
 					int rr, j, nr;
 					if (l == 22)
 					{
-						switch (partsi(r).tmp >> 3)
+						switch (parts[ID(r)].tmp >> 3)
 						{
 						case 1:
 							parts[i].vx = 0, parts[i].vy = 0;
 							break;
 						case 2:
-							if (partsi(r).temp > 8000)
+							if (parts[ID(r)].temp > 8000)
 							{
-								int temp = (int)(partsi(r).temp - 8272.65f);
+								int temp = (int)(parts[ID(r)].temp - 8272.65f);
 								if (!(rx || ry) && temp > (int)(rand() * 1000.0f / (RAND_MAX+1.0f)))
 								{
 									sim->kill_part(i);
@@ -209,11 +214,11 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 							}
 							break;
 						case 3:
-							if (!(partsi(r).tmp2 || rand()%500))
+							if (!(parts[ID(r)].tmp2 || rand()%500))
 							{
 								int np = sim->create_part(-1, x, y, PT_NEUT);
 								if (np < 0) parts[np].temp = parts[i].temp;
-								partsi(r).tmp2 = 500;
+								parts[ID(r)].tmp2 = 500;
 							}
 							if (!(rx || ry))
 							{
@@ -229,12 +234,12 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 					else if (l <= 8 && !(rx || ry))
 					{
 						diffs = (l == 8);
-						if ((l == 5 && !partsi(r).tmp) || diffs)
+						if ((l == 5 && !parts[ID(r)].tmp) || diffs)
 							target_r = ID(r);
 					}
-					else if (l == 16 && partsi(r).ctype == 25 && Element_MULTIPP::Arrow_keys != NULL)
+					else if (l == 16 && parts[ID(r)].ctype == 25 && Element_MULTIPP::Arrow_keys != NULL)
 					{
-						int tmp2 = partsi(r).tmp2;
+						int tmp2 = parts[ID(r)].tmp2;
 						int multiplier = (tmp2 >> 4) + 1;
 						tmp2 &= 0x0F;
 						if (Element_MULTIPP::Arrow_keys[0] & 0x10 && tmp2 >= 1 && tmp2 <= 8)
@@ -299,12 +304,33 @@ int Element_NEUT::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
+#ifdef LUACONSOLE
+#ifdef TPT_NEED_DLL_PLUGIN
+namespace
+{
+__attribute__ ((fastcall))
+int my_eval_move (Simulation * sim, int pt, int nx, int ny, unsigned r)
+{
+	if (TYP(r) != ELEM_MULTIPP)
+		return 0;
+	if (sim->parts[ID(r)].life != 8)
+		return 0;
+	return 2;
+}
+}
+#endif
+#endif
 
 //#TPT-Directive ElementHeader Element_NEUT static int ChangeDirection(Simulation* sim, int i, int x, int y, bool df, Particle* neut, Particle* under)
 int Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, bool df, Particle* neut, Particle* under)
 {
 	if (df)
 	{
+#ifdef LUACONSOLE
+#ifdef TPT_NEED_DLL_PLUGIN
+		LuaScriptInterface::simulation_debug_trigger::_main(0x80, i, x, y);
+#endif
+#endif
 		bool _fail = true;
 		int nx, ny, j = 0, _status = 1;
 		float ox = neut->x, oy = neut->y,
@@ -327,7 +353,7 @@ int Element_NEUT::ChangeDirection(Simulation* sim, int i, int x, int y, bool df,
 				break;
 			}
 			int r = sim->pmap[ny][nx];
-			if (TYP(r) == ELEM_MULTIPP && sim->partsi(r).life == 8)
+			if (TYP(r) == ELEM_MULTIPP && sim->parts[ID(r)].life == 8)
 				// (!sim->photons[ny][nx] || (nx == x && ny == y))
 			{
 				_status = 0;

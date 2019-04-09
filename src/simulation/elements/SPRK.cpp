@@ -168,6 +168,8 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 		if(parts[i].temp < 3595.0){
 			parts[i].temp += (rand()%20)-4;
 		}
+	case ELEM_MULTIPP:	// subframe SPRK
+		return 0;
 	default:
 		break;
 	}
@@ -180,7 +182,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					continue;
 				receiver = TYP(r);
 				sender = ct;
-				pavg = PAVG_INSL(r);
+				pavg = sim->parts_avg(i, ID(r), PT_INSL);
 				//receiver is the element SPRK is trying to conduct to
 				//sender is the element the SPRK is on
 				//First, some checks usually for (de)activation of elements
@@ -361,35 +363,35 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				}
 			conduct:
 				//Yay, passed normal conduction rules, check a few last things and change receiver to spark
-				if (receiver==PT_WATR||receiver==PT_SLTW) {
-					if (partsi(r).life==0 && parts[i].life<3)
+				if (receiver==PT_WATR || receiver==PT_SLTW) {
+					if (parts[ID(r)].life==0 && parts[i].life<3)
 					{
 						sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
-						if (receiver==PT_WATR) partsi(r).life = 6;
-						else partsi(r).life = 5;
-						partsi(r).ctype = receiver;
+						if (receiver==PT_WATR) parts[ID(r)].life = 6;
+						else parts[ID(r)].life = 5;
+						parts[ID(r)].ctype = receiver;
 					}
 				}
 				else if (receiver==PT_INST) {
-					if (partsi(r).life==0 && parts[i].life<4)
+					if (parts[ID(r)].life==0 && parts[i].life<4)
 					{
 						sim->FloodINST(x+rx,y+ry,PT_SPRK,PT_INST);//spark the wire
 					}
 				}
-				else if (partsi(r).life==0 && parts[i].life<4) {
-					partsi(r).life = 4;
-					partsi(r).ctype = receiver;
+				else if (parts[ID(r)].life==0 && parts[i].life<4) {
+					parts[ID(r)].life = 4;
+					parts[ID(r)].ctype = receiver;
 					sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
-					if (partsi(r).temp+10.0f<673.0f&&!sim->legacy_enable&& (sim->elements[receiver].Properties2 & PROP_ELEC_HEATING))
-						partsi(r).temp = partsi(r).temp+10.0f;
+					if (parts[ID(r)].temp+10.0f<673.0f && !sim->legacy_enable && (sim->elements[receiver].Properties2 & PROP_ELEC_HEATING))
+						parts[ID(r)].temp = parts[ID(r)].temp+10.0f;
 				}
-				else if (!partsi(r).life && sender==PT_ETRD && parts[i].life==5) //ETRD is odd and conducts to others only at life 5, this could probably be somewhere else
+				else if (!parts[ID(r)].life && sender==PT_ETRD && parts[i].life==5) //ETRD is odd and conducts to others only at life 5, this could probably be somewhere else
 				{
 					sim->part_change_type(i,x,y,sender);
 					parts[i].ctype = PT_NONE;
 					parts[i].life = 20;
-					partsi(r).life = 4;
-					partsi(r).ctype = receiver;
+					parts[ID(r)].life = 4;
+					parts[ID(r)].ctype = receiver;
 					sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
 				}
 			}

@@ -109,7 +109,7 @@ int Element_FSEP::update(UPDATE_FUNC_ARGS)
 				rx = x+rand()%5-2; ry = y+rand()%5-2;
 				if (!sim->InBounds(rx, ry) || (x == rx && y == ry))
 					continue;
-				r = pmap[ry][rx]; rt = TYP(r); r >>= PMAPBITS;
+				r = pmap[ry][rx]; rt = TYP(r); r = ID(r);
 			}
 			if (q && parts[i].life == 42)
 				parts[i].life = 41;

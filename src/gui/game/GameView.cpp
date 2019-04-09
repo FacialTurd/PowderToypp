@@ -724,7 +724,7 @@ void GameView::NotifyActiveToolsChanged(GameModel * sender)
 		if (active->GetIdentifier().find("_PT_") == active->GetIdentifier().npos)
 			ren->findingElement = 0;
 		else
-			ren->findingElement = sender->GetActiveTool(0)->GetToolID()%256;
+			ren->findingElement = TYP(sender->GetActiveTool(0)->GetToolID());
 	}
 	c->ActiveToolChanged(1, sender->GetActiveTool(1));
 	c->ActiveToolChanged(2, sender->GetActiveTool(2));
@@ -1519,10 +1519,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			if (ctrl)
 			{
 				Tool *active = c->GetActiveTool(0);
-				if (active->GetIdentifier().find("_PT_") == active->GetIdentifier().npos || ren->findingElement == active->GetToolID()%256)
+				if (active->GetIdentifier().find("_PT_") == active->GetIdentifier().npos || ren->findingElement == TYP(active->GetToolID()))
 					ren->findingElement = 0;
 				else
-					ren->findingElement = active->GetToolID()%256;
+					ren->findingElement = TYP(active->GetToolID());
 			}
 			else
 				c->FrameStep();
@@ -2219,6 +2219,23 @@ void GameView::SetSaveButtonTooltips()
 
 void GameView::OnDraw()
 {
+	auto mp_mode = [this] (std::stringstream &s, int l) -> bool
+	{
+		static const char* m[] = {
+			"PRSINS", "PRSINS", "TRON_GATE", "(Unused)", "LASER", "DIRCH", "HEATER", "PHTDUP", "VIBR2", "VIBR2",
+			"DEBUG", "PHTEM", "SPREFL", "DECOR", "DECO2", "PRTINS", "LOGICG", "PHDIOD", "DECO3", "NOTGIN",
+			"PARTEM", "EXPANDER", "EN_REFL", "STKMJ", "MOV_DRAY", "EXT_DRAY", "BUTTON", "STKSET", "RAY_REFL", "TRONE",
+			"TRONF", "TRONDL", "RAY_PC", "WIFI2", "FILTINC", "RNMRAY", "TMP2_T", "L_ANT", "PART_TR", "WAIT",
+			"LUACALL"
+		};
+		bool r = (l >= 0 && l <= 40);
+		if (r)
+			s << m[l];
+		else
+			s << c->ElementResolve(ELEM_MULTIPP, -1);
+		return r;
+	};
+	
 	Graphics * g = GetGraphics();
 	if (ren)
 	{
@@ -2407,15 +2424,7 @@ void GameView::OnDraw()
 	else if(showHud)
 	{
 		Particle * sample_particle = &(sample.particle);
-		static const char* E189Modes[] = {
-			"PRSINS", "PRSINS", "TRON_GATE", "(Unused)", "LASER", "DIRCH", "HEATER", "PHTDUP", "VIBR2", "VIBR2",
-			"DEBUG", "PHTEM", "SPREFL", "DECOR", "DECO2", "PRTINS", "LOGICG", "PHDIOD", "DECO3", "NOTGIN",
-			"PARTEM", "EXPANDER", "EN_REFL", "STKMJ", "MOV_DRAY", "EXT_DRAY", "BUTTON", "STKSET", "RAY_REFL", "TRONE",
-			"TRONF", "TRONDL", "RAY_PC", "WIFI2", "FILTINC", "RNMRAY", "TMP2_T", "L_ANT", "PART_TR", "WAIT",
-			"LUACALL"
-		};
-		const int maxE189Type = 40;
-		static const unsigned int E189IntM[] = {0x81055020U, 0x00000127U};
+
 		//Draw info about simulation under cursor
 		int wavelengthGfx = 0, alpha = 255;
 		if (toolTipPosition.Y < 120)
@@ -2463,9 +2472,11 @@ void GameView::OnDraw()
 						else
 							partint = 1;
 					}
-					else if (partlife >= 0 && partlife < 64 && (E189IntM[partlife >> 5] >> (partlife & 0x1F)) & 1)
+					else if (partlife >= 0 && partlife < 64)
 					{
-						partint = 1;
+						static const unsigned int int_mode[] = {0x81055020U, 0x00000127U};
+						if ((int_mode[partlife >> 5] >> (partlife & 0x1F)) & 1)
+							partint = 1;
 					}
 					else if (partlife == 10)
 					{
@@ -2540,14 +2551,8 @@ void GameView::OnDraw()
 				{
 					if (type == ELEM_MULTIPP)
 					{
-						if (partlife >= 0 && partlife <= maxE189Type)
-						{
-							sampleInfo << E189Modes[partlife];
-						}
-						else
-						{
-							sampleInfo << c->ElementResolve(ELEM_MULTIPP, -1) << "_F" << partlife;
-						}
+						if (!mp_mode(sampleInfo, partlife))
+							sampleInfo << "_F" << partlife;
 					}
 					else
 						sampleInfo << c->ElementResolve(type, ctype);
@@ -2557,8 +2562,8 @@ void GameView::OnDraw()
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == ELEM_MULTIPP && (partlife == 20 || partlife == 35))
 					{
 						sampleInfo << " (";
-						if (TYP(ctype) == ELEM_MULTIPP && type != PT_DRAY && ID(ctype) >= 0 && ID(ctype) <= maxE189Type)
-							sampleInfo << E189Modes[ID(ctype)];
+						if (TYP(ctype) == ELEM_MULTIPP && type != PT_DRAY)
+							mp_mode(sampleInfo, ID(ctype));
 						else
 						{
 							sampleInfo << c->ElementResolve(TYP(ctype), ID(ctype));
@@ -2704,14 +2709,8 @@ void GameView::OnDraw()
 					sampleInfo << c->ElementResolve(type, ctype);
 				else if (type == ELEM_MULTIPP)
 				{
-					if (partlife >= 0 && partlife <= maxE189Type)
-					{
-						sampleInfo << E189Modes[partlife];
-					}
-					else
-					{
-						sampleInfo << c->ElementResolve(ELEM_MULTIPP, -1) << "_F" << partlife;
-					}
+					if (!mp_mode(sampleInfo, partlife))
+						sampleInfo << "_F" << partlife;
 				}
 				else if (type == PT_PINVIS)
 				{

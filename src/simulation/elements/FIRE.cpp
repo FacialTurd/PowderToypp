@@ -194,9 +194,12 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 	int r, rx, ry, rt, lpv, t = parts[i].type;
 	int t1, t2, nflags, rndstore, mt;
+	bool extinguish = false, freeze = false;
 	t1 = parts[i].ctype;
 	if (t == PT_LAVA)
 	{
+		freeze = parts[i].flags & PFLAG_FREEZING;
+
 		if (t1 == PT_PLUT) parts[i].ctype = 0;
 		else if (!ISPOLO(t1))
 			goto update_fire;
@@ -209,7 +212,7 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 			rndc = !(rndstore & 0x7F);
 			if (rndc && (nflags & PFLAG_MIXTURE_FOUND))
 			{
-				lava_freeze(sim, parts[i], i, x, y);
+				lava_freeze(sim, i, x, y);
 				return 1;
 			}
 			// otherwise, MIXTURE_NOT_FOUND
@@ -218,15 +221,12 @@ int Element_FIRE::updateLegacy(UPDATE_FUNC_ARGS) {
 		rndstore >>= 7;
 		ry = rndstore % 5 - 2;
 		r = pmap[y+ry][x+rx];
-		t2 = partsi(r).ctype;
+		t2 = parts[ID(r)].ctype;
 		if (TYP(r) == PT_LAVA && ISPOLO(t2))
 		{
 			if (rndc && t1 != t2)
 				parts[i].flags |= PFLAG_FREEZING | PFLAG_MIXTURE_FOUND;
-			partsi(r).flags |= (parts[i].flags & PFLAG_FREEZING);
 		}
-		if (nflags & PFLAG_FREEZING && parts[i].life > 0)
-			return 1;
 	}
 update_fire:
 	for (rx=-2; rx<3; rx++)
@@ -243,59 +243,58 @@ update_fire:
 				lpv = (int)sim->pv[(y+ry)/CELL][(x+rx)/CELL];
 				if (lpv < 1) lpv = 1;
 				mt = sim->elements[rt].Meltable;
-				if (mt && ((t!=PT_FIRE&&t!=PT_PLSM) || (rt!=PT_METL && rt!=PT_IRON && rt!=PT_ETRD && rt!=PT_PSCN && rt!=PT_NSCN && rt!=PT_NTCT && rt!=PT_PTCT && rt!=PT_BMTL && rt!=PT_BRMT && rt!=PT_SALT && rt!=PT_INWR)) && mt*lpv>(rand()%1000))
+				if (mt && ((t!=PT_FIRE && t!=PT_PLSM) || (rt!=PT_METL && rt!=PT_IRON && rt!=PT_ETRD && rt!=PT_PSCN && rt!=PT_NSCN && rt!=PT_NTCT && rt!=PT_PTCT && rt!=PT_BMTL && rt!=PT_BRMT && rt!=PT_SALT && rt!=PT_INWR)) && mt*lpv>(rand()%1000))
 				{
 					if (t!=PT_LAVA || parts[i].life>0)
 					{
+						if (freeze)
+							continue;
 						if (rt==PT_BRMT)
-							partsi(r).ctype = PT_BMTL;
+							parts[ID(r)].ctype = PT_BMTL;
 						else if (rt==PT_SAND)
-							partsi(r).ctype = PT_GLAS;
+							parts[ID(r)].ctype = PT_GLAS;
 						else
-							partsi(r).ctype = rt;
+							parts[ID(r)].ctype = rt;
 						sim->part_change_type(ID(r),x+rx,y+ry,PT_LAVA);
-						partsi(r).life = rand()%120+240;
+						parts[ID(r)].life = rand()%120+240;
 					}
 					else
-					{
-						lava_freeze(sim, parts[i], i, x, y);
-						return 1;
-					}
+						extinguish = true;
 				}
-				if (rt==PT_ICEI || rt==PT_SNOW)
+				switch (rt)
 				{
+				case PT_LAVA:
+					if (freeze)
+						parts[ID(r)].flags |= PFLAG_FREEZING;
+					break;
+				case PT_ICEI:
+				case PT_SNOW:
 					sim->part_change_type(ID(r), x+rx, y+ry, PT_WATR);
-					if (t==PT_FIRE)
-					{
-						sim->kill_part(i);
-						return 1;
-					}
-					if (t==PT_LAVA)
-					{
-						parts[i].life = 0;
-						sim->part_change_type(i,x,y,PT_STNE);
-					}
-				}
-				if (rt==PT_WATR || rt==PT_DSTW || rt==PT_SLTW)
-				{
+					extinguish = true;
+					break;
+				case PT_WATR:
+				case PT_DSTW:
+				case PT_SLTW:
 					sim->kill_part(ID(r));
-					if (t==PT_FIRE)
-					{
-						sim->kill_part(i);
-						return 1;
-					}
-					if (t==PT_LAVA)
-					{
-						lava_freeze(sim, parts[i], i, x, y);
-					}
+					extinguish = true;
+					break;
 				}
 			}
+	if (extinguish)
+	{
+		if (t == PT_FIRE)
+			sim->kill_part(i);
+		else if (t == PT_LAVA)
+			lava_freeze(sim, i, x, y);
+		return 1;
+	}
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_FIRE static void lava_freeze(Simulation *sim, Particle &p, int i, int x, int y)
-void Element_FIRE::lava_freeze(Simulation *sim, Particle &p, int i, int x, int y)
+//#TPT-Directive ElementHeader Element_FIRE static void lava_freeze(Simulation *sim, int i, int x, int y)
+void Element_FIRE::lava_freeze(Simulation *sim, int i, int x, int y)
 {
+	Particle &p = sim->parts[i];
 	p.life = 0;
 	sim->part_change_type(i, x, y, p.ctype ? p.ctype : PT_STNE);
 	p.ctype = 0;

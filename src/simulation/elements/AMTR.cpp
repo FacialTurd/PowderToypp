@@ -60,7 +60,7 @@ int Element_AMTR::update(UPDATE_FUNC_ARGS)
 				rt = TYP(r);
 				if (rt!=PT_AMTR && !(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE))
 				    && rt!=PT_VOID && rt!=PT_BHOL && rt!=PT_NBHL && rt!=PT_PRTI && rt!=PT_PRTO
-					&& (rt!=PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)))
+					&& (rt!=PT_SPRK || !(sim->elements[parts[ID(r)].ctype].Properties2 & PROP_NODESTRUCT)))
 				{
 					parts[i].life++;
 					if (parts[i].life==4)

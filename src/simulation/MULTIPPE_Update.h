@@ -1,5 +1,4 @@
-#ifndef __MULTIPPE_Update_H__
-#define __MULTIPPE_Update_H__
+#pragma once
 
 #include "simulation/Elements.h"
 
@@ -27,23 +26,16 @@ namespace MULTIPPE_Update
 	// static int AddCharacter(Simulation *sim, int x, int y, int c, int rgb);
 	bool isAcceptedConductor (Simulation* sim, int r);
 	bool isAcceptedConductor_i (Simulation* sim, int r);
+
 	static void conductTo (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?
 	{
-		if (!partsi(r).life)
-		{
-			partsi(r).ctype = TYP(r);
-			sim->part_change_type(ID(r), x, y, PT_SPRK);
-			partsi(r).life = 4;
-		}
+		if (!parts[ID(r)].life)
+			sim->set_spark(ID(r), x, y);
 	}
 	static void conductToSWCH (Simulation* sim, int r, int x, int y, Particle *parts) // Inline or macro?
 	{
-		if (partsi(r).life == 10)
-		{
-			partsi(r).ctype = TYP(r);
-			sim->part_change_type(ID(r), x, y, PT_SPRK);
-			partsi(r).life = 4;
-		}
+		if (parts[ID(r)].life == 10)
+			sim->set_spark(ID(r), x, y);
 	}
 	static bool BreakWallTest (Simulation* sim, int x, int y, bool a) // Inline or macro?
 	{
@@ -64,4 +56,4 @@ namespace MULTIPPE_Update
 	// static bool SetDecoration(bool decorationState); // file used: src/gui/game/GameModel.cpp
 	// static bool GetDecoration();
 };
-#endif
+

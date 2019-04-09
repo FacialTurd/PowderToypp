@@ -79,11 +79,11 @@ int Element_POLC::update(UPDATE_FUNC_ARGS)
 		sctype = TYP(parts[i].ctype); // don't create SPC_AIR
 		int rrt = TYP(rr);
 
-		b1 = rrt && (rrt == PT_ELEC || (rrt == PT_E195 && partsi(rr).ctype >= 0 && partsi(rr).ctype <= PMAPMASK));
+		b1 = rrt && (rrt == PT_ELEC || (rrt == PT_E195 && parts[ID(rr)].ctype >= 0 && parts[ID(rr)].ctype <= PMAPMASK));
 		
 		if (b1 ? (rand() < strengthlist[std::max(stmp, 0)]) : (!stmp && !(rand() % 8192)))
 		{
-			rr >>= PMAPBITS;
+			rr = ID(rr);
 			if (!sctype || sim->elements[sctype].Properties & TYPE_ENERGY)
 			{
 				actype = sctype ? sctype : PT_ELEC;

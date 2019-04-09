@@ -784,7 +784,10 @@ __asm__ (
 	"jmp .Lcall_dll_api_1_entry;"
 	".p2align 3,,7\n\t"
 	".Lcall_dll_excp:" // 这是异常处理例程
-	"push %esi; push %ebx;" // ENTER EXCEPTION HANDLER
+	"movl 4(%esp), %eax;"
+	"testb $6, 4(%eax);"
+	"jz 1f; movl $1, %eax; ret;"
+	"1: push %esi; push %ebx;" // ENTER EXCEPTION HANDLER
 	"leal 12(%esp), %edx;"
 	"movl (%edx), %eax;" // eax = ExceptionRecord
 	"movl 4(%edx), %ebx;"
@@ -803,9 +806,9 @@ __asm__ (
 	"jne .Lcall_dll_excp.L2;"
 	".Lcall_dll_excp.L1:"
 	"xorl %ecx, %ecx;"
-	"movl %esi, %fs:(%ecx);"
-	"leal 8(%ebx), %esp;"
-	"pop %ebp;"
+	"pushl %ebx; pushl $0; pushl $0; pushl $1f; pushl %esi;"
+	"call _RtlUnwind@16;"
+	"1: pop %esp; add $8, %esp; pop %ebp;"
 	"ret $8\n\t" // LEAVE EXCEPTION HANDLER
 	".Lcall_dll_excp.L2:"
 	"pop %ebx; pop %esi; ret;"
@@ -2684,7 +2687,7 @@ int luatpt_two_state_update(lua_State * l)
 				if (!r)
 					continue;
 				rt = TYP(r);
-				r >>= PMAPBITS;
+				r = ID(r);
 				if (rt == t)
 				{
 					if (parts[i].life==10&&parts[r].life<10&&parts[r].life>0)

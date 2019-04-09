@@ -546,8 +546,9 @@ if GetOption('no-script-manager'):
 #Generate list of sources to compile
 sources = []
 
-if platform == "Windows" and (not msvc) and GetOption('call-seh-plugin'):
-	env.Append(CPPDEFINES=['TPT_NEED_DLL_PLUGIN'])
+if not msvc:
+	if platform == "Windows" and GetOption('call-seh-plugin'):
+		env.Append(CPPDEFINES=['TPT_NEED_DLL_PLUGIN'])
 	sources += Glob("src/asm/*.s")
 
 sources += Glob("src/*.cpp") + Glob("src/*/*.cpp") + Glob("src/*/*/*.cpp") + Glob("generated/*.cpp")

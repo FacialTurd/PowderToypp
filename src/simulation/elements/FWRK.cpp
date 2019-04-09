@@ -49,10 +49,9 @@ Element_FWRK::Element_FWRK()
 //#TPT-Directive ElementHeader Element_FWRK static int update(UPDATE_FUNC_ARGS)
 int Element_FWRK::update(UPDATE_FUNC_ARGS)
 {
-	 if (parts[i].life == 0 && ((surround_space && parts[i].temp>400 && (9+parts[i].temp/40)>rand()%100000) || parts[i].ctype == PT_DUST))
+	if (parts[i].life == 0 && ((surround_space && parts[i].temp>400 && (9+parts[i].temp/40)>rand()%100000) || parts[i].ctype == PT_DUST))
 	{
 		float gx, gy, multiplier, gmax, gswap;
-		int randTmp;
 		sim->GetGravityField(x, y, sim->elements[PT_FWRK].Gravity, 1.0f, gx, gy);
 		if (gx*gx+gy*gy < 0.001f)
 		{
@@ -66,7 +65,7 @@ int Element_FWRK::update(UPDATE_FUNC_ARGS)
 			multiplier = 15.0f/sqrtf(gx*gx+gy*gy);
 
 			//Some variation in speed parallel to gravity direction
-			randTmp = (rand()%200)-100;
+			int randTmp = (rand()%200)-100;
 			gx += gx*randTmp*0.002f;
 			gy += gy*randTmp*0.002f;
 			//and a bit more variation in speed perpendicular to gravity direction

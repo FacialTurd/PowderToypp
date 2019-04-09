@@ -59,12 +59,12 @@ int Element_C5::update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				int rt = TYP(r);
-				if ((rt!=PT_C5 && partsi(r).temp<100 && sim->GetHeatConduct(ID(r), rt)) || rt==PT_CFLM)
+				if ((rt!=PT_C5 && parts[ID(r)].temp<100 && sim->GetHeatConduct(ID(r), rt)) || rt==PT_CFLM)
 				{
 					if (!(rand()%6))
 					{
 						sim->part_change_type(i,x,y,PT_CFLM);
-						partsi(r).temp = parts[i].temp = 0;
+						parts[ID(r)].temp = parts[i].temp = 0;
 						parts[i].life = rand()%150+50;
 						sim->pv[y/CELL][x/CELL] += 1.5;
 					}

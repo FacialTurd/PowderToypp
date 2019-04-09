@@ -45,7 +45,7 @@ Element_LIFE::Element_LIFE()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	Update = NULL;
+	Update = &Element_LIFE::update;
 	Graphics = &Element_LIFE::graphics;
 
 	if(!Element_GOL_colourInit)
@@ -69,6 +69,13 @@ pixel Element_LIFE::Element_GOL_colour[NGOL];
 pixel Element_LIFE::customColorGradF = PIXPACK(0xFF00FF);
 //#TPT-Directive ElementHeader Element_LIFE static pixel customColorGradT;
 pixel Element_LIFE::customColorGradT = PIXPACK(0x330033);
+
+//#TPT-Directive ElementHeader Element_LIFE static int update(UPDATE_FUNC_ARGS)
+int Element_LIFE::update(UPDATE_FUNC_ARGS)
+{
+	parts[i].temp = restrict_flt(parts[i].temp-50.0f, MIN_TEMP, MAX_TEMP);
+	return 0;
+}
 
 //#TPT-Directive ElementHeader Element_LIFE static int graphics(GRAPHICS_FUNC_ARGS)
 int Element_LIFE::graphics(GRAPHICS_FUNC_ARGS)

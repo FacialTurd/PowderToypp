@@ -70,7 +70,7 @@ public:
 	bool isFromMyMod;
 	bool isPrevFromMyMod;
 
-	char can_move[PT_NUM][PT_NUM];
+	unsigned char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
 	int parts_lastActiveIndex;
 	int pfree;
@@ -178,9 +178,25 @@ public:
 	void photoelectric_effect(int nx, int ny);
 	unsigned direction_to_map(float dx, float dy, int t);
 	int do_move(int i, int x, int y, float nxf, float nyf);
+#ifdef __GNUC__
+	__attribute__((fastcall))
+#endif
 	int do_move(Simulation_move & mov);
+#ifdef __GNUC__
+	__attribute__((fastcall))
+#endif
 	int try_move(const Simulation_move & mov);
+#ifdef __GNUC__
+	__attribute__((fastcall))
+#endif
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
+#ifdef __GNUC__
+	__attribute__((fastcall))
+#ifdef TPT_NEED_DLL_PLUGIN
+	__attribute__((noinline))
+#endif
+#endif
+	int real_eval_move(int pt, int nx, int ny, unsigned r);
 	void init_can_move();
 	bool IsWallBlocking(int x, int y, int type);
 	bool IsValidElement(int type) {
@@ -200,19 +216,23 @@ public:
 	//int InCurrentBrush(int i, int j, int rx, int ry);
 	//int get_brush_flags();
 	int create_part(int p, int x, int y, int t, int v = -1);
+	int duplicate_part(int x, int y, Particle & part);
 	void delete_part(int x, int y);
 	void get_sign_pos(int i, int *x0, int *y0, int *w, int *h);
 	int is_wire(int x, int y);
 	int is_wire_off(int x, int y);
 	void set_emap(int x, int y);
+	void set_spark(int i, int x, int y, int life = 4);
+	int clear_spark(int i, int x, int y);
 	int parts_avg(int ci, int ni, int t);
+	bool parts_avg_elec(int ci, int ni);
 	void create_arc(int sx, int sy, int dx, int dy, int midpoints, int variance, int type, int flags);
 	void UpdateParticles(int start, int end);
 	void SimulateGoL();
 	void SimulateLLoops();
 	void RecalcFreeParticles(bool do_life_dec);
 	void CheckStacking();
-	void BeforeSim();
+	bool BeforeSim();
 	void AfterSim();
 	void rotate_area(int area_x, int area_y, int area_w, int area_h, int invert);
 	void clear_area(int area_x, int area_y, int area_w, int area_h);
@@ -281,10 +301,10 @@ public:
 	int get_wavelength_bin(int *wm);
 	int get_normal(int pt, int x, int y, float dx, float dy, float *nx, float *ny);
 	int get_normal_interp(int pt, float x0, float y0, float dx, float dy, float *nx, float *ny);
-	void clear_sim();
+	void clear_sim(bool = true);
 	void
-#if defined(_WIN32) && !defined(_WIN64) && defined(TPT_NEED_DLL_PLUGIN)
-	__fastcall
+#if defined(__GNUC__) && defined(TPT_NEED_DLL_PLUGIN)
+	__attribute__((fastcall))
 #endif
 	_check_neut_base0(int*, char*, bool = true);
 	Simulation();
