@@ -2273,7 +2273,8 @@ bool Simulation::parts_avg_elec(int ci, int ni)
 	int pmr = pmap[((int)(parts[ci].y+0.5f) + (int)(parts[ni].y+0.5f))/2][((int)(parts[ci].x+0.5f) + (int)(parts[ni].x+0.5f))/2];
 	if (!pmr)
 		return false;
-	return CHECK_EL_INSL(pmr);
+	int rt = parts[ID(pmr)].type;
+	return CHECK_EL_INSL(rt);
 }
 
 // unused function
