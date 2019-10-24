@@ -4240,36 +4240,33 @@ void Simulation::UpdateParticles(int start, int end)
 					}
 				}
 			}
-			if (elements[t].Gravity || !(elements[t].Properties & TYPE_SOLID))
+			if (!(elements[t].Properties & TYPE_SOLID))
 			{
-				//Gravity mode by Moach
-				switch (gravityMode)
+				if (elements[t].Gravity)
 				{
-				default:
-				case 0:
-					pGravX = 0.0f;
-					pGravY = elements[t].Gravity;
-					break;
-				case 1:
-					pGravX = pGravY = 0.0f;
-					break;
-				case 2:
-					pGravD = 0.01f - hypotf((x - XCNTR), (y - YCNTR));
-					pGravX = elements[t].Gravity * ((float)(x - XCNTR) / pGravD);
-					pGravY = elements[t].Gravity * ((float)(y - YCNTR) / pGravD);
-					break;
+					//Gravity mode by Moach
+					switch (gravityMode)
+					{
+					default:
+					case 0:
+						pGravX = 0.0f;
+						pGravY = elements[t].Gravity;
+						break;
+					case 1:
+						pGravX = pGravY = 0.0f;
+						break;
+					case 2:
+						pGravD = 0.01f - hypotf((x - XCNTR), (y - YCNTR));
+						pGravX = elements[t].Gravity * ((float)(x - XCNTR) / pGravD);
+						pGravY = elements[t].Gravity * ((float)(y - YCNTR) / pGravD);
+						break;
+					}
 				}
-				//Get some gravity from the gravity map
-				if (t==PT_ANAR)
+				if (elements[t].NewtonianGravity)
 				{
-					// perhaps we should have a ptypes variable for this
-					pGravX -= gravx[(y/CELL)*(XRES/CELL)+(x/CELL)];
-					pGravY -= gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
-				}
-				else if(t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH && !(elements[t].Properties & TYPE_SOLID))
-				{
-					pGravX += gravx[(y/CELL)*(XRES/CELL)+(x/CELL)];
-					pGravY += gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
+					//Get some gravity from the gravity map
+					pGravX += elements[t].NewtonianGravity * gravx[(y/CELL)*(XRES/CELL)+(x/CELL)];
+					pGravY += elements[t].NewtonianGravity * gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
 				}
 			}
 			else

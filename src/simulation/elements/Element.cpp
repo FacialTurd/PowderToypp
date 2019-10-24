@@ -15,6 +15,7 @@ Element::Element():
 	Loss(1.0f),
 	Collision(0.0f),
 	Gravity(0.0f),
+	NewtonianGravity(1.0f),
 	Diffusion(0.0f),
 	HotAir(0.0f * CFDS),
 	Falldown(0),
