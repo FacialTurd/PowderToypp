@@ -26,6 +26,7 @@ public:
 	float Loss;
 	float Collision;
 	float Gravity;
+	float NewtonianGravity;
 	float Diffusion;
 	float HotAir;
 	int Falldown;
