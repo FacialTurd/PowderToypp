@@ -64,6 +64,7 @@ std::vector<StructProperty> Element::GetProperties()
 	properties.push_back(StructProperty("Loss",							StructProperty::Float,		offsetof(Element, Loss)));
 	properties.push_back(StructProperty("Collision",					StructProperty::Float,		offsetof(Element, Collision)));
 	properties.push_back(StructProperty("Gravity",						StructProperty::Float,		offsetof(Element, Gravity)));
+	properties.push_back(StructProperty("NewtonianGravity",				StructProperty::Float,		offsetof(Element, NewtonianGravity)));
 	properties.push_back(StructProperty("Diffusion",					StructProperty::Float,		offsetof(Element, Diffusion)));
 	properties.push_back(StructProperty("HotAir",						StructProperty::Float,		offsetof(Element, HotAir)));
 	properties.push_back(StructProperty("Falldown",						StructProperty::Integer,	offsetof(Element, Falldown)));
