@@ -47,7 +47,9 @@ Element_H2::Element_H2()
 //#TPT-Directive ElementHeader Element_H2 static int update(UPDATE_FUNC_ARGS)
 int Element_H2::update(UPDATE_FUNC_ARGS)
 {
-	int r,rx,ry,rt;
+	int r, rx, ry, rt;
+	float temp = parts[i].temp, pres = sim->pv[y/CELL][x/CELL];
+
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -58,19 +60,20 @@ int Element_H2::update(UPDATE_FUNC_ARGS)
 				rt = TYP(r);
 				r = ID(r);
 
-				if (sim->pv[y/CELL][x/CELL] > 8.0f && rt == PT_DESL) // This will not work. DESL turns to fire above 5.0 pressure
+				if (pres > 8.0f && rt == PT_DESL) // This will not work. DESL turns to fire above 5.0 pressure
 				{
 					sim->part_change_type(r,x+rx,y+ry,PT_WATR);
 					sim->part_change_type(i,x,y,PT_OIL);
 					return 1;
 				}
-				if (sim->pv[y/CELL][x/CELL] > 45.0f)
+				if (pres > 45.0f)
 				{
 					if (parts[r].temp > 2273.15)
 						continue;
 				}
 				else
 				{
+					bool burn = false;
 					if (rt==PT_FIRE)
 					{
 						if(parts[r].tmp&0x02)
@@ -78,26 +81,28 @@ int Element_H2::update(UPDATE_FUNC_ARGS)
 						else
 							parts[r].temp=2473.15f;
 						parts[r].tmp |= 1;
-						sim->create_part(i,x,y,PT_FIRE);
-						parts[i].temp+=(rand()%100);
-						parts[i].tmp |= 1;
-						return 1;
+						burn = true;
 					}
 					else if ((rt==PT_PLSM && !(parts[r].tmp&4)) || (rt==PT_LAVA && parts[r].ctype != PT_BMTL))
 					{
-						sim->create_part(i,x,y,PT_FIRE);
-						parts[i].temp+=(rand()%100);
+						burn = true;
+					}
+					if (burn)
+					{
+						temp += rand() % 100;
+						rt = temp >= sim->elements[PT_FIRE].HighTemperature ? PT_PLSM : PT_FIRE;
+						sim->create_part(i,x,y,rt);
+						parts[i].temp = temp;
 						parts[i].tmp |= 1;
 						return 1;
 					}
 				}
 			}
-	if (parts[i].temp > 2273.15 && sim->pv[y/CELL][x/CELL] > 50.0f)
+	if (temp > 2273.15 && pres > 50.0f)
 	{
 		if (!(rand()%5))
 		{
 			int j;
-			float temp = parts[i].temp;
 			sim->create_part(i,x,y,PT_NBLE);
 			parts[i].tmp = 0x1;
 

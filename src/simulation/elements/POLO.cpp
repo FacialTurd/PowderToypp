@@ -118,7 +118,7 @@ int Element_POLO::update(UPDATE_FUNC_ARGS)
 				parts[rr].tmp3 = l;
 		}
 	}
-	if (parts[ri].type == PT_PROT)
+	if (TYP(r) == PT_PROT)
 	{
 		parts[i].tmp2++;
 		sim->kill_part(ri);
