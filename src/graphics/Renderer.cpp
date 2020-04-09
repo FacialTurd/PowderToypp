@@ -1558,12 +1558,6 @@ void Renderer::render_parts()
 						colr = firer = 255;
 						colg = fireg = colb = fireb = 0;
 						foundElements++;
-						if (findingElement == PT_WARP)
-						{
-							cola = 255;
-							pixel_mode &= ~PMODE;
-							pixel_mode |= PMODE_FLAT;
-						}
 					}
 					else
 					{
