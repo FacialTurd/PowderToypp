@@ -198,6 +198,7 @@ public:
 #endif
 	int real_eval_move(int pt, int nx, int ny, unsigned r);
 	void init_can_move();
+	// void init_can_conducts();
 	bool IsWallBlocking(int x, int y, int type);
 	bool IsValidElement(int type) {
 		return (type >= 0 && type < PT_NUM && elements[type].Enabled);

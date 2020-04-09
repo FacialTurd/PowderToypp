@@ -1930,7 +1930,7 @@ void GameSave::readPSv(char * saveDataChar, int dataLength)
 			}
 			else
 			{
-				particles[i-1].temp = elements[particles[i-1].type].Temperature;
+				particles[i-1].temp = elements[particles[i-1].type].DefaultProperties.temp;
 			}
 		}
 	}

@@ -2586,6 +2586,11 @@ void Simulation::init_can_move()
 	restrict_can_move();
 }
 
+// void Simulation::init_can_conducts()
+// {
+	
+// }
+
 /*
    RETURN-value explanation
 0 = No move/Bounce
@@ -3623,7 +3628,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 					parts[drawOnID].ctype |= PMAPID(v);
 				if (t == PT_LIGH)
 					parts[drawOnID].ctype |= PMAPID(30);
-				parts[drawOnID].temp = elements[t].Temperature;
+				parts[drawOnID].temp = elements[t].DefaultProperties.temp;
 			}
 			return -1;
 		}
@@ -3680,48 +3685,24 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	parts[i].x = (float)x;
 	parts[i].y = (float)y;
 	parts[i].type = t;
-	parts[i].vx = 0;
-	parts[i].vy = 0;
-	parts[i].life = 0;
-	parts[i].ctype = 0;
-	parts[i].temp = elements[t].Temperature;
-	parts[i].tmp = 0;
-	parts[i].tmp2 = 0;
-	parts[i].tmp3 = 0;
-	parts[i].tmp4 = 0;
-	parts[i].dcolour = 0;
-	parts[i].flags = 0;
-	if (t == PT_GLAS || t == PT_QRTZ || t == PT_TUNG)
-	{
-		parts[i].pavg[0] = 0.0f;
-		parts[i].pavg[1] = pv[y/CELL][x/CELL];
-	}
-	else
-	{
-		parts[i].pavg[0] = 0.0f;
-		parts[i].pavg[1] = 0.0f;
-	}
+	parts[i].vx = elements[t].DefaultProperties.vx;
+	parts[i].vy = elements[t].DefaultProperties.vy;
+	parts[i].life = elements[t].DefaultProperties.life;
+	parts[i].ctype = elements[t].DefaultProperties.ctype;
+	parts[i].temp = elements[t].DefaultProperties.temp;
+	parts[i].tmp = elements[t].DefaultProperties.tmp;
+	parts[i].tmp2 = elements[t].DefaultProperties.tmp2;
+	parts[i].tmp3 = elements[t].DefaultProperties.tmp3;
+	parts[i].tmp4 = elements[t].DefaultProperties.tmp4;
+	parts[i].dcolour = elements[t].DefaultProperties.dcolour;
+	parts[i].flags = elements[t].DefaultProperties.flags;
+	parts[i].pavg[0] = elements[t].DefaultProperties.pavg[0];
+	parts[i].pavg[1] = elements[t].DefaultProperties.pavg[1];
 
 	switch (t)
 	{
-	case PT_SOAP:
-		parts[i].tmp = -1;
-		parts[i].tmp2 = -1;
-		break;
-	case PT_ACID: case PT_CAUS:
-		parts[i].life = 75;
-		break;
-	/*Testing
-	case PT_WOOD:
-		parts[i].life = 150;
-		break;
-	End Testing*/
 	case PT_WARP:
 		parts[i].life = rand()%95+70;
-		break;
-	case PT_FUSE:
-		parts[i].life = 50;
-		parts[i].tmp = 50;
 		break;
 	case PT_LIFE:
 		if (v < NGOL)
@@ -3730,47 +3711,20 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			parts[i].ctype = v;
 		}
 		break;
-	case PT_DEUT:
-		parts[i].life = 10;
-		break;
-	case PT_MERC:
-		parts[i].tmp = 10;
-		break;
-	case PT_BRAY:
-		parts[i].life = 30;
-		break;
-	case PT_GPMP: case PT_PUMP:
-		parts[i].life = 10;
-		break;
 	case PT_SING:
 		parts[i].life = rand()%50+60;
+		break;
+	case PT_GLAS:
+	case PT_TUNG:
+		parts[i].pavg[1] = pv[y/CELL][x/CELL];
 		break;
 	case PT_QRTZ:
 	case PT_PQRT:
 		parts[i].tmp2 = (rand()%11);
+		parts[i].pavg[1] = pv[y/CELL][x/CELL];
 		break;
 	case PT_CLST:
 		parts[i].tmp = (rand()%7);
-		break;
-	case PT_FSEP:
-		parts[i].life = 50;
-		break;
-	case PT_COAL:
-		parts[i].life = 110;
-		parts[i].tmp = 50;
-		break;
-	case PT_IGNT:
-		parts[i].life = 3;
-		break;
-	case PT_FRZW:
-		parts[i].life = 100;
-		break;
-	case PT_PPIP:
-	case PT_PIPE:
-		parts[i].life = 60;
-		break;
-	case PT_BCOL:
-		parts[i].life = 110;
 		break;
 	case PT_FIRE:
 		parts[i].life = rand()%50+120;
@@ -3784,42 +3738,10 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	case PT_LAVA:
 		parts[i].life = rand()%120+240;
 		break;
-	case PT_NBLE:
-		parts[i].life = 0;
-		break;
-	case PT_ICEI:
-		parts[i].ctype = PT_WATR;
-		break;
-	case PT_MORT:
-		parts[i].vx = 2;
-		break;
-	case PT_EXOT:
-		parts[i].life = 1000;
-		parts[i].tmp = 244;
-		break;
-	case PT_EMBR:
-		parts[i].life = 50;
-		break;
 	case PT_TESC:
 		parts[i].tmp = v;
 		if (parts[i].tmp > 300)
-			parts[i].tmp=300;
-		break;
-	case PT_BIZR: case PT_BIZRG: case PT_BIZRS:
-		parts[i].ctype = 0x47FFFF;
-		break;
-	case PT_DTEC:
-	case PT_TSNS:
-	case PT_LSNS:
-		parts[i].tmp2 = 2;
-		break;
-	case PT_VINE:
-		parts[i].tmp = 1;
-		break;
-	case PT_VIRS:
-	case PT_VRSS:
-	case PT_VRSG:
-		parts[i].pavg[1] = 250;
+			parts[i].tmp = 300;
 		break;
 	case PT_CRMC:
 		parts[i].tmp2 = (rand() % 5);
@@ -3974,18 +3896,11 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	case PT_FILT:
 		parts[i].tmp = v;
 		break;
-	case PT_CRAY:
-		parts[i].life = -1;
-		break;
 	case ELEM_MULTIPP:
 	{
 		parts[i].life = v;
 		break;
 	}
-	case 194: // REP
-		parts[i].life = 10;
-		parts[i].tmp = 5;
-		break;
 	default:
 		break;
 	}
@@ -4240,6 +4155,8 @@ void Simulation::UpdateParticles(int start, int end)
 					}
 				}
 			}
+
+			pGravX = pGravY = 0;
 			if (!(elements[t].Properties & TYPE_SOLID))
 			{
 				if (elements[t].Gravity)
@@ -4269,8 +4186,7 @@ void Simulation::UpdateParticles(int start, int end)
 					pGravY += elements[t].NewtonianGravity * gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
 				}
 			}
-			else
-				pGravX = pGravY = 0;
+
 			//velocity updates for the particle
 			if (t != PT_SPNG || !(parts[i].flags&FLAG_MOVABLE))
 			{
@@ -4740,7 +4656,7 @@ void Simulation::UpdateParticles(int start, int end)
 			if ((elements[t].Explosive&2) && pv[y/CELL][x/CELL]>2.5f)
 			{
 				parts[i].life = rand()%80+180;
-				parts[i].temp = restrict_flt(elements[PT_FIRE].Temperature + (elements[t].Flammable/2), MIN_TEMP, MAX_TEMP);
+				parts[i].temp = restrict_flt(elements[PT_FIRE].DefaultProperties.temp + (elements[t].Flammable/2), MIN_TEMP, MAX_TEMP);
 				t = PT_FIRE;
 				part_change_type(i,x,y,t);
 				pv[y/CELL][x/CELL] += 0.25f * CFDS;
@@ -6681,6 +6597,7 @@ Simulation::Simulation():
 	DIRCHInteractTable = NULL;
 
 	init_can_move();
+	// init_can_conducts();
 	clear_sim();
 
 	grav->gravity_mask();

@@ -2114,7 +2114,7 @@ int LuaScriptInterface::simulation_resetTemp(lua_State * l)
 	{
 		if (luacon_sim->parts[i].type && (luacon_sim->elements[luacon_sim->parts[i].type].HeatConduct || !onlyConductors))
 		{
-			luacon_sim->parts[i].temp = luacon_sim->elements[luacon_sim->parts[i].type].Temperature;
+			luacon_sim->parts[i].temp = luacon_sim->elements[luacon_sim->parts[i].type].DefaultProperties.temp;
 		}
 	}
 	return 0;
@@ -4049,6 +4049,7 @@ int LuaScriptInterface::elements_loadDefault(lua_State * l)
 
 	luacon_model->BuildMenus();
 	luacon_sim->init_can_move();
+	// luacon_sim->init_can_conducts();
 	std::fill(luacon_ren->graphicscache, luacon_ren->graphicscache+PT_NUM, gcache_item());
 	return 0;
 }
@@ -4170,6 +4171,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 
 		luacon_model->BuildMenus();
 		luacon_sim->init_can_move();
+		// luacon_sim->init_can_conducts();
 		luacon_ren->graphicscache[id].isready = 0;
 
 		lua_pop(l, 1);
@@ -4231,6 +4233,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 
 			luacon_model->BuildMenus();
 			luacon_sim->init_can_move();
+			// luacon_sim->init_can_conducts();
 			luacon_ren->graphicscache[id].isready = 0;
 
 			return 0;

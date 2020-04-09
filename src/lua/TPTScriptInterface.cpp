@@ -11,8 +11,6 @@
 #include "gui/game/GameModel.h"
 #include "simulation/Air.h"
 
-#define ID part_ID
-
 TPTScriptInterface::TPTScriptInterface(GameController * c, GameModel * m): CommandInterface(c, m)
 {
 }
@@ -611,7 +609,7 @@ AnyType TPTScriptInterface::tptS_reset(std::deque<std::string> * words)
 		{
 			if (sim->parts[i].type)
 			{
-				sim->parts[i].temp = sim->elements[sim->parts[i].type].Temperature;
+				sim->parts[i].temp = sim->elements[sim->parts[i].type].DefaultProperties.temp;
 			}
 		}
 	}

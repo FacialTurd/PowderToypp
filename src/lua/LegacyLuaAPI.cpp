@@ -317,7 +317,7 @@ int luacon_element_getproperty(const char * key, int * format, unsigned int * mo
 			*modified_stuff |= LUACON_EL_MODIFIED_MENUS;
 	}
 	else if (!strcmp(key, "heat")) {
-		offset = offsetof(Element, Temperature);
+		offset = offsetof(Element, DefaultProperties.temp);
 		*format = 1;
 	}
 	else if (!strcmp(key, "hconduct")) {
@@ -332,7 +332,7 @@ int luacon_element_getproperty(const char * key, int * format, unsigned int * mo
 		offset = offsetof(Element, Properties);
 		*format = 0;
 		if (modified_stuff)
-			*modified_stuff |= LUACON_EL_MODIFIED_GRAPHICS | LUACON_EL_MODIFIED_CANMOVE;
+			*modified_stuff |= LUACON_EL_MODIFIED_GRAPHICS | LUACON_EL_MODIFIED_CANMOVE | LUACON_EL_MODIFIED_CANCONDUCTS;
 	}
 	else if (!strcmp(key, "description")) {
 		offset = offsetof(Element, Description);
@@ -449,6 +449,8 @@ int luacon_elementwrite(lua_State* l)
 			luacon_sim->init_can_move();
 		if (modified_stuff & LUACON_EL_MODIFIED_GRAPHICS)
 			memset(luacon_ren->graphicscache, 0, sizeof(gcache_item)*PT_NUM);
+		// if (modified_stuff & LUACON_EL_MODIFIED_CANCONDUCTS)
+			// luacon_sim->init_can_conducts();
 	}
 	return 0;
 }

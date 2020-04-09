@@ -27,6 +27,7 @@ class Tool;
 #define LUACON_EL_MODIFIED_CANMOVE 0x1
 #define LUACON_EL_MODIFIED_GRAPHICS 0x2
 #define LUACON_EL_MODIFIED_MENUS 0x4
+#define LUACON_EL_MODIFIED_CANCONDUCTS 0x8
 
 // idea from mniip, makes things much simpler
 #define SETCONST(L, NAME)\
