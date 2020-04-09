@@ -27,7 +27,6 @@ Element_PROT::Element_PROT()
 
 	Weight = -1;
 
-	Temperature = R_TEMP+273.15f;
 	HeatConduct = 61;
 	Description = "Protons. Transfer heat to materials, and removes sparks.";
 
@@ -163,36 +162,34 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	if (TYP(under) == PT_PINVIS)
 		under = partsi(under).tmp4;
 	int utype = TYP(under), aheadT;
-	int underI = ID(under), aheadI;
-	int flags = -1;
+	int uID = ID(under), aheadI;
+	int sparked, flags = -1;
 
 	switch (utype)
 	{
 	case PT_SPRK:
-	{
 		//remove active sparks
-		int sparked = parts[underI].ctype;
+		sparked = parts[uID].ctype;
 		if (sparked == ELEM_MULTIPP) // never appearing SPRK (ELEM_MULTIPP)
 			sparked = 0;
-		if (!sim->part_change_type(underI, x, y, sparked))
+		if (!sim->part_change_type(uID, x, y, sparked))
 		{
-			parts[underI].life = 44 + parts[underI].life;
-			parts[underI].ctype = 0;
+			parts[uID].life = 44 + parts[uID].life;
+			parts[uID].ctype = 0;
 		}
 		else
 			flags &= ~FLAG_HEAT_CONDUCT;
 		break;
-	}
 	case PT_DEUT:
-		if ((-((int)sim->pv[y / CELL][x / CELL] - 4) + (parts[underI].life / 100)) > rand() % 200)
+		if ((-((int)sim->pv[y / CELL][x / CELL] - 4) + (parts[uID].life / 100)) > rand() % 200)
 		{
-			DeutImplosion(sim, parts[underI].life, x, y, restrict_flt(parts[underI].temp + parts[underI].life * 500, MIN_TEMP, MAX_TEMP), PT_PROT);
-			sim->kill_part(underI);
+			DeutImplosion(sim, parts[uID].life, x, y, restrict_flt(parts[uID].temp + parts[uID].life * 500, MIN_TEMP, MAX_TEMP), PT_PROT);
+			sim->kill_part(uID);
 		}
 		break;
 	case PT_LCRY:
 		//Powered LCRY reaction: PROT->PHOT
-		if (parts[underI].life > 5 && !(rand() % 10))
+		if (parts[uID].life > 5 && !(rand() % 10))
 		{
 			sim->part_change_type(i, x, y, PT_PHOT);
 			parts[i].life *= 2;
@@ -200,8 +197,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 		break;
 	case PT_EXOT:
-		if (parts[underI].ctype != PT_E195)
-			parts[underI].ctype = PT_PROT;
+		if (parts[uID].ctype != PT_E195)
+			parts[uID].ctype = PT_PROT;
 		break;
 	case PT_WIFI:
 		float change;
@@ -210,12 +207,12 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		else if (parts[i].temp > 473.15f) change = 1000.0f;
 		else if (parts[i].temp > 373.15f) change = 100.0f;
 		else change = 0.0f;
-		parts[underI].temp = restrict_flt(parts[underI].temp + change, MIN_TEMP, MAX_TEMP);
+		parts[uID].temp = restrict_flt(parts[uID].temp + change, MIN_TEMP, MAX_TEMP);
 		flags &= ~FLAG_HEAT_CONDUCT;
 		break;
 	case ELEM_MULTIPP:
 		{
-			int t = PROT_interaction_1(sim, i, x, y, underI, parts[underI].life, flags);
+			int t = PROT_interaction_1(sim, i, x, y, uID, parts[uID].life, flags);
 			if (t >= 0)
 			{
 				sim->part_change_type(i, x, y, t);
@@ -236,20 +233,20 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		//set off explosives (only when hot because it wasn't as fun when it made an entire save explode)
 		if (parts[i].temp > 273.15f + 500.0f && (sim->elements[utype].Flammable || sim->elements[utype].Explosive || utype == PT_BANG))
 		{
-			sim->create_part(underI, x, y, PT_FIRE);
-			parts[underI].temp += restrict_flt(sim->elements[utype].Flammable * 5, MIN_TEMP, MAX_TEMP);
+			sim->create_part(uID, x, y, PT_FIRE);
+			parts[uID].temp += restrict_flt(sim->elements[utype].Flammable * 5, MIN_TEMP, MAX_TEMP);
 			sim->pv[y / CELL][x / CELL] += 1.00f;
 		}
 		//prevent inactive sparkable elements from being sparked
-		else if ((sim->elements[utype].Properties&PROP_CONDUCTS) && parts[underI].life <= 4)
+		else if ((sim->elements[utype].Properties & PROP_CONDUCTS) && parts[uID].life <= 4)
 		{
-			parts[underI].life = 40 + parts[underI].life;
+			parts[uID].life = 40 + parts[uID].life;
 		}
 		break;
 	}
 	//make temp of other things closer to it's own temperature. This will change temp of things that don't conduct, and won't change the PROT's temperature
 	if (flags & FLAG_HEAT_CONDUCT)
-		parts[underI].temp = restrict_flt(parts[underI].temp-(parts[underI].temp-parts[i].temp)/4.0f, MIN_TEMP, MAX_TEMP);
+		parts[uID].temp = restrict_flt(parts[uID].temp-(parts[uID].temp-parts[i].temp)/4.0f, MIN_TEMP, MAX_TEMP);
  
 	//if this proton has collided with another last frame, change it into a heavier element
 	ahead = sim->photons[y][x];

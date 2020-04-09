@@ -27,7 +27,6 @@ Element_NONE::Element_NONE()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+273.15f;
 	HeatConduct = 0;
 	Description = "Erases particles.";
 

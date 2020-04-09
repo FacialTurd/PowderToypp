@@ -129,7 +129,7 @@ int Element_FIGH::update(UPDATE_FUNC_ARGS)
 			if (!(sim->Extra_FIGH_pause & 2) && ((sim->Extra_FIGH_pause & 4)
 				|| figh->elem == PT_LIGH || figh->elem == PT_NEUT 
 			    || elem.Properties & (PROP_DEADLY | PROP_RADIOACTIVE)
-			    || element.DefaultProperties.temp >= 323 || element.DefaultProperties.temp <= 243))
+			    || elem.DefaultProperties.temp >= 323 || elem.DefaultProperties.temp <= 243))
 				figh->comm = (int)figh->comm | 0x08;
 			if (((figh->__flags & _STKM_FLAG_EPROP) == _STKM_FLAG_EFIGH) && (sim->Extra_FIGH_pause & 0x0F) == 0x0E)
 				figh->comm = (int)figh->comm | 0x08;

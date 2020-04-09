@@ -26,7 +26,7 @@ Element_RIME::Element_RIME()
 
 	Weight = 100;
 
-	Temperature = 243.15f;
+	DefaultProperties.temp = 243.15f;
 	HeatConduct = 100;
 	Description = "Solid, created when steam cools rapidly and goes through sublimation.";
 

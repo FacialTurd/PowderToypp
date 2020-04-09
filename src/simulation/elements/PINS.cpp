@@ -27,7 +27,6 @@ Element_PINS::Element_PINS()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+0.0f +273.15f;
 	HeatConduct = 251;
 	Description = "Unmeltable pressure insulator. blocks all air pressure.";
 

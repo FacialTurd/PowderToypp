@@ -27,7 +27,9 @@ Element_REPP::Element_REPP()
 
 	Weight = 80;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.life = 10;
+	DefaultProperties.temp = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.tmp = 5;
 	HeatConduct = 70;
 	Description = "Replicating powder.";
 

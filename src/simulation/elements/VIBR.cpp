@@ -27,7 +27,7 @@ Element_VIBR::Element_VIBR()
 
 	Weight = 100;
 
-	Temperature = 273.15f;
+	DefaultProperties.temp = 273.15f;
 	HeatConduct = 251;
 	Description = "Vibranium. Stores energy and releases it in violent explosions.";
 

@@ -26,7 +26,7 @@ Element_MERC::Element_MERC()
 
 	Weight = 91;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.tmp = 10;
 	HeatConduct = 251;
 	Description = "Mercury. Volume changes with temperature, Conductive.";
 

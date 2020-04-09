@@ -28,7 +28,7 @@ Element_STKM::Element_STKM()
 
 	Weight = 50;
 
-	Temperature = R_TEMP+14.6f+273.15f;
+	DefaultProperties.temp = R_TEMP+14.6f+273.15f;
 	HeatConduct = 0;
 	Description = "Stickman. Don't kill him! Control with the arrow keys.";
 

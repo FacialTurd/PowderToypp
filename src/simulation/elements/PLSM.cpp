@@ -26,7 +26,7 @@ Element_PLSM::Element_PLSM()
 
 	Weight = 1;
 
-	Temperature = 10000.0f		+273.15f;
+	DefaultProperties.temp = 10000.0f		+273.15f;
 	HeatConduct = 5;
 	Description = "Plasma, extremely hot.";
 

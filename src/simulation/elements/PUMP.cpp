@@ -27,7 +27,8 @@ Element_PUMP::Element_PUMP()
 
 	Weight = 100;
 
-	Temperature = 273.15f;
+	DefaultProperties.life = 10;
+	DefaultProperties.temp = 273.15f;
 	HeatConduct = 0;
 	Description = "Pressure pump. Changes pressure to its temp when activated. (use HEAT/COOL).";
 

@@ -30,7 +30,7 @@ Element_POLC::Element_POLC()
 
 	Weight = 90;
 
-	Temperature = 388.15f; 
+	DefaultProperties.temp = 388.15f; 
 	HeatConduct = 251;
 	Description = "Experimental element. Some kind of nuclear fuel, POLO decay catalyst";
 

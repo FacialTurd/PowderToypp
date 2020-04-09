@@ -27,7 +27,7 @@ Element_NBLE::Element_NBLE()
 
 	Weight = 1;
 
-	Temperature = R_TEMP+2.0f	+273.15f;
+	DefaultProperties.temp = R_TEMP+2.0f	+273.15f;
 	HeatConduct = 106;
 	Description = "Noble Gas. Diffuses and conductive. Ionizes into plasma when introduced to electricity.";
 
@@ -74,7 +74,7 @@ int Element_NBLE::update(UPDATE_FUNC_ARGS)
 				parts[j].temp = temp;
 				parts[j].tmp = 0x1;
 			}
-			int rx = x+rand()%3-1, ry = y+rand()%3-1, rt = pmap[ry][rx]&0xFF;
+			int rx = x+rand()%3-1, ry = y+rand()%3-1, rt = TYP(pmap[ry][rx]);
 			if (sim->can_move[PT_PLSM][rt] || rt == PT_NBLE)
 			{
 				j = sim->create_part(-3,rx,ry,PT_PLSM);

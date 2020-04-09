@@ -27,7 +27,7 @@ Element_PHOT::Element_PHOT()
 
 	Weight = -1;
 
-	Temperature = R_TEMP+900.0f+273.15f;
+	DefaultProperties.temp = R_TEMP+900.0f+273.15f;
 	HeatConduct = 251;
 	Description = "Photons. Refracts through glass, scattered by quartz, and color-changed by different elements. Ignites flammable materials.";
 

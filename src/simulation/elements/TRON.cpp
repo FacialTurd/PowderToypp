@@ -27,7 +27,7 @@ Element_TRON::Element_TRON()
 
 	Weight = 100;
 
-	Temperature = 0.0f;
+	DefaultProperties.temp = 0.0f;
 	HeatConduct = 40;
 	Description = "Smart particles, Travels in straight lines and avoids obstacles. Grows with time.";
 

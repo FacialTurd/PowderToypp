@@ -26,7 +26,7 @@ Element_VRSS::Element_VRSS()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+ 273.15f;
+	DefaultProperties.pavg[1] = 250;
 	HeatConduct = 251;
 	Description = "Solid Virus. Turns everything it touches into virus.";
 

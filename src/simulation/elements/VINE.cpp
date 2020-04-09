@@ -28,7 +28,7 @@ Element_VINE::Element_VINE()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+0.0f +273.15f;
+	DefaultProperties.tmp = 1;
 	HeatConduct = 65;
 	Description = "Vine, can grow along WOOD.";
 

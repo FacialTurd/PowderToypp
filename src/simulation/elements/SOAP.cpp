@@ -26,7 +26,9 @@ Element_SOAP::Element_SOAP()
 
 	Weight = 35;
 
-	Temperature = R_TEMP-2.0f	+273.15f;
+	DefaultProperties.temp = R_TEMP-2.0f	+273.15f;
+	DefaultProperties.tmp = -1;
+	DefaultProperties.tmp2 = -1;
 	HeatConduct = 29;
 	Description = "Soap. Creates bubbles, washes off deco color, and cures virus.";
 
