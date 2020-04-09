@@ -28,7 +28,6 @@ Element::Element():
 
 	Weight(50),
 
-	Temperature(273.15f),
 	HeatConduct(128),
 	Description("No description"),
 
@@ -48,6 +47,8 @@ Element::Element():
 	Graphics(&Element::defaultGraphics),
 	IconGenerator(NULL)
 {
+	memset(&DefaultProperties, 0, sizeof(Particle));
+	DefaultProperties.temp = R_TEMP + 273.15f;
 }
 
 std::vector<StructProperty> Element::GetProperties()
@@ -74,7 +75,7 @@ std::vector<StructProperty> Element::GetProperties()
 	properties.push_back(StructProperty("Hardness",						StructProperty::Integer,	offsetof(Element, Hardness)));
 	properties.push_back(StructProperty("PhotonReflectWavelengths",		StructProperty::UInteger,	offsetof(Element, PhotonReflectWavelengths)));
 	properties.push_back(StructProperty("Weight",						StructProperty::Integer,	offsetof(Element, Weight)));
-	properties.push_back(StructProperty("Temperature",					StructProperty::Float,		offsetof(Element, Temperature)));
+	properties.push_back(StructProperty("Temperature",					StructProperty::Float,		offsetof(Element, DefaultProperties.temp)));
 	properties.push_back(StructProperty("HeatConduct",					StructProperty::UChar,		offsetof(Element, HeatConduct)));
 	properties.push_back(StructProperty("Description",					StructProperty::String,		offsetof(Element, Description)));
 	properties.push_back(StructProperty("State",						StructProperty::Removed,	0));

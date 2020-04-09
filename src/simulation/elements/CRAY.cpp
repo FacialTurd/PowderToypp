@@ -27,7 +27,7 @@ Element_CRAY::Element_CRAY()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+0.0f +273.15f;
+	DefaultProperties.life = -1;
 	HeatConduct = 0;
 	Description = "Particle Ray Emitter. Creates a beam of particles set by its ctype, with a range set by tmp.";
 

@@ -29,7 +29,7 @@ Element_LDTC::Element_LDTC()
 
 	Weight = 100;
 
-	Temperature = R_TEMP + 273.15f;
+	DefaultProperties.temp = R_TEMP + 273.15f;
 	HeatConduct = 0;
 	Description = "Linear detector. Scans in 8 directions for particles with its ctype and creates a spark on the opposite side.";
 

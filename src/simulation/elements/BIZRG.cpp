@@ -26,7 +26,8 @@ Element_BIZRG::Element_BIZRG()
 
 	Weight = 1;
 
-	Temperature = R_TEMP-200.0f+273.15f;
+	DefaultProperties.ctype = 0x47FFFF;
+	DefaultProperties.temp = R_TEMP-200.0f+273.15f;
 	HeatConduct = 42;
 	Description = "Bizarre gas.";
 

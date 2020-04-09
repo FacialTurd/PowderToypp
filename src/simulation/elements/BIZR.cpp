@@ -26,7 +26,7 @@ Element_BIZR::Element_BIZR()
 
 	Weight = 30;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.ctype = 0x47FFFF;
 	HeatConduct = 29;
 	Description = "Bizarre... contradicts the normal state changes. Paints other elements with its deco color.";
 

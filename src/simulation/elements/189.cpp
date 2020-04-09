@@ -46,7 +46,7 @@ Element_MULTIPP::Element_MULTIPP()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.temp = R_TEMP+0.0f	+273.15f;
 	HeatConduct = 0;
 	Description = "Experimental element. has multi-purpose.";
 

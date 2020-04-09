@@ -26,7 +26,8 @@ Element_EMBR::Element_EMBR()
 
 	Weight = 30;
 
-	Temperature = 500.0f +273.15f;
+	DefaultProperties.life = 50;
+	DefaultProperties.temp = 500.0f +273.15f;
 	HeatConduct = 29;
 	Description = "Sparks. Formed by explosions.";
 

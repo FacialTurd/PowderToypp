@@ -30,7 +30,7 @@ Element_HEAC::Element_HEAC()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+273.15f;
+	DefaultProperties.temp = R_TEMP+273.15f;
 	HeatConduct = 251;
 	Description = "Rapid heat conductor.";
 

@@ -26,7 +26,6 @@ Element_INDI::Element_INDI()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
 	HeatConduct = 0;
 	Description = "Indestructible Insulator.";
 

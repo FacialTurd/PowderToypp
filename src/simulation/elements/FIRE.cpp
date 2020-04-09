@@ -30,7 +30,7 @@ Element_FIRE::Element_FIRE()
 
 	Weight = 2;
 
-	Temperature = R_TEMP+400.0f+273.15f;
+	DefaultProperties.temp = R_TEMP+400.0f+273.15f;
 	HeatConduct = 88;
 	Description = "Ignites flammable materials. Heats air.";
 
@@ -95,22 +95,22 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				rt = TYP(r);
+				rt = TYP(r); r = ID(r);
 				
 				//THRM burning
 				if (rt==PT_THRM && (t==PT_FIRE || t==PT_PLSM || t==PT_LAVA))
 				{
 					if (!(rand()%500)) {
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_LAVA);
-						partsi(r).ctype = PT_BMTL;
-						partsi(r).temp = 3500.0f;
+						sim->part_change_type(r,x+rx,y+ry,PT_LAVA);
+						parts[r].ctype = PT_BMTL;
+						parts[r].temp = 3500.0f;
 						sim->pv[(y+ry)/CELL][(x+rx)/CELL] += 50.0f;
 					} else {
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_LAVA);
-						partsi(r).life = 400;
-						partsi(r).ctype = PT_THRM;
-						partsi(r).temp = 3500.0f;
-						partsi(r).tmp = 20;
+						sim->part_change_type(r,x+rx,y+ry,PT_LAVA);
+						parts[r].life = 400;
+						parts[r].ctype = PT_THRM;
+						parts[r].temp = 3500.0f;
+						parts[r].tmp = 20;
 					}
 					continue;
 				}
@@ -119,46 +119,45 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 				{
 					if ((t==PT_FIRE || t==PT_PLSM))
 					{
-						if (partsi(r).life>100 && !(rand()%500)) {
-							partsi(r).life = 99;
+						if (parts[r].life>100 && !(rand()%500)) {
+							parts[r].life = 99;
 						}
 					}
 				}
 
 				if (t == PT_LAVA)
 				{
-					int ri = ID(r);
 					switch (parts[i].ctype)
 					{
 					case PT_IRON:
-						Element_IRON::makeAlloy(sim, i, rt, ri);
+						Element_IRON::makeAlloy(sim, i, rt, r);
 						break;
 					case PT_QRTZ: // LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
-						if (rt == PT_LAVA && parts[ri].ctype == PT_CLST)
+						if (rt == PT_LAVA && parts[r].ctype == PT_CLST)
 						{
 							float pres = std::max(sim->pv[y/CELL][x/CELL]*10.0f, 0.0f);
 							if (parts[i].temp >= pres+sim->elements[PT_CRMC].HighTemperature+50.0f)
 							{
 								parts[i].ctype = PT_CRMC;
-								parts[ri].ctype = PT_CRMC;
+								parts[r].ctype = PT_CRMC;
 							}
 						}
 						break;
 					case PT_HEAC:
 						if (rt == PT_HEAC)
 						{
-							if (parts[ri].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
+							if (parts[r].temp > sim->elements[PT_HEAC].HighTemperature && rand()%200)
 							{
-								sim->part_change_type(ri, x+rx, y+ry, PT_LAVA);
-								parts[ri].ctype = PT_HEAC;
+								sim->part_change_type(r, x+rx, y+ry, PT_LAVA);
+								parts[r].ctype = PT_HEAC;
 							}
 						}
 					case PT_POLO:
-						if (rt == PT_LAVA && parts[ri].ctype == PT_POLC)
+						if (rt == PT_LAVA && parts[r].ctype == PT_POLC)
 						{
 							if (!sim->legacy_enable)
 							{
-								parts[ri].temp -= 0.3f;
+								parts[r].temp -= 0.3f;
 								parts[i].temp -= 0.3f;
 							}
 						}
@@ -171,12 +170,12 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 				    //exceptions, t is the thing causing the spark and rt is what's burning
 				    (t != PT_SPRK || (rt != PT_RBDM && rt != PT_LRBD && rt != PT_INSL)) &&
 				    (t != PT_PHOT || rt != PT_INSL) &&
-				    (rt != PT_SPNG || partsi(r).life == 0))
+				    (rt != PT_SPNG || parts[r].life == 0))
 				{
-					sim->part_change_type(ID(r), x+rx, y+ry, PT_FIRE);
-					partsi(r).temp = restrict_flt(sim->elements[PT_FIRE].Temperature + (sim->elements[rt].Flammable/2), MIN_TEMP, MAX_TEMP);
-					partsi(r).life = rand()%80+180;
-					partsi(r).tmp = partsi(r).ctype = 0;
+					sim->part_change_type(r, x+rx, y+ry, PT_FIRE);
+					parts[r].temp = restrict_flt(sim->elements[PT_FIRE].DefaultProperties.temp + (sim->elements[rt].Flammable/2), MIN_TEMP, MAX_TEMP);
+					parts[r].life = rand()%80+180;
+					parts[r].tmp = parts[r].ctype = 0;
 					if (sim->elements[rt].Explosive)
 						sim->pv[y/CELL][x/CELL] += 0.25f * CFDS;
 				}

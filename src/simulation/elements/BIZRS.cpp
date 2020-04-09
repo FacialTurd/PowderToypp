@@ -26,7 +26,8 @@ Element_BIZRS::Element_BIZRS()
 
 	Weight = 100;
 
-	Temperature = R_TEMP+300.0f+273.15f;
+	DefaultProperties.ctype = 0x47FFFF;
+	DefaultProperties.temp = R_TEMP+300.0f+273.15f;
 	HeatConduct = 251;
 	Description = "Bizarre solid.";
 

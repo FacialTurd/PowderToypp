@@ -27,7 +27,7 @@ Element_BCOL::Element_BCOL()
 
 	Weight = 90;
 
-	Temperature = R_TEMP+0.0f	+273.15f;
+	DefaultProperties.tmp = 50;
 	HeatConduct = 150;
 	Description = "Broken Coal. Heavy particles, burns slowly.";
 

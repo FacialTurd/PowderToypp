@@ -30,7 +30,9 @@ Element_EXOT::Element_EXOT()
 
 	Weight = 46;
 
-	Temperature = R_TEMP-2.0f	+273.15f;
+	DefaultProperties.life = 1000;
+	DefaultProperties.temp = R_TEMP-2.0f	+273.15f;
+	DefaultProperties.tmp = 244;
 	HeatConduct = 250;
 	Description = "Exotic matter. Explodes with excess exposure to electrons. Has many other odd reactions.";
 

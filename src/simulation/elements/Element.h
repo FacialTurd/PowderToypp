@@ -37,7 +37,6 @@ public:
 	// Photon wavelengths are ANDed with this value when a photon hits an element, meaning that only wavelengths present in both this value and the original photon will remain in the reflected photon
 	unsigned int PhotonReflectWavelengths;
 	int Weight;
-	float Temperature;
 	unsigned char HeatConduct;
 	const char *Description;
 	unsigned int Properties;
@@ -55,6 +54,8 @@ public:
 	int (*Update) (UPDATE_FUNC_ARGS);
 	int (*Graphics) (GRAPHICS_FUNC_ARGS);
 	VideoBuffer * (*IconGenerator)(int, int, int);
+
+	Particle DefaultProperties;
 
 	Element();
 	virtual ~Element() {}
