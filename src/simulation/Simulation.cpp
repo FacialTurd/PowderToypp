@@ -2527,7 +2527,7 @@ void Simulation::init_can_move()
 		if (destinationType && (destinationType == PT_PHOT || (prop & PROP_TRANSPARENT)))
 			can_move[PT_PHOT][destinationType] = 2;
 
-		if (destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_INDI && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO && destinationType != PT_E187)
+		if (destinationType != PT_DMND && destinationType != PT_INSL && destinationType != PT_INDI && destinationType != PT_VOID && destinationType != PT_PVOD && destinationType != PT_VIBR && destinationType != PT_BVBR && destinationType != PT_PRTI && destinationType != PT_PRTO && destinationType != PT_E196)
 			for (int i = 0; i < numTypePassThroughs; i++)
 				can_move[passAllTypes[i]][destinationType] = 2; // PROT, GRVT, "E195"
 
@@ -2566,8 +2566,8 @@ void Simulation::init_can_move()
 	can_move[PT_TRON][PT_SWCH] = 3;
 
 	can_move[PT_ELEC][PT_POLC] = 2;
-	can_move[PT_GLOW][PT_E187] = 0;
-	can_move[PT_E195][PT_E187] = 2; // "E195" pass through "E187"
+	can_move[PT_GLOW][PT_E196] = 0;
+	can_move[PT_E195][PT_E196] = 2; // "E195" pass through "E196"
 
 	can_move[PT_E195][PT_VIBR] = 2;
 	can_move[PT_E195][PT_BVBR] = 2;
@@ -3719,9 +3719,10 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].pavg[1] = pv[y/CELL][x/CELL];
 		break;
 	case PT_QRTZ:
+		parts[i].pavg[1] = pv[y/CELL][x/CELL];
+		// no break
 	case PT_PQRT:
 		parts[i].tmp2 = (rand()%11);
-		parts[i].pavg[1] = pv[y/CELL][x/CELL];
 		break;
 	case PT_CLST:
 		parts[i].tmp = (rand()%7);
@@ -3901,6 +3902,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		parts[i].life = v;
 		break;
 	}
+	case PT_SLCN:
+		Element_SLCN::init(this, i);
 	default:
 		break;
 	}
@@ -5136,7 +5139,7 @@ killed:
 									break;
 								}
 								if (TYP(clear_r)!=t || (bmap[clear_y/CELL][j/CELL] && bmap[clear_y/CELL][j/CELL]!=WL_STREAM) ||
-									(t == PT_E187 && (partsi(clear_r).tmp & 4)))
+									(t == PT_E196 && (partsi(clear_r).tmp & 4)))
 									break;
 							}
 							if (parts[i].vy>0)
@@ -5149,7 +5152,7 @@ killed:
 									int nr = pmap[j][nx];
 									if ((TYP(nr)!=t || bmap[j/CELL][nx/CELL]) && do_move(i, nx, ny, (float)nx, (float)j))
 										break;
-									else if (t == PT_E187 && (partsi(nr).tmp & 4))
+									else if (t == PT_E196 && (partsi(nr).tmp & 4))
 										break;
 									if (TYP(pmap[j][nx])!=t || (bmap[j/CELL][nx/CELL] && bmap[j/CELL][nx/CELL]!=WL_STREAM))
 										break;
@@ -5241,7 +5244,7 @@ killed:
 									if (TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 										break;
 								}
-								else if (t == PT_E187 && (partsi(nr).tmp & 4))
+								else if (t == PT_E196 && (partsi(nr).tmp & 4))
 									break;
 							}
 							if (s==1)
@@ -5294,7 +5297,7 @@ killed:
 										if (s || TYP(pmap[ny][nx])!=t || bmap[ny/CELL][nx/CELL]!=WL_STREAM)
 											break; // found the edge of the liquid and movement into it succeeded, so stop moving down
 									}
-									else if (t == PT_E187 && (partsi(nr).tmp & 4))
+									else if (t == PT_E196 && (partsi(nr).tmp & 4))
 										break;
 								}
 							}

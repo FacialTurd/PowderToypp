@@ -97,41 +97,60 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 					continue;
 				rt = TYP(r); r = ID(r);
 				
-				//THRM burning
-				if (rt==PT_THRM && (t==PT_FIRE || t==PT_PLSM || t==PT_LAVA))
+				switch (rt)
 				{
-					if (!(rand()%500)) {
-						sim->part_change_type(r,x+rx,y+ry,PT_LAVA);
-						parts[r].ctype = PT_BMTL;
-						parts[r].temp = 3500.0f;
-						sim->pv[(y+ry)/CELL][(x+rx)/CELL] += 50.0f;
-					} else {
-						sim->part_change_type(r,x+rx,y+ry,PT_LAVA);
-						parts[r].life = 400;
-						parts[r].ctype = PT_THRM;
-						parts[r].temp = 3500.0f;
-						parts[r].tmp = 20;
-					}
-					continue;
-				}
-
-				if ((rt==PT_COAL) || (rt==PT_BCOL))
-				{
-					if ((t==PT_FIRE || t==PT_PLSM))
+				case PT_THRM: // THRM burning
+					if (t==PT_FIRE || t==PT_PLSM || t==PT_LAVA)
 					{
-						if (parts[r].life>100 && !(rand()%500)) {
+						sim->part_change_type(r,x+rx,y+ry,PT_LAVA);
+						parts[r].temp = 3500.0f;
+						if (!(rand() % 500)) {
+							parts[r].ctype = PT_BMTL;
+							sim->pv[(y+ry)/CELL][(x+rx)/CELL] += 50.0f;
+						} else {
+							parts[r].life = 400;
+							parts[r].ctype = PT_THRM;
+							parts[r].tmp = 20;
+						}
+						continue;
+					}
+					break;
+				case PT_COAL:
+				case PT_BCOL:
+					if (t==PT_FIRE || t==PT_PLSM)
+					{
+						if (parts[r].life > 100 && !(rand() % 500)) {
 							parts[r].life = 99;
 						}
 					}
+					else if (t==PT_LAVA)
+					{
+						switch (parts[i].ctype)
+						{
+						case PT_IRON:
+							if (!(rand() % 500))
+							{
+								parts[i].ctype = PT_METL;
+								sim->kill_part(r);
+							}
+							break;
+						case PT_STNE:
+						case PT_NONE:
+							if (!(rand() % 60))
+							{
+								parts[i].ctype = PT_SLCN;
+								sim->kill_part(r);
+							}
+							break;
+						}
+					}
+					break;
 				}
 
 				if (t == PT_LAVA)
 				{
 					switch (parts[i].ctype)
 					{
-					case PT_IRON:
-						Element_IRON::makeAlloy(sim, i, rt, r);
-						break;
 					case PT_QRTZ: // LAVA(CLST) + LAVA(PQRT) + high enough temp = LAVA(CRMC) + LAVA(CRMC)
 						if (rt == PT_LAVA && parts[r].ctype == PT_CLST)
 						{
@@ -141,6 +160,34 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 								parts[i].ctype = PT_CRMC;
 								parts[r].ctype = PT_CRMC;
 							}
+						}
+						break;
+					case PT_SLCN:
+						if (rt == PT_O2)
+						{
+							switch (rand() % 3)
+							{
+							case 0:
+								parts[i].ctype = PT_SAND;
+								break;
+							case 1:
+								parts[i].ctype = PT_CLST;
+								// avoid creating CRMC.
+								if (parts[i].temp >= sim->elements[PT_PQRT].HighTemperature * 3)
+								{
+									parts[i].ctype = PT_PQRT;
+								}
+								break;
+							case 2:
+								parts[i].ctype = PT_STNE;
+								break;
+							}
+							sim->kill_part(ID(r));
+						}
+						else if (rt == PT_LAVA && (parts[r].ctype == PT_METL || parts[r].ctype == PT_BMTL))
+						{
+							parts[i].ctype = PT_NSCN;
+							parts[r].ctype = PT_PSCN;
 						}
 						break;
 					case PT_HEAC:
