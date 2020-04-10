@@ -182,7 +182,7 @@ int Element_FIRE::update(UPDATE_FUNC_ARGS)
 								parts[i].ctype = PT_STNE;
 								break;
 							}
-							sim->kill_part(ID(r));
+							sim->kill_part(r);
 						}
 						else if (rt == PT_LAVA && (parts[r].ctype == PT_METL || parts[r].ctype == PT_BMTL))
 						{

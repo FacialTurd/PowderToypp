@@ -280,6 +280,8 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 		}
 		else if (parts[i].tmp > 250)
 			element = PT_PLSM;
+		else if (myCollision && (parts[i].tmp > 150))
+			element = PT_SLCN;
 		else if (parts[i].tmp > 100)
 			element = PT_O2;
 		else if (parts[i].tmp > 50)
