@@ -1,10 +1,10 @@
 #include "simulation/Elements.h"
 #include <stdint.h>
-//#TPT-Directive ElementClass Element_E187 PT_E187 187
-Element_E187::Element_E187()
+//#TPT-Directive ElementClass Element_E196 PT_E196 196
+Element_E196::Element_E196()
 {
-	Identifier = "DEFAULT_PT_E187";
-	Name = "E187";
+	Identifier = "DEFAULT_PT_E196";
+	Name = "E196";
 	Colour = PIXPACK(0xB038D8);
 	MenuVisible = 1;
 	MenuSection = SC_NUCLEAR;
@@ -47,8 +47,8 @@ Element_E187::Element_E187()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	Update = &Element_E187::update;
-	Graphics = &Element_E187::graphics;
+	Update = &Element_E196::update;
+	Graphics = &Element_E196::graphics;
 }
 
 #define PFLAG_EMITTED			0x1
@@ -61,8 +61,8 @@ Element_E187::Element_E187()
 
 #define PFLAG_COLLIDED			0x10
 
-//#TPT-Directive ElementHeader Element_E187 static unsigned int my_random()
-unsigned int Element_E187::my_random()
+//#TPT-Directive ElementHeader Element_E196 static unsigned int my_random()
+unsigned int Element_E196::my_random()
 {
 	static uint32_t state[2] = {1, 0};
 	uint32_t x = state[0];
@@ -74,8 +74,8 @@ unsigned int Element_E187::my_random()
 	return x ^ state[1];
 }
 
-//#TPT-Directive ElementHeader Element_E187 static int update(UPDATE_FUNC_ARGS)
-int Element_E187::update(UPDATE_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_E196 static int update(UPDATE_FUNC_ARGS)
+int Element_E196::update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry, stmp, stmp2, rt;
 	int rndstore;
@@ -92,12 +92,12 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 		int pres = sim->pv[y/CELL][x/CELL];
 		if ((pres < -5) && !(rand()%10000) && !(stmp & PFLAG_EMITTED))
 		{
-			Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+			Element_E196::createPhotons(sim, i, x, y, stmp, parts);
 		}
 		r = sim->photons[y][x];
 		if (TYP(r) == PT_PHOT && ((pres < -5) ? -10 : 5 - pres) > (rand()%1000))
 		{
-			Element_E187::createPhotons(sim, i, x, y, stmp, parts);
+			Element_E196::createPhotons(sim, i, x, y, stmp, parts);
 		}
 	}
 	if (stmp & PFLAG_SOLID_STATE)
@@ -188,14 +188,14 @@ int Element_E187::update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E187 static int graphics(GRAPHICS_FUNC_ARGS)
-int Element_E187::graphics(GRAPHICS_FUNC_ARGS)
+//#TPT-Directive ElementHeader Element_E196 static int graphics(GRAPHICS_FUNC_ARGS)
+int Element_E196::graphics(GRAPHICS_FUNC_ARGS)
 {
 	return 0;
 }
 
-//#TPT-Directive ElementHeader Element_E187 static int createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
-int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
+//#TPT-Directive ElementHeader Element_E196 static int createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
+int Element_E196::createPhotons(Simulation* sim, int i, int x, int y, int tmp, Particle *parts)
 {
 	if (sim->pfree < 0)
 		return 0;
@@ -231,4 +231,4 @@ int Element_E187::createPhotons(Simulation* sim, int i, int x, int y, int tmp, P
 	return 0;
 }
 
-Element_E187::~Element_E187() {}
+Element_E196::~Element_E196() {}
