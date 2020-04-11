@@ -284,7 +284,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			Element_STKM::STKM_init_legs(this, &player, i);
 			player.spwn = 1;
 			player.elem = PT_DUST;
-			player.rocketBoots = false;
 			if ((save->majorVersion < 93 && parts[i].ctype == SPC_AIR) ||
 				(save->majorVersion < 88 && parts[i].ctype == OLD_SPC_AIR))
 			{
@@ -302,7 +301,6 @@ int Simulation::Load(int fullX, int fullY, GameSave * save, bool includePressure
 			Element_STKM::STKM_init_legs(this, &player2, i);
 			player2.spwn = 1;
 			player2.elem = PT_DUST;
-			player2.rocketBoots = false;
 			if ((save->majorVersion < 93 && parts[i].ctype == SPC_AIR) ||
 				(save->majorVersion < 88 && parts[i].ctype == OLD_SPC_AIR))
 			{
@@ -3477,18 +3475,18 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 			player2.spawnID = i;
 		break;
 	case PT_STKM:
-		player.spwn = 1;
 		Element_STKM::STKM_init_legs(this, &player, i);
+		player.spwn = 1;
 		break;
 	case PT_STKM2:
-		player2.spwn = 1;
 		Element_STKM::STKM_init_legs(this, &player2, i);
+		player2.spwn = 1;
 		break;
 	case PT_FIGH:
 		if (parts[i].tmp >= 0 && parts[i].tmp < MAX_FIGHTERS)
 		{
-			fighters[parts[i].tmp].spwn = 1;
 			Element_STKM::STKM_init_legs(this, &fighters[parts[i].tmp], i);
+			fighters[parts[i].tmp].spwn = 1;
 		}
 		fighcount++;
 		break;
@@ -3757,7 +3755,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			parts[i].life = 100;
 			Element_STKM::STKM_init_legs(this, &player, i);
 			player.spwn = 1;
-			player.rocketBoots = false;
 		}
 		else
 		{
@@ -3779,7 +3776,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			parts[i].life = 100;
 			Element_STKM::STKM_init_legs(this, &player2, i);
 			player2.spwn = 1;
-			player2.rocketBoots = false;
 		}
 		else
 		{
@@ -3805,7 +3801,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			Element_STKM::STKM_init_legs(this, &fighters[fcount], i);
 			fighters[fcount].spwn = 1;
 			fighters[fcount].elem = PT_DUST;
-			fighters[fcount].rocketBoots = false;
 			fighcount++;
 			return i;
 		}

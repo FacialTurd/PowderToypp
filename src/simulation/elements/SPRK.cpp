@@ -181,6 +181,7 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					continue;
 				receiver = TYP(r);
 				sender = ct;
+				Particle &part = parts[ID(r)];
 				pavg = sim->parts_avg(i, ID(r), PT_INSL);
 				//receiver is the element SPRK is trying to conduct to
 				//sender is the element the SPRK is on
@@ -191,46 +192,49 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (!CHECK_EL_INSL(pavg) && parts[i].life<4)
 					{
 						if(sender==PT_PSCN && partsi(r).life<10) {
-							partsi(r).life = 10;
+							ri.life = 10;
 						}
 						else if (sender==PT_NSCN)
 						{
-							partsi(r).ctype = PT_NONE;
-							partsi(r).life = 9;
+							ri.ctype = PT_NONE;
+							ri.life = 9;
 						}
 					}
 					break;
 				case PT_SPRK:
 					if (!CHECK_EL_INSL(pavg) && parts[i].life<4)
 					{
-						if (partsi(r).ctype==PT_SWCH)
+						int receiver = part.life;
+						if (receiver==PT_SWCH)
 						{
 							if (sender==PT_NSCN)
 							{
 								sim->part_change_type(ID(r),x+rx,y+ry,PT_SWCH);
-								partsi(r).ctype = PT_NONE;
-								partsi(r).life = 9;
+								part.ctype = PT_NONE;
+								part.life = 9;
 							}
 						}
-						else if(partsi(r).ctype==PT_NTCT||partsi(r).ctype==PT_PTCT)		
+						else if(receiver==PT_NTCT || receiver==PT_PTCT)		
+						{
 							if (sender==PT_METL)
 							{
-								partsi(r).temp = 473.0f;
+								part.temp = 473.0f;
 							}
+						}
 					}
 					continue;
 				case PT_PUMP: case PT_GPMP: case PT_HSWC: case PT_PBCN:
 					if (parts[i].life<4)// PROP_PTOGGLE, Maybe? We seem to use 2 different methods for handling actived elements, this one seems better. Yes, use this one for new elements, PCLN is different for compatibility with existing saves
 					{
 						if (sender==PT_PSCN) partsi(r).life = 10;
-						else if (sender==PT_NSCN && partsi(r).life>=10) partsi(r).life = 9;
+						else if (sender==PT_NSCN && part.life>=10) part.life = 9;
 					}
 					continue;
 				case PT_LCRY:
 					if (abs(rx)<2&&abs(ry)<2 && parts[i].life<4)
 					{
-						if (sender==PT_PSCN && partsi(r).tmp == 0) partsi(r).tmp = 2;
-						else if (sender==PT_NSCN && partsi(r).tmp == 3) partsi(r).tmp = 1;
+						if (sender==PT_PSCN && part.tmp == 0) part.tmp = 2;
+						else if (sender==PT_NSCN && part.tmp == 3) part.tmp = 1;
 					}
 					continue;
 				case PT_PPIP:
@@ -243,32 +247,32 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				case PT_NTCT: case PT_PTCT: case PT_INWR:
 					if (sender==PT_METL && !CHECK_EL_INSL(pavg) && parts[i].life<4)
 					{
-						partsi(r).temp = 473.0f;
+						part.temp = 473.0f;
 						if (receiver==PT_NTCT||receiver==PT_PTCT)
 							continue;
 					}
 					break;
 				case PT_EMP:
-					if (!partsi(r).life && parts[i].life > 0 && parts[i].life < 4)
+					if (!part.life && parts[i].life > 0 && parts[i].life < 4)
 					{
 						sim->emp_trigger_count++;
 						sim->emp_decor += 3;
 						if (sim->emp_decor > 40)
 							sim->emp_decor = 40;
-						partsi(r).life = 220;
+						part.life = 220;
 					}
 					continue;
 				case PT_PINVIS:
 					if (parts[i].life<4)
 					{
-						if (sender == PT_PSCN && partsi(r).life < 10)
+						if (sender == PT_PSCN && part.life < 10)
 						{
 							// Instantly activate PINV
 							PropertyValue value;
 							value.Integer = 10;
 							sim->flood_prop(x+rx, y+ry, offsetof(Particle, life), value, StructProperty::Integer);
 						}
-						else if (sender == PT_NSCN && partsi(r).life >= 10)
+						else if (sender == PT_NSCN && part.life >= 10)
 						{
 							// Instantly deactivate PINV
 							PropertyValue value;
@@ -311,12 +315,6 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (receiver==PT_NSCN || receiver==PT_PSCN)
 						goto conduct;
 					continue;
-				/*
-				case PT_INW2:
-					if (sender==PT_NSCN || sender==PT_PSCN || (sender==PT_INW2 && partsi(r).tmp == parts[i].tmp))
-						goto conduct;
-					continue;
-				*/
 				default:
 					break;
 				}
@@ -324,15 +322,15 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 				switch (receiver)
 				{
 				case PT_QRTZ:
-					if ((sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ||sender==PT_INDC) && (partsi(r).temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
+					if ((sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ||sender==PT_INDC) && (part.temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
 						goto conduct;
 					continue;
 				case PT_NTCT:
-					if (sender==PT_NSCN || (sender==PT_PSCN&&partsi(r).temp>373.0f))
+					if (sender==PT_NSCN || (sender==PT_PSCN&&part.temp>373.0f))
 						goto conduct;
 					continue;
 				case PT_PTCT:
-					if (sender==PT_NSCN || (sender==PT_PSCN&&partsi(r).temp<373.0f))
+					if (sender==PT_NSCN || (sender==PT_PSCN&&part.temp<373.0f))
 						goto conduct;
 					continue;
 				case PT_INWR:

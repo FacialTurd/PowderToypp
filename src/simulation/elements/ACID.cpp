@@ -58,15 +58,15 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				int rt = TYP(r);
+				int rt = TYP(r); r = ID(r);
 				if (rt != PT_ACID && rt != PT_CAUS && rt != ELEM_MULTIPP)
 				{
 					if (rt==PT_PLEX || rt==PT_NITR || rt==PT_GUNP || rt==PT_RBDM || rt==PT_LRBD)
 					{
 						sim->part_change_type(i,x,y,PT_FIRE);
-						sim->part_change_type(ID(r),x+rx,y+ry,PT_FIRE);
+						sim->part_change_type(r,x+rx,y+ry,PT_FIRE);
 						parts[i].life = 4;
-						partsi(r).life = 4;
+						parts[r].life = 4;
 					}
 					else if (rt==PT_WTRV)
 					{
@@ -74,22 +74,22 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 						{
 							sim->part_change_type(i, x, y, PT_CAUS);
 							parts[i].life = (rand()%50)+25;
-							sim->kill_part(ID(r));
+							sim->kill_part(r);
 						}
 					}
 					else if ((!(sim->elements[rt].Properties2 & (PROP_NODESTRUCT | PROP_UNBREAKABLECLONE)) &&
-						(rt != PT_SPRK || !(sim->elements[partsi(r).ctype].Properties2 & PROP_NODESTRUCT)) &&
+						(rt != PT_SPRK || !(sim->elements[parts[r].ctype].Properties2 & PROP_NODESTRUCT)) &&
 						sim->elements[rt].Hardness>(rand()%1000))&&parts[i].life>=50)
 					{
-						if (sim->parts_avg(i, ID(r), PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
+						if (sim->parts_avg(i, r, PT_GLAS)!= PT_GLAS)//GLAS protects stuff from acid
 						{
-							float newtemp = ((60.0f-(float)sim->elements[ID(r)].Hardness))*7.0f;
+							float newtemp = ((60.0f-(float)sim->elements[rt].Hardness))*7.0f;
 							if (newtemp < 0){
 								newtemp = 0;
 							}
 							parts[i].temp += newtemp;
 							parts[i].life--;
-							sim->kill_part(ID(r));
+							sim->kill_part(r);
 						}
 					}
 					else if (parts[i].life<=50)
@@ -109,17 +109,18 @@ int Element_ACID::update(UPDATE_FUNC_ARGS)
 			if (!r)
 				continue;
 			int rt = TYP(r);
-			if (rt==PT_ACID && (parts[i].life>partsi(r).life) && parts[i].life>0)//diffusion
+			Particle &part = parts[ID(r)];
+			if (rt==PT_ACID && (parts[i].life > part.life) && parts[i].life > 0)//diffusion
 			{
-				int temp = parts[i].life - partsi(r).life;
+				int temp = parts[i].life - part.life;
 				if (temp==1)
 				{
-					partsi(r).life++;
+					part.life++;
 					parts[i].life--;
 				}
 				else if (temp>0)
 				{
-					partsi(r).life += temp/2;
+					part.life += temp/2;
 					parts[i].life -= temp/2;
 				}
 			}

@@ -77,17 +77,17 @@ unsigned int Element_E196::my_random()
 //#TPT-Directive ElementHeader Element_E196 static int update(UPDATE_FUNC_ARGS)
 int Element_E196::update(UPDATE_FUNC_ARGS)
 {
-	int r, rx, ry, stmp, stmp2, rt;
+	int r, rx, ry, stmp, stmp2, rt, ri;
 	int rndstore;
+	Particle &self = parts[i];
+
 	static const signed char table1[64] = {
 		1,0,1,1,1,1,0,1,0,1,-1,1,-1,1,-1,0,-1,0,-1,-1,-1,-1,0,-1,0,-1,1,-1,1,-1,1,0,
 		2,0,2,1,2,2,1,2,0,2,-1,2,-2,2,-2,1,-2,0,-2,-1,-2,-2,-1,-2,0,-2,1,-2,2,-2,2,-1
 	};
 	
-	// parts[i].flags &= ~PFLAG_COLLIDED;
-	
-	stmp = parts[i].tmp;
-	if (!parts[i].life)
+	stmp = self.tmp;
+	if (!self.life)
 	{
 		int pres = sim->pv[y/CELL][x/CELL];
 		if ((pres < -5) && !(rand()%10000) && !(stmp & PFLAG_EMITTED))
@@ -102,14 +102,14 @@ int Element_E196::update(UPDATE_FUNC_ARGS)
 	}
 	if (stmp & PFLAG_SOLID_STATE)
 	{
-		parts[i].vx = 0; parts[i].vy = 0;
-		if (parts[i].temp >= 300.0f)
-			parts[i].tmp &= ~PFLAG_SOLID_STATE;
+		self.vx = 0; self.vy = 0;
+		if (self.temp >= 300.0f)
+			self.tmp &= ~PFLAG_SOLID_STATE;
 	}
 	else
 	{
-		if (parts[i].temp < 160.0f)
-			parts[i].tmp |= PFLAG_SOLID_STATE;
+		if (self.temp < 160.0f)
+			self.tmp |= PFLAG_SOLID_STATE;
 
 		int rnd1;
 		rndstore = my_random();
@@ -149,35 +149,37 @@ int Element_E196::update(UPDATE_FUNC_ARGS)
 					continue;
 			}
 
-			rt = TYP(r);
+			rt = TYP(r); ri = ID(r);
+			Particle &part = parts[i];
+
 			if (rt == PT_GLOW || rt == PT_ISOZ)
 			{
-				int diluted_level = (parts[i].tmp >> PFLAG_DILUTED_SHIFT) & PFLAG_DILUTED_LEVELS;
-				if (rt == PT_ISOZ && (diluted_level < PFLAG_DILUTED_LEVELS) && !parts[i].life)
+				int diluted_level = (self.tmp >> PFLAG_DILUTED_SHIFT) & PFLAG_DILUTED_LEVELS;
+				if (rt == PT_ISOZ && (diluted_level < PFLAG_DILUTED_LEVELS) && !self.life)
 				{
 					unsigned int z = my_random();
-					parts[i].tmp += 1 << PFLAG_DILUTED_SHIFT;
-					parts[i].life = 20 + (z % 50);
-					partsi(r).tmp = parts[i].tmp | PFLAG_EMITTED;
-					partsi(r).life = 20 + ((z >> 16) % 50);
-					sim->part_change_type(ID(r), x+rx, y+ry, parts[i].type);
+					self.tmp += 1 << PFLAG_DILUTED_SHIFT;
+					self.life = 20 + (z % 50);
+					part.tmp = self.tmp | PFLAG_EMITTED;
+					part.life = 20 + ((z >> 16) % 50);
+					sim->part_change_type(ri, x+rx, y+ry, self.type);
 					continue;
 				}
-				parts[i].x = partsi(r).x;
-				parts[i].y = partsi(r).y;
-				partsi(r).x = x;
-				partsi(r).y = y;
+				self.x = part.x;
+				self.y = part.y;
+				part.x = x;
+				part.y = y;
 				pmap[y][x] = r;
-				pmap[y+ry][x+rx] = PMAP(i, parts[i].type);
+				pmap[y+ry][x+rx] = PMAP(i, self.type);
 				break;
 			}
-			else if (rt == parts[i].type)
+			else if (rt == self.type)
 			{
-				int swaptmp = partsi(r).tmp;
+				int swaptmp = part.tmp;
 				if (!(swaptmp & PFLAG_SOLID_STATE))
 				{
-					partsi(r).tmp = parts[i].tmp;
-					parts[i].tmp = swaptmp;
+					part.tmp = self.tmp;
+					self.tmp = swaptmp;
 				}
 				continue;
 			}

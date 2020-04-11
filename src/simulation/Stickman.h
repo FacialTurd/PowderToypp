@@ -30,6 +30,7 @@ struct playerst
 	bool fan;
 	// int action;
 	int spawnID;         //id of the SPWN particle that spawns it
+	int rocketBootSpawn;
 	int parentStickman;
 	int firstChild;
 	int prevStickman;

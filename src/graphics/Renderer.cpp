@@ -165,10 +165,14 @@ void Renderer::RenderBegin()
 							int i = sim->create_part(-1, x, y, ELEM_MULTIPP, ELEM_MDECOR);
 							if (i >= 0) sim->parts[i].ctype = deco;
 						}
-						else if (rt == ELEM_MULTIPP && sim->partsi(r).life == ELEM_MDECOR)
-							sim->partsi(r).ctype = deco;
-						else
-							sim->partsi(r).dcolour = deco;
+						else if (rt == ELEM_MULTIPP)
+						{
+							Particle &part = sim->parts[ID(r)];
+							if (part.life == ELEM_MDECOR)
+								part.ctype = deco;
+							else
+								part.dcolour = deco;
+						}
 					}
 				}
 			}
@@ -1392,11 +1396,6 @@ void Renderer::render_parts()
 
 			if(nx >= XRES || nx < 0 || ny >= YRES || ny < 0)
 				continue;
-			
-			/*
-			if (TYP(sim->pmap[ny][nx]) == PT_PINVIS)
-				sim->partsi(sim->pmap[ny][nx]).tmp4 = PMAP(i, t);
-			*/
 
 			if(TYP(sim->photons[ny][nx]) && !(sim->elements[t].Properties & TYPE_ENERGY) && t!=PT_STKM && t!=PT_STKM2 && t!=PT_FIGH)
 				continue;

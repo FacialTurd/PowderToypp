@@ -306,17 +306,18 @@ void PropertyTool::SetProperty(Simulation *sim, ui::Point position)
 		i = sim->photons[position.Y][position.X];
 	if(!i)
 		return;
+	char *addr = ((char*)&sim->parts[ID(i)]) + propOffset;
 	switch (propType)
 	{
 		case StructProperty::Float:
-			*((float*)(((char*)&sim->partsi(i))+propOffset)) = propValue.Float;
+			*((float*)addr) = propValue.Float;
 			break;
 		case StructProperty::ParticleType:
 		case StructProperty::Integer:
-			*((int*)(((char*)&sim->partsi(i))+propOffset)) = propValue.Integer;
+			*((int*)addr) = propValue.Integer;
 			break;
 		case StructProperty::UInteger:
-			*((unsigned int*)(((char*)&sim->partsi(i))+propOffset)) = propValue.UInteger;
+			*((unsigned int*)addr) = propValue.UInteger;
 			break;
 		default:
 			break;

@@ -86,7 +86,7 @@ int Element_STKM::graphics(GRAPHICS_FUNC_ARGS)
 
 //#TPT-Directive ElementHeader Element_STKM static int run_stickman(playerst *playerp, UPDATE_FUNC_ARGS)
 int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
-	int r, rx, ry, ctype;
+	int r, rx, ry, rt, ctype;
 	int t = parts[i].type;
 
 	float pp, d, pressure;
@@ -286,25 +286,35 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 		if (!moved && playerp->rocketBoots)
 		{
-			parts[i].vx -= rocketBootsHeadEffect*rby;
-			parts[i].vy += rocketBootsHeadEffect*rbx;
-			playerp->accs[2] -= rocketBootsFeetEffect*rby;
-			playerp->accs[6] -= rocketBootsFeetEffect*rby;
-			playerp->accs[3] += rocketBootsFeetEffect*rbx;
-			playerp->accs[7] += rocketBootsFeetEffect*rbx;
-			if (!(sim->Extra_FIGH_pause & 0x400))
+			parts[i].vx -= rocketBootsHeadEffect*rby*dy;
+			parts[i].vy += rocketBootsHeadEffect*rbx*dy;
+			playerp->accs[2] -= rocketBootsFeetEffect*rby*dy;
+			playerp->accs[6] -= rocketBootsFeetEffect*rby*dy;
+			playerp->accs[3] += rocketBootsFeetEffect*rbx*dy;
+			playerp->accs[7] += rocketBootsFeetEffect*rbx*dy;
+			rt = playerp->rocketBootSpawn;
+			if (sim->Extra_FIGH_pause & 0x400) rt = PT_NONE;
+			if (rt != PT_NONE)
 			{
-				int comm = playerp->comm; dy *= 25;
+				int comm = playerp->comm;
 				for (int leg=0; leg<2; leg++)
 				{
 					if (!(comm & (1 << leg)))
 						continue;
 					int footX = playerp->legs_curr[leg*4+2], footY = playerp->legs_curr[leg*4+3];
-					int np = sim->create_part(-1, footX, footY, PT_PLSM);
-					if (np>=0)
+					int np = sim->create_part(-1, footX, footY, rt);
+					if (np >= 0)
 					{
-						parts[np].vx = parts[i].vx+rby*dy;
-						parts[np].vy = parts[i].vy-rbx*dy;
+						if (leg)
+						{
+							parts[np].vx = parts[i].vx - rby * 25;
+							parts[np].vy = parts[i].vy + rbx * 25;
+						}
+						else
+						{
+							parts[np].vx = parts[i].vx + rby * 25;
+							parts[np].vy = parts[i].vy - rbx * 25;
+						}
 						parts[np].life += 30;
 					}
 				}
@@ -371,7 +381,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	if (INBOND(rx, ry) && sim->bmap[ry][rx]==WL_DETECT)
 	    sim->set_emap(rx, ry);
 
-	int rndstore, randpool = 0, under_wall, rt;
+	int rndstore, randpool = 0, under_wall;
 	//Searching for particles near head
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
@@ -739,7 +749,7 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 
 			if (sim->GetHeatConduct(r, rt) &&
 				((playerp->elem!=PT_LIGH && sim->parts[r].temp>=323) || sim->parts[r].temp<=243) &&
-				(!playerp->rocketBoots || rt != PT_PLSM))
+				(!playerp->rocketBoots || playerp->rocketBootSpawn != rt))
 			{
 				sim->parts[i].life -= 2;
 				playerp->accs[3] -= gmult;
@@ -849,7 +859,10 @@ void Element_STKM::STKM_init_legs(Simulation *sim, playerst *playerp, int i)
 	playerp->comm = 0;
 	playerp->pcomm = 0;
 	playerp->frames = 0;
+	playerp->spwn = 0;
 	playerp->fan = false;
+	playerp->rocketBoots = false;
+	playerp->rocketBootSpawn = PT_PLSM;
 	playerp->__flags = 0;
 	playerp->parentStickman = -1;
 	playerp->firstChild = -1;
@@ -900,7 +913,7 @@ void Element_STKM::STKM_set_element(Simulation *sim, playerst *playerp, int elem
 	    || sim->elements[element].Properties&TYPE_ENERGY
 	    || element == PT_LOLZ || element == PT_LOVE)
 	{
-		if (!playerp->rocketBoots || element != PT_PLSM)
+		if (!playerp->rocketBoots || element != playerp->rocketBootSpawn)
 		{
 			playerp->elem = element;
 			playerp->fan = false;

@@ -66,7 +66,7 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 					if (rt!=PT_CRAY && rt!=PT_PSCN && rt!=PT_INST && rt!=PT_METL && rt!=PT_SPRK && rt!=ELEM_MULTIPP && rt!=PT_INDC && rt<PT_NUM)
 					{
 						parts[i].ctype = TYP(r);
-						parts[i].temp = partsi(r).temp;
+						parts[i].temp = parts[ID(r)].temp;
 					}
 				}
 	}
@@ -84,9 +84,10 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 						continue;
 					if (CHECK_EL_SPRKL3(r)) { //spark found, start creating
 						unsigned int colored = 0;
-						bool destroy = partsi(r).ctype==PT_PSCN;
-						bool nostop = partsi(r).ctype==PT_INST;
-						bool createSpark = (partsi(r).ctype==PT_INWR);
+						Particle &part = parts[ID(r)];
+						bool destroy = part.ctype==PT_PSCN;
+						bool nostop = part.ctype==PT_INST;
+						bool createSpark = part.ctype==PT_INWR;
 						int partsRemaining = 255;
 						if (parts[i].tmp) //how far it shoots
 							partsRemaining = parts[i].tmp;
@@ -109,15 +110,15 @@ int Element_CRAY::update(UPDATE_FUNC_ARGS)
 										docontinue = 0;
 								}
 							} else if (TYP(r)==PT_FILT) { // get color if passed through FILT
-								if (partsi(r).dcolour == 0xFF000000)
+								if (part.dcolour == 0xFF000000)
 									colored = 0xFF000000;
-								else if (partsi(r).tmp==0)
+								else if (part.tmp==0)
 								{
-									colored = wavelengthToDecoColour(Element_FILT::getWavelengths(&partsi(r)));
+									colored = wavelengthToDecoColour(Element_FILT::getWavelengths(&part));
 								}
 								else if (colored==0xFF000000)
 									colored = 0;
-								partsi(r).life = 4;
+								part.life = 4;
 							} else if (TYP(r) == PT_CRAY || nostop) {
 								docontinue = 1;
 							} else if(destroy && r && !(sim->elements[TYP(r)].Properties2 & PROP_NODESTRUCT)) {

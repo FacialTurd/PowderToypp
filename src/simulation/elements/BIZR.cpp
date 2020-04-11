@@ -65,15 +65,16 @@ int Element_BIZR::update(UPDATE_FUNC_ARGS)
 					rt = TYP(r);
 					if (rt!=PT_BIZR && rt!=PT_BIZRG && rt!=PT_BIZRS)
 					{
-						tr = (partsi(r).dcolour>>16)&0xFF;
-						tg = (partsi(r).dcolour>>8)&0xFF;
-						tb = (partsi(r).dcolour)&0xFF;
-						ta = (partsi(r).dcolour>>24)&0xFF;
+						unsigned int deco = partsi(r).dcolour;
+						tr = (deco >> 16) & 0xFF;
+						tg = (deco >> 8) & 0xFF;
+						tb = deco & 0xFF;
+						ta = (deco >> 24) & 0xFF;
 						
-						mr = (mdeco>>16)&0xFF;
-						mg = (mdeco>>8)&0xFF;
-						mb = (mdeco)&0xFF;
-						ma = (mdeco>>24)&0xFF;
+						mr = (mdeco >> 16) & 0xFF;
+						mg = (mdeco >> 8) & 0xFF;
+						mb = mdeco & 0xFF;
+						ma = (mdeco >> 24) & 0xFF;
 						
 						nr = (tr*BLEND) + (mr*(1 - BLEND));
 						ng = (tg*BLEND) + (mg*(1 - BLEND));

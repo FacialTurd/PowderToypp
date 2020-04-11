@@ -70,8 +70,9 @@ int Element_ACEL::update(UPDATE_FUNC_ARGS)
 					continue;
 				if(sim->elements[TYP(r)].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY))
 				{
-					partsi(r).vx *= multiplier;
-					partsi(r).vy *= multiplier;
+					Particle &part = parts[ID(r)];
+					part.vx *= multiplier;
+					part.vy *= multiplier;
 					parts[i].tmp = 1;
 				}
 			}
