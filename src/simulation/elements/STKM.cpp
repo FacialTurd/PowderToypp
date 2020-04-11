@@ -92,7 +92,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	float pp, d, pressure;
 	float dt = 0.9;// /(FPSB*FPSB);  //Delta time in square
 	float gvx, gvy;
-	float gx, gy, dl, dr;
+	float gx, gy, dl, dr, dx, dy;
 	float rocketBootsHeadEffect = 0.35f;
 	float rocketBootsFeetEffect = 0.15f;
 	float rocketBootsHeadEffectV = 0.3f;// stronger acceleration vertically, to counteract gravity
@@ -170,7 +170,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	
 	bool antigrav = sim->Extra_FIGH_pause & 0x200;
 	bool prevent_spawn = false;
-	int grav_multiplier = antigrav ? -1 : 1;
+	int grav_multiplier = antigrav ? -1 : 1, comm = playerp->comm & 0x03;
 
 	if (antigrav) // anti-gravity ?
 	{
@@ -209,33 +209,33 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	parts[i].vy -= gvy*dt;
 
 	//Verlet integration
-	pp = 2*playerp->legs[0]-playerp->legs[2]+playerp->accs[0]*dt*dt;
-	playerp->legs[2] = playerp->legs[0];
-	playerp->legs[0] = pp;
-	pp = 2*playerp->legs[1]-playerp->legs[3]+playerp->accs[1]*dt*dt;
-	playerp->legs[3] = playerp->legs[1];
-	playerp->legs[1] = pp;
+	pp = 2*playerp->legs_curr[0]-playerp->legs_prev[0]+playerp->accs[0]*dt*dt;
+	playerp->legs_prev[0] = playerp->legs_curr[0];
+	playerp->legs_curr[0] = pp;
+	pp = 2*playerp->legs_curr[1]-playerp->legs_prev[1]+playerp->accs[1]*dt*dt;
+	playerp->legs_prev[1] = playerp->legs_curr[1];
+	playerp->legs_curr[1] = pp;
 
-	pp = 2*playerp->legs[4]-playerp->legs[6]+(playerp->accs[2]+gvx)*dt*dt;
-	playerp->legs[6] = playerp->legs[4];
-	playerp->legs[4] = pp;
-	pp = 2*playerp->legs[5]-playerp->legs[7]+(playerp->accs[3]+gvy)*dt*dt;
-	playerp->legs[7] = playerp->legs[5];
-	playerp->legs[5] = pp;
+	pp = 2*playerp->legs_curr[2]-playerp->legs_prev[2]+(playerp->accs[2]+gvx)*dt*dt;
+	playerp->legs_prev[2] = playerp->legs_curr[2];
+	playerp->legs_curr[2] = pp;
+	pp = 2*playerp->legs_curr[3]-playerp->legs_prev[3]+(playerp->accs[3]+gvy)*dt*dt;
+	playerp->legs_prev[3] = playerp->legs_curr[3];
+	playerp->legs_curr[3] = pp;
 
-	pp = 2*playerp->legs[8]-playerp->legs[10]+playerp->accs[4]*dt*dt;
-	playerp->legs[10] = playerp->legs[8];
-	playerp->legs[8] = pp;
-	pp = 2*playerp->legs[9]-playerp->legs[11]+playerp->accs[5]*dt*dt;
-	playerp->legs[11] = playerp->legs[9];
-	playerp->legs[9] = pp;
+	pp = 2*playerp->legs_curr[4]-playerp->legs_prev[4]+playerp->accs[4]*dt*dt;
+	playerp->legs_prev[4] = playerp->legs_curr[4];
+	playerp->legs_curr[4] = pp;
+	pp = 2*playerp->legs_curr[5]-playerp->legs_prev[5]+playerp->accs[5]*dt*dt;
+	playerp->legs_prev[5] = playerp->legs_curr[5];
+	playerp->legs_curr[5] = pp;
 
-	pp = 2*playerp->legs[12]-playerp->legs[14]+(playerp->accs[6]+gvx)*dt*dt;
-	playerp->legs[14] = playerp->legs[12];
-	playerp->legs[12] = pp;
-	pp = 2*playerp->legs[13]-playerp->legs[15]+(playerp->accs[7]+gvy)*dt*dt;
-	playerp->legs[15] = playerp->legs[13];
-	playerp->legs[13] = pp;
+	pp = 2*playerp->legs_curr[6]-playerp->legs_prev[6]+(playerp->accs[6]+gvx)*dt*dt;
+	playerp->legs_prev[6] = playerp->legs_curr[6];
+	playerp->legs_curr[6] = pp;
+	pp = 2*playerp->legs_curr[7]-playerp->legs_prev[7]+(playerp->accs[7]+gvy)*dt*dt;
+	playerp->legs_prev[7] = playerp->legs_curr[7];
+	playerp->legs_curr[7] = pp;
 
 	//Setting acceleration to 0
 	playerp->accs[0] = 0;
@@ -250,33 +250,36 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	playerp->accs[6] = 0;
 	playerp->accs[7] = 0;
 
-	gx = (playerp->legs[4] + playerp->legs[12])/2 - gvy;
-	gy = (playerp->legs[5] + playerp->legs[13])/2 + gvx;
-	dl = pow(gx - playerp->legs[4], 2) + pow(gy - playerp->legs[5], 2);
-	dr = pow(gx - playerp->legs[12], 2) + pow(gy - playerp->legs[13], 2);
+	gx = (playerp->legs_curr[2] + playerp->legs_curr[6])/2 - gvy;
+	gy = (playerp->legs_curr[3] + playerp->legs_curr[7])/2 + gvx;
+	dl = pow(gx - playerp->legs_curr[2], 2) + pow(gy - playerp->legs_curr[3], 2);
+	dr = pow(gx - playerp->legs_curr[6], 2) + pow(gy - playerp->legs_curr[7], 2);
+	dx = dl - dr;
+	dy = (comm & 1) - (comm >> 1);
 
-	//Go left
-	if (((int)(playerp->comm)&0x01) == 0x01)
+	//Go left or right
+	if (playerp->comm)
 	{
 		bool moved = false;
-		if (dl>dr)
+		dx *= dy;
+		if (dx > 0)
 		{
-			if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
+			if (is_blocking(sim, playerp, t, playerp->legs_curr[2], playerp->legs_curr[3]))
 			{
-				playerp->accs[2] = -3*gvy-3*gvx;
-				playerp->accs[3] = 3*gvx-3*gvy;
-				playerp->accs[0] = -gvy;
+				playerp->accs[2] = -dy * 3 *gvy - 3 * gvx;
+				playerp->accs[3] = 3 * gvx - 3 * gvy;
+				playerp->accs[0] = -dy * gvy;
 				playerp->accs[1] = gvx;
 				moved = true;
 			}
 		}
 		else
 		{
-			if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
+			if (is_blocking(sim, playerp, t, playerp->legs_curr[6], playerp->legs_curr[7]))
 			{
-				playerp->accs[6] = -3*gvy-3*gvx;
-				playerp->accs[7] = 3*gvx-3*gvy;
-				playerp->accs[0] = -gvy;
+				playerp->accs[6] = -dy * 3 *gvy - 3 * gvx;
+				playerp->accs[7] = 3 * gvx - 3 * gvy;
+				playerp->accs[0] = -dy * gvy;
 				playerp->accs[1] = gvx;
 				moved = true;
 			}
@@ -291,16 +294,17 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			playerp->accs[7] += rocketBootsFeetEffect*rbx;
 			if (!(sim->Extra_FIGH_pause & 0x400))
 			{
+				int comm = playerp->comm; dy *= 25;
 				for (int leg=0; leg<2; leg++)
 				{
-					if (leg==1 && (((int)(playerp->comm)&0x02) == 0x02))
+					if (!(comm & (1 << leg)))
 						continue;
-					int footX = playerp->legs[leg*8+4], footY = playerp->legs[leg*8+5];
+					int footX = playerp->legs_curr[leg*4+2], footY = playerp->legs_curr[leg*4+3];
 					int np = sim->create_part(-1, footX, footY, PT_PLSM);
 					if (np>=0)
 					{
-						parts[np].vx = parts[i].vx+rby*25;
-						parts[np].vy = parts[i].vy-rbx*25;
+						parts[np].vx = parts[i].vx+rby*dy;
+						parts[np].vy = parts[i].vy-rbx*dy;
 						parts[np].life += 30;
 					}
 				}
@@ -308,60 +312,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 	}
 
-	//Go right
-	if (((int)(playerp->comm)&0x02) == 0x02)
-	{
-		bool moved = false;
-		if (dl<dr)
-		{
-			if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
-			{
-				playerp->accs[2] = 3*gvy-3*gvx;
-				playerp->accs[3] = -3*gvx-3*gvy;
-				playerp->accs[0] = gvy;
-				playerp->accs[1] = -gvx;
-				moved = true;
-			}
-		}
-		else
-		{
-			if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
-			{
-				playerp->accs[6] = 3*gvy-3*gvx;
-				playerp->accs[7] = -3*gvx-3*gvy;
-				playerp->accs[0] = gvy;
-				playerp->accs[1] = -gvx;
-				moved = true;
-			}
-		}
-		if (!moved && playerp->rocketBoots)
-		{
-			parts[i].vx += rocketBootsHeadEffect*rby;
-			parts[i].vy -= rocketBootsHeadEffect*rbx;
-			playerp->accs[2] += rocketBootsFeetEffect*rby;
-			playerp->accs[6] += rocketBootsFeetEffect*rby;
-			playerp->accs[3] -= rocketBootsFeetEffect*rbx;
-			playerp->accs[7] -= rocketBootsFeetEffect*rbx;
-			if (!(sim->Extra_FIGH_pause & 0x400))
-			{
-				for (int leg=0; leg<2; leg++)
-				{
-					if (leg==0 && (((int)(playerp->comm)&0x01) == 0x01))
-						continue;
-					int footX = playerp->legs[leg*8+4], footY = playerp->legs[leg*8+5];
-					int np = sim->create_part(-1, footX, footY, PT_PLSM);
-					if (np>=0)
-					{
-						parts[np].vx = parts[i].vx-rby*25;
-						parts[np].vy = parts[i].vy+rbx*25;
-						parts[np].life += 30;
-					}
-				}
-			}
-		}
-	}
-
-	if (playerp->rocketBoots && ((int)(playerp->comm)&0x03) == 0x03)
+	if (playerp->rocketBoots && comm == 0x03)
 	{
 		// Pressing left and right simultaneously with rocket boots on slows the stickman down
 		// Particularly useful in zero gravity
@@ -386,7 +337,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 			{
 				for (int leg=0; leg<2; leg++)
 				{
-					int footX = playerp->legs[leg*8+4], footY = playerp->legs[leg*8+5];
+					int footX = playerp->legs_curr[leg*4+2], footY = playerp->legs_curr[leg*4+3];
 					int np = sim->create_part(-1, footX, footY+1, PT_PLSM);
 					if (np>=0)
 					{
@@ -397,8 +348,8 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 				}
 			}
 		}
-		else if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]) ||
-				 is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
+		else if (is_blocking(sim, playerp, t, playerp->legs_curr[2], playerp->legs_curr[3]) ||
+				 is_blocking(sim, playerp, t, playerp->legs_curr[6], playerp->legs_curr[7]))
 		{
 			parts[i].vx -= 4*gvx;
 			parts[i].vy -= 4*gvy;
@@ -410,12 +361,15 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	}
 
 	//Charge detector wall if foot inside
-	if (INBOND((int)(playerp->legs[4]+0.5)/CELL, (int)(playerp->legs[5]+0.5)/CELL) &&
-	       sim->bmap[(int)(playerp->legs[5]+0.5)/CELL][(int)(playerp->legs[4]+0.5)/CELL]==WL_DETECT)
-		sim->set_emap((int)playerp->legs[4]/CELL, (int)playerp->legs[5]/CELL);
-	if (INBOND((int)(playerp->legs[12]+0.5)/CELL, (int)(playerp->legs[13]+0.5)/CELL) &&
-	        sim->bmap[(int)(playerp->legs[13]+0.5)/CELL][(int)(playerp->legs[12]+0.5)/CELL]==WL_DETECT)
-		sim->set_emap((int)(playerp->legs[12]+0.5)/CELL, (int)(playerp->legs[13]+0.5)/CELL);
+	rx = (int)(playerp->legs_curr[2]+0.5)/CELL;
+	ry = (int)(playerp->legs_curr[3]+0.5)/CELL;
+	if (INBOND(rx, ry) && sim->bmap[ry][rx]==WL_DETECT)
+		sim->set_emap(rx, ry);
+
+	rx = (int)(playerp->legs_curr[6]+0.5)/CELL;
+	ry = (int)(playerp->legs_curr[7]+0.5)/CELL;
+	if (INBOND(rx, ry) && sim->bmap[ry][rx]==WL_DETECT)
+	    sim->set_emap(rx, ry);
 
 	int rndstore, randpool = 0, under_wall, rt;
 	//Searching for particles near head
@@ -632,59 +586,67 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	}
 
 	//Simulation of joints
-	d = 25/(pow((playerp->legs[0]-playerp->legs[4]), 2) + pow((playerp->legs[1]-playerp->legs[5]), 2)+25) - 0.5;  //Fast distance
-	playerp->legs[4] -= (playerp->legs[0]-playerp->legs[4])*d;
-	playerp->legs[5] -= (playerp->legs[1]-playerp->legs[5])*d;
-	playerp->legs[0] += (playerp->legs[0]-playerp->legs[4])*d;
-	playerp->legs[1] += (playerp->legs[1]-playerp->legs[5])*d;
+	dx = playerp->legs_curr[0] - playerp->legs_curr[2];
+	dy = playerp->legs_curr[1] - playerp->legs_curr[3];
+	d = 25/(pow(dx, 2) + pow(dy, 2)+25) - 0.5;  //Fast distance
+	playerp->legs_curr[2] -= dx * d;
+	playerp->legs_curr[3] -= dy * d;
+	playerp->legs_curr[0] += (playerp->legs_curr[0]-playerp->legs_curr[2])*d;
+	playerp->legs_curr[1] += (playerp->legs_curr[1]-playerp->legs_curr[3])*d;
 
-	d = 25/(pow((playerp->legs[8]-playerp->legs[12]), 2) + pow((playerp->legs[9]-playerp->legs[13]), 2)+25) - 0.5;
-	playerp->legs[12] -= (playerp->legs[8]-playerp->legs[12])*d;
-	playerp->legs[13] -= (playerp->legs[9]-playerp->legs[13])*d;
-	playerp->legs[8] += (playerp->legs[8]-playerp->legs[12])*d;
-	playerp->legs[9] += (playerp->legs[9]-playerp->legs[13])*d;
+	dx = playerp->legs_curr[4] - playerp->legs_curr[6];
+	dy = playerp->legs_curr[5] - playerp->legs_curr[7];
+	d = 25/(pow(dx, 2) + pow(dy, 2)+25) - 0.5;
+	playerp->legs_curr[6] -= dx * d;
+	playerp->legs_curr[7] -= dy * d;
+	playerp->legs_curr[4] += (playerp->legs_curr[4]-playerp->legs_curr[6])*d;
+	playerp->legs_curr[5] += (playerp->legs_curr[5]-playerp->legs_curr[7])*d;
 
-	d = 36/(pow((playerp->legs[0]-parts[i].x), 2) + pow((playerp->legs[1]-parts[i].y), 2)+36) - 0.5;
-	parts[i].vx -= (playerp->legs[0]-parts[i].x)*d;
-	parts[i].vy -= (playerp->legs[1]-parts[i].y)*d;
-	playerp->legs[0] += (playerp->legs[0]-parts[i].x)*d;
-	playerp->legs[1] += (playerp->legs[1]-parts[i].y)*d;
+	dx = playerp->legs_curr[0] - parts[i].x;
+	dy = playerp->legs_curr[1] - parts[i].y;
+	d = 36/(pow(dx, 2) + pow(dy, 2)+36) - 0.5;
+	parts[i].vx -= dx * d;
+	parts[i].vy -= dy * d;
+	playerp->legs_curr[0] += dx * d;
+	playerp->legs_curr[1] += dy * d;
 
-	d = 36/(pow((playerp->legs[8]-parts[i].x), 2) + pow((playerp->legs[9]-parts[i].y), 2)+36) - 0.5;
-	parts[i].vx -= (playerp->legs[8]-parts[i].x)*d;
-	parts[i].vy -= (playerp->legs[9]-parts[i].y)*d;
-	playerp->legs[8] += (playerp->legs[8]-parts[i].x)*d;
-	playerp->legs[9] += (playerp->legs[9]-parts[i].y)*d;
+	dx = playerp->legs_curr[4] - parts[i].x;
+	dy = playerp->legs_curr[5] - parts[i].y;
+	d = 36/(pow(dx, 2) + pow(dy, 2)+36) - 0.5;
+	parts[i].vx -= dx * d;
+	parts[i].vy -= dy * d;
+	playerp->legs_curr[4] += dx * d;
+	playerp->legs_curr[5] += dy * d;
 
-	if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
+	if (is_blocking(sim, playerp, t, playerp->legs_curr[2], playerp->legs_curr[3]))
 	{
-		playerp->legs[4] = playerp->legs[6];
-		playerp->legs[5] = playerp->legs[7];
+		playerp->legs_curr[2] = playerp->legs_prev[2];
+		playerp->legs_curr[3] = playerp->legs_prev[3];
 	}
 
-	if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
+	if (is_blocking(sim, playerp, t, playerp->legs_curr[6], playerp->legs_curr[7]))
 	{
-		playerp->legs[12] = playerp->legs[14];
-		playerp->legs[13] = playerp->legs[15];
+		playerp->legs_curr[6] = playerp->legs_prev[6];
+		playerp->legs_curr[7] = playerp->legs_prev[7];
 	}
 
 	//This makes stick man "pop" from obstacles
-	if (is_blocking(sim, playerp, t, playerp->legs[4], playerp->legs[5]))
+	if (is_blocking(sim, playerp, t, playerp->legs_curr[2], playerp->legs_curr[3]))
 	{
 		float t;
-		t = playerp->legs[4]; playerp->legs[4] = playerp->legs[6]; playerp->legs[6] = t;
-		t = playerp->legs[5]; playerp->legs[5] = playerp->legs[7]; playerp->legs[7] = t;
+		t = playerp->legs_curr[2]; playerp->legs_curr[2] = playerp->legs_prev[2]; playerp->legs_prev[2] = t;
+		t = playerp->legs_curr[3]; playerp->legs_curr[3] = playerp->legs_prev[3]; playerp->legs_prev[3] = t;
 	}
 
-	if (is_blocking(sim, playerp, t, playerp->legs[12], playerp->legs[13]))
+	if (is_blocking(sim, playerp, t, playerp->legs_curr[6], playerp->legs_curr[7]))
 	{
 		float t;
-		t = playerp->legs[12]; playerp->legs[12] = playerp->legs[14]; playerp->legs[14] = t;
-		t = playerp->legs[13]; playerp->legs[13] = playerp->legs[15]; playerp->legs[15] = t;
+		t = playerp->legs_curr[6]; playerp->legs_curr[6] = playerp->legs_prev[6]; playerp->legs_prev[6] = t;
+		t = playerp->legs_curr[7]; playerp->legs_curr[7] = playerp->legs_prev[7]; playerp->legs_prev[7] = t;
 	}
 
 	//Keeping legs distance
-	if ((pow((playerp->legs[4] - playerp->legs[12]), 2) + pow((playerp->legs[5]-playerp->legs[13]), 2))<16)
+	if ((pow((playerp->legs_curr[2] - playerp->legs_curr[6]), 2) + pow((playerp->legs_curr[3]-playerp->legs_curr[7]), 2))<16)
 	{
 		float tvx, tvy;
 		tvx = -gvy;
@@ -700,7 +662,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		}
 	}
 
-	if ((pow((playerp->legs[0] - playerp->legs[8]), 2) + pow((playerp->legs[1]-playerp->legs[9]), 2))<16)
+	if ((pow((playerp->legs_curr[0] - playerp->legs_curr[4]), 2) + pow((playerp->legs_curr[1]-playerp->legs_curr[5]), 2))<16)
 	{
 		float tvx, tvy;
 		tvx = -gvy;
@@ -717,10 +679,10 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	}
 
 	//If legs touch something
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)(playerp->legs[5]+0.5), grav_multiplier);
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)(playerp->legs[13]+0.5), grav_multiplier);
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[4]+0.5), (int)playerp->legs[5], grav_multiplier);
-	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs[12]+0.5), (int)playerp->legs[13], grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs_curr[2]+0.5), (int)(playerp->legs_curr[3]+0.5), grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs_curr[6]+0.5), (int)(playerp->legs_curr[7]+0.5), grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs_curr[2]+0.5), (int)playerp->legs_curr[3], grav_multiplier);
+	Element_STKM::STKM_interact(sim, playerp, i, (int)(playerp->legs_curr[6]+0.5), (int)playerp->legs_curr[7], grav_multiplier);
 	if (!parts[i].type)
 		return 1;
 
@@ -866,22 +828,24 @@ void Element_STKM::STKM_clear(Simulation * sim, playerst *playerp)
 //#TPT-Directive ElementHeader Element_STKM static void STKM_init_legs(Simulation *sim, playerst *playerp, int i)
 void Element_STKM::STKM_init_legs(Simulation *sim, playerst *playerp, int i)
 {
-	int x, y;
+	int j, x, y;
 
 	x = (int)(sim->parts[i].x+0.5f);
 	y = (int)(sim->parts[i].y+0.5f);
 	
 	int gmult = (sim->Extra_FIGH_pause & 0x200) ? -1 : 1;
-	int _leg_v[] = {-1,6,-1,6,-3,12,-3,12,1,6,1,6,3,12,3,12};
+	int _leg_v[] = {-1,6,-3,12,1,6,3,12};
 
-	for (int j = 0; j < 8; j++)
+	for (j = 0; j < 8; j += 2)
 	{
-		playerp->legs[2*j+0] = x + gmult*_leg_v[2*j+0];
-		playerp->legs[2*j+1] = y + gmult*_leg_v[2*j+1];
+		playerp->legs_curr[j] = x + gmult*_leg_v[j];
+		playerp->legs_curr[j+1] = y + gmult*_leg_v[j+1];
 	}
-
-	for (int j = 0; j < 8; j++)
+	for (j = 0; j < 8; j++)
+	{
+		playerp->legs_prev[j] = playerp->legs_curr[j];
 		playerp->accs[j] = 0;
+	}
 	playerp->comm = 0;
 	playerp->pcomm = 0;
 	playerp->frames = 0;

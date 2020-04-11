@@ -1693,16 +1693,16 @@ void Renderer::render_parts()
 					}
 
 					glVertex2f(nx, ny+STKM_grav_mult);
-					glVertex2f(cplayer->legs[0], cplayer->legs[1]);
+					glVertex2f(cplayer->legs_curr[0], cplayer->legs_curr[1]);
 
-					glVertex2f(cplayer->legs[0], cplayer->legs[1]);
-					glVertex2f(cplayer->legs[4], cplayer->legs[5]);
+					glVertex2f(cplayer->legs_curr[0], cplayer->legs_curr[1]);
+					glVertex2f(cplayer->legs_curr[2], cplayer->legs_curr[3]);
 
 					glVertex2f(nx, ny+STKM_grav_mult);
-					glVertex2f(cplayer->legs[8], cplayer->legs[9]);
+					glVertex2f(cplayer->legs_curr[4], cplayer->legs_curr[5]);
 
-					glVertex2f(cplayer->legs[8], cplayer->legs[9]);
-					glVertex2f(cplayer->legs[12], cplayer->legs[13]);
+					glVertex2f(cplayer->legs_curr[4], cplayer->legs_curr[5]);
+					glVertex2f(cplayer->legs_curr[6], cplayer->legs_curr[7]);
 					glEnd();
 #else
 					if (findingElement && findingElement == t)
@@ -1755,15 +1755,15 @@ void Renderer::render_parts()
 						draw_line(nx+2, ny-2, nx+2, ny+2, colr, colg, colb, 255);
 					}
 					//legs
-					draw_line(nx, ny+STKM_grav_mult, cplayer->legs[0], cplayer->legs[1], legr, legg, legb, 255);
-					draw_line(cplayer->legs[0], cplayer->legs[1], cplayer->legs[4], cplayer->legs[5], legr, legg, legb, 255);
-					draw_line(nx, ny+STKM_grav_mult, cplayer->legs[8], cplayer->legs[9], legr, legg, legb, 255);
-					draw_line(cplayer->legs[8], cplayer->legs[9], cplayer->legs[12], cplayer->legs[13], legr, legg, legb, 255);
+					draw_line(nx, ny+STKM_grav_mult, cplayer->legs_curr[0], cplayer->legs_curr[1], legr, legg, legb, 255);
+					draw_line(cplayer->legs_curr[0], cplayer->legs_curr[1], cplayer->legs_curr[2], cplayer->legs_curr[3], legr, legg, legb, 255);
+					draw_line(nx, ny+STKM_grav_mult, cplayer->legs_curr[4], cplayer->legs_curr[5], legr, legg, legb, 255);
+					draw_line(cplayer->legs_curr[4], cplayer->legs_curr[5], cplayer->legs_curr[6], cplayer->legs_curr[7], legr, legg, legb, 255);
 					if (cplayer->rocketBoots)
 					{
 						for (int leg=0; leg<2; leg++)
 						{
-							int nx = cplayer->legs[leg*8+4], ny = cplayer->legs[leg*8+5];
+							int nx = cplayer->legs_curr[leg*4+2], ny = cplayer->legs_curr[leg*4+3];
 							int colr = 255, colg = 0, colb = 255;
 							if (((int)(cplayer->comm)&0x04) == 0x04 || (((int)(cplayer->comm)&0x01) == 0x01 && leg==0) || (((int)(cplayer->comm)&0x02) == 0x02 && leg==1))
 								blendpixel(nx, ny, 0, 255, 0, 255);

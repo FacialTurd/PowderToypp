@@ -152,7 +152,7 @@ int Element_SLCN::update(UPDATE_FUNC_ARGS)
 
 	// Phase change logic.
 	int current_color_phase = self.tmp & 31; // limited to 0 through 31. using bitlogic for simplicity.
-	int current_spark_phase = self.tmp & 15; // limited to 0 through 15.
+	int current_spark_phase = self.tmp2 & 15; // limited to 0 through 15.
 
 	float &clr_phse_transition_cnt = self.pavg[0];
 	float &sprk_phse_transition_cnt = self.pavg[1];

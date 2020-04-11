@@ -4907,10 +4907,12 @@ killed:
 					if (!x_ok || !y_ok) //when moving from left to right stickmen might be able to fall through solid things, fix with "eval_move(t, nx+diffx, ny+diffy, NULL)" but then they die instead
 					{
 						if (stickman)
-							for (int i = 0; i < 16; i+=2)
+							for (int i = 0; i < 8; i += 2)
 							{
-								stickman->legs[i] += (nx-oldnx);
-								stickman->legs[i+1] += (ny-oldny);
+								stickman->legs_curr[i] += (nx-oldnx);
+								stickman->legs_curr[i+1] += (ny-oldny);
+								stickman->legs_prev[i] += (nx-oldnx);
+								stickman->legs_prev[i+1] += (ny-oldny);
 								stickman->accs[i/2] *= .95f;
 							}
 						parts[i].vy *= .95f;

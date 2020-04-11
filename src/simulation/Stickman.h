@@ -19,7 +19,8 @@ struct playerst
 	char pcomm;          //previous command
 	int elem;            //element power
 	int pelem;           //previous element power
-	float legs[16];      //legs' positions
+	float legs_curr[8];  //legs' positions
+	float legs_prev[8];  //legs' positions
 	float accs[8];       //accelerations
 	char spwn;           //if stick man was spawned
 	int __flags;         //stick man's extra flags
