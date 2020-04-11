@@ -192,12 +192,12 @@ int Element_SPRK::update(UPDATE_FUNC_ARGS)
 					if (!CHECK_EL_INSL(pavg) && parts[i].life<4)
 					{
 						if(sender==PT_PSCN && partsi(r).life<10) {
-							ri.life = 10;
+							part.life = 10;
 						}
 						else if (sender==PT_NSCN)
 						{
-							ri.ctype = PT_NONE;
-							ri.life = 9;
+							part.ctype = PT_NONE;
+							part.life = 9;
 						}
 					}
 					break;
