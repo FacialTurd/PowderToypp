@@ -3578,6 +3578,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	}
 	else if (p == -2)//creating from brush
 	{
+		int prop = elements[t].Properties;
 		if (pmap[y][x])
 		{
 			int drawOn = TYP(pmap[y][x]), drawOnID = ID(pmap[y][x]);
@@ -3590,10 +3591,10 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			if (drawOn == t)
 				return -1;
 			if (((elements[drawOn].Properties & PROP_DRAWONCTYPE) ||
-				 (drawOn == PT_STOR && !(elements[t].Properties & TYPE_SOLID)) ||
+				 (drawOn == PT_STOR && !(prop & TYPE_SOLID)) ||
 				 (drawOn == PT_PCLN && t != PT_PSCN && t != PT_NSCN) ||
 				 (drawOn == PT_PBCN && t != PT_PSCN && t != PT_NSCN))
-				&& (!(elements[t].Properties & PROP_NOCTYPEDRAW)))
+				&& (!(prop & PROP_NOCTYPEDRAW)))
 			{
 				int oldct = parts[drawOnID].ctype;
 				parts[drawOnID].ctype = t;
@@ -3632,7 +3633,9 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		}
 		else if (IsWallBlocking(x, y, t))
 			return -1;
-		if (photons[y][x] && (elements[t].Properties & TYPE_ENERGY))
+		else if (bmap[y/CELL][x/CELL]==WL_DETECT && (prop & TYPE_SOLID))
+			return -1;
+		if (photons[y][x] && (prop & TYPE_ENERGY))
 			return -1;
 		if (pfree == -1)
 			return -1;
@@ -4103,7 +4106,6 @@ void Simulation::UpdateParticles(int start, int end)
 			if (x<CELL || y<CELL || x>=XRES-CELL || y>=YRES-CELL ||
 			        (bmap[y/CELL][x/CELL] && (
 			          (bltable[bmap[y/CELL][x/CELL]][0] && !(elements[t].Properties & bltable[bmap[y/CELL][x/CELL]][1])) ||
-					  (bmap[y/CELL][x/CELL]==WL_DETECT && (t==PT_METL || t==PT_SPRK || t==PT_INDC)) || // can't detecting INDC
 			          (bmap[y/CELL][x/CELL]==WL_EWALL && !emap[y/CELL][x/CELL])) &&
 					  !(elements[t].Properties2 & PROP_ALLOWS_WALL)))
 			{
@@ -4474,15 +4476,15 @@ void Simulation::UpdateParticles(int start, int end)
 #else
 						if (s != PT_NUM) {}
 #endif
-						else if (t == PT_WTRV)
+						else switch (t) // LowTempTransition
 						{
+						case PT_WTRV:
 							if (pt < 273.0f)
 								s = PT_RIME;
 							else
 								s = PT_DSTW;
-						}
-						else if (t == PT_LAVA)
-						{
+							break;
+						case PT_LAVA:
 							s = parts[i].ctype;
 							if (s > 0 && s < PT_NUM && s != PT_LAVA && s != ELEM_MULTIPP && elements[s].Enabled)
 							{
@@ -4538,9 +4540,10 @@ void Simulation::UpdateParticles(int start, int end)
 								s = PT_STNE;
 							else
 								s = -1;
-						}
-						else
+							break;
+						default:
 							s = -1;
+						}
 					}
 					else
 						s = -1;
@@ -4553,27 +4556,26 @@ void Simulation::UpdateParticles(int start, int end)
 #endif
 					if (s >= 0) // particle type change occurred
 					{
-						if (s == PT_ICEI || s == PT_LAVA || s == PT_SNOW)
-							parts[i].ctype = t;
-						if (!((s == PT_ICEI && parts[i].ctype == PT_FRZW) || (
-							(t == PT_VIRS || t == PT_VRSS || t == PT_VRSG) && parts[i].tmp4 == ELEM_MULTIPP // don't clear VIRS-infected E189's life
-						)))
-							parts[i].life = 0;
-						if (s == PT_FIRE)
+						switch (s)
 						{
+						case PT_ICEI:
+						case PT_LAVA:
+						case PT_SNOW:
+							parts[i].ctype = t;
+							break;
+						case PT_FIRE:
 							//hackish, if tmp isn't 0 the FIRE might turn into DSTW later
 							//idealy transitions should use create_part(i) but some elements rely on properties staying constant
 							//and I don't feel like checking each one right now
 							parts[i].tmp = 0;
-						}
-						if ((elements[s].Properties & TYPE_GAS) && !(elements[parts[i].type].Properties & TYPE_GAS))
-							pv[y/CELL][x/CELL] += 0.50f;
-
-						if (s == PT_NONE)
-						{
+							break;
+						case PT_NONE:
 							kill_part(i);
 							goto killed;
 						}
+						if (!((s == PT_ICEI && parts[i].ctype == PT_FRZW) || s == PT_VIRS || s == PT_VRSS || s == PT_VRSG))
+							parts[i].life = 0;
+
 						// part_change_type could refuse to change the type and kill the particle
 						// for example, changing type to STKM but one already exists
 						// we need to account for that to not cause simulation corruption issues
