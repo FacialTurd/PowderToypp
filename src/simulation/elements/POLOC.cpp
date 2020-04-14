@@ -26,6 +26,7 @@ Element_POLC::Element_POLC()
 	Explosive = 0;
 	Meltable = 1;
 	Hardness = 0;
+	Harmness = 2;
 	PhotonReflectWavelengths = 0x000FF200;
 
 	Weight = 90;

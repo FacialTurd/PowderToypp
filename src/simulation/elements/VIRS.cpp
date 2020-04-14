@@ -23,6 +23,7 @@ Element_VIRS::Element_VIRS()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 20;
+	Harmness = 1;
 
 	Weight = 31;
 
@@ -31,7 +32,7 @@ Element_VIRS::Element_VIRS()
 	HeatConduct = 251;
 	Description = "Virus. Turns everything it touches into virus.";
 
-	Properties = TYPE_LIQUID|PROP_DEADLY;
+	Properties = TYPE_LIQUID;
 	// Properties2 |= PROP_DEBUG_USE_TMP2;
 	// VIRS using "tmp4", not "tmp2"
 

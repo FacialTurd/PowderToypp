@@ -23,6 +23,7 @@ Element_VRSG::Element_VRSG()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 0;
+	Harmness = 1;
 
 	Weight = 1;
 
@@ -31,7 +32,7 @@ Element_VRSG::Element_VRSG()
 	HeatConduct = 251;
 	Description = "Gas Virus. Turns everything it touches into virus.";
 
-	Properties = TYPE_GAS|PROP_DEADLY;
+	Properties = TYPE_GAS;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

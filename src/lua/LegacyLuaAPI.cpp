@@ -288,6 +288,10 @@ int luacon_element_getproperty(const char * key, int * format, unsigned int * mo
 		offset = offsetof(Element, Hardness);
 		*format = 0;
 	}
+	else if (!strcmp(key, "harmness")) {
+		offset = offsetof(Element, Harmness);
+		*format = 0;
+	}
 	// Not sure if this should be enabled
 	// Also, needs a new format type for unsigned ints
 	/*else if (!strcmp(key, "photonreflectwavelengths")) {
@@ -333,6 +337,12 @@ int luacon_element_getproperty(const char * key, int * format, unsigned int * mo
 		*format = 0;
 		if (modified_stuff)
 			*modified_stuff |= LUACON_EL_MODIFIED_GRAPHICS | LUACON_EL_MODIFIED_CANMOVE | LUACON_EL_MODIFIED_CANCONDUCTS;
+	}
+	else if (!strcmp(key, "properties2")) {
+		offset = offsetof(Element, Properties2);
+		*format = 0;
+		if (modified_stuff)
+			*modified_stuff |= LUACON_EL_MODIFIED_CANMOVE;
 	}
 	else if (!strcmp(key, "description")) {
 		offset = offsetof(Element, Description);

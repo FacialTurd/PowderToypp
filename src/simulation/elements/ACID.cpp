@@ -24,6 +24,7 @@ Element_ACID::Element_ACID()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 0;
+	Harmness = 5;
 	PhotonReflectWavelengths = 0x1FE001FE;
 
 	Weight = 10;
@@ -32,7 +33,7 @@ Element_ACID::Element_ACID()
 	HeatConduct = 34;
 	Description = "Dissolves almost everything.";
 
-	Properties = TYPE_LIQUID|PROP_DEADLY;
+	Properties = TYPE_LIQUID;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

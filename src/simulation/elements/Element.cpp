@@ -24,6 +24,7 @@ Element::Element():
 	Explosive(0),
 	Meltable(0),
 	Hardness(30),
+	Harmness(0),
 	PhotonReflectWavelengths(0x3FFFFFFF),
 
 	Weight(50),
@@ -73,6 +74,7 @@ std::vector<StructProperty> Element::GetProperties()
 	properties.push_back(StructProperty("Explosive",					StructProperty::Integer,	offsetof(Element, Explosive)));
 	properties.push_back(StructProperty("Meltable",						StructProperty::Integer,	offsetof(Element, Meltable)));
 	properties.push_back(StructProperty("Hardness",						StructProperty::Integer,	offsetof(Element, Hardness)));
+	properties.push_back(StructProperty("Harmness",						StructProperty::Integer,	offsetof(Element, Harmness)));
 	properties.push_back(StructProperty("PhotonReflectWavelengths",		StructProperty::UInteger,	offsetof(Element, PhotonReflectWavelengths)));
 	properties.push_back(StructProperty("Weight",						StructProperty::Integer,	offsetof(Element, Weight)));
 	properties.push_back(StructProperty("Temperature",					StructProperty::Float,		offsetof(Element, DefaultProperties.temp)));

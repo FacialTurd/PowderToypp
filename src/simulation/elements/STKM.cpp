@@ -754,22 +754,16 @@ void Element_STKM::STKM_interact(Simulation *sim, playerst *playerp, int i, int 
 				sim->parts[i].life -= 2;
 				playerp->accs[3] -= gmult;
 			}
-				
-			if (sim->elements[rt].Properties&PROP_DEADLY)
-				switch (rt)
-				{
-					case PT_ACID:
-						sim->parts[i].life -= 5;
-						break;
-					default:
-						sim->parts[i].life -= 1;
-						break;
-				}
 
-			if (sim->elements[rt].Properties&PROP_RADIOACTIVE)
-				sim->parts[i].life -= 1;
+			if (sim->elements[rt].Harmness > 0)
+			{
+				if (sim->parts[i].life > sim->elements[rt].Harmness)
+					sim->parts[i].life -= sim->elements[rt].Harmness;
+				else
+					sim->parts[i].life = 0;
+			}
 		}
-		
+
 		if (rt == ELEM_MULTIPP)
 		{
 			STKM_set_life_1(sim, r, i);

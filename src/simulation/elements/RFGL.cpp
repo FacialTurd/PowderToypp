@@ -23,13 +23,14 @@ Element_RFGL::Element_RFGL()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 20;
+	Harmness = 1;
 
 	Weight = 10;
 
 	HeatConduct = 3;
 	Description = "Liquid refrigerant.";
 
-	Properties = TYPE_LIQUID|PROP_DEADLY;
+	Properties = TYPE_LIQUID;
 	Properties2 |= PROP_DEBUG_HIDE_TMP;
 
 	LowPressure = 2;

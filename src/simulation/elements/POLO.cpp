@@ -23,6 +23,7 @@ Element_POLO::Element_POLO()
 	Explosive = 0;
 	Meltable = 1;
 	Hardness = 0;
+	Harmness = 2;
 	PhotonReflectWavelengths = 0x000FF200;
 
 	Weight = 90;
@@ -31,7 +32,7 @@ Element_POLO::Element_POLO()
 	HeatConduct = 251;
 	Description = "Polonium, highly radioactive. Decays into NEUT and heats up.";
 
-	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC|PROP_DEADLY;
+	Properties = TYPE_PART|PROP_NEUTPASS|PROP_RADIOACTIVE|PROP_LIFE_DEC;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

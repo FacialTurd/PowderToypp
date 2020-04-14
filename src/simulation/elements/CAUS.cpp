@@ -23,6 +23,7 @@ Element_CAUS::Element_CAUS()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 0;
+	Harmness = 1;
 
 	Weight = 1;
 
@@ -30,7 +31,7 @@ Element_CAUS::Element_CAUS()
 	HeatConduct = 70;
 	Description = "Caustic Gas, acts like ACID.";
 
-	Properties = TYPE_GAS|PROP_DEADLY;
+	Properties = TYPE_GAS;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

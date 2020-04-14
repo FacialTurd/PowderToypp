@@ -23,6 +23,7 @@ Element_VRSS::Element_VRSS()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 1;
+	Harmness = 1;
 
 	Weight = 100;
 
@@ -30,7 +31,7 @@ Element_VRSS::Element_VRSS()
 	HeatConduct = 251;
 	Description = "Solid Virus. Turns everything it touches into virus.";
 
-	Properties = TYPE_SOLID|PROP_DEADLY;
+	Properties = TYPE_SOLID;
 
 	LowPressure = IPL;
 	LowPressureTransition = NT;

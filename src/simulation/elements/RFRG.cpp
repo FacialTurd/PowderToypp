@@ -23,13 +23,14 @@ Element_RFRG::Element_RFRG()
 	Explosive = 0;
 	Meltable = 0;
 	Hardness = 20;
+	Harmness = 1;
 
 	Weight = 1;
 
 	HeatConduct = 3;
 	Description = "Refrigerant. Heats up and liquefies under pressure.";
 
-	Properties = TYPE_GAS|PROP_DEADLY;
+	Properties = TYPE_GAS;
 	Properties2 |= PROP_DEBUG_HIDE_TMP;
 
 	LowPressure = IPL;
