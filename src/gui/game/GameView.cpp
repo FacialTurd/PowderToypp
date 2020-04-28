@@ -1581,7 +1581,10 @@ void GameView::OnKeyPress(int key, Uint16 character, bool shift, bool ctrl, bool
 			ui::Engine::Ref().ConfirmExit();
 			break;
 		case 'u':
-			c->ToggleAHeat();
+			if (ctrl)
+				c->ResetAHeat();
+			else
+				c->ToggleAHeat();
 			break;
 		case 'n':
 			c->ToggleNewtonianGravity();

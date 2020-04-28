@@ -3508,9 +3508,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 {
 	int i;
 
-	if (x<0 || y<0 || x>=XRES || y>=YRES)
-		return -1;
-	if (t>=0 && t<PT_NUM && !elements[t].Enabled)
+	if (x<0 || y<0 || x>=XRES || y>=YRES || t<=0 || t>=PT_NUM || !elements[t].Enabled)
 		return -1;
 
 	if (t==PT_SPRK)

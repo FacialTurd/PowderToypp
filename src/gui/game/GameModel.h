@@ -166,18 +166,19 @@ public:
 	void SetSaveFile(SaveFile * newSave);
 	void AddObserver(GameView * observer);
 
-	bool GetPaused();
 	void SetPaused(bool pauseState);
-	bool GetDecoration();
+	bool GetPaused();
 	void SetDecoration(bool decorationState);
-	bool GetLLCA();
+	bool GetDecoration();
 	void SetLLCA(bool m);
-	bool GetAHeatEnable();
+	bool GetLLCA();
 	void SetAHeatEnable(bool aHeat);
-	bool GetNewtonianGrvity();
+	bool GetAHeatEnable();
+	void ResetAHeat();
 	void SetNewtonianGravity(bool newtonainGravity);
-	bool GetGravityGrid();
+	bool GetNewtonianGrvity();
 	void ShowGravityGrid(bool showGrid);
+	bool GetGravityGrid();
 	void ClearSimulation();
 	vector<Menu*> GetMenuList();
 	vector<QuickOption*> GetQuickOptions();
