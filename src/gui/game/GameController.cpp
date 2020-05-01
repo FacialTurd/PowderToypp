@@ -997,7 +997,7 @@ void GameController::ResetAHeat()
 
 void GameController::ToggleNewtonianGravity()
 {
-	gameModel->SetNewtonianGravity(!gameModel->GetNewtonianGrvity());
+	gameModel->SetNewtonianGravity(!gameModel->GetNewtonianGravity());
 }
 
 void GameController::LoadRenderPreset(int presetNum)

@@ -91,8 +91,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 
 	float pp, d, pressure;
 	float dt = 0.9;// /(FPSB*FPSB);  //Delta time in square
-	float gvx, gvy;
-	float gx, gy, dl, dr, dx, dy;
+	float gvx, gvy, dx, dy;
 	float rocketBootsHeadEffect = 0.35f;
 	float rocketBootsFeetEffect = 0.15f;
 	float rocketBootsHeadEffectV = 0.3f;// stronger acceleration vertically, to counteract gravity
@@ -250,11 +249,9 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 	playerp->accs[6] = 0;
 	playerp->accs[7] = 0;
 
-	gx = (playerp->legs_curr[2] + playerp->legs_curr[6])/2 - gvy;
-	gy = (playerp->legs_curr[3] + playerp->legs_curr[7])/2 + gvx;
-	dl = pow(gx - playerp->legs_curr[2], 2) + pow(gy - playerp->legs_curr[3], 2);
-	dr = pow(gx - playerp->legs_curr[6], 2) + pow(gy - playerp->legs_curr[7], 2);
-	dx = dl - dr;
+	dx = playerp->legs_curr[6] - playerp->legs_curr[2];
+	dy = playerp->legs_curr[7] - playerp->legs_curr[3];
+	dx = dy * gvx - dx * gvy;
 	dy = (comm & 1) - (comm >> 1);
 
 	//Go left or right
@@ -266,7 +263,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		{
 			if (is_blocking(sim, playerp, t, playerp->legs_curr[2], playerp->legs_curr[3]))
 			{
-				playerp->accs[2] = -dy * 3 *gvy - 3 * gvx;
+				playerp->accs[2] = -dy * 3 * gvy - 3 * gvx;
 				playerp->accs[3] = 3 * gvx - 3 * gvy;
 				playerp->accs[0] = -dy * gvy;
 				playerp->accs[1] = gvx;
@@ -277,7 +274,7 @@ int Element_STKM::run_stickman(playerst *playerp, UPDATE_FUNC_ARGS) {
 		{
 			if (is_blocking(sim, playerp, t, playerp->legs_curr[6], playerp->legs_curr[7]))
 			{
-				playerp->accs[6] = -dy * 3 *gvy - 3 * gvx;
+				playerp->accs[6] = -dy * 3 * gvy - 3 * gvx;
 				playerp->accs[7] = 3 * gvx - 3 * gvy;
 				playerp->accs[0] = -dy * gvy;
 				playerp->accs[1] = gvx;

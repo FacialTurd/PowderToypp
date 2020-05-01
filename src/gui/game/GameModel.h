@@ -176,7 +176,7 @@ public:
 	bool GetAHeatEnable();
 	void ResetAHeat();
 	void SetNewtonianGravity(bool newtonainGravity);
-	bool GetNewtonianGrvity();
+	bool GetNewtonianGravity();
 	void ShowGravityGrid(bool showGrid);
 	bool GetGravityGrid();
 	void ClearSimulation();

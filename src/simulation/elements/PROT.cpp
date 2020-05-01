@@ -306,15 +306,10 @@ int Element_PROT::update(UPDATE_FUNC_ARGS)
 	//collide with other protons to make heavier materials
 	if (aheadI != i && aheadT == PT_PROT)
 	{
-		float velocity1 = powf(parts[i].vx, 2.0f)+powf(parts[i].vy, 2.0f);
-		float velocity2 = powf(parts[aheadI].vx, 2.0f)+powf(parts[aheadI].vy, 2.0f);
-		float direction1 = atan2f(-parts[i].vy, parts[i].vx);
-		float direction2 = atan2f(-parts[aheadI].vy, parts[aheadI].vx);
-		float difference = direction1 - direction2; if (difference < 0) difference += 6.28319f;
-
-		if (difference > 3.12659f && difference < 3.15659f && velocity1 + velocity2 > 10.0f)
+		float energy = CollisionEnergy(&parts[i], &parts[aheadI]);
+		if (energy > 10.0f)
 		{
-			parts[aheadI].tmp += (int)(velocity1 + velocity2);
+			parts[aheadI].tmp += (int)energy;
 			parts[aheadI].tmp2 |= (parts[i].tmp2 & 2);
 			sim->kill_part(i);
 			return 1;
@@ -343,6 +338,18 @@ int Element_PROT::DeutImplosion(Simulation * sim, int n, int x, int y, float tem
 	}
 	sim->pv[y/CELL][x/CELL] -= (6.0f * CFDS)*n;
 	return 0;
+}
+
+//#TPT-Directive ElementHeader Element_PROT static float CollisionEnergy(const Particle* cpart1, const Particle* cpart2, float angle = -0.015f)
+float Element_PROT::CollisionEnergy(const Particle* cpart1, const Particle* cpart2, float angle)
+{
+	float velocity1 = powf(cpart1->vx, 2.0f) + powf(cpart1->vy, 2.0f);
+	float velocity2 = powf(cpart2->vx, 2.0f) + powf(cpart2->vy, 2.0f);
+	float a = angle * (cpart1->vx * cpart2->vx + cpart1->vy * cpart2->vy);
+	float b = cpart1->vy * cpart2->vx - cpart1->vx * cpart2->vy;
+	if (a > b && a > -b)
+		return velocity1 + velocity2;
+	return 0.0f;
 }
 
 //#TPT-Directive ElementHeader Element_PROT static int graphics(GRAPHICS_FUNC_ARGS)

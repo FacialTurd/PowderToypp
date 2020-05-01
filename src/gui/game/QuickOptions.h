@@ -65,11 +65,11 @@ public:
 	}
 	virtual bool GetToggle() 
 	{
-		return m->GetNewtonianGrvity();
+		return m->GetNewtonianGravity();
 	}
 	virtual void perform()
 	{
-		m->SetNewtonianGravity(!m->GetNewtonianGrvity());
+		m->SetNewtonianGravity(!m->GetNewtonianGravity());
 	}
 };
 
