@@ -90,13 +90,13 @@ bool Element_LDTC::accepted_conductor(Simulation* sim, int r)
 //#TPT-Directive ElementHeader Element_LDTC static int update(UPDATE_FUNC_ARGS)
 int Element_LDTC::update(UPDATE_FUNC_ARGS)
 {
-	int ctype = TYP(parts[i].ctype), ctypeExtra = ID(parts[i].ctype), detectLength = parts[i].tmp, detectSpaces = parts[i].tmp2;
+	int ctype = TYP(parts[i].ctype), ctypeExtra = ID(parts[i].ctype), detectLength = parts[i].tmp, detectSpaces = parts[i].life;
 	bool copyColor = !(parts[i].tmp2 & Element_LDTC::FLAG_NO_COPY_COLOR);
 	bool ignoreEnergy = parts[i].tmp2 & Element_LDTC::FLAG_IGNORE_ENERGY;
 	bool invertFilter = parts[i].tmp2 & Element_LDTC::FLAG_INVERT_FILTER;
 	bool keepSearching = parts[i].tmp2 & Element_LDTC::FLAG_KEEP_SEARCHING;
 	if (detectSpaces < 0)
-		detectSpaces = parts[i].tmp2 = 0;
+		detectSpaces = parts[i].life = 0;
 	if (detectLength < 0)
 		detectLength = parts[i].tmp = 0;
 	for (int rx = -1; rx <= 1; rx++)
@@ -113,10 +113,10 @@ int Element_LDTC::update(UPDATE_FUNC_ARGS)
 				if (!boolMode && !filtMode)
 					continue;
 
-				int maxRange = parts[i].life + parts[i].tmp;
+				int maxRange = detectSpaces + detectLength;
 				int xStep = rx * -1, yStep = ry * -1;
-				int xCurrent = x + (xStep * (parts[i].life + 1)), yCurrent = y + (yStep * (parts[i].life + 1));
-				for (; !parts[i].tmp ||
+				int xCurrent = x + (xStep * (detectSpaces + 1)), yCurrent = y + (yStep * (detectSpaces + 1));
+				for (; !detectLength ||
 					(xStep * (xCurrent - x) <= maxRange &&
 					yStep * (yCurrent - y) <= maxRange);
 					xCurrent += xStep, yCurrent += yStep)

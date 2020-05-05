@@ -141,13 +141,10 @@ int Element_LSNS::update(UPDATE_FUNC_ARGS)
 					}
 				}
 				// .life deserialization.
-				if (doDeserialization)
+				else if (doDeserialization)
 				{
 					if (TYP(r) != PT_FILT)
-					{
 						parts[ID(r)].life = life - 0x10000000;
-						break;
-					}
 				}
 			}
 
