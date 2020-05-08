@@ -354,7 +354,7 @@ AnyType TPTScriptInterface::tptS_set(std::deque<std::string> * words)
 		}
 		else
 			partIndex = ((NumberType)selector).Value();
-		if(partIndex<0 || partIndex>NPART || sim->parts[partIndex].type==0)
+		if(partIndex<0 || partIndex>=NPART || sim->parts[partIndex].type==0)
 			throw GeneralException("Invalid particle");
 
 		switch(propertyFormat)
