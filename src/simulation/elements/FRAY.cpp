@@ -69,8 +69,8 @@ int Element_FRAY::update(UPDATE_FUNC_ARGS)
 						if (!r)
 							r = sim->photons[y+nyi+nyy][x+nxi+nxx];
 						if (r && !(sim->elements[TYP(r)].Properties & TYPE_SOLID)){
-							partsi(r).vx += nxi*((parts[i].temp-273.15)/10.0f);
-							partsi(r).vy += nyi*((parts[i].temp-273.15)/10.0f);
+							partsi(r).vx += nxi*((parts[i].temp-273.15f)/10.0f);
+							partsi(r).vy += nyi*((parts[i].temp-273.15f)/10.0f);
 						}
 					}
 				}
