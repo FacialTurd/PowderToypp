@@ -68,14 +68,14 @@ const int Element_LDTC::FLAG_KEEP_SEARCHING = 0x8;
 // 0x08: Keep searching even after finding a particle
 
 
-//#TPT-Directive ElementHeader Element_LDTC static bool phot_data_type(int rt);
+//#TPT-Directive ElementHeader Element_LDTC static bool phot_data_type(int rt)
 /* Returns true for particles that activate the special FILT color copying mode */
 bool Element_LDTC::phot_data_type(int rt)
 {
 	return rt == PT_FILT || rt == PT_PHOT || rt == PT_BRAY;
 }
 
-//#TPT-Directive ElementHeader Element_LDTC static bool accepted_conductor(Simulation *sim, int rt);
+//#TPT-Directive ElementHeader Element_LDTC static bool accepted_conductor(Simulation *sim, int rt)
 /* Returns true for particles that start a ray search ("dtec" mode)
  */
 bool Element_LDTC::accepted_conductor(Simulation* sim, int r)

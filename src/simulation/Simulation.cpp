@@ -3899,7 +3899,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		break;
 	}
 	case PT_SLCN:
-		Element_SLCN::init(this, i);
+		Element_SLCN::initSparkles(parts[i]);
 	default:
 		break;
 	}
